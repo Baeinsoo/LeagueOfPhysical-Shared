@@ -1,0 +1,17 @@
+{
+    "name": "baegames.LOP.Shared.Editor",
+    "rootNamespace": "LOP.Editor",
+    "references": [
+        "baegames.LOP.Shared.Runtime",
+        "baegames.LOP.Shared.Generated"
+    ],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

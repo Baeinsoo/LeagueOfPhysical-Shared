@@ -1,0 +1,14 @@
+{
+    "name": "baegames.LOP.Shared.Generated",
+    "rootNamespace": "",
+    "references": ["baegames.LOP.Shared.Runtime"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": ["Google.Protobuf.dll"],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

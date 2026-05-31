@@ -1,0 +1,19 @@
+{
+    "name": "baegames.LOP.Shared.Tests.EditMode",
+    "rootNamespace": "LOP.Tests",
+    "references": [
+        "baegames.LOP.Shared.Runtime",
+        "baegames.LOP.Shared.Generated",
+        "baegames.GameFramework.Runtime"
+    ],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": ["TestAssemblies"]
+}

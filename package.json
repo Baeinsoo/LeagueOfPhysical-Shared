@@ -1,0 +1,11 @@
+{
+    "name": "com.baegames.lop.shared",
+    "version": "0.0.1",
+    "displayName": "LOP Shared",
+    "description": "League of Physical 클라/서버 공유 도메인 (proto 메시지, 메시지 인프라, 향후 MasterData/Simulation).",
+    "unity": "2022.3",
+    "author": { "name": "insoo.bae" },
+    "dependencies": {
+        "com.baegames.gameframework": "0.0.2"
+    }
+}
