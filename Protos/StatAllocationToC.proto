@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+// @auto_generate
+message StatAllocationToC
+{
+    string stat = 1;
+	int32 stat_value = 2;
+}
