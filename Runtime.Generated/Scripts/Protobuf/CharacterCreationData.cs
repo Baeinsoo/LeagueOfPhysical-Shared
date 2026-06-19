@@ -23,16 +23,18 @@ public static partial class CharacterCreationDataReflection {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
           "ChtDaGFyYWN0ZXJDcmVhdGlvbkRhdGEucHJvdG8aHEJhc2VFbnRpdHlDcmVh",
-          "dGlvbkRhdGEucHJvdG8i6gEKFUNoYXJhY3RlckNyZWF0aW9uRGF0YRI6Chli",
+          "dGlvbkRhdGEucHJvdG8itwIKFUNoYXJhY3RlckNyZWF0aW9uRGF0YRI6Chli",
           "YXNlX2VudGl0eV9jcmVhdGlvbl9kYXRhGAEgASgLMhcuQmFzZUVudGl0eUNy",
           "ZWF0aW9uRGF0YRIWCg5jaGFyYWN0ZXJfY29kZRgCIAEoCRIRCgl2aXN1YWxf",
           "aWQYAyABKAkSDgoGbWF4X0hQGAQgASgFEhIKCmN1cnJlbnRfSFAYBSABKAUS",
           "DgoGbWF4X01QGAYgASgFEhIKCmN1cnJlbnRfTVAYByABKAUSDQoFbGV2ZWwY",
-          "CCABKAUSEwoLY3VycmVudF9leHAYCSABKANiBnByb3RvMw=="));
+          "CCABKAUSEwoLY3VycmVudF9leHAYCSABKAMSEAoIc3RyZW5ndGgYCiABKAUS",
+          "EQoJZGV4dGVyaXR5GAsgASgFEhQKDGludGVsbGlnZW5jZRgMIAEoBRIQCgh2",
+          "aXRhbGl0eRgNIAEoBWIGcHJvdG8z"));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::BaseEntityCreationDataReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::CharacterCreationData), global::CharacterCreationData.Parser, new[]{ "BaseEntityCreationData", "CharacterCode", "VisualId", "MaxHP", "CurrentHP", "MaxMP", "CurrentMP", "Level", "CurrentExp" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::CharacterCreationData), global::CharacterCreationData.Parser, new[]{ "BaseEntityCreationData", "CharacterCode", "VisualId", "MaxHP", "CurrentHP", "MaxMP", "CurrentMP", "Level", "CurrentExp", "Strength", "Dexterity", "Intelligence", "Vitality" }, null, null, null, null)
         }));
   }
   #endregion
@@ -83,6 +85,10 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
     currentMP_ = other.currentMP_;
     level_ = other.level_;
     currentExp_ = other.currentExp_;
+    strength_ = other.strength_;
+    dexterity_ = other.dexterity_;
+    intelligence_ = other.intelligence_;
+    vitality_ = other.vitality_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -200,6 +206,54 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
     }
   }
 
+  /// <summary>Field number for the "strength" field.</summary>
+  public const int StrengthFieldNumber = 10;
+  private int strength_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Strength {
+    get { return strength_; }
+    set {
+      strength_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "dexterity" field.</summary>
+  public const int DexterityFieldNumber = 11;
+  private int dexterity_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Dexterity {
+    get { return dexterity_; }
+    set {
+      dexterity_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "intelligence" field.</summary>
+  public const int IntelligenceFieldNumber = 12;
+  private int intelligence_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Intelligence {
+    get { return intelligence_; }
+    set {
+      intelligence_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "vitality" field.</summary>
+  public const int VitalityFieldNumber = 13;
+  private int vitality_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Vitality {
+    get { return vitality_; }
+    set {
+      vitality_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -224,6 +278,10 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
     if (CurrentMP != other.CurrentMP) return false;
     if (Level != other.Level) return false;
     if (CurrentExp != other.CurrentExp) return false;
+    if (Strength != other.Strength) return false;
+    if (Dexterity != other.Dexterity) return false;
+    if (Intelligence != other.Intelligence) return false;
+    if (Vitality != other.Vitality) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -240,6 +298,10 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
     if (CurrentMP != 0) hash ^= CurrentMP.GetHashCode();
     if (Level != 0) hash ^= Level.GetHashCode();
     if (CurrentExp != 0L) hash ^= CurrentExp.GetHashCode();
+    if (Strength != 0) hash ^= Strength.GetHashCode();
+    if (Dexterity != 0) hash ^= Dexterity.GetHashCode();
+    if (Intelligence != 0) hash ^= Intelligence.GetHashCode();
+    if (Vitality != 0) hash ^= Vitality.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -294,6 +356,22 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
       output.WriteRawTag(72);
       output.WriteInt64(CurrentExp);
     }
+    if (Strength != 0) {
+      output.WriteRawTag(80);
+      output.WriteInt32(Strength);
+    }
+    if (Dexterity != 0) {
+      output.WriteRawTag(88);
+      output.WriteInt32(Dexterity);
+    }
+    if (Intelligence != 0) {
+      output.WriteRawTag(96);
+      output.WriteInt32(Intelligence);
+    }
+    if (Vitality != 0) {
+      output.WriteRawTag(104);
+      output.WriteInt32(Vitality);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -340,6 +418,22 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
       output.WriteRawTag(72);
       output.WriteInt64(CurrentExp);
     }
+    if (Strength != 0) {
+      output.WriteRawTag(80);
+      output.WriteInt32(Strength);
+    }
+    if (Dexterity != 0) {
+      output.WriteRawTag(88);
+      output.WriteInt32(Dexterity);
+    }
+    if (Intelligence != 0) {
+      output.WriteRawTag(96);
+      output.WriteInt32(Intelligence);
+    }
+    if (Vitality != 0) {
+      output.WriteRawTag(104);
+      output.WriteInt32(Vitality);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -376,6 +470,18 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
     }
     if (CurrentExp != 0L) {
       size += 1 + pb::CodedOutputStream.ComputeInt64Size(CurrentExp);
+    }
+    if (Strength != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Strength);
+    }
+    if (Dexterity != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Dexterity);
+    }
+    if (Intelligence != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Intelligence);
+    }
+    if (Vitality != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Vitality);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -418,6 +524,18 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
     }
     if (other.CurrentExp != 0L) {
       CurrentExp = other.CurrentExp;
+    }
+    if (other.Strength != 0) {
+      Strength = other.Strength;
+    }
+    if (other.Dexterity != 0) {
+      Dexterity = other.Dexterity;
+    }
+    if (other.Intelligence != 0) {
+      Intelligence = other.Intelligence;
+    }
+    if (other.Vitality != 0) {
+      Vitality = other.Vitality;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -477,6 +595,22 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
           CurrentExp = input.ReadInt64();
           break;
         }
+        case 80: {
+          Strength = input.ReadInt32();
+          break;
+        }
+        case 88: {
+          Dexterity = input.ReadInt32();
+          break;
+        }
+        case 96: {
+          Intelligence = input.ReadInt32();
+          break;
+        }
+        case 104: {
+          Vitality = input.ReadInt32();
+          break;
+        }
       }
     }
   #endif
@@ -533,6 +667,22 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
         }
         case 72: {
           CurrentExp = input.ReadInt64();
+          break;
+        }
+        case 80: {
+          Strength = input.ReadInt32();
+          break;
+        }
+        case 88: {
+          Dexterity = input.ReadInt32();
+          break;
+        }
+        case 96: {
+          Intelligence = input.ReadInt32();
+          break;
+        }
+        case 104: {
+          Vitality = input.ReadInt32();
           break;
         }
       }
