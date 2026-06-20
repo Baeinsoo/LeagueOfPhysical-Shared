@@ -3,6 +3,13 @@ syntax = "proto3";
 import "PlayerInput.proto";
 import "ProtoTransform.proto";
 
+// 패킷당 redundancy로 묶어 보낼 단일 입력 엔트리(필드 타입 — wire 직접 전송 안 함, 자동 생성 마커 없음 → MessageId 없음).
+message PlayerInputEntry
+{
+	int64 tick = 1;
+	PlayerInput player_input = 2;
+}
+
 // @auto_generate
 message PlayerInputToS
 {
@@ -10,4 +17,5 @@ message PlayerInputToS
 	int64 tick = 2;
 	PlayerInput player_input = 3;
 	ProtoTransform entity_transform = 4;
+	repeated PlayerInputEntry recent_inputs = 5;
 }
