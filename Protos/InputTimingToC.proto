@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+// @auto_generate
+message InputTimingToC
+{
+	double avg_d = 1;
+	int32 max_d = 2;
+	int32 prune_count = 3;
+	int32 seq_gap_count = 4;
+	int32 sample_count = 5;
+}
