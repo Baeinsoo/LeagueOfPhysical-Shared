@@ -8,4 +8,6 @@ message EntitySnap
 	ProtoVector3 position = 2;
 	ProtoVector3 rotation = 3;
 	ProtoVector3 velocity = 4;
+	int32 max_HP = 5;
+	int32 current_HP = 6;
 }

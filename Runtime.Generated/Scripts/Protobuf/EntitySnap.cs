@@ -22,14 +22,15 @@ public static partial class EntitySnapReflection {
   static EntitySnapReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChBFbnRpdHlTbmFwLnByb3RvGhJQcm90b1ZlY3RvcjMucHJvdG8iggEKCkVu",
+          "ChBFbnRpdHlTbmFwLnByb3RvGhJQcm90b1ZlY3RvcjMucHJvdG8ipgEKCkVu",
           "dGl0eVNuYXASEQoJZW50aXR5X2lkGAEgASgJEh8KCHBvc2l0aW9uGAIgASgL",
           "Mg0uUHJvdG9WZWN0b3IzEh8KCHJvdGF0aW9uGAMgASgLMg0uUHJvdG9WZWN0",
-          "b3IzEh8KCHZlbG9jaXR5GAQgASgLMg0uUHJvdG9WZWN0b3IzYgZwcm90bzM="));
+          "b3IzEh8KCHZlbG9jaXR5GAQgASgLMg0uUHJvdG9WZWN0b3IzEg4KBm1heF9I",
+          "UBgFIAEoBRISCgpjdXJyZW50X0hQGAYgASgFYgZwcm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::ProtoVector3Reflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP" }, null, null, null, null)
         }));
   }
   #endregion
@@ -75,6 +76,8 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     position_ = other.position_ != null ? other.position_.Clone() : null;
     rotation_ = other.rotation_ != null ? other.rotation_.Clone() : null;
     velocity_ = other.velocity_ != null ? other.velocity_.Clone() : null;
+    maxHP_ = other.maxHP_;
+    currentHP_ = other.currentHP_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -132,6 +135,30 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
   }
 
+  /// <summary>Field number for the "max_HP" field.</summary>
+  public const int MaxHPFieldNumber = 5;
+  private int maxHP_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int MaxHP {
+    get { return maxHP_; }
+    set {
+      maxHP_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "current_HP" field.</summary>
+  public const int CurrentHPFieldNumber = 6;
+  private int currentHP_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int CurrentHP {
+    get { return currentHP_; }
+    set {
+      currentHP_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -151,6 +178,8 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (!object.Equals(Position, other.Position)) return false;
     if (!object.Equals(Rotation, other.Rotation)) return false;
     if (!object.Equals(Velocity, other.Velocity)) return false;
+    if (MaxHP != other.MaxHP) return false;
+    if (CurrentHP != other.CurrentHP) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -162,6 +191,8 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (position_ != null) hash ^= Position.GetHashCode();
     if (rotation_ != null) hash ^= Rotation.GetHashCode();
     if (velocity_ != null) hash ^= Velocity.GetHashCode();
+    if (MaxHP != 0) hash ^= MaxHP.GetHashCode();
+    if (CurrentHP != 0) hash ^= CurrentHP.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -196,6 +227,14 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(34);
       output.WriteMessage(Velocity);
     }
+    if (MaxHP != 0) {
+      output.WriteRawTag(40);
+      output.WriteInt32(MaxHP);
+    }
+    if (CurrentHP != 0) {
+      output.WriteRawTag(48);
+      output.WriteInt32(CurrentHP);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -222,6 +261,14 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(34);
       output.WriteMessage(Velocity);
     }
+    if (MaxHP != 0) {
+      output.WriteRawTag(40);
+      output.WriteInt32(MaxHP);
+    }
+    if (CurrentHP != 0) {
+      output.WriteRawTag(48);
+      output.WriteInt32(CurrentHP);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -243,6 +290,12 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
     if (velocity_ != null) {
       size += 1 + pb::CodedOutputStream.ComputeMessageSize(Velocity);
+    }
+    if (MaxHP != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(MaxHP);
+    }
+    if (CurrentHP != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(CurrentHP);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -276,6 +329,12 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
         Velocity = new global::ProtoVector3();
       }
       Velocity.MergeFrom(other.Velocity);
+    }
+    if (other.MaxHP != 0) {
+      MaxHP = other.MaxHP;
+    }
+    if (other.CurrentHP != 0) {
+      CurrentHP = other.CurrentHP;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -321,6 +380,14 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
           input.ReadMessage(Velocity);
           break;
         }
+        case 40: {
+          MaxHP = input.ReadInt32();
+          break;
+        }
+        case 48: {
+          CurrentHP = input.ReadInt32();
+          break;
+        }
       }
     }
   #endif
@@ -363,6 +430,14 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
             Velocity = new global::ProtoVector3();
           }
           input.ReadMessage(Velocity);
+          break;
+        }
+        case 40: {
+          MaxHP = input.ReadInt32();
+          break;
+        }
+        case 48: {
+          CurrentHP = input.ReadInt32();
           break;
         }
       }
