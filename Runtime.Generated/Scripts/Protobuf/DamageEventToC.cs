@@ -22,16 +22,15 @@ public static partial class DamageEventToCReflection {
   static DamageEventToCReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChREYW1hZ2VFdmVudFRvQy5wcm90byLjAQoORGFtYWdlRXZlbnRUb0MSDAoE",
+          "ChREYW1hZ2VFdmVudFRvQy5wcm90byK8AQoORGFtYWdlRXZlbnRUb0MSDAoE",
           "dGljaxgBIAEoAxITCgthdHRhY2tlcl9pZBgCIAEoCRIRCgl0YXJnZXRfaWQY",
           "AyABKAkSEwoLYWN0aW9uX2NvZGUYBCABKAkSEwoLZGFtYWdlX3R5cGUYBSAB",
           "KAkSDgoGZGFtYWdlGAYgASgDEhMKC2lzX2NyaXRpY2FsGAcgASgIEhEKCWlz",
-          "X2RvZGdlZBgIIAEoCBISCgppc19ibG9ja2VkGAkgASgIEhQKDHJlbWFpbmlu",
-          "Z19IUBgKIAEoAxIPCgdpc19kZWFkGAsgASgIYgZwcm90bzM="));
+          "X2RvZGdlZBgIIAEoCBISCgppc19ibG9ja2VkGAkgASgIYgZwcm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::DamageEventToC), global::DamageEventToC.Parser, new[]{ "Tick", "AttackerId", "TargetId", "ActionCode", "DamageType", "Damage", "IsCritical", "IsDodged", "IsBlocked", "RemainingHP", "IsDead" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::DamageEventToC), global::DamageEventToC.Parser, new[]{ "Tick", "AttackerId", "TargetId", "ActionCode", "DamageType", "Damage", "IsCritical", "IsDodged", "IsBlocked" }, null, null, null, null)
         }));
   }
   #endregion
@@ -85,8 +84,6 @@ public sealed partial class DamageEventToC : pb::IMessage<DamageEventToC>
     isCritical_ = other.isCritical_;
     isDodged_ = other.isDodged_;
     isBlocked_ = other.isBlocked_;
-    remainingHP_ = other.remainingHP_;
-    isDead_ = other.isDead_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -204,30 +201,6 @@ public sealed partial class DamageEventToC : pb::IMessage<DamageEventToC>
     }
   }
 
-  /// <summary>Field number for the "remaining_HP" field.</summary>
-  public const int RemainingHPFieldNumber = 10;
-  private long remainingHP_;
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public long RemainingHP {
-    get { return remainingHP_; }
-    set {
-      remainingHP_ = value;
-    }
-  }
-
-  /// <summary>Field number for the "is_dead" field.</summary>
-  public const int IsDeadFieldNumber = 11;
-  private bool isDead_;
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public bool IsDead {
-    get { return isDead_; }
-    set {
-      isDead_ = value;
-    }
-  }
-
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -252,8 +225,6 @@ public sealed partial class DamageEventToC : pb::IMessage<DamageEventToC>
     if (IsCritical != other.IsCritical) return false;
     if (IsDodged != other.IsDodged) return false;
     if (IsBlocked != other.IsBlocked) return false;
-    if (RemainingHP != other.RemainingHP) return false;
-    if (IsDead != other.IsDead) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -270,8 +241,6 @@ public sealed partial class DamageEventToC : pb::IMessage<DamageEventToC>
     if (IsCritical != false) hash ^= IsCritical.GetHashCode();
     if (IsDodged != false) hash ^= IsDodged.GetHashCode();
     if (IsBlocked != false) hash ^= IsBlocked.GetHashCode();
-    if (RemainingHP != 0L) hash ^= RemainingHP.GetHashCode();
-    if (IsDead != false) hash ^= IsDead.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -326,14 +295,6 @@ public sealed partial class DamageEventToC : pb::IMessage<DamageEventToC>
       output.WriteRawTag(72);
       output.WriteBool(IsBlocked);
     }
-    if (RemainingHP != 0L) {
-      output.WriteRawTag(80);
-      output.WriteInt64(RemainingHP);
-    }
-    if (IsDead != false) {
-      output.WriteRawTag(88);
-      output.WriteBool(IsDead);
-    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -380,14 +341,6 @@ public sealed partial class DamageEventToC : pb::IMessage<DamageEventToC>
       output.WriteRawTag(72);
       output.WriteBool(IsBlocked);
     }
-    if (RemainingHP != 0L) {
-      output.WriteRawTag(80);
-      output.WriteInt64(RemainingHP);
-    }
-    if (IsDead != false) {
-      output.WriteRawTag(88);
-      output.WriteBool(IsDead);
-    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -423,12 +376,6 @@ public sealed partial class DamageEventToC : pb::IMessage<DamageEventToC>
       size += 1 + 1;
     }
     if (IsBlocked != false) {
-      size += 1 + 1;
-    }
-    if (RemainingHP != 0L) {
-      size += 1 + pb::CodedOutputStream.ComputeInt64Size(RemainingHP);
-    }
-    if (IsDead != false) {
       size += 1 + 1;
     }
     if (_unknownFields != null) {
@@ -469,12 +416,6 @@ public sealed partial class DamageEventToC : pb::IMessage<DamageEventToC>
     }
     if (other.IsBlocked != false) {
       IsBlocked = other.IsBlocked;
-    }
-    if (other.RemainingHP != 0L) {
-      RemainingHP = other.RemainingHP;
-    }
-    if (other.IsDead != false) {
-      IsDead = other.IsDead;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -531,14 +472,6 @@ public sealed partial class DamageEventToC : pb::IMessage<DamageEventToC>
           IsBlocked = input.ReadBool();
           break;
         }
-        case 80: {
-          RemainingHP = input.ReadInt64();
-          break;
-        }
-        case 88: {
-          IsDead = input.ReadBool();
-          break;
-        }
       }
     }
   #endif
@@ -592,14 +525,6 @@ public sealed partial class DamageEventToC : pb::IMessage<DamageEventToC>
         }
         case 72: {
           IsBlocked = input.ReadBool();
-          break;
-        }
-        case 80: {
-          RemainingHP = input.ReadInt64();
-          break;
-        }
-        case 88: {
-          IsDead = input.ReadBool();
           break;
         }
       }
