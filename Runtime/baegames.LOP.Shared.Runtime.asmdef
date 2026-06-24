@@ -1,7 +1,7 @@
 {
     "name": "baegames.LOP.Shared.Runtime",
     "rootNamespace": "LOP",
-    "references": ["baegames.GameFramework.Runtime"],
+    "references": ["baegames.GameFramework.Runtime", "baegames.GameFramework.World"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
