@@ -4,7 +4,8 @@
     "references": [
         "baegames.LOP.Shared.Runtime",
         "baegames.LOP.Shared.Generated",
-        "baegames.GameFramework.Runtime"
+        "baegames.GameFramework.Runtime",
+        "baegames.GameFramework.World"
     ],
     "includePlatforms": ["Editor"],
     "excludePlatforms": [],
