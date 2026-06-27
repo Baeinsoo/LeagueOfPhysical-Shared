@@ -22,14 +22,14 @@ public static partial class PlayerInputReflection {
   static PlayerInputReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChFQbGF5ZXJJbnB1dC5wcm90byJvCgtQbGF5ZXJJbnB1dBIXCg9zZXF1ZW5j",
-          "ZV9udW1iZXIYASABKAMSEgoKaG9yaXpvbnRhbBgCIAEoAhIQCgh2ZXJ0aWNh",
-          "bBgDIAEoAhIMCgRqdW1wGAQgASgIEhMKC2FjdGlvbl9jb2RlGAUgASgJYgZw",
-          "cm90bzM="));
+          "ChFQbGF5ZXJJbnB1dC5wcm90byKDAQoLUGxheWVySW5wdXQSFwoPc2VxdWVu",
+          "Y2VfbnVtYmVyGAEgASgDEhIKCmhvcml6b250YWwYAiABKAISEAoIdmVydGlj",
+          "YWwYAyABKAISDAoEanVtcBgEIAEoCBITCgthY3Rpb25fY29kZRgFIAEoCRIS",
+          "CgphYmlsaXR5X2lkGAYgASgFYgZwcm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::PlayerInput), global::PlayerInput.Parser, new[]{ "SequenceNumber", "Horizontal", "Vertical", "Jump", "ActionCode" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::PlayerInput), global::PlayerInput.Parser, new[]{ "SequenceNumber", "Horizontal", "Vertical", "Jump", "ActionCode", "AbilityId" }, null, null, null, null)
         }));
   }
   #endregion
@@ -76,6 +76,7 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
     vertical_ = other.vertical_;
     jump_ = other.jump_;
     actionCode_ = other.actionCode_;
+    abilityId_ = other.abilityId_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -145,6 +146,18 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
     }
   }
 
+  /// <summary>Field number for the "ability_id" field.</summary>
+  public const int AbilityIdFieldNumber = 6;
+  private int abilityId_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int AbilityId {
+    get { return abilityId_; }
+    set {
+      abilityId_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -165,6 +178,7 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
     if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(Vertical, other.Vertical)) return false;
     if (Jump != other.Jump) return false;
     if (ActionCode != other.ActionCode) return false;
+    if (AbilityId != other.AbilityId) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -177,6 +191,7 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
     if (Vertical != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(Vertical);
     if (Jump != false) hash ^= Jump.GetHashCode();
     if (ActionCode.Length != 0) hash ^= ActionCode.GetHashCode();
+    if (AbilityId != 0) hash ^= AbilityId.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -215,6 +230,10 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
       output.WriteRawTag(42);
       output.WriteString(ActionCode);
     }
+    if (AbilityId != 0) {
+      output.WriteRawTag(48);
+      output.WriteInt32(AbilityId);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -245,6 +264,10 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
       output.WriteRawTag(42);
       output.WriteString(ActionCode);
     }
+    if (AbilityId != 0) {
+      output.WriteRawTag(48);
+      output.WriteInt32(AbilityId);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -269,6 +292,9 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
     }
     if (ActionCode.Length != 0) {
       size += 1 + pb::CodedOutputStream.ComputeStringSize(ActionCode);
+    }
+    if (AbilityId != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(AbilityId);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -296,6 +322,9 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
     }
     if (other.ActionCode.Length != 0) {
       ActionCode = other.ActionCode;
+    }
+    if (other.AbilityId != 0) {
+      AbilityId = other.AbilityId;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -336,6 +365,10 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
           ActionCode = input.ReadString();
           break;
         }
+        case 48: {
+          AbilityId = input.ReadInt32();
+          break;
+        }
       }
     }
   #endif
@@ -373,6 +406,10 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
         }
         case 42: {
           ActionCode = input.ReadString();
+          break;
+        }
+        case 48: {
+          AbilityId = input.ReadInt32();
           break;
         }
       }

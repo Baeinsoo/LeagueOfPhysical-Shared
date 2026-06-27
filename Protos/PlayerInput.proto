@@ -6,4 +6,5 @@ message PlayerInput {
   float vertical = 3;
   bool jump = 4;
   string action_code = 5;
+  int32 ability_id = 6;
 }
