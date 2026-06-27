@@ -3,8 +3,9 @@ using GameFramework.World;
 namespace LOP
 {
     /// <summary>
-    /// 어빌리티 로직(상태 없음). GAS 생명주기(CanActivate→Commit(코스트+쿨다운)→효과 생성)를 anemic으로 구현.
-    /// 쿨다운은 절대 end-tick(파생 readiness, per-tick 갱신 없음). 효과는 StatusEffectSystem이 적용(이음새).
+    /// 어빌리티 로직(상태 없음). GAS 생명주기(CanActivate→Commit→페이즈 머신)를 anemic으로 구현.
+    /// 발동은 Startup→Active→Recovery 시간 페이즈(격투 frame data, 시뮬 틱 구동). 효과는 Active 진입 시 적용.
+    /// 쿨다운은 절대 end-tick(파생 readiness). busy = ActiveAbility 진행 중.
     /// </summary>
     public class AbilitySystem
     {
@@ -28,13 +29,17 @@ namespace LOP
             abilities.Slots[abilityId] = new AbilitySlot(abilityId, 0);
         }
 
-        /// <summary>발동 가능 여부(GAS CanActivateAbility): 보유 + 쿨다운 ready + 자원 충분. 순수 읽기.</summary>
+        /// <summary>발동 가능 여부(GAS CanActivateAbility): 보유 + not busy + 쿨다운 ready + 자원 충분. 순수 읽기.</summary>
         public bool CanActivate(Entity caster, in AbilityData data, long currentTick)
         {
             var abilities = caster.Get<Abilities>();
             if (abilities == null || !abilities.Slots.TryGetValue(data.AbilityId, out var slot))
             {
                 return false;
+            }
+            if (abilities.ActiveAbility != null)
+            {
+                return false;   // busy — 다른 발동 진행 중(Startup/Active/Recovery)
             }
             if (currentTick < slot.CooldownEndTick)
             {
@@ -52,8 +57,9 @@ namespace LOP
         }
 
         /// <summary>
-        /// 어빌리티를 발동한다. CanActivate면 Commit(코스트 차감 + 쿨다운 설정) 후 producedEffects를 타깃에 적용하고 true.
-        /// 아니면 부수효과 없이 false. producedEffects = 호출자가 data.ProducesEffectIds로 resolve한 효과 설정.
+        /// 어빌리티를 발동한다. CanActivate면 Commit(코스트 차감 + 쿨다운 설정) 후 페이즈 머신을 시작하고 true.
+        /// 효과는 *여기서 적용하지 않고* Active 진입 시 <see cref="Tick"/>이 적용한다. 아니면 부수효과 없이 false.
+        /// producedEffects = 호출자가 data.ProducesEffectIds로 resolve한 효과 설정.
         /// </summary>
         public bool TryActivate(Entity caster, in AbilityData data, Entity target,
                                 StatusEffectData[] producedEffects, long currentTick)
@@ -71,16 +77,57 @@ namespace LOP
             var abilities = caster.Get<Abilities>();
             abilities.Slots[data.AbilityId] = new AbilitySlot(data.AbilityId, currentTick + data.CooldownTicks);
 
-            // 효과 생성(이음새) — 즉발. 캐스트 경로는 후속.
-            if (producedEffects != null)
-            {
-                string casterId = caster.Id;
-                foreach (var effect in producedEffects)
-                {
-                    _statusEffectSystem.Apply(target, effect, casterId, currentTick);
-                }
-            }
+            // 페이즈 머신 시작 — 경계를 절대 틱으로 확정. 효과는 Active 진입 시 Tick이 적용.
+            long startupEnd = currentTick + data.StartupTicks;
+            long activeEnd = startupEnd + data.ActiveTicks;
+            long recoveryEnd = activeEnd + data.RecoveryTicks;
+            abilities.ActiveAbility = new ActiveAbility(data.AbilityId, AbilityPhase.Startup,
+                startupEnd, activeEnd, recoveryEnd, target, producedEffects);
             return true;
+        }
+
+        /// <summary>
+        /// 진행 중인 <see cref="ActiveAbility"/>의 페이즈를 전진(매 틱). Startup→Active 전이 시 PendingEffects를
+        /// 적용, Active→Recovery, Recovery 종료 시 Ready(null). ActiveAbility 없으면 no-op.
+        /// </summary>
+        public void Tick(Entity entity, long currentTick)
+        {
+            var abilities = entity.Get<Abilities>();
+            if (abilities?.ActiveAbility == null)
+            {
+                return;
+            }
+
+            var active = abilities.ActiveAbility.Value;
+            switch (active.Phase)
+            {
+                case AbilityPhase.Startup:
+                    if (currentTick >= active.StartupEndTick)
+                    {
+                        if (active.PendingEffects != null)
+                        {
+                            string casterId = entity.Id;
+                            foreach (var effect in active.PendingEffects)
+                            {
+                                _statusEffectSystem.Apply(active.Target, effect, casterId, currentTick);
+                            }
+                        }
+                        abilities.ActiveAbility = active.WithPhase(AbilityPhase.Active);
+                    }
+                    break;
+                case AbilityPhase.Active:
+                    if (currentTick >= active.ActiveEndTick)
+                    {
+                        abilities.ActiveAbility = active.WithPhase(AbilityPhase.Recovery);
+                    }
+                    break;
+                case AbilityPhase.Recovery:
+                    if (currentTick >= active.RecoveryEndTick)
+                    {
+                        abilities.ActiveAbility = null;
+                    }
+                    break;
+            }
         }
     }
 }

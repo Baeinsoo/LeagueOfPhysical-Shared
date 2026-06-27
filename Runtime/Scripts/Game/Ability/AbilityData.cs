@@ -12,18 +12,23 @@ namespace LOP
         public readonly int AbilityId;
         public readonly long CooldownTicks;
         public readonly int MpCost;
-        public readonly long CastTimeTicks;     // 0 = 즉발 (캐스트 경로는 후속)
+        public readonly long StartupTicks;      // 윈드업(=캐스트). 0이면 발동 틱에 곧장 Active.
+        public readonly long ActiveTicks;       // 판정 창(behavior가 살아있는 구간) 길이.
+        public readonly long RecoveryTicks;     // 후딜(busy 잠금).
         public readonly TargetingMode TargetingMode;
         public readonly float Range;
         public readonly int[] ProducesEffectIds;
 
-        public AbilityData(int abilityId, long cooldownTicks, int mpCost, long castTimeTicks,
+        public AbilityData(int abilityId, long cooldownTicks, int mpCost,
+                           long startupTicks, long activeTicks, long recoveryTicks,
                            TargetingMode targetingMode, float range, int[] producesEffectIds)
         {
             AbilityId = abilityId;
             CooldownTicks = cooldownTicks;
             MpCost = mpCost;
-            CastTimeTicks = castTimeTicks;
+            StartupTicks = startupTicks;
+            ActiveTicks = activeTicks;
+            RecoveryTicks = recoveryTicks;
             TargetingMode = targetingMode;
             Range = range;
             ProducesEffectIds = producesEffectIds;
