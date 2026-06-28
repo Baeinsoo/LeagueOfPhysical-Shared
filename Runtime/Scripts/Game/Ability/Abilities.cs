@@ -31,10 +31,10 @@ namespace LOP
         public readonly long ActiveEndTick;
         public readonly long RecoveryEndTick;
         public readonly Entity Target;
-        public readonly StatusEffectData[] PendingEffects;
+        public readonly AbilityEffect[] Effects;
 
         public ActiveAbility(int abilityId, AbilityPhase phase, long startupEndTick, long activeEndTick,
-                             long recoveryEndTick, Entity target, StatusEffectData[] pendingEffects)
+                             long recoveryEndTick, Entity target, AbilityEffect[] effects)
         {
             AbilityId = abilityId;
             Phase = phase;
@@ -42,11 +42,11 @@ namespace LOP
             ActiveEndTick = activeEndTick;
             RecoveryEndTick = recoveryEndTick;
             Target = target;
-            PendingEffects = pendingEffects;
+            Effects = effects;
         }
 
         public ActiveAbility WithPhase(AbilityPhase phase)
-            => new ActiveAbility(AbilityId, phase, StartupEndTick, ActiveEndTick, RecoveryEndTick, Target, PendingEffects);
+            => new ActiveAbility(AbilityId, phase, StartupEndTick, ActiveEndTick, RecoveryEndTick, Target, Effects);
     }
 
     /// <summary>엔티티가 보유한 어빌리티 슬롯 집합(데이터 컴포넌트). AbilityId당 1 슬롯(InstancedPerActor).</summary>

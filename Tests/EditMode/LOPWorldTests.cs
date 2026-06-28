@@ -12,7 +12,7 @@ namespace LOP.Tests
             var registry = new EntityRegistry();
             var buffer = new WorldEventBuffer();
             var statusEffects = new StatusEffectSystem(new StatsSystem());
-            var abilitySystem = new AbilitySystem(new ManaSystem(), statusEffects);
+            var abilitySystem = new AbilitySystem(new ManaSystem());
             var world = new LOPWorld(registry, buffer, abilitySystem, statusEffects);
 
             var entity = new Entity("e1");
@@ -39,7 +39,7 @@ namespace LOP.Tests
             var registry = new EntityRegistry();
             var statusEffects = new StatusEffectSystem(new StatsSystem());
             var world = new LOPWorld(registry, new WorldEventBuffer(),
-                new AbilitySystem(new ManaSystem(), statusEffects), statusEffects);
+                new AbilitySystem(new ManaSystem()), statusEffects);
             registry.Add(new Entity("bare"));   // StatusEffects/Abilities 없음
 
             Assert.DoesNotThrow(() => world.Tick(1, 0.05f));   // 가드로 no-op
@@ -50,7 +50,7 @@ namespace LOP.Tests
         {
             var registry = new EntityRegistry();
             var statusEffects = new StatusEffectSystem(new StatsSystem());
-            var abilitySystem = new AbilitySystem(new ManaSystem(), statusEffects);
+            var abilitySystem = new AbilitySystem(new ManaSystem());
             var world = new LOPWorld(registry, new WorldEventBuffer(), abilitySystem, statusEffects);
 
             var entity = new Entity("e1");
@@ -63,7 +63,7 @@ namespace LOP.Tests
             abilitySystem.Grant(entity, 1);
             // startup0/active1/recovery0, 효과 없음 — 페이즈 전진만 검증
             abilitySystem.TryActivate(entity,
-                new AbilityData(1, 0, 0, 0, 1, 0, TargetingMode.Self, 0f, null), entity, null, 0);
+                new AbilityData(1, 0, 0, 0, 1, 0, null), entity, 0);
             Assert.That(entity.Get<Abilities>().ActiveAbility.Value.Phase, Is.EqualTo(AbilityPhase.Startup));
 
             world.Tick(0, 0.05f);   // Startup -> Active
