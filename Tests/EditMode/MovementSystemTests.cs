@@ -13,12 +13,12 @@ namespace LOP.Tests
             => MovementSystem.ProcessMovement(new MovementInput(cur, h, v, speed, maxAccel, dt));
 
         [Test]
-        public void NoInput_LeavesHorizontalUnchanged()
+        public void NoInput_BrakesTowardZero_PreservesY()
         {
-            // 방향 입력이 없으면 좌우/앞뒤 속도는 그대로(멈춤은 drag가 처리). 위아래 속도도 보존.
+            // 방향 입력이 없으면 목표 0으로 제동(정지). rate(=maxAccel·dt=10) >= 현재(5) → 0. 위아래 속도는 보존.
             var r = Move(new Vector3(5f, -7.5f, 0f), 0f, 0f);
 
-            Assert.That(r.velocity.x, Is.EqualTo(5f).Within(Tolerance));
+            Assert.That(r.velocity.x, Is.EqualTo(0f).Within(Tolerance));
             Assert.That(r.velocity.y, Is.EqualTo(-7.5f).Within(Tolerance));
             Assert.IsFalse(r.hasRotation);
         }

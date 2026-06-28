@@ -41,9 +41,9 @@ namespace LOP
 
     /// <summary>
     /// 플레이어 입력으로 새 이동 속도를 계산한다 (클라이언트·서버가 똑같이 사용).
-    /// 방향 입력이 있으면 지금 속도에서 목표 속도로 곧장 당겨서, 가던 방향의 관성이 남지 않게 한다
-    /// (예: 오른쪽으로 가다 위를 누르면 오른쪽 속도가 사라지고 위로만 감 → 옆으로 안 미끄러짐).
-    /// 방향 입력이 없으면 속도를 그대로 둔다 — 멈추는 건 Rigidbody의 drag(linearDamping)가 처리한다.
+    /// 지금 속도에서 목표 속도로 정해진 양만큼 당긴다. 입력이 있으면 목표=입력 방향×moveSpeed,
+    /// 없으면 목표=0(정지). 그래서 방향전환 시 옆 관성이 안 남고, 입력을 떼면 0으로 제동해 멈춘다.
+    /// 수평(좌우/앞뒤)만 다루고 수직(y)은 중력·점프 몫(drag 미사용).
     /// </summary>
     public static class MovementSystem
     {
@@ -54,17 +54,18 @@ namespace LOP
 
             Vector3 dir = new Vector3(input.horizontal, 0, input.vertical);
             bool hasRotation = dir.sqrMagnitude > 0f;
-            Vector3 newHoriz = horiz;  // 방향 입력이 없으면 속도 그대로 (멈춤은 drag가 처리)
+            Vector3 desired = Vector3.zero;  // 입력이 없으면 목표 0 → 0으로 제동(정지)
             Vector3 rotation = Vector3.zero;
             if (hasRotation)
             {
                 dir.Normalize();
-                Vector3 desired = dir * input.speed;
-                // 지금 속도에서 목표 속도로 정해진 양만큼 당긴다 (옆 관성이 남지 않음)
-                newHoriz = Vector3.MoveTowards(horiz, desired, input.maxAcceleration * input.deltaTime);
+                desired = dir * input.speed;
                 float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
                 rotation = new Vector3(0, angle, 0);
             }
+
+            // 지금 속도에서 목표로 정해진 양만큼 당긴다(입력 방향 속도로, 없으면 0으로). 옆 관성이 안 남음.
+            Vector3 newHoriz = Vector3.MoveTowards(horiz, desired, input.maxAcceleration * input.deltaTime);
 
             return new MovementResult(new Vector3(newHoriz.x, input.currentVelocity.y, newHoriz.z), hasRotation, rotation);
         }
