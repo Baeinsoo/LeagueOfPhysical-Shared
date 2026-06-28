@@ -1,11 +1,9 @@
 namespace LOP
 {
-    /// <summary>어빌리티 타게팅 종류(설정). 지오메트리 해소는 후속.</summary>
-    public enum TargetingMode { Self, Unit, Point, Direction }
-
     /// <summary>
-    /// 어빌리티 설정(불변 디자인 데이터). 후속 슬라이스에서 Luban TbAbility로 외부화되며, 코어는 이 구조체만 소비한다.
-    /// <para>ProducesEffectIds는 *어떤 효과인지*만 가리킨다 — 실제 StatusEffectData는 호출자(사이드)가 resolve해 TryActivate에 넘긴다.</para>
+    /// 어빌리티 설정(불변 디자인 데이터) — 얇은 컨테이너: 프레임 타이밍 + 코스트/쿨다운 + <see cref="Effects"/> 리스트.
+    /// "어빌리티가 뭘 하는지"는 effect 리스트의 조합으로 표현한다(타입별 서브클래스 없음 — 한 클래스, 다른 데이터).
+    /// Luban TbAbility로 외부화되며, 코어는 이 구조체만 소비한다(Luban 생성 타입은 side provider가 매핑).
     /// </summary>
     public readonly struct AbilityData
     {
@@ -13,15 +11,13 @@ namespace LOP
         public readonly long CooldownTicks;
         public readonly int MpCost;
         public readonly long StartupTicks;      // 윈드업(=캐스트). 0이면 발동 틱에 곧장 Active.
-        public readonly long ActiveTicks;       // 판정 창(behavior가 살아있는 구간) 길이.
+        public readonly long ActiveTicks;       // 판정 창(effect가 발화하는 구간) 길이.
         public readonly long RecoveryTicks;     // 후딜(busy 잠금).
-        public readonly TargetingMode TargetingMode;
-        public readonly float Range;
-        public readonly int[] ProducesEffectIds;
+        public readonly AbilityEffect[] Effects;
 
         public AbilityData(int abilityId, long cooldownTicks, int mpCost,
                            long startupTicks, long activeTicks, long recoveryTicks,
-                           TargetingMode targetingMode, float range, int[] producesEffectIds)
+                           AbilityEffect[] effects)
         {
             AbilityId = abilityId;
             CooldownTicks = cooldownTicks;
@@ -29,9 +25,7 @@ namespace LOP
             StartupTicks = startupTicks;
             ActiveTicks = activeTicks;
             RecoveryTicks = recoveryTicks;
-            TargetingMode = targetingMode;
-            Range = range;
-            ProducesEffectIds = producesEffectIds;
+            Effects = effects;
         }
     }
 }
