@@ -17,5 +17,6 @@ namespace LOP
         public const ushort StatAllocationToS              = 12;
         public const ushort UserEntitySnapToC              = 13;
         public const ushort InputTimingToC                 = 14;
+        public const ushort AbilityActivatedToC            = 15;
     }
 }
