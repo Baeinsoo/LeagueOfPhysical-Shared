@@ -22,14 +22,14 @@ public static partial class PlayerInputReflection {
   static PlayerInputReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChFQbGF5ZXJJbnB1dC5wcm90byKDAQoLUGxheWVySW5wdXQSFwoPc2VxdWVu",
-          "Y2VfbnVtYmVyGAEgASgDEhIKCmhvcml6b250YWwYAiABKAISEAoIdmVydGlj",
-          "YWwYAyABKAISDAoEanVtcBgEIAEoCBITCgthY3Rpb25fY29kZRgFIAEoCRIS",
-          "CgphYmlsaXR5X2lkGAYgASgFYgZwcm90bzM="));
+          "ChFQbGF5ZXJJbnB1dC5wcm90byJuCgtQbGF5ZXJJbnB1dBIXCg9zZXF1ZW5j",
+          "ZV9udW1iZXIYASABKAMSEgoKaG9yaXpvbnRhbBgCIAEoAhIQCgh2ZXJ0aWNh",
+          "bBgDIAEoAhIMCgRqdW1wGAQgASgIEhIKCmFiaWxpdHlfaWQYBiABKAViBnBy",
+          "b3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::PlayerInput), global::PlayerInput.Parser, new[]{ "SequenceNumber", "Horizontal", "Vertical", "Jump", "ActionCode", "AbilityId" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::PlayerInput), global::PlayerInput.Parser, new[]{ "SequenceNumber", "Horizontal", "Vertical", "Jump", "AbilityId" }, null, null, null, null)
         }));
   }
   #endregion
@@ -75,7 +75,6 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
     horizontal_ = other.horizontal_;
     vertical_ = other.vertical_;
     jump_ = other.jump_;
-    actionCode_ = other.actionCode_;
     abilityId_ = other.abilityId_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
@@ -134,18 +133,6 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
     }
   }
 
-  /// <summary>Field number for the "action_code" field.</summary>
-  public const int ActionCodeFieldNumber = 5;
-  private string actionCode_ = "";
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public string ActionCode {
-    get { return actionCode_; }
-    set {
-      actionCode_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-    }
-  }
-
   /// <summary>Field number for the "ability_id" field.</summary>
   public const int AbilityIdFieldNumber = 6;
   private int abilityId_;
@@ -177,7 +164,6 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
     if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(Horizontal, other.Horizontal)) return false;
     if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(Vertical, other.Vertical)) return false;
     if (Jump != other.Jump) return false;
-    if (ActionCode != other.ActionCode) return false;
     if (AbilityId != other.AbilityId) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
@@ -190,7 +176,6 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
     if (Horizontal != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(Horizontal);
     if (Vertical != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(Vertical);
     if (Jump != false) hash ^= Jump.GetHashCode();
-    if (ActionCode.Length != 0) hash ^= ActionCode.GetHashCode();
     if (AbilityId != 0) hash ^= AbilityId.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
@@ -226,10 +211,6 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
       output.WriteRawTag(32);
       output.WriteBool(Jump);
     }
-    if (ActionCode.Length != 0) {
-      output.WriteRawTag(42);
-      output.WriteString(ActionCode);
-    }
     if (AbilityId != 0) {
       output.WriteRawTag(48);
       output.WriteInt32(AbilityId);
@@ -260,10 +241,6 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
       output.WriteRawTag(32);
       output.WriteBool(Jump);
     }
-    if (ActionCode.Length != 0) {
-      output.WriteRawTag(42);
-      output.WriteString(ActionCode);
-    }
     if (AbilityId != 0) {
       output.WriteRawTag(48);
       output.WriteInt32(AbilityId);
@@ -289,9 +266,6 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
     }
     if (Jump != false) {
       size += 1 + 1;
-    }
-    if (ActionCode.Length != 0) {
-      size += 1 + pb::CodedOutputStream.ComputeStringSize(ActionCode);
     }
     if (AbilityId != 0) {
       size += 1 + pb::CodedOutputStream.ComputeInt32Size(AbilityId);
@@ -319,9 +293,6 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
     }
     if (other.Jump != false) {
       Jump = other.Jump;
-    }
-    if (other.ActionCode.Length != 0) {
-      ActionCode = other.ActionCode;
     }
     if (other.AbilityId != 0) {
       AbilityId = other.AbilityId;
@@ -361,10 +332,6 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
           Jump = input.ReadBool();
           break;
         }
-        case 42: {
-          ActionCode = input.ReadString();
-          break;
-        }
         case 48: {
           AbilityId = input.ReadInt32();
           break;
@@ -402,10 +369,6 @@ public sealed partial class PlayerInput : pb::IMessage<PlayerInput>
         }
         case 32: {
           Jump = input.ReadBool();
-          break;
-        }
-        case 42: {
-          ActionCode = input.ReadString();
           break;
         }
         case 48: {
