@@ -1,7 +1,5 @@
 syntax = "proto3";
 
-import "ActionData.proto";
-
 // @auto_generate
 message UserEntitySnapToC
 {
@@ -12,5 +10,4 @@ message UserEntitySnapToC
 	int32 level = 5;
 	int64 current_exp = 6;
 	int32 stat_points = 7;
-	repeated ActionData action_datas = 8;
 }
