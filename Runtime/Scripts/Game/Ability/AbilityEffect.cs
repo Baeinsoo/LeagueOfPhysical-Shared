@@ -35,7 +35,7 @@ namespace LOP
         }
     }
 
-    /// <summary>전방으로 민다(대시). 모션/물리는 side 개념이라 실제 push는 side 핸들러.</summary>
+    /// <summary>전방으로 민다(대시). 핸들러가 World.Velocity에 push, 호스트 브릿지가 Rigidbody에 반영.</summary>
     public sealed class MotionEffect : AbilityEffect
     {
         public readonly float Speed;
