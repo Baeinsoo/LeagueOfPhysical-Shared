@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-message PlayerInput {
+message InputCommand {
   int64 sequence_number = 1;
   float horizontal = 2;
   float vertical = 3;

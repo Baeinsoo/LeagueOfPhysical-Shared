@@ -10,7 +10,7 @@ namespace LOP
         public const ushort GameInfoToC                    = 7;
         public const ushort GameInfoToS                    = 8;
         public const ushort InputSequenceToC               = 9;
-        public const ushort PlayerInputToS                 = 10;
+        public const ushort InputCommandToS                = 10;
         public const ushort StatAllocationToC              = 11;
         public const ushort StatAllocationToS              = 12;
         public const ushort UserEntitySnapToC              = 13;
