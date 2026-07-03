@@ -1,3 +1,4 @@
+using GameFramework;
 using LOP;
 using NUnit.Framework;
 using UnityEngine;
@@ -88,6 +89,108 @@ namespace LOP.Tests
             var r = Move(Vector3.zero, 0f, 1f, maxAccel: 20f);
 
             Assert.That(r.velocity.z, Is.EqualTo(2f).Within(Tolerance));
+        }
+    }
+
+    /// <summary>인스턴스 Tick — PlayerInput(이번 틱 입력)을 읽어 World.Velocity/Transform에 쓰는 이동 시스템.</summary>
+    public class MovementSystemTickTests
+    {
+        const float Tolerance = 1e-3f;
+        const float Dt = 0.1f;   // MaxAcceleration(100)×0.1=10 ≥ moveSpeed(5) → 한 틱에 목표 도달
+
+        private MovementSystem system;
+
+        [SetUp]
+        public void SetUp()
+        {
+            system = new MovementSystem(new GameFramework.World.StatsSystem());
+        }
+
+        // Current에 커맨드가 확정된(호스트가 소비 완료한) 조종 엔티티를 만든다.
+        private static GameFramework.World.Entity CreateControlledEntity(Vector3 velocity, InputCommand current)
+        {
+            var entity = new GameFramework.World.Entity("e1");
+            entity.Add(new GameFramework.World.Transform());
+            entity.Add(new GameFramework.World.Velocity { Linear = velocity.ToNumerics() });
+            var stats = new GameFramework.World.Stats();
+            stats.BaseStats[(int)GameFramework.World.EntityStatType.MoveSpeed] = 5f;
+            stats.BaseStats[(int)GameFramework.World.EntityStatType.JumpPower] = 12f;
+            entity.Add(stats);
+            entity.Add(new InputBuffer { Current = current });
+            return entity;
+        }
+
+        [Test]
+        public void NoInputBuffer_DoesNothing()
+        {
+            // 조종 안 되는 엔티티(AI/원격/아이템)는 InputBuffer가 없다 → 속도 그대로.
+            var entity = new GameFramework.World.Entity("e1");
+            entity.Add(new GameFramework.World.Velocity { Linear = new Vector3(3f, 0f, 0f).ToNumerics() });
+
+            system.Tick(entity, Dt);
+
+            Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(3f).Within(Tolerance));
+        }
+
+        [Test]
+        public void NoCurrentCommand_DoesNothing()
+        {
+            // 버퍼는 있으나 이번 틱 확정 커맨드가 없으면(Current=null) 손대지 않는다.
+            var entity = CreateControlledEntity(new Vector3(3f, 0f, 0f), null);
+
+            system.Tick(entity, Dt);
+
+            Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(3f).Within(Tolerance));
+        }
+
+        [Test]
+        public void Input_WritesVelocityAndRotation()
+        {
+            // 오른쪽 입력 → 오른쪽 5, 90도 바라봄
+            var entity = CreateControlledEntity(Vector3.zero, new InputCommand { Horizontal = 1f });
+
+            system.Tick(entity, Dt);
+
+            Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(5f).Within(Tolerance));
+            Assert.That(entity.Get<GameFramework.World.Transform>().Rotation.ToUnity().eulerAngles.y, Is.EqualTo(90f).Within(Tolerance));
+        }
+
+        [Test]
+        public void Jump_SetsYFromJumpPowerStat()
+        {
+            var entity = CreateControlledEntity(new Vector3(0f, -3f, 0f), new InputCommand { Jump = true });
+
+            system.Tick(entity, Dt);
+
+            Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().y, Is.EqualTo(12f).Within(Tolerance));
+        }
+
+        [Test]
+        public void ZeroInput_BrakesHorizontal_PreservesY()
+        {
+            // 무입력 틱(호스트가 0 커맨드를 확정) → 수평은 0으로 제동, 수직은 중력 몫이라 보존.
+            var entity = CreateControlledEntity(new Vector3(5f, -7.5f, 0f), new InputCommand());
+
+            system.Tick(entity, Dt);
+
+            Vector3 v = entity.Get<GameFramework.World.Velocity>().Linear.ToUnity();
+            Assert.That(v.x, Is.EqualTo(0f).Within(Tolerance));
+            Assert.That(v.y, Is.EqualTo(-7.5f).Within(Tolerance));
+        }
+
+        [Test]
+        public void ActiveMotionEffect_SkipsMovement()
+        {
+            // 대시 Active 동안은 입력 이동을 무시한다(대시가 방향·속도를 주도).
+            var entity = CreateControlledEntity(new Vector3(15f, 0f, 0f), new InputCommand { Vertical = 1f });
+            var abilities = new Abilities();
+            abilities.ActiveAbility = new ActiveAbility(2, AbilityPhase.Active, 0, 100, 200, null,
+                new AbilityEffect[] { new MotionEffect(15f) });
+            entity.Add(abilities);
+
+            system.Tick(entity, Dt);
+
+            Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(15f).Within(Tolerance));
         }
     }
 }
