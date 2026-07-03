@@ -34,7 +34,7 @@ namespace LOP.Tests
         // 런타임 1틱 모사: world.Tick(페이즈 전진) → host가 executor로 effect 구동. entityManager는 헤이스트에 불필요(null).
         private void Advance(Entity e, long tick)
         {
-            Advance(e,tick);
+            _system.Tick(e, tick);
             _executor.DriveActiveEntity(e, null, tick);
         }
 
