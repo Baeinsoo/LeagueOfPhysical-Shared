@@ -61,7 +61,7 @@ namespace LOP
         /// PlayerInput(이번 틱 입력)을 읽어 이동을 적용한다 — World.Velocity/Transform에 쓴다.
         /// PlayerInput이 없는 엔티티(AI/원격/아이템)는 건드리지 않는다.
         /// </summary>
-        public void Tick(GameFramework.World.Entity entity, float deltaTime)
+        public void Tick(GameFramework.World.Entity entity, long currentTick, float deltaTime)
         {
             var buffer = entity.Get<InputBuffer>();
             if (buffer == null)

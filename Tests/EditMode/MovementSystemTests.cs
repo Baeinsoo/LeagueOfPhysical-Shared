@@ -127,7 +127,7 @@ namespace LOP.Tests
             var entity = new GameFramework.World.Entity("e1");
             entity.Add(new GameFramework.World.Velocity { Linear = new Vector3(3f, 0f, 0f).ToNumerics() });
 
-            system.Tick(entity, Dt);
+            system.Tick(entity, 0, Dt);
 
             Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(3f).Within(Tolerance));
         }
@@ -138,7 +138,7 @@ namespace LOP.Tests
             // 버퍼는 있으나 이번 틱 확정 커맨드가 없으면(Current=null) 손대지 않는다.
             var entity = CreateControlledEntity(new Vector3(3f, 0f, 0f), null);
 
-            system.Tick(entity, Dt);
+            system.Tick(entity, 0, Dt);
 
             Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(3f).Within(Tolerance));
         }
@@ -149,7 +149,7 @@ namespace LOP.Tests
             // 오른쪽 입력 → 오른쪽 5, 90도 바라봄
             var entity = CreateControlledEntity(Vector3.zero, new InputCommand { Horizontal = 1f });
 
-            system.Tick(entity, Dt);
+            system.Tick(entity, 0, Dt);
 
             Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(5f).Within(Tolerance));
             Assert.That(entity.Get<GameFramework.World.Transform>().Rotation.ToUnity().eulerAngles.y, Is.EqualTo(90f).Within(Tolerance));
@@ -160,7 +160,7 @@ namespace LOP.Tests
         {
             var entity = CreateControlledEntity(new Vector3(0f, -3f, 0f), new InputCommand { Jump = true });
 
-            system.Tick(entity, Dt);
+            system.Tick(entity, 0, Dt);
 
             Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().y, Is.EqualTo(12f).Within(Tolerance));
         }
@@ -171,7 +171,7 @@ namespace LOP.Tests
             // 무입력 틱(호스트가 0 커맨드를 확정) → 수평은 0으로 제동, 수직은 중력 몫이라 보존.
             var entity = CreateControlledEntity(new Vector3(5f, -7.5f, 0f), new InputCommand());
 
-            system.Tick(entity, Dt);
+            system.Tick(entity, 0, Dt);
 
             Vector3 v = entity.Get<GameFramework.World.Velocity>().Linear.ToUnity();
             Assert.That(v.x, Is.EqualTo(0f).Within(Tolerance));
@@ -188,7 +188,7 @@ namespace LOP.Tests
                 new AbilityEffect[] { new MotionEffect(15f) });
             entity.Add(abilities);
 
-            system.Tick(entity, Dt);
+            system.Tick(entity, 0, Dt);
 
             Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(15f).Within(Tolerance));
         }
