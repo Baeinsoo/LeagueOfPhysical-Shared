@@ -40,7 +40,7 @@ namespace LOP
 
         /// <summary>
         /// 활성 창 <c>[StartupEndTick, ActiveEndTick)</c> 안이면 진행 중 어빌리티의 <see cref="MotionEffect"/>를 돌려준다.
-        /// 페이즈가 아니라 경계틱으로 판정 → 대시 전이 틱에도 same-tick 파생(모터가 대시를 파생할 때 사용).
+        /// 페이즈가 아니라 경계틱으로 판정 → 대시 전이 틱에도 same-tick 파생(이동 시스템이 대시를 파생할 때 사용).
         /// </summary>
         public static bool TryGetActiveMotionEffect(Entity entity, long currentTick, out MotionEffect motionEffect)
         {
