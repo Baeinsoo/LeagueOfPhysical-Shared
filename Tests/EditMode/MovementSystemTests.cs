@@ -179,18 +179,52 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void ActiveMotionEffect_SkipsMovement()
+        public void ActiveMotionEffect_DerivesDashVelocity_FromFacing_IgnoresInput()
         {
-            // 대시 Active 동안은 입력 이동을 무시한다(대시가 방향·속도를 주도).
+            // 대시 활성 창 안 → 모터가 forward×Speed를 직접 쓴다(입력 무시). 기본 rotation=identity → forward=+z.
             var entity = CreateControlledEntity(new Vector3(15f, 0f, 0f), new InputCommand { Vertical = 1f });
             var abilities = new Abilities();
-            abilities.ActiveAbility = new ActiveAbility(2, AbilityPhase.Active, 0, 100, 200, null,
-                new AbilityEffect[] { new MotionEffect(15f) });
+            abilities.ActiveAbility = new ActiveAbility(2, AbilityPhase.Startup, 0, 100, 200, null,
+                new AbilityEffect[] { new MotionEffect(15f) });   // 창 [0,100)
             entity.Add(abilities);
+
+            system.Tick(entity, 0, Dt);   // 0 ∈ [0,100)
+
+            Vector3 v = entity.Get<GameFramework.World.Velocity>().Linear.ToUnity();
+            Assert.That(v.x, Is.EqualTo(0f).Within(Tolerance), "입력 무시(락)");
+            Assert.That(v.z, Is.EqualTo(15f).Within(Tolerance), "forward(+z)×15");
+        }
+
+        [Test]
+        public void OutsideDashWindow_WalksNormally()
+        {
+            // 창 밖 tick이면 대시 아님 → 걷기(입력대로).
+            var entity = CreateControlledEntity(Vector3.zero, new InputCommand { Horizontal = 1f });
+            var abilities = new Abilities();
+            abilities.ActiveAbility = new ActiveAbility(2, AbilityPhase.Startup, 0, 5, 10, null,
+                new AbilityEffect[] { new MotionEffect(15f) });   // 창 [0,5)
+            entity.Add(abilities);
+
+            system.Tick(entity, 5, Dt);   // 5 ∉ [0,5) → 걷기
+
+            Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(5f).Within(Tolerance));
+        }
+
+        [Test]
+        public void AdditiveContribution_AddsOnTopOfWalk()
+        {
+            // 외부 Additive 기여(넉백류)는 걷기 위에 가산된다.
+            var entity = CreateControlledEntity(Vector3.zero, new InputCommand { Horizontal = 1f }); // 걷기 → x=5
+            var contribs = new MotionContributions();
+            contribs.Items.Add(new MotionContribution(new System.Numerics.Vector3(0f, 0f, 4f),
+                MotionContributionMode.Additive, 0, 0, 10));
+            entity.Add(contribs);
 
             system.Tick(entity, 0, Dt);
 
-            Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(15f).Within(Tolerance));
+            Vector3 v = entity.Get<GameFramework.World.Velocity>().Linear.ToUnity();
+            Assert.That(v.x, Is.EqualTo(5f).Within(Tolerance), "걷기 x=5");
+            Assert.That(v.z, Is.EqualTo(4f).Within(Tolerance), "additive z=4 가산");
         }
     }
 }
