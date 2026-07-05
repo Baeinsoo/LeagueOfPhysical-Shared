@@ -1,7 +1,6 @@
 syntax = "proto3";
-
 import "ProtoVector3.proto";
-
+import "ProtoMotionContribution.proto";
 message EntitySnap
 {
 	string entity_id = 1;
@@ -10,4 +9,5 @@ message EntitySnap
 	ProtoVector3 velocity = 4;
 	int32 max_HP = 5;
 	int32 current_HP = 6;
+	repeated ProtoMotionContribution motion_contributions = 7;
 }

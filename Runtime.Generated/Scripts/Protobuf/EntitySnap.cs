@@ -22,15 +22,17 @@ public static partial class EntitySnapReflection {
   static EntitySnapReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChBFbnRpdHlTbmFwLnByb3RvGhJQcm90b1ZlY3RvcjMucHJvdG8ipgEKCkVu",
-          "dGl0eVNuYXASEQoJZW50aXR5X2lkGAEgASgJEh8KCHBvc2l0aW9uGAIgASgL",
-          "Mg0uUHJvdG9WZWN0b3IzEh8KCHJvdGF0aW9uGAMgASgLMg0uUHJvdG9WZWN0",
-          "b3IzEh8KCHZlbG9jaXR5GAQgASgLMg0uUHJvdG9WZWN0b3IzEg4KBm1heF9I",
-          "UBgFIAEoBRISCgpjdXJyZW50X0hQGAYgASgFYgZwcm90bzM="));
+          "ChBFbnRpdHlTbmFwLnByb3RvGhJQcm90b1ZlY3RvcjMucHJvdG8aHVByb3Rv",
+          "TW90aW9uQ29udHJpYnV0aW9uLnByb3RvIt4BCgpFbnRpdHlTbmFwEhEKCWVu",
+          "dGl0eV9pZBgBIAEoCRIfCghwb3NpdGlvbhgCIAEoCzINLlByb3RvVmVjdG9y",
+          "MxIfCghyb3RhdGlvbhgDIAEoCzINLlByb3RvVmVjdG9yMxIfCgh2ZWxvY2l0",
+          "eRgEIAEoCzINLlByb3RvVmVjdG9yMxIOCgZtYXhfSFAYBSABKAUSEgoKY3Vy",
+          "cmVudF9IUBgGIAEoBRI2ChRtb3Rpb25fY29udHJpYnV0aW9ucxgHIAMoCzIY",
+          "LlByb3RvTW90aW9uQ29udHJpYnV0aW9uYgZwcm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-        new pbr::FileDescriptor[] { global::ProtoVector3Reflection.Descriptor, },
+        new pbr::FileDescriptor[] { global::ProtoVector3Reflection.Descriptor, global::ProtoMotionContributionReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions" }, null, null, null, null)
         }));
   }
   #endregion
@@ -78,6 +80,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     velocity_ = other.velocity_ != null ? other.velocity_.Clone() : null;
     maxHP_ = other.maxHP_;
     currentHP_ = other.currentHP_;
+    motionContributions_ = other.motionContributions_.Clone();
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -159,6 +162,17 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
   }
 
+  /// <summary>Field number for the "motion_contributions" field.</summary>
+  public const int MotionContributionsFieldNumber = 7;
+  private static readonly pb::FieldCodec<global::ProtoMotionContribution> _repeated_motionContributions_codec
+      = pb::FieldCodec.ForMessage(58, global::ProtoMotionContribution.Parser);
+  private readonly pbc::RepeatedField<global::ProtoMotionContribution> motionContributions_ = new pbc::RepeatedField<global::ProtoMotionContribution>();
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public pbc::RepeatedField<global::ProtoMotionContribution> MotionContributions {
+    get { return motionContributions_; }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -180,6 +194,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (!object.Equals(Velocity, other.Velocity)) return false;
     if (MaxHP != other.MaxHP) return false;
     if (CurrentHP != other.CurrentHP) return false;
+    if(!motionContributions_.Equals(other.motionContributions_)) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -193,6 +208,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (velocity_ != null) hash ^= Velocity.GetHashCode();
     if (MaxHP != 0) hash ^= MaxHP.GetHashCode();
     if (CurrentHP != 0) hash ^= CurrentHP.GetHashCode();
+    hash ^= motionContributions_.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -235,6 +251,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(48);
       output.WriteInt32(CurrentHP);
     }
+    motionContributions_.WriteTo(output, _repeated_motionContributions_codec);
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -269,6 +286,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(48);
       output.WriteInt32(CurrentHP);
     }
+    motionContributions_.WriteTo(ref output, _repeated_motionContributions_codec);
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -297,6 +315,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (CurrentHP != 0) {
       size += 1 + pb::CodedOutputStream.ComputeInt32Size(CurrentHP);
     }
+    size += motionContributions_.CalculateSize(_repeated_motionContributions_codec);
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
     }
@@ -336,6 +355,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (other.CurrentHP != 0) {
       CurrentHP = other.CurrentHP;
     }
+    motionContributions_.Add(other.motionContributions_);
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
 
@@ -388,6 +408,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
           CurrentHP = input.ReadInt32();
           break;
         }
+        case 58: {
+          motionContributions_.AddEntriesFrom(input, _repeated_motionContributions_codec);
+          break;
+        }
       }
     }
   #endif
@@ -438,6 +462,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
         }
         case 48: {
           CurrentHP = input.ReadInt32();
+          break;
+        }
+        case 58: {
+          motionContributions_.AddEntriesFrom(ref input, _repeated_motionContributions_codec);
           break;
         }
       }
