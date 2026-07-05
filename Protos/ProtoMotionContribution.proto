@@ -1,0 +1,12 @@
+syntax = "proto3";
+import "ProtoVector3.proto";
+
+message ProtoMotionContribution
+{
+	ProtoVector3 horizontal = 1;
+	int32 mode = 2;
+	int32 priority = 3;
+	int64 start_tick = 4;
+	int64 end_tick = 5;
+	float decay_per_tick = 6;
+}

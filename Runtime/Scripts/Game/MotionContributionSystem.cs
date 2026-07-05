@@ -45,11 +45,22 @@ namespace LOP
                 {
                     if (c.Mode == MotionContributionMode.Additive && c.IsActiveAt(currentTick))
                     {
-                        sum += c.Horizontal;
+                        float factor = System.MathF.Pow(c.DecayPerTick, currentTick - c.StartTick);
+                        sum += c.Horizontal * factor;
                     }
                 }
             }
             return sum;
+        }
+
+        /// <summary>공격자→대상 방향으로 미는 Additive 넉백 기여 하나(순수 커널 — 서버 핸들러/테스트 공용). y는 무시.</summary>
+        public static MotionContribution CreateRadialKnockback(
+            Vector3 attackerPos, Vector3 targetPos, float strength, int durationTicks, float decayPerTick, long currentTick)
+        {
+            Vector3 away = new Vector3(targetPos.X - attackerPos.X, 0f, targetPos.Z - attackerPos.Z);
+            Vector3 dir = away.LengthSquared() > 1e-8f ? Vector3.Normalize(away) : Vector3.Zero;
+            return new MotionContribution(dir * strength, MotionContributionMode.Additive, 0,
+                currentTick, currentTick + durationTicks, decayPerTick);
         }
     }
 }

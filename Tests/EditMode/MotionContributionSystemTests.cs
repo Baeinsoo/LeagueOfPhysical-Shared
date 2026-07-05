@@ -71,5 +71,53 @@ namespace LOP.Tests
             Assert.AreEqual(1, c.Items.Count);
             Assert.AreEqual(30, c.Items[0].EndTick);
         }
+
+        [Test]
+        public void Resolve_AdditiveDecaysExponentially()
+        {
+            // v0=(0,0,10), k=0.5, 창[0,100)
+            var c = With(new MotionContribution(new Vector3(0, 0, 10), MotionContributionMode.Additive, 0, 0, 100, 0.5f));
+            Assert.Less(Vector3.Distance(system.Resolve(Vector3.Zero, c, 0), new Vector3(0, 0, 10)), 1e-4f, "elapsed 0 → v0");
+            Assert.Less(Vector3.Distance(system.Resolve(Vector3.Zero, c, 1), new Vector3(0, 0, 5)), 1e-4f, "elapsed 1 → v0*0.5");
+            Assert.Less(Vector3.Distance(system.Resolve(Vector3.Zero, c, 2), new Vector3(0, 0, 2.5f)), 1e-4f, "elapsed 2 → v0*0.25");
+        }
+
+        [Test]
+        public void Resolve_DecayOne_IsConstant_NoRegression()
+        {
+            var c = With(new MotionContribution(new Vector3(0, 0, 5), MotionContributionMode.Additive, 0, 0, 100, 1f));
+            Assert.Less(Vector3.Distance(system.Resolve(Vector3.Zero, c, 0), new Vector3(0, 0, 5)), 1e-4f);
+            Assert.Less(Vector3.Distance(system.Resolve(Vector3.Zero, c, 50), new Vector3(0, 0, 5)), 1e-4f, "k=1 → 상수");
+        }
+
+        [Test]
+        public void CreateRadialKnockback_PushesAwayFromAttacker()
+        {
+            // attacker (0,0,0), target (3,0,4) → 방향 (0.6,0,0.8), strength 10 → (6,0,8)
+            var c = MotionContributionSystem.CreateRadialKnockback(
+                Vector3.Zero, new Vector3(3, 0, 4), strength: 10f, durationTicks: 12, decayPerTick: 0.8f, currentTick: 5);
+            Assert.Less(Vector3.Distance(c.Horizontal, new Vector3(6, 0, 8)), 1e-4f, "radial away × strength");
+            Assert.AreEqual(MotionContributionMode.Additive, c.Mode);
+            Assert.AreEqual(5, c.StartTick);
+            Assert.AreEqual(17, c.EndTick, "start + duration");
+            Assert.AreEqual(0.8f, c.DecayPerTick, 1e-6f);
+        }
+
+        [Test]
+        public void CreateRadialKnockback_IgnoresY()
+        {
+            // 높이 차가 있어도 수평만 — target y는 무시
+            var c = MotionContributionSystem.CreateRadialKnockback(
+                new Vector3(0, 5, 0), new Vector3(3, 0, 4), 10f, 12, 0.8f, 0);
+            Assert.Less(Vector3.Distance(c.Horizontal, new Vector3(6, 0, 8)), 1e-4f);
+        }
+
+        [Test]
+        public void CreateRadialKnockback_SamePosition_ZeroPush()
+        {
+            var c = MotionContributionSystem.CreateRadialKnockback(
+                new Vector3(2, 0, 2), new Vector3(2, 0, 2), 10f, 12, 0.8f, 0);
+            Assert.Less(c.Horizontal.Length(), 1e-4f, "겹친 위치 → 0(NaN 방지)");
+        }
     }
 }

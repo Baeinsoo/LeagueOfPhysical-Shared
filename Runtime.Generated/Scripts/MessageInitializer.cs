@@ -14,9 +14,9 @@ namespace LOP
             MessageFactory.RegisterCreator(MessageIds.EntitySpawnToC, () => new EntitySpawnToC());
             MessageFactory.RegisterCreator(MessageIds.GameInfoToC, () => new GameInfoToC());
             MessageFactory.RegisterCreator(MessageIds.GameInfoToS, () => new GameInfoToS());
+            MessageFactory.RegisterCreator(MessageIds.InputCommandToS, () => new InputCommandToS());
             MessageFactory.RegisterCreator(MessageIds.InputSequenceToC, () => new InputSequenceToC());
             MessageFactory.RegisterCreator(MessageIds.InputTimingToC, () => new InputTimingToC());
-            MessageFactory.RegisterCreator(MessageIds.InputCommandToS, () => new InputCommandToS());
             MessageFactory.RegisterCreator(MessageIds.StatAllocationToC, () => new StatAllocationToC());
             MessageFactory.RegisterCreator(MessageIds.StatAllocationToS, () => new StatAllocationToS());
             MessageFactory.RegisterCreator(MessageIds.UserEntitySnapToC, () => new UserEntitySnapToC());

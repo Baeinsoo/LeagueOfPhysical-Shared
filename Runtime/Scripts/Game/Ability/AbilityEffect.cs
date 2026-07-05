@@ -45,4 +45,24 @@ namespace LOP
             Speed = speed;
         }
     }
+
+    /// <summary>대상을 공격자 반대 방향으로 민다(넉백). 서버 핸들러가 부채꼴 대상을 찾아 Additive 기여를 등록.
+    /// 클라엔 핸들러 미등록 → 클라는 스냅샷으로 결과를 받음(데미지처럼 서버권위).</summary>
+    public sealed class KnockbackEffect : AbilityEffect
+    {
+        public readonly float Strength;      // 초기 세기 v0
+        public readonly float Range;         // 판정 반경
+        public readonly float Angle;         // 부채꼴 전체 각(도)
+        public readonly int DurationTicks;   // 밀림 지속(활성 창)
+        public readonly float DecayPerTick;  // 지수 감쇠(0<k<=1)
+
+        public KnockbackEffect(float strength, float range, float angle, int durationTicks, float decayPerTick)
+        {
+            Strength = strength;
+            Range = range;
+            Angle = angle;
+            DurationTicks = durationTicks;
+            DecayPerTick = decayPerTick;
+        }
+    }
 }
