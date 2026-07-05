@@ -13,7 +13,7 @@ namespace LOP.Tests
             var buffer = new WorldEventBuffer();
             var statusEffects = new StatusEffectSystem(new StatsSystem());
             var abilitySystem = new AbilitySystem(new ManaSystem());
-            var world = new LOPWorld(registry, buffer, new MovementSystem(new StatsSystem()), abilitySystem, statusEffects);
+            var world = new LOPWorld(registry, buffer, new MovementSystem(new StatsSystem(), new MotionContributionSystem()), abilitySystem, statusEffects);
 
             var entity = new Entity("e1");
             entity.Add(new Stats());
@@ -39,7 +39,7 @@ namespace LOP.Tests
             var registry = new EntityRegistry();
             var statusEffects = new StatusEffectSystem(new StatsSystem());
             var world = new LOPWorld(registry, new WorldEventBuffer(),
-                new MovementSystem(new StatsSystem()), new AbilitySystem(new ManaSystem()), statusEffects);
+                new MovementSystem(new StatsSystem(), new MotionContributionSystem()), new AbilitySystem(new ManaSystem()), statusEffects);
             registry.Add(new Entity("bare"));   // StatusEffects/Abilities 없음
 
             Assert.DoesNotThrow(() => world.Tick(1, 0.05f));   // 가드로 no-op
@@ -52,7 +52,7 @@ namespace LOP.Tests
             var statusEffects = new StatusEffectSystem(new StatsSystem());
             var abilitySystem = new AbilitySystem(new ManaSystem());
             var world = new LOPWorld(registry, new WorldEventBuffer(),
-                new MovementSystem(new StatsSystem()), abilitySystem, statusEffects);
+                new MovementSystem(new StatsSystem(), new MotionContributionSystem()), abilitySystem, statusEffects);
 
             var entity = new Entity("e1");
             entity.Add(new Abilities());

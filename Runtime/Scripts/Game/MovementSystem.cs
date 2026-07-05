@@ -51,10 +51,12 @@ namespace LOP
         private const float MaxAcceleration = 100f;   // 목표 속도로 따라붙는 빠르기(클수록 즉각 반응 — 튜닝값)
 
         private readonly GameFramework.World.StatsSystem statsSystem;
+        private readonly MotionContributionSystem motionContributionSystem;
 
-        public MovementSystem(GameFramework.World.StatsSystem statsSystem)
+        public MovementSystem(GameFramework.World.StatsSystem statsSystem, MotionContributionSystem motionContributionSystem)
         {
             this.statsSystem = statsSystem;
+            this.motionContributionSystem = motionContributionSystem;
         }
 
         /// <summary>
@@ -104,8 +106,8 @@ namespace LOP
 
             // 외부 기여(Additive; 슬라이스1엔 인스턴스 없음 — null-safe) 합성. 만료 기여는 프루닝.
             var contributions = entity.Get<MotionContributions>();
-            MotionContributionSystem.Prune(contributions, currentTick);
-            Vector3 finalHorizontal = MotionContributionSystem
+            motionContributionSystem.Prune(contributions, currentTick);
+            Vector3 finalHorizontal = motionContributionSystem
                 .Resolve(baseHorizontal.ToNumerics(), contributions, currentTick).ToUnity();
 
             velocity.x = finalHorizontal.x;

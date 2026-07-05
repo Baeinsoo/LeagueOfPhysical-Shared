@@ -103,7 +103,7 @@ namespace LOP.Tests
         [SetUp]
         public void SetUp()
         {
-            system = new MovementSystem(new GameFramework.World.StatsSystem());
+            system = new MovementSystem(new GameFramework.World.StatsSystem(), new MotionContributionSystem());
         }
 
         // Current에 커맨드가 확정된(호스트가 소비 완료한) 조종 엔티티를 만든다.
