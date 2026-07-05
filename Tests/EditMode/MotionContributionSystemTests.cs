@@ -71,5 +71,23 @@ namespace LOP.Tests
             Assert.AreEqual(1, c.Items.Count);
             Assert.AreEqual(30, c.Items[0].EndTick);
         }
+
+        [Test]
+        public void Resolve_AdditiveDecaysExponentially()
+        {
+            // v0=(0,0,10), k=0.5, 창[0,100)
+            var c = With(new MotionContribution(new Vector3(0, 0, 10), MotionContributionMode.Additive, 0, 0, 100, 0.5f));
+            Assert.Less(Vector3.Distance(system.Resolve(Vector3.Zero, c, 0), new Vector3(0, 0, 10)), 1e-4f, "elapsed 0 → v0");
+            Assert.Less(Vector3.Distance(system.Resolve(Vector3.Zero, c, 1), new Vector3(0, 0, 5)), 1e-4f, "elapsed 1 → v0*0.5");
+            Assert.Less(Vector3.Distance(system.Resolve(Vector3.Zero, c, 2), new Vector3(0, 0, 2.5f)), 1e-4f, "elapsed 2 → v0*0.25");
+        }
+
+        [Test]
+        public void Resolve_DecayOne_IsConstant_NoRegression()
+        {
+            var c = With(new MotionContribution(new Vector3(0, 0, 5), MotionContributionMode.Additive, 0, 0, 100, 1f));
+            Assert.Less(Vector3.Distance(system.Resolve(Vector3.Zero, c, 0), new Vector3(0, 0, 5)), 1e-4f);
+            Assert.Less(Vector3.Distance(system.Resolve(Vector3.Zero, c, 50), new Vector3(0, 0, 5)), 1e-4f, "k=1 → 상수");
+        }
     }
 }

@@ -45,7 +45,8 @@ namespace LOP
                 {
                     if (c.Mode == MotionContributionMode.Additive && c.IsActiveAt(currentTick))
                     {
-                        sum += c.Horizontal;
+                        float factor = System.MathF.Pow(c.DecayPerTick, currentTick - c.StartTick);
+                        sum += c.Horizontal * factor;
                     }
                 }
             }
