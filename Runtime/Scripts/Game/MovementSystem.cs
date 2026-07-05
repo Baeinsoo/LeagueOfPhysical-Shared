@@ -51,17 +51,19 @@ namespace LOP
         private const float MaxAcceleration = 100f;   // 목표 속도로 따라붙는 빠르기(클수록 즉각 반응 — 튜닝값)
 
         private readonly GameFramework.World.StatsSystem statsSystem;
+        private readonly MotionContributionSystem motionContributionSystem;
 
-        public MovementSystem(GameFramework.World.StatsSystem statsSystem)
+        public MovementSystem(GameFramework.World.StatsSystem statsSystem, MotionContributionSystem motionContributionSystem)
         {
             this.statsSystem = statsSystem;
+            this.motionContributionSystem = motionContributionSystem;
         }
 
         /// <summary>
         /// PlayerInput(이번 틱 입력)을 읽어 이동을 적용한다 — World.Velocity/Transform에 쓴다.
         /// PlayerInput이 없는 엔티티(AI/원격/아이템)는 건드리지 않는다.
         /// </summary>
-        public void Tick(GameFramework.World.Entity entity, float deltaTime)
+        public void Tick(GameFramework.World.Entity entity, long currentTick, float deltaTime)
         {
             var buffer = entity.Get<InputBuffer>();
             if (buffer == null)
@@ -75,35 +77,42 @@ namespace LOP
                 return;   // 이번 틱 확정된 커맨드 없음
             }
 
-            // 대시 같은 이동 어빌리티가 Active면 입력 이동을 무시한다(대시가 방향·속도를 주도).
-            if (AbilitySystem.HasActiveMotionEffect(entity))
-            {
-                return;
-            }
-
-            var stats = entity.Get<GameFramework.World.Stats>();
-            float speed = statsSystem.GetValue(stats, (int)GameFramework.World.EntityStatType.MoveSpeed);
-
             var worldVelocity = entity.Get<GameFramework.World.Velocity>();
-            Vector3 velocity = worldVelocity.Linear.ToUnity();
+            Vector3 velocity = worldVelocity.Linear.ToUnity();   // Y 보존용
 
-            var result = ProcessMovement(new MovementInput(
-                velocity, input.Horizontal, input.Vertical, speed, MaxAcceleration, deltaTime));
-
-            // 계산된 새 속도를 반영한다(좌우/앞뒤만; Y는 중력에 맡겨 보존). 점프면 Y를 점프 속도로 세팅.
-            velocity.x = result.velocity.x;
-            velocity.z = result.velocity.z;
-            if (input.Jump)
+            Vector3 baseHorizontal;
+            if (AbilitySystem.TryGetActiveMotionEffect(entity, currentTick, out var motion))
             {
-                velocity.y = statsSystem.GetValue(stats, (int)GameFramework.World.EntityStatType.JumpPower);
+                // 대시(파생 Override): 바라보는 방향으로 speed. 입력 무시(락) + 회전 미변경 + 점프 무시(현행 bow-out과 동일).
+                Vector3 forward = entity.Get<GameFramework.World.Transform>().Rotation.ToUnity() * Vector3.forward;
+                baseHorizontal = new Vector3(forward.x, 0f, forward.z).normalized * motion.Speed;
             }
+            else
+            {
+                var stats = entity.Get<GameFramework.World.Stats>();
+                float speed = statsSystem.GetValue(stats, (int)GameFramework.World.EntityStatType.MoveSpeed);
+                var result = ProcessMovement(new MovementInput(
+                    velocity, input.Horizontal, input.Vertical, speed, MaxAcceleration, deltaTime));
+                baseHorizontal = new Vector3(result.velocity.x, 0f, result.velocity.z);
+                if (input.Jump)
+                {
+                    velocity.y = statsSystem.GetValue(stats, (int)GameFramework.World.EntityStatType.JumpPower);
+                }
+                if (result.hasRotation)
+                {
+                    entity.Get<GameFramework.World.Transform>().Rotation = Quaternion.Euler(result.rotation).ToNumerics();
+                }
+            }
+
+            // 외부 기여(Additive; 슬라이스1엔 인스턴스 없음 — null-safe) 합성. 만료 기여는 프루닝.
+            var contributions = entity.Get<MotionContributions>();
+            motionContributionSystem.Prune(contributions, currentTick);
+            Vector3 finalHorizontal = motionContributionSystem
+                .Resolve(baseHorizontal.ToNumerics(), contributions, currentTick).ToUnity();
+
+            velocity.x = finalHorizontal.x;
+            velocity.z = finalHorizontal.z;
             worldVelocity.Linear = velocity.ToNumerics();
-
-            if (result.hasRotation)
-            {
-                entity.Get<GameFramework.World.Transform>().Rotation =
-                    Quaternion.Euler(result.rotation).ToNumerics();
-            }
         }
 
         public static MovementResult ProcessMovement(in MovementInput input)

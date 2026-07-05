@@ -103,7 +103,7 @@ namespace LOP.Tests
         [SetUp]
         public void SetUp()
         {
-            system = new MovementSystem(new GameFramework.World.StatsSystem());
+            system = new MovementSystem(new GameFramework.World.StatsSystem(), new MotionContributionSystem());
         }
 
         // Current에 커맨드가 확정된(호스트가 소비 완료한) 조종 엔티티를 만든다.
@@ -127,7 +127,7 @@ namespace LOP.Tests
             var entity = new GameFramework.World.Entity("e1");
             entity.Add(new GameFramework.World.Velocity { Linear = new Vector3(3f, 0f, 0f).ToNumerics() });
 
-            system.Tick(entity, Dt);
+            system.Tick(entity, 0, Dt);
 
             Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(3f).Within(Tolerance));
         }
@@ -138,7 +138,7 @@ namespace LOP.Tests
             // 버퍼는 있으나 이번 틱 확정 커맨드가 없으면(Current=null) 손대지 않는다.
             var entity = CreateControlledEntity(new Vector3(3f, 0f, 0f), null);
 
-            system.Tick(entity, Dt);
+            system.Tick(entity, 0, Dt);
 
             Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(3f).Within(Tolerance));
         }
@@ -149,7 +149,7 @@ namespace LOP.Tests
             // 오른쪽 입력 → 오른쪽 5, 90도 바라봄
             var entity = CreateControlledEntity(Vector3.zero, new InputCommand { Horizontal = 1f });
 
-            system.Tick(entity, Dt);
+            system.Tick(entity, 0, Dt);
 
             Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(5f).Within(Tolerance));
             Assert.That(entity.Get<GameFramework.World.Transform>().Rotation.ToUnity().eulerAngles.y, Is.EqualTo(90f).Within(Tolerance));
@@ -160,7 +160,7 @@ namespace LOP.Tests
         {
             var entity = CreateControlledEntity(new Vector3(0f, -3f, 0f), new InputCommand { Jump = true });
 
-            system.Tick(entity, Dt);
+            system.Tick(entity, 0, Dt);
 
             Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().y, Is.EqualTo(12f).Within(Tolerance));
         }
@@ -171,7 +171,7 @@ namespace LOP.Tests
             // 무입력 틱(호스트가 0 커맨드를 확정) → 수평은 0으로 제동, 수직은 중력 몫이라 보존.
             var entity = CreateControlledEntity(new Vector3(5f, -7.5f, 0f), new InputCommand());
 
-            system.Tick(entity, Dt);
+            system.Tick(entity, 0, Dt);
 
             Vector3 v = entity.Get<GameFramework.World.Velocity>().Linear.ToUnity();
             Assert.That(v.x, Is.EqualTo(0f).Within(Tolerance));
@@ -179,18 +179,52 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void ActiveMotionEffect_SkipsMovement()
+        public void ActiveMotionEffect_DerivesDashVelocity_FromFacing_IgnoresInput()
         {
-            // 대시 Active 동안은 입력 이동을 무시한다(대시가 방향·속도를 주도).
+            // 대시 활성 창 안 → 모터가 forward×Speed를 직접 쓴다(입력 무시). 기본 rotation=identity → forward=+z.
             var entity = CreateControlledEntity(new Vector3(15f, 0f, 0f), new InputCommand { Vertical = 1f });
             var abilities = new Abilities();
-            abilities.ActiveAbility = new ActiveAbility(2, AbilityPhase.Active, 0, 100, 200, null,
-                new AbilityEffect[] { new MotionEffect(15f) });
+            abilities.ActiveAbility = new ActiveAbility(2, AbilityPhase.Startup, 0, 100, 200, null,
+                new AbilityEffect[] { new MotionEffect(15f) });   // 창 [0,100)
             entity.Add(abilities);
 
-            system.Tick(entity, Dt);
+            system.Tick(entity, 0, Dt);   // 0 ∈ [0,100)
 
-            Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(15f).Within(Tolerance));
+            Vector3 v = entity.Get<GameFramework.World.Velocity>().Linear.ToUnity();
+            Assert.That(v.x, Is.EqualTo(0f).Within(Tolerance), "입력 무시(락)");
+            Assert.That(v.z, Is.EqualTo(15f).Within(Tolerance), "forward(+z)×15");
+        }
+
+        [Test]
+        public void OutsideDashWindow_WalksNormally()
+        {
+            // 창 밖 tick이면 대시 아님 → 걷기(입력대로).
+            var entity = CreateControlledEntity(Vector3.zero, new InputCommand { Horizontal = 1f });
+            var abilities = new Abilities();
+            abilities.ActiveAbility = new ActiveAbility(2, AbilityPhase.Startup, 0, 5, 10, null,
+                new AbilityEffect[] { new MotionEffect(15f) });   // 창 [0,5)
+            entity.Add(abilities);
+
+            system.Tick(entity, 5, Dt);   // 5 ∉ [0,5) → 걷기
+
+            Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(5f).Within(Tolerance));
+        }
+
+        [Test]
+        public void AdditiveContribution_AddsOnTopOfWalk()
+        {
+            // 외부 Additive 기여(넉백류)는 걷기 위에 가산된다.
+            var entity = CreateControlledEntity(Vector3.zero, new InputCommand { Horizontal = 1f }); // 걷기 → x=5
+            var contribs = new MotionContributions();
+            contribs.Items.Add(new MotionContribution(new System.Numerics.Vector3(0f, 0f, 4f),
+                MotionContributionMode.Additive, 0, 0, 10));
+            entity.Add(contribs);
+
+            system.Tick(entity, 0, Dt);
+
+            Vector3 v = entity.Get<GameFramework.World.Velocity>().Linear.ToUnity();
+            Assert.That(v.x, Is.EqualTo(5f).Within(Tolerance), "걷기 x=5");
+            Assert.That(v.z, Is.EqualTo(4f).Within(Tolerance), "additive z=4 가산");
         }
     }
 }
