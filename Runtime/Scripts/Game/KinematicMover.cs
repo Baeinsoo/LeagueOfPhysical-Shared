@@ -46,6 +46,7 @@ namespace LOP
     /// </summary>
     public static class KinematicMover
     {
+        const int MaxSlides = 4;         // 미끄러짐 반복 상한(과회전·무한루프 방지)
         const float SkinWidth = 0.02f;   // 벽에서 살짝 띄우는 여유(끼임 방지)
 
         public static KinematicMoveResult Move(in KinematicMoveInput input, ICollisionQuery query)
@@ -54,24 +55,33 @@ namespace LOP
             Vector3 remaining = input.velocity * input.deltaTime;
             Vector3 velocity = input.velocity;
 
-            float dist = remaining.magnitude;
-            if (dist > 1e-5f)
+            for (int i = 0; i < MaxSlides; i++)
             {
+                float dist = remaining.magnitude;
+                if (dist < 1e-5f)
+                {
+                    break;
+                }
                 Vector3 dir = remaining / dist;
+
                 Vector3 p1 = pos + Vector3.up * input.radius;
                 Vector3 p2 = pos + Vector3.up * (input.height - input.radius);
                 CollisionHit hit = query.CapsuleCast(p1, p2, input.radius, dir, dist + SkinWidth, input.layerMask);
-                if (hit.HasHit)
-                {
-                    float moveDist = Mathf.Max(hit.Distance - SkinWidth, 0f);
-                    pos += dir * moveDist;
-                    velocity = Vector3.zero;   // 임시: 충돌 시 정지 (다음 테스트에서 일반화)
-                }
-                else
+                if (hit.HasHit == false)
                 {
                     pos += remaining;
+                    break;
                 }
+
+                float moveDist = Mathf.Max(hit.Distance - SkinWidth, 0f);
+                pos += dir * moveDist;
+
+                // 남은 이동과 속도를 충돌면(plane)에 투영 → 벽을 따라 미끄러짐. 정면 벽이면 0으로 소멸.
+                Vector3 leftover = remaining - dir * moveDist;
+                remaining = Vector3.ProjectOnPlane(leftover, hit.Normal);
+                velocity = Vector3.ProjectOnPlane(velocity, hit.Normal);
             }
+
             return new KinematicMoveResult(pos, velocity, false);
         }
     }
