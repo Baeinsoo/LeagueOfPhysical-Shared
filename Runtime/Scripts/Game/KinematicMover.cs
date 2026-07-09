@@ -46,10 +46,33 @@ namespace LOP
     /// </summary>
     public static class KinematicMover
     {
+        const float SkinWidth = 0.02f;   // 벽에서 살짝 띄우는 여유(끼임 방지)
+
         public static KinematicMoveResult Move(in KinematicMoveInput input, ICollisionQuery query)
         {
+            Vector3 pos = input.position;
             Vector3 remaining = input.velocity * input.deltaTime;
-            return new KinematicMoveResult(input.position + remaining, input.velocity, false);
+            Vector3 velocity = input.velocity;
+
+            float dist = remaining.magnitude;
+            if (dist > 1e-5f)
+            {
+                Vector3 dir = remaining / dist;
+                Vector3 p1 = pos + Vector3.up * input.radius;
+                Vector3 p2 = pos + Vector3.up * (input.height - input.radius);
+                CollisionHit hit = query.CapsuleCast(p1, p2, input.radius, dir, dist + SkinWidth, input.layerMask);
+                if (hit.HasHit)
+                {
+                    float moveDist = Mathf.Max(hit.Distance - SkinWidth, 0f);
+                    pos += dir * moveDist;
+                    velocity = Vector3.zero;   // 임시: 충돌 시 정지 (다음 테스트에서 일반화)
+                }
+                else
+                {
+                    pos += remaining;
+                }
+            }
+            return new KinematicMoveResult(pos, velocity, false);
         }
     }
 }

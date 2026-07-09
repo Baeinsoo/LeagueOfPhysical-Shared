@@ -39,5 +39,20 @@ namespace LOP.Tests
             Assert.That(r.position.z, Is.EqualTo(0f).Within(Tolerance));
             Assert.IsFalse(r.grounded);
         }
+
+        [Test]
+        public void HeadOnWall_StopsAndZeroesVelocityAlongNormal()
+        {
+            var query = new FakeCollisionQuery();
+            // 정면 벽: 거리 0.5에서 법선이 이동 반대(-x)
+            query.Responses.Enqueue(new CollisionHit(true, 0.5f, new Vector3(-1f, 0f, 0f), Vector3.zero));
+            var r = KinematicMover.Move(Input(Vector3.zero, new Vector3(10f, 0f, 0f)), query);
+
+            // 접촉 전까지만(≈0.48, skin 여유), 목표(1.0)까지 안 감
+            Assert.That(r.position.x, Is.GreaterThan(0.4f));
+            Assert.That(r.position.x, Is.LessThan(0.6f));
+            // 벽 법선 방향 속도 소멸
+            Assert.That(r.velocity.x, Is.EqualTo(0f).Within(Tolerance));
+        }
     }
 }
