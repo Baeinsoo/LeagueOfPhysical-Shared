@@ -72,5 +72,17 @@ namespace LOP.Tests
             Assert.That(new Vector3(r.velocity.x, 0f, r.velocity.z).magnitude, Is.GreaterThan(0.1f),
                 "각진 벽에서는 속도가 소멸이 아니라 재방향되어야 함");
         }
+
+        [Test]
+        public void GroundHit_SetsGrounded_AndZeroesVerticalVelocity()
+        {
+            var query = new FakeCollisionQuery();
+            // 아래로 낙하 중 바닥(법선 위) 접촉
+            query.Responses.Enqueue(new CollisionHit(true, 0.1f, new Vector3(0f, 1f, 0f), Vector3.zero));
+            var r = KinematicMover.Move(Input(Vector3.zero, new Vector3(0f, -20f, 0f)), query);
+
+            Assert.IsTrue(r.grounded, "바닥 법선(위쪽) 접촉 시 grounded");
+            Assert.That(r.velocity.y, Is.EqualTo(0f).Within(Tolerance), "바닥에 닿으면 수직 속도 소멸");
+        }
     }
 }

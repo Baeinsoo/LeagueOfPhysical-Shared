@@ -48,12 +48,14 @@ namespace LOP
     {
         const int MaxSlides = 4;         // 미끄러짐 반복 상한(과회전·무한루프 방지)
         const float SkinWidth = 0.02f;   // 벽에서 살짝 띄우는 여유(끼임 방지)
+        const float GroundNormalY = 0.7f;  // 면 법선의 위쪽 성분이 이보다 크면 바닥(≈45도)
 
         public static KinematicMoveResult Move(in KinematicMoveInput input, ICollisionQuery query)
         {
             Vector3 pos = input.position;
             Vector3 remaining = input.velocity * input.deltaTime;
             Vector3 velocity = input.velocity;
+            bool grounded = false;
 
             for (int i = 0; i < MaxSlides; i++)
             {
@@ -76,13 +78,17 @@ namespace LOP
                 float moveDist = Mathf.Max(hit.Distance - SkinWidth, 0f);
                 pos += dir * moveDist;
 
-                // 남은 이동과 속도를 충돌면(plane)에 투영 → 벽을 따라 미끄러짐. 정면 벽이면 0으로 소멸.
+                if (hit.Normal.y >= GroundNormalY)
+                {
+                    grounded = true;
+                }
+
                 Vector3 leftover = remaining - dir * moveDist;
                 remaining = Vector3.ProjectOnPlane(leftover, hit.Normal);
                 velocity = Vector3.ProjectOnPlane(velocity, hit.Normal);
             }
 
-            return new KinematicMoveResult(pos, velocity, false);
+            return new KinematicMoveResult(pos, velocity, grounded);
         }
     }
 }
