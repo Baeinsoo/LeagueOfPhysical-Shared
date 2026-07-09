@@ -84,5 +84,20 @@ namespace LOP.Tests
             Assert.IsTrue(r.grounded, "바닥 법선(위쪽) 접촉 시 grounded");
             Assert.That(r.velocity.y, Is.EqualTo(0f).Within(Tolerance), "바닥에 닿으면 수직 속도 소멸");
         }
+
+        [Test]
+        public void AlwaysBlocked_TerminatesWithinMaxSlides()
+        {
+            var query = new FakeCollisionQuery();
+            // 매 sweep마다 같은 각진 벽 → 잔여가 계속 남아도 상한(MaxSlides) 내에서 종료해야 함
+            for (int i = 0; i < 20; i++)
+            {
+                query.Responses.Enqueue(new CollisionHit(true, 0.1f,
+                    new Vector3(-0.7071f, 0f, -0.7071f), Vector3.zero));
+            }
+            var r = KinematicMover.Move(Input(Vector3.zero, new Vector3(10f, 0f, 0f)), query);
+
+            Assert.That(query.CallCount, Is.LessThanOrEqualTo(4), "MaxSlides 상한 내에서 종료(무한루프 방지)");
+        }
     }
 }
