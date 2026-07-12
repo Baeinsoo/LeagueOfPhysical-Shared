@@ -39,7 +39,7 @@ namespace LOP
             {
                 return;
             }
-            var ctx = new AbilityEffectContext(caster, active.Value.Target, currentTick, entityManager);
+            var ctx = new AbilityEffectContext(caster, active.Value.Target, currentTick, entityManager, 0);
             if (currentTick == active.Value.StartupEndTick)
             {
                 OnActiveEnter(ctx, active.Value.Effects);   // 진입 1회 — 데미지·상태효과(즉발)
@@ -54,11 +54,13 @@ namespace LOP
             {
                 return;
             }
-            foreach (var effect in effects)
+            for (int i = 0; i < effects.Length; i++)
             {
-                if (_handlers.TryGetValue(effect.GetType(), out var handler))
+                if (_handlers.TryGetValue(effects[i].GetType(), out var handler))
                 {
-                    handler.OnActiveEnter(ctx, effect);
+                    var effectCtx = new AbilityEffectContext(
+                        ctx.Caster, ctx.Target, ctx.CurrentTick, ctx.EntityManager, i);
+                    handler.OnActiveEnter(effectCtx, effects[i]);
                 }
             }
         }
@@ -70,11 +72,13 @@ namespace LOP
             {
                 return;
             }
-            foreach (var effect in effects)
+            for (int i = 0; i < effects.Length; i++)
             {
-                if (_handlers.TryGetValue(effect.GetType(), out var handler))
+                if (_handlers.TryGetValue(effects[i].GetType(), out var handler))
                 {
-                    handler.OnActiveTick(ctx, effect);
+                    var effectCtx = new AbilityEffectContext(
+                        ctx.Caster, ctx.Target, ctx.CurrentTick, ctx.EntityManager, i);
+                    handler.OnActiveTick(effectCtx, effects[i]);
                 }
             }
         }
