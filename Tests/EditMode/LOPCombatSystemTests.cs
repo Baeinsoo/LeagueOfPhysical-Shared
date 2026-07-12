@@ -57,7 +57,7 @@ namespace LOP.Tests
             else
             {
                 Assert.Greater(evt.amount, 0);
-                Assert.AreEqual(100 - evt.amount, health.Current);
+                Assert.AreEqual(System.Math.Max(0, 100 - evt.amount), health.Current);  // 데미지가 HP 초과 시 0으로 클램프
             }
         }
 

@@ -53,6 +53,7 @@ namespace LOP
             int targetDexterity = targetStats != null ? Mathf.RoundToInt(statsSystem.GetValue(targetStats, (int)GameFramework.World.EntityStatType.Dexterity)) : 0;
 
             damage += attackerStrength;
+            damage *= 3;   // 밸런스: 경험치 획득 속도 위해 데미지 3배(크리 배수 적용 전 기본 데미지)
 
             ulong seed = GameFramework.Hashing.Combine(
                 GameFramework.Hashing.Combine(
