@@ -14,13 +14,16 @@ namespace LOP
         public readonly Entity Target;
         public readonly long CurrentTick;
         public readonly IEntityManager EntityManager;
+        public readonly int EffectIndex;   // 효과 리스트 내 위치 — 결정론 RNG sub-stream 구분용
 
-        public AbilityEffectContext(Entity caster, Entity target, long currentTick, IEntityManager entityManager)
+        public AbilityEffectContext(Entity caster, Entity target, long currentTick,
+                                    IEntityManager entityManager, int effectIndex)
         {
             Caster = caster;
             Target = target;
             CurrentTick = currentTick;
             EntityManager = entityManager;
+            EffectIndex = effectIndex;
         }
     }
 }

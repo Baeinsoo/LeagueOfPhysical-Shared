@@ -7,4 +7,5 @@ message GameInfo {
   double interval = 2;
   double elapsed_time = 3;
   repeated EntityCreationData entity_creation_datas = 4;
+  uint64 match_seed = 5;
 }

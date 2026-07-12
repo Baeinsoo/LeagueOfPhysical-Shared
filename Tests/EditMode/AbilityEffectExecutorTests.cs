@@ -15,7 +15,30 @@ namespace LOP.Tests
             protected override void OnActiveTick(AbilityEffectContext ctx, T effect) => TickCount++;
         }
 
-        private static AbilityEffectContext Ctx() => new AbilityEffectContext(null, null, 0, null);
+        private static AbilityEffectContext Ctx() => new AbilityEffectContext(null, null, 0, null, 0);
+
+        private class IndexCapturingHandler<T> : AbilityEffectHandler<T> where T : AbilityEffect
+        {
+            public readonly System.Collections.Generic.List<int> EnterIndices = new System.Collections.Generic.List<int>();
+            protected override void OnActiveEnter(AbilityEffectContext ctx, T effect) => EnterIndices.Add(ctx.EffectIndex);
+        }
+
+        [Test]
+        public void Dispatch_PassesEffectListIndexToHandler()
+        {
+            var damage = new IndexCapturingHandler<DamageEffect>();
+            var executor = new AbilityEffectExecutor(new IAbilityEffectHandler[] { damage });
+            var effects = new AbilityEffect[]
+            {
+                new DamageEffect(10, 1f, 90f),
+                new DamageEffect(10, 1f, 90f),
+                new DamageEffect(10, 1f, 90f),
+            };
+
+            executor.OnActiveEnter(new AbilityEffectContext(null, null, 0, null, 0), effects);
+
+            Assert.That(damage.EnterIndices, Is.EqualTo(new[] { 0, 1, 2 }));
+        }
 
         [Test]
         public void Dispatch_RoutesEachEffectToItsTypeHandler()
