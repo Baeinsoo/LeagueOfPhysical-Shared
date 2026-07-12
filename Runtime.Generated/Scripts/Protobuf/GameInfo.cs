@@ -22,14 +22,15 @@ public static partial class GameInfoReflection {
   static GameInfoReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "Cg5HYW1lSW5mby5wcm90bxoYRW50aXR5Q3JlYXRpb25EYXRhLnByb3RvInQK",
-          "CEdhbWVJbmZvEgwKBHRpY2sYASABKAMSEAoIaW50ZXJ2YWwYAiABKAESFAoM",
-          "ZWxhcHNlZF90aW1lGAMgASgBEjIKFWVudGl0eV9jcmVhdGlvbl9kYXRhcxgE",
-          "IAMoCzITLkVudGl0eUNyZWF0aW9uRGF0YWIGcHJvdG8z"));
+          "Cg5HYW1lSW5mby5wcm90bxoYRW50aXR5Q3JlYXRpb25EYXRhLnByb3RvIogB",
+          "CghHYW1lSW5mbxIMCgR0aWNrGAEgASgDEhAKCGludGVydmFsGAIgASgBEhQK",
+          "DGVsYXBzZWRfdGltZRgDIAEoARIyChVlbnRpdHlfY3JlYXRpb25fZGF0YXMY",
+          "BCADKAsyEy5FbnRpdHlDcmVhdGlvbkRhdGESEgoKbWF0Y2hfc2VlZBgFIAEo",
+          "BGIGcHJvdG8z"));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::EntityCreationDataReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::GameInfo), global::GameInfo.Parser, new[]{ "Tick", "Interval", "ElapsedTime", "EntityCreationDatas" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::GameInfo), global::GameInfo.Parser, new[]{ "Tick", "Interval", "ElapsedTime", "EntityCreationDatas", "MatchSeed" }, null, null, null, null)
         }));
   }
   #endregion
@@ -75,6 +76,7 @@ public sealed partial class GameInfo : pb::IMessage<GameInfo>
     interval_ = other.interval_;
     elapsedTime_ = other.elapsedTime_;
     entityCreationDatas_ = other.entityCreationDatas_.Clone();
+    matchSeed_ = other.matchSeed_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -131,6 +133,18 @@ public sealed partial class GameInfo : pb::IMessage<GameInfo>
     get { return entityCreationDatas_; }
   }
 
+  /// <summary>Field number for the "match_seed" field.</summary>
+  public const int MatchSeedFieldNumber = 5;
+  private ulong matchSeed_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public ulong MatchSeed {
+    get { return matchSeed_; }
+    set {
+      matchSeed_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -150,6 +164,7 @@ public sealed partial class GameInfo : pb::IMessage<GameInfo>
     if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(Interval, other.Interval)) return false;
     if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(ElapsedTime, other.ElapsedTime)) return false;
     if(!entityCreationDatas_.Equals(other.entityCreationDatas_)) return false;
+    if (MatchSeed != other.MatchSeed) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -161,6 +176,7 @@ public sealed partial class GameInfo : pb::IMessage<GameInfo>
     if (Interval != 0D) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(Interval);
     if (ElapsedTime != 0D) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(ElapsedTime);
     hash ^= entityCreationDatas_.GetHashCode();
+    if (MatchSeed != 0UL) hash ^= MatchSeed.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -192,6 +208,10 @@ public sealed partial class GameInfo : pb::IMessage<GameInfo>
       output.WriteDouble(ElapsedTime);
     }
     entityCreationDatas_.WriteTo(output, _repeated_entityCreationDatas_codec);
+    if (MatchSeed != 0UL) {
+      output.WriteRawTag(40);
+      output.WriteUInt64(MatchSeed);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -215,6 +235,10 @@ public sealed partial class GameInfo : pb::IMessage<GameInfo>
       output.WriteDouble(ElapsedTime);
     }
     entityCreationDatas_.WriteTo(ref output, _repeated_entityCreationDatas_codec);
+    if (MatchSeed != 0UL) {
+      output.WriteRawTag(40);
+      output.WriteUInt64(MatchSeed);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -235,6 +259,9 @@ public sealed partial class GameInfo : pb::IMessage<GameInfo>
       size += 1 + 8;
     }
     size += entityCreationDatas_.CalculateSize(_repeated_entityCreationDatas_codec);
+    if (MatchSeed != 0UL) {
+      size += 1 + pb::CodedOutputStream.ComputeUInt64Size(MatchSeed);
+    }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
     }
@@ -257,6 +284,9 @@ public sealed partial class GameInfo : pb::IMessage<GameInfo>
       ElapsedTime = other.ElapsedTime;
     }
     entityCreationDatas_.Add(other.entityCreationDatas_);
+    if (other.MatchSeed != 0UL) {
+      MatchSeed = other.MatchSeed;
+    }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
 
@@ -292,6 +322,10 @@ public sealed partial class GameInfo : pb::IMessage<GameInfo>
           entityCreationDatas_.AddEntriesFrom(input, _repeated_entityCreationDatas_codec);
           break;
         }
+        case 40: {
+          MatchSeed = input.ReadUInt64();
+          break;
+        }
       }
     }
   #endif
@@ -325,6 +359,10 @@ public sealed partial class GameInfo : pb::IMessage<GameInfo>
         }
         case 34: {
           entityCreationDatas_.AddEntriesFrom(ref input, _repeated_entityCreationDatas_codec);
+          break;
+        }
+        case 40: {
+          MatchSeed = input.ReadUInt64();
           break;
         }
       }
