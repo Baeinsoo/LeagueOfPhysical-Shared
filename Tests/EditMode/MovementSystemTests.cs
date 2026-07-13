@@ -14,6 +14,26 @@ namespace LOP.Tests
             => MovementSystem.ProcessMovement(new MovementInput(cur, h, v, speed, maxAccel, dt));
 
         [Test]
+        public void Tick_InputlessEntity_ResolvesExternalForceIntoVelocity()
+        {
+            var movement = new MovementSystem(new GameFramework.World.StatsSystem(), new MotionContributionSystem());
+
+            var e = new GameFramework.World.Entity("e1");
+            e.Add(new GameFramework.World.Velocity { Linear = new System.Numerics.Vector3(2, 5, 0) });  // 브레인 속도
+            var mc = new MotionContributions();
+            mc.Items.Add(new MotionContribution(new System.Numerics.Vector3(0, 0, 8),
+                MotionContributionMode.Additive, 0, 0, 100, 1f));   // 활성 넉백, decay 1
+            e.Add(mc);
+            // InputBuffer 없음 (AI/원격)
+
+            movement.Tick(e, 0, 0.05f);
+
+            var v = e.Get<GameFramework.World.Velocity>().Linear;
+            Assert.Less(System.Numerics.Vector3.Distance(v, new System.Numerics.Vector3(2, 5, 8)), 1e-4f,
+                "입력 없어도 외력 folding, y 보존");
+        }
+
+        [Test]
         public void NoInput_BrakesTowardZero_PreservesY()
         {
             // 방향 입력이 없으면 목표 0으로 제동(정지). rate(=maxAccel·dt=10) >= 현재(5) → 0. 위아래 속도는 보존.
