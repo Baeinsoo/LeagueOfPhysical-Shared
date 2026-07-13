@@ -6,6 +6,8 @@ namespace LOP
         private readonly AbilitySystem _abilitySystem;
         private readonly StatusEffectSystem _statusEffectSystem;
         private readonly AbilityEffectExecutor _abilityEffectExecutor;
+        private readonly KinematicMoveSystem _kinematicMoveSystem;
+        private readonly GameFramework.IMotionBridge _motionBridge;
 
         public LOPWorld(
             GameFramework.World.EntityRegistry entityRegistry,
@@ -13,13 +15,17 @@ namespace LOP
             MovementSystem movementSystem,
             AbilitySystem abilitySystem,
             StatusEffectSystem statusEffectSystem,
-            AbilityEffectExecutor abilityEffectExecutor)
+            AbilityEffectExecutor abilityEffectExecutor,
+            KinematicMoveSystem kinematicMoveSystem,
+            GameFramework.IMotionBridge motionBridge)
             : base(entityRegistry, eventBuffer)
         {
             _movementSystem = movementSystem;
             _abilitySystem = abilitySystem;
             _statusEffectSystem = statusEffectSystem;
             _abilityEffectExecutor = abilityEffectExecutor;
+            _kinematicMoveSystem = kinematicMoveSystem;
+            _motionBridge = motionBridge;
         }
 
         protected override void Mutation(long tick, float deltaTime)
@@ -50,6 +56,19 @@ namespace LOP
                 if (entity.Has<GameFramework.World.Simulated>())
                 {
                     _abilityEffectExecutor.DriveActiveEntity(entity, tick);
+                }
+            }
+
+            // 키네마틱 이동(중력+collide-and-slide). host 물리 브릿지로 겹침해소·rb 반영을 사이드 무관 호출.
+            // 이전엔 host MoveCharacters/MoveLocalPlayer. 서버=전 캐릭(전 Simulated) / 클라=내 캐릭만.
+            _motionBridge.SyncTransforms();
+            foreach (var entity in EntityRegistry.All)
+            {
+                if (entity.Has<GameFramework.World.Simulated>())
+                {
+                    _motionBridge.Depenetrate(entity.Id);
+                    _kinematicMoveSystem.Tick(entity, deltaTime);
+                    _motionBridge.PushMotion(entity.Id);
                 }
             }
         }
