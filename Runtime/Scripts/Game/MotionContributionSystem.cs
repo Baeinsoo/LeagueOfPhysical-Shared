@@ -53,25 +53,6 @@ namespace LOP
             return sum;
         }
 
-        /// <summary>
-        /// 엔티티의 현재 수평 속도를 base로 외부 기여(넉백 등)를 합성해 World.Velocity에 되쓴다(y는 보존).
-        /// 입력으로 이동을 계산하지 않는 엔티티(AI 등)용 — 플레이어는 <see cref="MovementSystem.Tick"/>이
-        /// 입력 기반 base로 같은 <see cref="Resolve"/>를 태운다. 만료 기여는 프루닝.
-        /// </summary>
-        public void ApplyToVelocity(GameFramework.World.Entity entity, long currentTick)
-        {
-            var worldVelocity = entity.Get<GameFramework.World.Velocity>();
-            if (worldVelocity == null)
-            {
-                return;
-            }
-            var contributions = entity.Get<MotionContributions>();
-            Prune(contributions, currentTick);
-            Vector3 v = worldVelocity.Linear;
-            Vector3 final = Resolve(new Vector3(v.X, 0f, v.Z), contributions, currentTick);
-            worldVelocity.Linear = new Vector3(final.X, v.Y, final.Z);
-        }
-
         /// <summary>공격자→대상 방향으로 미는 Additive 넉백 기여 하나(순수 커널 — 서버 핸들러/테스트 공용). y는 무시.</summary>
         public static MotionContribution CreateRadialKnockback(
             Vector3 attackerPos, Vector3 targetPos, float strength, int durationTicks, float decayPerTick, long currentTick)

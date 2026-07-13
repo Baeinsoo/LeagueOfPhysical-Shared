@@ -65,46 +65,42 @@ namespace LOP
         /// </summary>
         public void Tick(GameFramework.World.Entity entity, long currentTick, float deltaTime)
         {
-            var buffer = entity.Get<InputBuffer>();
-            if (buffer == null)
-            {
-                return;   // 입력 비조종(AI/원격/아이템) — 버퍼 없음
-            }
-
-            var input = buffer.Current;
-            if (input == null)
-            {
-                return;   // 이번 틱 확정된 커맨드 없음
-            }
-
             var worldVelocity = entity.Get<GameFramework.World.Velocity>();
+            if (worldVelocity == null)
+            {
+                return;   // 이동 없는 엔티티
+            }
             Vector3 velocity = worldVelocity.Linear.ToUnity();   // Y 보존용
+            Vector3 baseHorizontal = new Vector3(velocity.x, 0f, velocity.z);   // 기본 = 현재 수평(입력 없으면 유지)
 
-            Vector3 baseHorizontal;
-            if (AbilitySystem.TryGetActiveMotionEffect(entity, currentTick, out var motion))
+            var input = entity.Get<InputBuffer>()?.Current;
+            if (input != null)
             {
-                // 대시(파생 Override): 바라보는 방향으로 speed. 입력 무시(락) + 회전 미변경 + 점프 무시(현행 bow-out과 동일).
-                Vector3 forward = entity.Get<GameFramework.World.Transform>().Rotation.ToUnity() * Vector3.forward;
-                baseHorizontal = new Vector3(forward.x, 0f, forward.z).normalized * motion.Speed;
-            }
-            else
-            {
-                var stats = entity.Get<GameFramework.World.Stats>();
-                float speed = statsSystem.GetValue(stats, (int)GameFramework.World.EntityStatType.MoveSpeed);
-                var result = ProcessMovement(new MovementInput(
-                    velocity, input.Horizontal, input.Vertical, speed, MaxAcceleration, deltaTime));
-                baseHorizontal = new Vector3(result.velocity.x, 0f, result.velocity.z);
-                if (input.Jump)
+                if (AbilitySystem.TryGetActiveMotionEffect(entity, currentTick, out var motion))
                 {
-                    velocity.y = statsSystem.GetValue(stats, (int)GameFramework.World.EntityStatType.JumpPower);
+                    // 대시(파생 Override): 바라보는 방향으로 speed. 입력 무시(락) + 회전 미변경 + 점프 무시.
+                    Vector3 forward = entity.Get<GameFramework.World.Transform>().Rotation.ToUnity() * Vector3.forward;
+                    baseHorizontal = new Vector3(forward.x, 0f, forward.z).normalized * motion.Speed;
                 }
-                if (result.hasRotation)
+                else
                 {
-                    entity.Get<GameFramework.World.Transform>().Rotation = Quaternion.Euler(result.rotation).ToNumerics();
+                    var stats = entity.Get<GameFramework.World.Stats>();
+                    float speed = statsSystem.GetValue(stats, (int)GameFramework.World.EntityStatType.MoveSpeed);
+                    var result = ProcessMovement(new MovementInput(
+                        velocity, input.Horizontal, input.Vertical, speed, MaxAcceleration, deltaTime));
+                    baseHorizontal = new Vector3(result.velocity.x, 0f, result.velocity.z);
+                    if (input.Jump)
+                    {
+                        velocity.y = statsSystem.GetValue(stats, (int)GameFramework.World.EntityStatType.JumpPower);
+                    }
+                    if (result.hasRotation)
+                    {
+                        entity.Get<GameFramework.World.Transform>().Rotation = Quaternion.Euler(result.rotation).ToNumerics();
+                    }
                 }
             }
 
-            // 외부 기여(Additive; 슬라이스1엔 인스턴스 없음 — null-safe) 합성. 만료 기여는 프루닝.
+            // 외부 기여(넉백 등) 합성 — 입력 유무 무관, 플레이어·AI 공통. 만료 프루닝.
             var contributions = entity.Get<MotionContributions>();
             motionContributionSystem.Prune(contributions, currentTick);
             Vector3 finalHorizontal = motionContributionSystem

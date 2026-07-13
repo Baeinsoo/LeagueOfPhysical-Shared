@@ -119,56 +119,5 @@ namespace LOP.Tests
                 new Vector3(2, 0, 2), new Vector3(2, 0, 2), 10f, 12, 0.8f, 0);
             Assert.Less(c.Horizontal.Length(), 1e-4f, "겹친 위치 → 0(NaN 방지)");
         }
-
-        // ApplyToVelocity: 엔티티의 현재 수평 속도를 base로 외력을 합성해 World.Velocity에 되쓴다.
-        // 입력으로 이동을 계산하지 않는 엔티티(AI 등)용 — 넉백을 실제 속도에 folding하는 통로.
-
-        private static GameFramework.World.Entity EntityWith(Vector3 velocity, params MotionContribution[] items)
-        {
-            var e = new GameFramework.World.Entity("e1");
-            e.Add(new GameFramework.World.Velocity { Linear = velocity });
-            var c = new MotionContributions();
-            c.Items.AddRange(items);
-            e.Add(c);
-            return e;
-        }
-
-        [Test]
-        public void ApplyToVelocity_FoldsActiveKnockbackIntoHorizontal_PreservesY()
-        {
-            // 브레인 속도(2,5,0) + 활성 넉백(0,0,8, decay 1) → 수평 합성, y(5)는 보존
-            var e = EntityWith(new Vector3(2, 5, 0),
-                new MotionContribution(new Vector3(0, 0, 8), MotionContributionMode.Additive, 0, 0, 100, 1f));
-            system.ApplyToVelocity(e, 0);
-            var v = e.Get<GameFramework.World.Velocity>().Linear;
-            Assert.Less(Vector3.Distance(v, new Vector3(2, 5, 8)), 1e-4f, "수평 base+넉백, y 보존");
-        }
-
-        [Test]
-        public void ApplyToVelocity_NoContributions_LeavesVelocityUnchanged()
-        {
-            var e = new GameFramework.World.Entity("e1");
-            e.Add(new GameFramework.World.Velocity { Linear = new Vector3(3, -9, 4) });
-            system.ApplyToVelocity(e, 0);   // MotionContributions 없음 → no-op
-            Assert.AreEqual(new Vector3(3, -9, 4), e.Get<GameFramework.World.Velocity>().Linear);
-        }
-
-        [Test]
-        public void ApplyToVelocity_PrunesExpiredContribution_LeavesBase()
-        {
-            var e = EntityWith(new Vector3(1, 0, 0),
-                new MotionContribution(new Vector3(0, 0, 8), MotionContributionMode.Additive, 0, 0, 10));  // end 10
-            system.ApplyToVelocity(e, 10);   // 10 >= 10 만료
-            Assert.AreEqual(0, e.Get<MotionContributions>().Items.Count, "만료 기여 프루닝");
-            Assert.Less(Vector3.Distance(e.Get<GameFramework.World.Velocity>().Linear, new Vector3(1, 0, 0)), 1e-4f,
-                "만료라 base 그대로");
-        }
-
-        [Test]
-        public void ApplyToVelocity_NoVelocityComponent_NoThrow()
-        {
-            var e = new GameFramework.World.Entity("e1");   // Velocity 없음
-            Assert.DoesNotThrow(() => system.ApplyToVelocity(e, 0));
-        }
     }
 }
