@@ -7,7 +7,7 @@ namespace LOP
         private readonly StatusEffectSystem _statusEffectSystem;
         private readonly AbilityEffectExecutor _abilityEffectExecutor;
         private readonly KinematicMoveSystem _kinematicMoveSystem;
-        private readonly GameFramework.IMotionBridge _motionBridge;
+        private readonly GameFramework.World.IMotionBridge _motionBridge;
 
         public LOPWorld(
             GameFramework.World.EntityRegistry entityRegistry,
@@ -17,7 +17,7 @@ namespace LOP
             StatusEffectSystem statusEffectSystem,
             AbilityEffectExecutor abilityEffectExecutor,
             KinematicMoveSystem kinematicMoveSystem,
-            GameFramework.IMotionBridge motionBridge)
+            GameFramework.World.IMotionBridge motionBridge)
             : base(entityRegistry, eventBuffer)
         {
             _movementSystem = movementSystem;
@@ -66,9 +66,9 @@ namespace LOP
             {
                 if (entity.Has<GameFramework.World.Simulated>())
                 {
-                    _motionBridge.Depenetrate(entity.Id);
+                    _motionBridge.Depenetrate(entity);
                     _kinematicMoveSystem.Tick(entity, deltaTime);
-                    _motionBridge.PushMotion(entity.Id);
+                    _motionBridge.PushMotion(entity);
                 }
             }
         }
