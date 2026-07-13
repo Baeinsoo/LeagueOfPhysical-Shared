@@ -46,32 +46,13 @@ namespace LOP
                 {
                     continue;
                 }
-                if (!IsInAttackSector(casterTransform, targetTransform.Position, effect.Range, effect.Angle))
+                if (!AttackSector.Contains(casterTransform, targetTransform.Position, effect.Range, effect.Angle))
                 {
                     continue;
                 }
 
                 combatSystem.Attack(ctx.Caster, target, effect.Amount, ctx.CurrentTick, ctx.EffectIndex, matchSeed.Value);
             }
-        }
-
-        // 시전자 정면 부채꼴(전체 각 angle) 안이고 range 이내인지. World.Transform(진실원본) 기준, System.Numerics.
-        private static bool IsInAttackSector(GameFramework.World.Transform caster,
-                                             System.Numerics.Vector3 targetPosition, float range, float angle)
-        {
-            System.Numerics.Vector3 toTarget = targetPosition - caster.Position;
-            if (toTarget.Length() > range)
-            {
-                return false;
-            }
-
-            System.Numerics.Vector3 forward =
-                System.Numerics.Vector3.Transform(System.Numerics.Vector3.UnitZ, caster.Rotation);
-            float dot = System.Numerics.Vector3.Dot(
-                System.Numerics.Vector3.Normalize(forward),
-                System.Numerics.Vector3.Normalize(toTarget));
-            float targetAngle = (float)System.Math.Acos(System.Math.Clamp(dot, -1.0, 1.0)) * (180f / (float)System.Math.PI);
-            return targetAngle <= (angle * 0.5f);
         }
     }
 }
