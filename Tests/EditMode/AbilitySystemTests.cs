@@ -35,7 +35,7 @@ namespace LOP.Tests
         private void Advance(Entity e, long tick)
         {
             _system.Tick(e, tick);
-            _executor.DriveActiveEntity(e, null, tick);
+            _executor.DriveActiveEntity(e, tick);
         }
 
         private static StatusEffectData? Resolve(int effectId)

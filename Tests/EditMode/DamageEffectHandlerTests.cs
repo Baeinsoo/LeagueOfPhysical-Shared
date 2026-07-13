@@ -46,7 +46,7 @@ namespace LOP.Tests
         }
 
         private static AbilityEffectContext Ctx(Entity caster)
-            => new AbilityEffectContext(caster, null, 5L, null, 0);
+            => new AbilityEffectContext(caster, null, 5L, 0);
 
         [Test]
         public void Hits_target_in_front_within_sector()
