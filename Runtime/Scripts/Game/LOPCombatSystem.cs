@@ -22,7 +22,7 @@ namespace LOP
         }
 
         public void Attack(GameFramework.World.Entity attacker, GameFramework.World.Entity target,
-                           long tick, int effectIndex, ulong matchSeed)
+                           int baseDamage, long tick, int effectIndex, ulong matchSeed)
         {
             bool attackerIsPlayer = attacker?.Has<GameFramework.World.Ownership>() == true;
             bool targetIsPlayer = target?.Has<GameFramework.World.Ownership>() == true;
@@ -43,7 +43,7 @@ namespace LOP
                 return;
             }
 
-            int damage = 10;
+            int damage = baseDamage;
             GameFramework.World.Stats attackerStats = attacker?.Get<GameFramework.World.Stats>();
             GameFramework.World.Stats targetStats = target?.Get<GameFramework.World.Stats>();
 

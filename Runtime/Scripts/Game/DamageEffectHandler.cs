@@ -51,7 +51,7 @@ namespace LOP
                     continue;
                 }
 
-                combatSystem.Attack(ctx.Caster, target, ctx.CurrentTick, ctx.EffectIndex, matchSeed.Value);
+                combatSystem.Attack(ctx.Caster, target, effect.Amount, ctx.CurrentTick, ctx.EffectIndex, matchSeed.Value);
             }
         }
 
