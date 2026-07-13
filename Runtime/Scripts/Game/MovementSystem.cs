@@ -89,7 +89,7 @@ namespace LOP
                     var result = ProcessMovement(new MovementInput(
                         velocity, input.Horizontal, input.Vertical, speed, MaxAcceleration, deltaTime));
                     baseHorizontal = new Vector3(result.velocity.x, 0f, result.velocity.z);
-                    if (input.Jump)
+                    if (input.Jump && !AbilitySystem.IsJumpBlocked(entity, currentTick))
                     {
                         velocity.y = statsSystem.GetValue(stats, (int)GameFramework.World.EntityStatType.JumpPower);
                     }
@@ -99,6 +99,10 @@ namespace LOP
                     }
                 }
             }
+
+            // 공격 등 진행 중 어빌리티의 현재 페이즈 이동배율을 수평속도에 곱한다(플레이어=모터 결과, AI=잔류속도).
+            // 넉백 folding 전이라 외력은 안 깎임. 회전은 위에서 이미 세팅돼 배율 무관.
+            baseHorizontal *= AbilitySystem.GetMovementMultiplier(entity, currentTick);
 
             // 외부 기여(넉백 등) 합성 — 입력 유무 무관, 플레이어·AI 공통. 만료 프루닝.
             var contributions = entity.Get<MotionContributions>();
