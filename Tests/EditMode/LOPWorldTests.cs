@@ -20,14 +20,14 @@ namespace LOP.Tests
             public GameFramework.CollisionHit CapsuleCast(UnityEngine.Vector3 p1, UnityEngine.Vector3 p2,
                 float radius, UnityEngine.Vector3 dir, float dist, int mask) => GameFramework.CollisionHit.None;
         }
-        private class SpyBridge : GameFramework.IMotionBridge
+        private class SpyBridge : GameFramework.World.IMotionBridge
         {
             public int syncCount;
             public readonly System.Collections.Generic.List<string> depenetrated = new System.Collections.Generic.List<string>();
             public readonly System.Collections.Generic.List<string> pushed = new System.Collections.Generic.List<string>();
             public void SyncTransforms() => syncCount++;
-            public void Depenetrate(string id) => depenetrated.Add(id);
-            public void PushMotion(string id) => pushed.Add(id);
+            public void Depenetrate(GameFramework.World.Entity e) => depenetrated.Add(e.Id);
+            public void PushMotion(GameFramework.World.Entity e) => pushed.Add(e.Id);
         }
 
         [Test]
