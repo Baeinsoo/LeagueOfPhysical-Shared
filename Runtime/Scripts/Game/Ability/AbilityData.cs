@@ -14,10 +14,16 @@ namespace LOP
         public readonly long ActiveTicks;       // 판정 창(effect가 발화하는 구간) 길이.
         public readonly long RecoveryTicks;     // 후딜(busy 잠금).
         public readonly AbilityEffect[] Effects;
+        public readonly float StartupMoveScale;
+        public readonly float ActiveMoveScale;
+        public readonly float RecoveryMoveScale;
+        public readonly bool BlockJump;
 
         public AbilityData(int abilityId, long cooldownTicks, int mpCost,
                            long startupTicks, long activeTicks, long recoveryTicks,
-                           AbilityEffect[] effects)
+                           AbilityEffect[] effects,
+                           float startupMoveScale = 1f, float activeMoveScale = 1f,
+                           float recoveryMoveScale = 1f, bool blockJump = false)
         {
             AbilityId = abilityId;
             CooldownTicks = cooldownTicks;
@@ -26,6 +32,10 @@ namespace LOP
             ActiveTicks = activeTicks;
             RecoveryTicks = recoveryTicks;
             Effects = effects;
+            StartupMoveScale = startupMoveScale;
+            ActiveMoveScale = activeMoveScale;
+            RecoveryMoveScale = recoveryMoveScale;
+            BlockJump = blockJump;
         }
     }
 }
