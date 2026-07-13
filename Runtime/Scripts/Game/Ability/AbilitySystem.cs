@@ -66,6 +66,28 @@ namespace LOP
             return false;
         }
 
+        /// <summary>진행 중 어빌리티의 현재 페이즈 이동배율(없으면 1=자유). 경계틱으로 판정 → 시스템 실행순서 무관.</summary>
+        public static float GetMovementMultiplier(Entity entity, long currentTick)
+        {
+            var active = entity?.Get<Abilities>()?.ActiveAbility;
+            if (active == null)
+            {
+                return 1f;
+            }
+            var a = active.Value;
+            if (currentTick < a.StartupEndTick)  return a.StartupMoveScale;
+            if (currentTick < a.ActiveEndTick)   return a.ActiveMoveScale;
+            if (currentTick < a.RecoveryEndTick) return a.RecoveryMoveScale;
+            return 1f;
+        }
+
+        /// <summary>발동 창(RecoveryEnd 전) 안이고 BlockJump면 점프 차단. GetMovementMultiplier와 같은 경계틱 판정.</summary>
+        public static bool IsJumpBlocked(Entity entity, long currentTick)
+        {
+            var active = entity?.Get<Abilities>()?.ActiveAbility;
+            return active != null && active.Value.BlockJump && currentTick < active.Value.RecoveryEndTick;
+        }
+
         /// <summary>어빌리티를 엔티티에 부여한다(ready 슬롯 추가).</summary>
         public void Grant(Entity entity, int abilityId)
         {
@@ -128,7 +150,8 @@ namespace LOP
             long activeEnd = startupEnd + data.ActiveTicks;
             long recoveryEnd = activeEnd + data.RecoveryTicks;
             abilities.ActiveAbility = new ActiveAbility(data.AbilityId, AbilityPhase.Startup,
-                startupEnd, activeEnd, recoveryEnd, target, data.Effects);
+                startupEnd, activeEnd, recoveryEnd, target, data.Effects,
+                data.StartupMoveScale, data.ActiveMoveScale, data.RecoveryMoveScale, data.BlockJump);
             return true;
         }
 
