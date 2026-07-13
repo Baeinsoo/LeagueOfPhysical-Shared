@@ -18,6 +18,7 @@ namespace LOP.Tests
             var entity = new Entity("e1");
             entity.Add(new Stats());
             entity.Add(new StatusEffects());
+            entity.Add(new Simulated());   // Mutation이 Has<Simulated>만 순회
             registry.Add(entity);
 
             // 5틱 지속 효과(모디파이어 없음 — 만료 경로만) 적용
@@ -46,6 +47,27 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void Tick_SkipsEntitiesWithoutSimulated()
+        {
+            var registry = new EntityRegistry();
+            var statusEffects = new StatusEffectSystem(new StatsSystem());
+            var abilitySystem = new AbilitySystem(new ManaSystem());
+            var world = new LOPWorld(registry, new WorldEventBuffer(),
+                new MovementSystem(new StatsSystem(), new MotionContributionSystem()), abilitySystem, statusEffects);
+
+            var entity = new Entity("e1");
+            entity.Add(new Stats());
+            entity.Add(new StatusEffects());
+            registry.Add(entity);   // Simulated 없음
+
+            statusEffects.Apply(entity,
+                new StatusEffectData(1, DurationPolicy.Duration, 5, null, StatusStackPolicy.Refresh, 1), "src", 0);
+
+            world.Tick(5, 0.05f);   // Simulated 없으니 만료 sweep 안 돎
+            Assert.That(entity.Get<StatusEffects>().Effects.Count, Is.EqualTo(1), "Simulated 없으면 틱 스킵");
+        }
+
+        [Test]
         public void Tick_AdvancesAbilityPhase_ViaMutationSweep()
         {
             var registry = new EntityRegistry();
@@ -59,6 +81,7 @@ namespace LOP.Tests
             entity.Add(new Mana(100));
             entity.Add(new Stats());
             entity.Add(new StatusEffects());
+            entity.Add(new Simulated());   // Mutation이 Has<Simulated>만 순회
             registry.Add(entity);
 
             abilitySystem.Grant(entity, 1);

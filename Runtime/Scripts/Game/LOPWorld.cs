@@ -24,14 +24,20 @@ namespace LOP
             // 이동은 어빌리티 페이즈 전진보다 먼저 — 대시 발동 틱의 입력 게이트 타이밍이 이 순서에 걸려 있다.
             foreach (var entity in EntityRegistry.All)
             {
-                _movementSystem.Tick(entity, tick, deltaTime);
+                if (entity.Has<GameFramework.World.Simulated>())
+                {
+                    _movementSystem.Tick(entity, tick, deltaTime);
+                }
             }
 
             // 어빌리티 페이즈 전진(Active 진입 시 효과 적용) + 상태이상 만료.
             foreach (var entity in EntityRegistry.All)
             {
-                _abilitySystem.Tick(entity, tick);
-                _statusEffectSystem.Tick(entity, tick);
+                if (entity.Has<GameFramework.World.Simulated>())
+                {
+                    _abilitySystem.Tick(entity, tick);
+                    _statusEffectSystem.Tick(entity, tick);
+                }
             }
         }
     }
