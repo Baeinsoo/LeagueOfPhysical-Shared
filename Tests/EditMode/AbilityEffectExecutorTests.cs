@@ -15,7 +15,7 @@ namespace LOP.Tests
             protected override void OnActiveTick(AbilityEffectContext ctx, T effect) => TickCount++;
         }
 
-        private static AbilityEffectContext Ctx() => new AbilityEffectContext(null, null, 0, null, 0);
+        private static AbilityEffectContext Ctx() => new AbilityEffectContext(null, null, 0, 0);
 
         private class IndexCapturingHandler<T> : AbilityEffectHandler<T> where T : AbilityEffect
         {
@@ -35,7 +35,7 @@ namespace LOP.Tests
                 new DamageEffect(10, 1f, 90f),
             };
 
-            executor.OnActiveEnter(new AbilityEffectContext(null, null, 0, null, 0), effects);
+            executor.OnActiveEnter(new AbilityEffectContext(null, null, 0, 0), effects);
 
             Assert.That(damage.EnterIndices, Is.EqualTo(new[] { 0, 1, 2 }));
         }
@@ -97,7 +97,7 @@ namespace LOP.Tests
             for (long t = 0; t <= 3; t++)
             {
                 system.Tick(e, t);
-                executor.DriveActiveEntity(e, null, t);
+                executor.DriveActiveEntity(e, t);
             }
             // t0: Startup->Active, t0==StartupEndTick → enter(1)+tick(1) / t1,t2: Active → tick / t3: Active->Recovery → 없음
 

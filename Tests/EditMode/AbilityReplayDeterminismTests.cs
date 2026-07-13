@@ -55,7 +55,7 @@ namespace LOP.Tests
         {
             _abilities.Tick(e, tick);
             _status.Tick(e, tick);
-            _executor.DriveActiveEntity(e, null, tick);
+            _executor.DriveActiveEntity(e, tick);
         }
 
         private static void AssertStateEqual(PredictedAbilityState expected, Entity actual, long atTick)

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using GameFramework;
 using GameFramework.World;
 
 namespace LOP
@@ -30,16 +29,15 @@ namespace LOP
         /// 한 엔티티의 진행 중 어빌리티를 보고 Active 창 effect를 디스패치한다(host가 매 틱·엔티티마다 호출).
         /// Active 진입 틱(=StartupEndTick)에 OnActiveEnter 1회 + Active 동안 매 틱 OnActiveTick.
         /// 페이즈 전진은 <see cref="AbilitySystem.Tick"/>(world.Tick)이 먼저 끝낸 상태를 읽는다.
-        /// entityManager는 ctx로 전달(핸들러 DI 순환 회피).
         /// </summary>
-        public void DriveActiveEntity(Entity caster, IEntityManager entityManager, long currentTick)
+        public void DriveActiveEntity(Entity caster, long currentTick)
         {
             var active = caster?.Get<Abilities>()?.ActiveAbility;
             if (active == null || active.Value.Phase != AbilityPhase.Active)
             {
                 return;
             }
-            var ctx = new AbilityEffectContext(caster, active.Value.Target, currentTick, entityManager, 0);
+            var ctx = new AbilityEffectContext(caster, active.Value.Target, currentTick, 0);
             if (currentTick == active.Value.StartupEndTick)
             {
                 OnActiveEnter(ctx, active.Value.Effects);   // 진입 1회 — 데미지·상태효과(즉발)
@@ -59,7 +57,7 @@ namespace LOP
                 if (_handlers.TryGetValue(effects[i].GetType(), out var handler))
                 {
                     var effectCtx = new AbilityEffectContext(
-                        ctx.Caster, ctx.Target, ctx.CurrentTick, ctx.EntityManager, i);
+                        ctx.Caster, ctx.Target, ctx.CurrentTick, i);
                     handler.OnActiveEnter(effectCtx, effects[i]);
                 }
             }
@@ -77,7 +75,7 @@ namespace LOP
                 if (_handlers.TryGetValue(effects[i].GetType(), out var handler))
                 {
                     var effectCtx = new AbilityEffectContext(
-                        ctx.Caster, ctx.Target, ctx.CurrentTick, ctx.EntityManager, i);
+                        ctx.Caster, ctx.Target, ctx.CurrentTick, i);
                     handler.OnActiveTick(effectCtx, effects[i]);
                 }
             }
