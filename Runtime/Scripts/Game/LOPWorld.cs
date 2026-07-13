@@ -5,18 +5,21 @@ namespace LOP
         private readonly MovementSystem _movementSystem;
         private readonly AbilitySystem _abilitySystem;
         private readonly StatusEffectSystem _statusEffectSystem;
+        private readonly AbilityEffectExecutor _abilityEffectExecutor;
 
         public LOPWorld(
             GameFramework.World.EntityRegistry entityRegistry,
             GameFramework.World.WorldEventBuffer eventBuffer,
             MovementSystem movementSystem,
             AbilitySystem abilitySystem,
-            StatusEffectSystem statusEffectSystem)
+            StatusEffectSystem statusEffectSystem,
+            AbilityEffectExecutor abilityEffectExecutor)
             : base(entityRegistry, eventBuffer)
         {
             _movementSystem = movementSystem;
             _abilitySystem = abilitySystem;
             _statusEffectSystem = statusEffectSystem;
+            _abilityEffectExecutor = abilityEffectExecutor;
         }
 
         protected override void Mutation(long tick, float deltaTime)
@@ -37,6 +40,16 @@ namespace LOP
                 {
                     _abilitySystem.Tick(entity, tick);
                     _statusEffectSystem.Tick(entity, tick);
+                }
+            }
+
+            // 페이즈 전진 후 active 창 effect 구동(대시 push·데미지·상태효과). 이전엔 host DriveAbilityEffects.
+            // cross-entity 판정(서버 데미지/넉백)이 "전원 이동 후"를 보도록 별도 루프(페이즈 배리어).
+            foreach (var entity in EntityRegistry.All)
+            {
+                if (entity.Has<GameFramework.World.Simulated>())
+                {
+                    _abilityEffectExecutor.DriveActiveEntity(entity, tick);
                 }
             }
         }
