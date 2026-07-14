@@ -24,8 +24,44 @@ namespace LOP.Tests
             }
         }
 
+        // 평평한 지면(Plane)을 흉내내는 쿼리 — 캐스트 위치에 따라 응답한다(스크립트 큐와 달리 지오메트리 반영).
+        // 수평 캐스트: 캡슐 바닥이 지면(GroundY)에 닿아있으면 grazing 히트(버그 트리거), 띄워졌으면 None.
+        // 아래 캐스트: 지면까지 거리를 돌려줌.
+        private class GroundPlaneQuery : ICollisionQuery
+        {
+            public float GroundY = 0f;
+
+            public CollisionHit CapsuleCast(Vector3 p1, Vector3 p2, float radius,
+                Vector3 direction, float distance, int layerMask)
+            {
+                float bottom = Mathf.Min(p1.y, p2.y) - radius;   // 캡슐 최하단
+                if (direction.y < -0.5f)   // 아래로 캐스트 → 지면까지
+                {
+                    float d = bottom - GroundY;
+                    return d <= distance ? new CollisionHit(true, Mathf.Max(d, 0f), Vector3.up, Vector3.zero)
+                                         : CollisionHit.None;
+                }
+                // 수평 캐스트: 바닥에 붙어있으면 지면과 grazing → 히트, 띄워졌으면 안 맞음
+                return bottom <= GroundY + 1e-4f
+                    ? new CollisionHit(true, 0f, Vector3.up, Vector3.zero)
+                    : CollisionHit.None;
+            }
+        }
+
         private static KinematicMoveInput Input(Vector3 pos, Vector3 vel, float dt = 0.1f)
             => new KinematicMoveInput(pos, vel, 0.35f, 1.5f, dt, ~0);
+
+        [Test]
+        public void GroundedHorizontalMove_MovesAlongGround_NotBlockedByFloor()
+        {
+            // 지면(y=0) 위, 수평 속도 + 중력. 바닥에 발이 붙어 있어도 앞으로 걸어야 한다(현재 버그: 못 감).
+            var query = new GroundPlaneQuery { GroundY = 0f };
+            var r = KinematicMover.Move(Input(Vector3.zero, new Vector3(10f, -20f, 0f)), query);
+
+            Assert.That(r.position.x, Is.GreaterThan(0.5f), "바닥 위에서 수평 이동이 막히면 안 됨");
+            Assert.IsTrue(r.grounded, "바닥 접촉이면 grounded");
+            Assert.That(r.velocity.y, Is.EqualTo(0f).Within(Tolerance), "바닥에서 수직 속도 소멸");
+        }
 
         [Test]
         public void NoHit_MovesFullDelta()
