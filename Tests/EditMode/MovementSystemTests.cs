@@ -246,5 +246,64 @@ namespace LOP.Tests
             Assert.That(v.x, Is.EqualTo(5f).Within(Tolerance), "걷기 x=5");
             Assert.That(v.z, Is.EqualTo(4f).Within(Tolerance), "additive z=4 가산");
         }
+
+        // 진행 중 어빌리티(배율/점프)를 붙인 조종 엔티티. 창 [10,100) active, [100,200) recovery.
+        private static void AttachAbility(GameFramework.World.Entity e, float active, bool blockJump)
+        {
+            var ab = new Abilities();
+            ab.ActiveAbility = new ActiveAbility(3, AbilityPhase.Active, 10, 100, 200, null,
+                new AbilityEffect[0], 1f, active, 1f, blockJump);
+            e.Add(ab);
+        }
+
+        [Test]
+        public void ActiveAbility_RootsMovement_ButKeepsRotation()
+        {
+            // activeMoveScale=0 → 수평 0으로 정지, 그러나 방향은 입력(오른쪽=90도)따라 살아있음.
+            var entity = CreateControlledEntity(Vector3.zero, new InputCommand { Horizontal = 1f });
+            AttachAbility(entity, active: 0f, blockJump: false);
+
+            system.Tick(entity, 50, Dt);   // 50 ∈ [10,100) active
+
+            Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(0f).Within(Tolerance), "루팅");
+            Assert.That(entity.Get<GameFramework.World.Transform>().Rotation.ToUnity().eulerAngles.y, Is.EqualTo(90f).Within(Tolerance), "회전 살아있음");
+        }
+
+        [Test]
+        public void ActiveAbility_PartialScale_SlowsMovement()
+        {
+            // activeMoveScale=0.4 → 목표 5 × 0.4 = 2.
+            var entity = CreateControlledEntity(Vector3.zero, new InputCommand { Horizontal = 1f });
+            AttachAbility(entity, active: 0.4f, blockJump: false);
+
+            system.Tick(entity, 50, Dt);
+
+            Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(2f).Within(Tolerance));
+        }
+
+        [Test]
+        public void BlockJump_IgnoresJumpInput()
+        {
+            var entity = CreateControlledEntity(new Vector3(0f, -3f, 0f), new InputCommand { Jump = true });
+            AttachAbility(entity, active: 1f, blockJump: true);
+
+            system.Tick(entity, 50, Dt);
+
+            Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().y, Is.EqualTo(-3f).Within(Tolerance), "점프 무시(y 미변경)");
+        }
+
+        [Test]
+        public void AI_RootsResidualVelocity_DuringAttack()
+        {
+            // InputBuffer 없는 AI + 잔류 속도(5,0,0) + activeMoveScale=0 → 수평 0(미끄러짐 소멸).
+            var entity = new GameFramework.World.Entity("ai");
+            entity.Add(new GameFramework.World.Transform());
+            entity.Add(new GameFramework.World.Velocity { Linear = new Vector3(5f, 0f, 0f).ToNumerics() });
+            AttachAbility(entity, active: 0f, blockJump: false);
+
+            system.Tick(entity, 50, Dt);
+
+            Assert.That(entity.Get<GameFramework.World.Velocity>().Linear.ToUnity().x, Is.EqualTo(0f).Within(Tolerance));
+        }
     }
 }

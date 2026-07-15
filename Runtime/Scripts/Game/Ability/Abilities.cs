@@ -32,9 +32,15 @@ namespace LOP
         public readonly long RecoveryEndTick;
         public readonly Entity Target;
         public readonly AbilityEffect[] Effects;
+        public readonly float StartupMoveScale;
+        public readonly float ActiveMoveScale;
+        public readonly float RecoveryMoveScale;
+        public readonly bool BlockJump;
 
         public ActiveAbility(int abilityId, AbilityPhase phase, long startupEndTick, long activeEndTick,
-                             long recoveryEndTick, Entity target, AbilityEffect[] effects)
+                             long recoveryEndTick, Entity target, AbilityEffect[] effects,
+                             float startupMoveScale = 1f, float activeMoveScale = 1f,
+                             float recoveryMoveScale = 1f, bool blockJump = false)
         {
             AbilityId = abilityId;
             Phase = phase;
@@ -43,10 +49,15 @@ namespace LOP
             RecoveryEndTick = recoveryEndTick;
             Target = target;
             Effects = effects;
+            StartupMoveScale = startupMoveScale;
+            ActiveMoveScale = activeMoveScale;
+            RecoveryMoveScale = recoveryMoveScale;
+            BlockJump = blockJump;
         }
 
         public ActiveAbility WithPhase(AbilityPhase phase)
-            => new ActiveAbility(AbilityId, phase, StartupEndTick, ActiveEndTick, RecoveryEndTick, Target, Effects);
+            => new ActiveAbility(AbilityId, phase, StartupEndTick, ActiveEndTick, RecoveryEndTick, Target, Effects,
+                                 StartupMoveScale, ActiveMoveScale, RecoveryMoveScale, BlockJump);
     }
 
     /// <summary>엔티티가 보유한 어빌리티 슬롯 집합(데이터 컴포넌트). AbilityId당 1 슬롯(InstancedPerActor).</summary>
