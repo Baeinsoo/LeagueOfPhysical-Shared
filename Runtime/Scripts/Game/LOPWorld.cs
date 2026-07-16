@@ -67,6 +67,7 @@ namespace LOP
                 if (entity.Has<GameFramework.World.Simulated>())
                 {
                     _motionBridge.Depenetrate(entity);
+                    _motionBridge.Separate(entity);
                     _kinematicMoveSystem.Tick(entity, deltaTime);
                     _motionBridge.PushMotion(entity);
                 }

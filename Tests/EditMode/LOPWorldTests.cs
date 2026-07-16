@@ -54,6 +54,25 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void Tick_RunsSeparatePhase_ForSimulatedEntities()
+        {
+            var registry = new EntityRegistry();
+            var bridge = new SpyBridge();
+            var world = new LOPWorld(registry, new WorldEventBuffer(),
+                new MovementSystem(new StatsSystem(), new MotionContributionSystem()),
+                new AbilitySystem(new ManaSystem()), new StatusEffectSystem(new StatsSystem()),
+                new AbilityEffectExecutor(null), new KinematicMoveSystem(new FakeQuery(), ~0), bridge);
+
+            var entity = new Entity("e1");
+            entity.Add(new Simulated());
+            registry.Add(entity);
+
+            world.Tick(0, 0.05f);
+
+            Assert.That(bridge.separated, Does.Contain("e1"), "Simulated 엔티티마다 Separate 호출");
+        }
+
+        [Test]
         public void Tick_DrivesActiveAbilityEffect_ViaAbsorbedPhase()
         {
             var registry = new EntityRegistry();
