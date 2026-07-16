@@ -24,9 +24,11 @@ namespace LOP.Tests
         {
             public int syncCount;
             public readonly System.Collections.Generic.List<string> depenetrated = new System.Collections.Generic.List<string>();
+            public readonly System.Collections.Generic.List<string> separated = new System.Collections.Generic.List<string>();
             public readonly System.Collections.Generic.List<string> pushed = new System.Collections.Generic.List<string>();
             public void SyncTransforms() => syncCount++;
             public void Depenetrate(GameFramework.World.Entity e) => depenetrated.Add(e.Id);
+            public void Separate(GameFramework.World.Entity e) => separated.Add(e.Id);
             public void PushMotion(GameFramework.World.Entity e) => pushed.Add(e.Id);
         }
 
@@ -49,6 +51,25 @@ namespace LOP.Tests
             Assert.That(bridge.syncCount, Is.EqualTo(1), "SyncTransforms 페이즈당 1회");
             Assert.That(bridge.depenetrated, Does.Contain("e1"));
             Assert.That(bridge.pushed, Does.Contain("e1"));
+        }
+
+        [Test]
+        public void Tick_RunsSeparatePhase_ForSimulatedEntities()
+        {
+            var registry = new EntityRegistry();
+            var bridge = new SpyBridge();
+            var world = new LOPWorld(registry, new WorldEventBuffer(),
+                new MovementSystem(new StatsSystem(), new MotionContributionSystem()),
+                new AbilitySystem(new ManaSystem()), new StatusEffectSystem(new StatsSystem()),
+                new AbilityEffectExecutor(null), new KinematicMoveSystem(new FakeQuery(), ~0), bridge);
+
+            var entity = new Entity("e1");
+            entity.Add(new Simulated());
+            registry.Add(entity);
+
+            world.Tick(0, 0.05f);
+
+            Assert.That(bridge.separated, Does.Contain("e1"), "Simulated 엔티티마다 Separate 호출");
         }
 
         [Test]
