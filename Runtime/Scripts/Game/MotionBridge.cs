@@ -5,7 +5,9 @@ namespace LOP
 {
     /// <summary>
     /// World 모션을 Unity 물리 바디에 반영하는 공유 브릿지(포트 구현 1개 — UnityCollisionQuery와 동형).
-    /// 겹침 해소는 2패스: Depenetrate(지형 full) + Separate(캐릭터 reciprocal, per-side 배율).
+    /// 겹침 해소는 2패스: Depenetrate(지형) + Separate(캐릭터). 둘 다 full로 밀어냄 — 캐릭터는 서로 통과
+    /// 못 하는 단단한 벽이고, 클·서가 동일해야 예측이 맞아 recon이 작다(soft 분리는 넷코드상 불가로 폐기).
+    /// (배율 param은 seam으로 남겨둠 — 현재 클·서 모두 1.0.)
     /// World.Transform이 진실원본, Rigidbody는 팔로워(kinematic이면 위치·회전 직접 밀어넣음).
     /// </summary>
     public class MotionBridge : GameFramework.World.IMotionBridge
@@ -31,7 +33,7 @@ namespace LOP
 
         public void Separate(GameFramework.World.Entity entity)
         {
-            // 캐릭터끼리 부드럽게 밀어냄. 배율=per-side(서버 0.5 상호분리 / 클라 1.0 내가 다 빠짐).
+            // 캐릭터 겹침에서 캡슐을 밖으로 — 캐릭터는 벽이라 full로 빠져나옴(양쪽 1.0). 클·서 동일 = 예측 일치.
             ApplyPushOut(entity, _charMask, _separationScale);
         }
 
