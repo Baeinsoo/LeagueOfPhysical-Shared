@@ -24,9 +24,11 @@ namespace LOP.Tests
         {
             public int syncCount;
             public readonly System.Collections.Generic.List<string> depenetrated = new System.Collections.Generic.List<string>();
+            public readonly System.Collections.Generic.List<string> separated = new System.Collections.Generic.List<string>();
             public readonly System.Collections.Generic.List<string> pushed = new System.Collections.Generic.List<string>();
             public void SyncTransforms() => syncCount++;
             public void Depenetrate(GameFramework.World.Entity e) => depenetrated.Add(e.Id);
+            public void Separate(GameFramework.World.Entity e) => separated.Add(e.Id);
             public void PushMotion(GameFramework.World.Entity e) => pushed.Add(e.Id);
         }
 
