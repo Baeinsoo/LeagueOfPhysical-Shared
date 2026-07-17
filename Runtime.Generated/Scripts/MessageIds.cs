@@ -3,7 +3,7 @@ namespace LOP
 {
     public static class MessageIds
     {
-        public const ushort DamageEventToC                 = 3;
+        public const ushort WorldEventBatchToC             = 1;
         public const ushort EntityDespawnToC               = 4;
         public const ushort EntitySnapsToC                 = 5;
         public const ushort EntitySpawnToC                 = 6;
@@ -15,6 +15,5 @@ namespace LOP
         public const ushort StatAllocationToS              = 12;
         public const ushort UserEntitySnapToC              = 13;
         public const ushort InputTimingToC                 = 14;
-        public const ushort AbilityActivatedToC            = 15;
     }
 }

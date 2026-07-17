@@ -1,6 +1,5 @@
 syntax = "proto3";
 
-// @auto_generate 
 message DamageEventToC
 {
 	int64 tick = 1;

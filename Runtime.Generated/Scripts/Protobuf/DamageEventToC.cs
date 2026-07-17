@@ -37,9 +37,6 @@ public static partial class DamageEventToCReflection {
 
 }
 #region Messages
-/// <summary>
-/// @auto_generate 
-/// </summary>
 [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
 public sealed partial class DamageEventToC : pb::IMessage<DamageEventToC>
 #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE

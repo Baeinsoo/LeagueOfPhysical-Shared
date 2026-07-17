@@ -7,8 +7,6 @@ namespace LOP
         [RuntimeInitializeOnLoadMethod]
         private static void Initialize()
         {
-            MessageFactory.RegisterCreator(MessageIds.AbilityActivatedToC, () => new AbilityActivatedToC());
-            MessageFactory.RegisterCreator(MessageIds.DamageEventToC, () => new DamageEventToC());
             MessageFactory.RegisterCreator(MessageIds.EntityDespawnToC, () => new EntityDespawnToC());
             MessageFactory.RegisterCreator(MessageIds.EntitySnapsToC, () => new EntitySnapsToC());
             MessageFactory.RegisterCreator(MessageIds.EntitySpawnToC, () => new EntitySpawnToC());
@@ -20,6 +18,7 @@ namespace LOP
             MessageFactory.RegisterCreator(MessageIds.StatAllocationToC, () => new StatAllocationToC());
             MessageFactory.RegisterCreator(MessageIds.StatAllocationToS, () => new StatAllocationToS());
             MessageFactory.RegisterCreator(MessageIds.UserEntitySnapToC, () => new UserEntitySnapToC());
+            MessageFactory.RegisterCreator(MessageIds.WorldEventBatchToC, () => new WorldEventBatchToC());
         }
     }
 }

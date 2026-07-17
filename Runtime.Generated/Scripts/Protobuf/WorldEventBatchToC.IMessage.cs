@@ -1,9 +1,9 @@
 using Google.Protobuf;
 using LOP;
 
-public sealed partial class AbilityActivatedToC : GameFramework.IMessage
+public sealed partial class WorldEventBatchToC : GameFramework.IMessage
 {
-    public ushort messageId => MessageIds.AbilityActivatedToC;
+    public ushort messageId => MessageIds.WorldEventBatchToC;
 
     public byte[] Serialize()
     {

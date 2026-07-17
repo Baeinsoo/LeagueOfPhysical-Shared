@@ -1,6 +1,5 @@
 syntax = "proto3";
 
-// @auto_generate
 message AbilityActivatedToC
 {
 	string entity_id = 1;
