@@ -35,9 +35,6 @@ public static partial class AbilityActivatedToCReflection {
 
 }
 #region Messages
-/// <summary>
-/// @auto_generate
-/// </summary>
 [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
 public sealed partial class AbilityActivatedToC : pb::IMessage<AbilityActivatedToC>
 #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
