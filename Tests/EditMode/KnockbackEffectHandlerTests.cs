@@ -36,7 +36,7 @@ namespace LOP.Tests
             => new KnockbackEffectHandler(overlap, reg);
 
         private static AbilityEffectContext Ctx(Entity caster)
-            => new AbilityEffectContext(caster, null, 5L, 0);
+            => new AbilityEffectContext(caster, null, 5L, 0, new AttackHitContext());
 
         private static KnockbackEffect Effect()
             => new KnockbackEffect(5f, 5f, 90f, 12, 0.8f);   // strength, range, angle, durationTicks, decayPerTick

@@ -37,10 +37,11 @@ namespace LOP
             {
                 return;
             }
-            var ctx = new AbilityEffectContext(caster, active.Value.Target, currentTick, 0);
+            var hit = new AttackHitContext();   // 이 발동의 명중 대상 공유 채널
+            var ctx = new AbilityEffectContext(caster, active.Value.Target, currentTick, 0, hit);
             if (currentTick == active.Value.StartupEndTick)
             {
-                OnActiveEnter(ctx, active.Value.Effects);   // 진입 1회 — 데미지·상태효과(즉발)
+                OnActiveEnter(ctx, active.Value.Effects);   // 진입 1회 — 데미지(히트 정의) → 넉백(라이더)
             }
             OnActiveTick(ctx, active.Value.Effects);         // 매 틱 — 대시 push(지속)
         }
@@ -57,7 +58,7 @@ namespace LOP
                 if (_handlers.TryGetValue(effects[i].GetType(), out var handler))
                 {
                     var effectCtx = new AbilityEffectContext(
-                        ctx.Caster, ctx.Target, ctx.CurrentTick, i);
+                        ctx.Caster, ctx.Target, ctx.CurrentTick, i, ctx.HitContext);
                     handler.OnActiveEnter(effectCtx, effects[i]);
                 }
             }
@@ -75,7 +76,7 @@ namespace LOP
                 if (_handlers.TryGetValue(effects[i].GetType(), out var handler))
                 {
                     var effectCtx = new AbilityEffectContext(
-                        ctx.Caster, ctx.Target, ctx.CurrentTick, i);
+                        ctx.Caster, ctx.Target, ctx.CurrentTick, i, ctx.HitContext);
                     handler.OnActiveTick(effectCtx, effects[i]);
                 }
             }
