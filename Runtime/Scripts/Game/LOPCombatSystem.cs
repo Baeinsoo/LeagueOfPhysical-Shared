@@ -10,15 +10,18 @@ namespace LOP
         private readonly GameFramework.World.WorldEventBuffer worldEventBuffer;
         private readonly GameFramework.World.HealthSystem healthSystem;
         private readonly GameFramework.World.StatsSystem statsSystem;
+        private readonly CombatConfig config;
 
         public LOPCombatSystem(
             GameFramework.World.WorldEventBuffer worldEventBuffer,
             GameFramework.World.HealthSystem healthSystem,
-            GameFramework.World.StatsSystem statsSystem)
+            GameFramework.World.StatsSystem statsSystem,
+            CombatConfig config)
         {
             this.worldEventBuffer = worldEventBuffer;
             this.healthSystem = healthSystem;
             this.statsSystem = statsSystem;
+            this.config = config;
         }
 
         // 공격-대상 당 결정론 seed(effectIndex 없음). 닷지는 이걸, 크리는 여기에 effectIndex를 더한 seed를 쓴다.
@@ -36,7 +39,7 @@ namespace LOP
             int targetDex = DexOf(target);
             var rng = new GameFramework.DeterministicRandom(AttackSeed(matchSeed, tick, attacker.Id, target.Id));
             float dodgeChance = (float)targetDex / (attackerDex + targetDex);
-            dodgeChance = Mathf.Clamp(dodgeChance, 0.05f, 0.95f);
+            dodgeChance = Mathf.Clamp(dodgeChance, config.DodgeChanceMin, config.DodgeChanceMax);
             return rng.Range(0.0f, 1.0f) < dodgeChance;
         }
 
@@ -83,7 +86,7 @@ namespace LOP
                 isCritical = IsCritical(attackerStrength, targetStrength, ref critRng);
                 if (isCritical)
                 {
-                    damage = Mathf.RoundToInt(damage * critRng.Range(1.25f, 1.75f));
+                    damage = Mathf.RoundToInt(damage * critRng.Range(config.CritMultMin, config.CritMultMax));
                 }
                 healthSystem.TakeDamage(health, damage);
                 hitContext?.MarkLanded(target.Id);   // 명중 = on-hit 라이더 대상
@@ -114,7 +117,7 @@ namespace LOP
         public bool IsCritical(int attackerStr, int targetStr, ref GameFramework.DeterministicRandom rng)
         {
             float critChance = (float)attackerStr / (attackerStr + targetStr);
-            critChance = Mathf.Clamp(critChance, 0.05f, 0.50f);
+            critChance = Mathf.Clamp(critChance, config.CritChanceMin, config.CritChanceMax);
             double roll = rng.Range(0.0f, 1.0f);
             return roll < critChance;
         }

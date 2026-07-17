@@ -41,7 +41,8 @@ namespace LOP.Tests
         private static DamageEffectHandler Handler(EntityRegistry reg, WorldEventBuffer buf,
                                                    StatsSystem stats, GameFramework.IOverlapQuery overlap)
         {
-            var combat = new LOPCombatSystem(buf, new HealthSystem(), stats);
+            var combat = new LOPCombatSystem(buf, new HealthSystem(), stats,
+                new CombatConfig(0.05f, 0.95f, 0.05f, 0.50f, 1.25f, 1.75f));
             return new DamageEffectHandler(combat, overlap, new FakeSeed(12345UL), reg);
         }
 

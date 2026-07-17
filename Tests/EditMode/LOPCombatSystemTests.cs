@@ -6,13 +6,20 @@ namespace LOP.Tests
 {
     public class LOPCombatSystemTests
     {
-        private static (WorldEventBuffer buf, LOPCombatSystem combat, StatsSystem stats) NewCombat()
+        // 기본 config = 현 하드코딩 값(동작 무변화)
+        private static CombatConfig DefaultConfig()
+            => new CombatConfig(0.05f, 0.95f, 0.05f, 0.50f, 1.25f, 1.75f);
+
+        private static (WorldEventBuffer buf, LOPCombatSystem combat, StatsSystem stats) NewCombatCfg(CombatConfig cfg)
         {
             var buf = new WorldEventBuffer();
             var stats = new StatsSystem();
-            var combat = new LOPCombatSystem(buf, new HealthSystem(), stats);
+            var combat = new LOPCombatSystem(buf, new HealthSystem(), stats, cfg);
             return (buf, combat, stats);
         }
+
+        private static (WorldEventBuffer buf, LOPCombatSystem combat, StatsSystem stats) NewCombat()
+            => NewCombatCfg(DefaultConfig());
 
         private static Entity Player(string id, StatsSystem stats, int str, int dex, int? hp = null)
         {
@@ -139,6 +146,32 @@ namespace LOP.Tests
             {
                 Assert.Greater(dh.amount, dl.amount);   // 높은 base → 더 큰 데미지
             }
+        }
+
+        [Test]
+        public void Config_forces_always_dodge_when_min_is_one()
+        {
+            // dodge clamp [1,1] → 항상 회피
+            var cfg = new CombatConfig(1f, 1f, 0.05f, 0.50f, 1.25f, 1.75f);
+            var (buf, combat, stats) = NewCombatCfg(cfg);
+            var target = Player("B", stats, 10, 10, 100);
+            combat.Attack(Player("A", stats, 20, 10), target, 10, 5, 0, 12345UL, new AttackHitContext());
+            var evt = (DamageDealtEvent)buf.Snapshot[0];
+            Assert.IsTrue(evt.isDodged);
+            Assert.AreEqual(0, evt.amount);
+        }
+
+        [Test]
+        public void Config_forces_never_dodge_when_max_is_zero()
+        {
+            // dodge clamp [0,0] → 절대 회피 안 함
+            var cfg = new CombatConfig(0f, 0f, 0.05f, 0.50f, 1.25f, 1.75f);
+            var (buf, combat, stats) = NewCombatCfg(cfg);
+            var target = Player("B", stats, 10, 10, 100);
+            combat.Attack(Player("A", stats, 20, 10), target, 10, 5, 0, 12345UL, new AttackHitContext());
+            var evt = (DamageDealtEvent)buf.Snapshot[0];
+            Assert.IsFalse(evt.isDodged);
+            Assert.Greater(evt.amount, 0);
         }
     }
 }
