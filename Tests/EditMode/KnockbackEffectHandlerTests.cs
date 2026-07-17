@@ -1,5 +1,4 @@
 using System.Numerics;
-using GameFramework;
 using GameFramework.World;
 using NUnit.Framework;
 
@@ -7,17 +6,10 @@ namespace LOP.Tests
 {
     public class KnockbackEffectHandlerTests
     {
-        private sealed class FakeOverlap : GameFramework.IOverlapQuery
-        {
-            private readonly string[] ids;
-            public FakeOverlap(params string[] ids) { this.ids = ids; }
-            public string[] OverlapSphere(Vector3 center, float radius) => ids;
-        }
-
-        private static Entity Caster(string id, EntityRegistry reg, Quaternion rot)
+        private static Entity Caster(string id, EntityRegistry reg)
         {
             var e = new Entity(id);
-            e.Add(new GameFramework.World.Transform { Position = Vector3.Zero, Rotation = rot });
+            e.Add(new GameFramework.World.Transform { Position = Vector3.Zero, Rotation = Quaternion.Identity });
             e.Add(new MotionContributions());
             reg.Add(e);
             return e;
@@ -32,61 +24,45 @@ namespace LOP.Tests
             return e;
         }
 
-        private static KnockbackEffectHandler Handler(EntityRegistry reg, GameFramework.IOverlapQuery overlap)
-            => new KnockbackEffectHandler(overlap, reg);
+        private static AbilityEffectContext Ctx(Entity caster, AttackHitContext hit)
+            => new AbilityEffectContext(caster, null, 5L, 0, hit);
 
-        private static AbilityEffectContext Ctx(Entity caster)
-            => new AbilityEffectContext(caster, null, 5L, 0);
-
-        private static KnockbackEffect Effect()
-            => new KnockbackEffect(5f, 5f, 90f, 12, 0.8f);   // strength, range, angle, durationTicks, decayPerTick
+        private static KnockbackEffect Effect() => new KnockbackEffect(5f, 12, 0.8f);   // strength, durationTicks, decayPerTick
 
         [Test]
-        public void PushesTargetInFront()
+        public void Pushes_only_landed_targets()
         {
             var reg = new EntityRegistry();
-            var caster = Caster("A", reg, Quaternion.Identity);   // forward = +Z
+            var caster = Caster("A", reg);
+            var hitTarget = Target("B", reg, new Vector3(0, 0, 3));
+            var missTarget = Target("C", reg, new Vector3(0, 0, 3));
+            var hit = new AttackHitContext();
+            hit.MarkLanded("B");   // B만 명중, C는 닷지
+
+            new KnockbackEffectHandler(reg).OnActiveEnter(Ctx(caster, hit), Effect());
+
+            Assert.AreEqual(1, hitTarget.Get<MotionContributions>().Items.Count);   // 명중 → 넉백
+            Assert.AreEqual(0, missTarget.Get<MotionContributions>().Items.Count);  // 닷지 → 넉백 없음
+        }
+
+        [Test]
+        public void No_landed_targets_pushes_nothing()
+        {
+            var reg = new EntityRegistry();
+            var caster = Caster("A", reg);
             var target = Target("B", reg, new Vector3(0, 0, 3));
-            Handler(reg, new FakeOverlap("B")).OnActiveEnter(Ctx(caster), Effect());
-            Assert.AreEqual(1, target.Get<MotionContributions>().Items.Count);
-        }
-
-        [Test]
-        public void SkipsSelf()
-        {
-            var reg = new EntityRegistry();
-            var caster = Caster("A", reg, Quaternion.Identity);
-            Handler(reg, new FakeOverlap("A")).OnActiveEnter(Ctx(caster), Effect());
-            Assert.AreEqual(0, caster.Get<MotionContributions>().Items.Count);
-        }
-
-        [Test]
-        public void SkipsBehindTarget()
-        {
-            var reg = new EntityRegistry();
-            var caster = Caster("A", reg, Quaternion.Identity);
-            var target = Target("B", reg, new Vector3(0, 0, -3));
-            Handler(reg, new FakeOverlap("B")).OnActiveEnter(Ctx(caster), Effect());
+            new KnockbackEffectHandler(reg).OnActiveEnter(Ctx(caster, new AttackHitContext()), Effect());
             Assert.AreEqual(0, target.Get<MotionContributions>().Items.Count);
         }
 
         [Test]
-        public void SkipsOutOfRange()
+        public void Null_hitContext_pushes_nothing()
         {
             var reg = new EntityRegistry();
-            var caster = Caster("A", reg, Quaternion.Identity);
-            var target = Target("B", reg, new Vector3(0, 0, 20));
-            Handler(reg, new FakeOverlap("B")).OnActiveEnter(Ctx(caster), Effect());
-            Assert.AreEqual(0, target.Get<MotionContributions>().Items.Count);
-        }
-
-        [Test]
-        public void SkipsUnresolvableId()
-        {
-            var reg = new EntityRegistry();
-            var caster = Caster("A", reg, Quaternion.Identity);
+            var caster = Caster("A", reg);
             Assert.DoesNotThrow(() =>
-                Handler(reg, new FakeOverlap("ghost")).OnActiveEnter(Ctx(caster), Effect()));
+                new KnockbackEffectHandler(reg).OnActiveEnter(
+                    new AbilityEffectContext(caster, null, 5L, 0, null), Effect()));
         }
     }
 }

@@ -27,11 +27,35 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void IsDodged_is_deterministic_and_effectIndex_independent()
+        {
+            var a = NewCombat();
+            var atk = Player("A", a.stats, 10, 10);
+            var tgt = Player("B", a.stats, 10, 10, 100);
+            bool d1 = a.combat.IsDodged(atk, tgt, 7, 999UL);
+            bool d2 = a.combat.IsDodged(atk, tgt, 7, 999UL);
+            Assert.AreEqual(d1, d2);   // 같은 입력 = 같은 결과 (effectIndex 파라미터 자체가 없음)
+        }
+
+        [Test]
+        public void Attack_marks_landed_iff_not_dodged()
+        {
+            var (buf, combat, stats) = NewCombat();
+            var atk = Player("A", stats, 20, 10);
+            var tgt = Player("B", stats, 10, 10, 100);
+            var hit = new AttackHitContext();
+            combat.Attack(atk, tgt, 10, 5, 0, 12345UL, hit);
+
+            var evt = (DamageDealtEvent)buf.Snapshot[0];
+            Assert.AreEqual(!evt.isDodged, hit.Landed("B"));   // 명중 기록 == 닷지 아님
+        }
+
+        [Test]
         public void Attack_is_deterministic_for_same_inputs()
         {
             var a = NewCombat(); var b = NewCombat();
-            a.combat.Attack(Player("A", a.stats, 20, 10), Player("B", a.stats, 10, 10, 100), 10, 5, 0, 12345UL);
-            b.combat.Attack(Player("A", b.stats, 20, 10), Player("B", b.stats, 10, 10, 100), 10, 5, 0, 12345UL);
+            a.combat.Attack(Player("A", a.stats, 20, 10), Player("B", a.stats, 10, 10, 100), 10, 5, 0, 12345UL, new AttackHitContext());
+            b.combat.Attack(Player("A", b.stats, 20, 10), Player("B", b.stats, 10, 10, 100), 10, 5, 0, 12345UL, new AttackHitContext());
 
             var da = (DamageDealtEvent)a.buf.Snapshot[0];
             var db = (DamageDealtEvent)b.buf.Snapshot[0];
@@ -45,7 +69,7 @@ namespace LOP.Tests
         {
             var (buf, combat, stats) = NewCombat();
             var target = Player("B", stats, 10, 10, 100);
-            combat.Attack(Player("A", stats, 20, 10), target, 10, 5, 0, 12345UL);
+            combat.Attack(Player("A", stats, 20, 10), target, 10, 5, 0, 12345UL, new AttackHitContext());
 
             var evt = (DamageDealtEvent)buf.Snapshot[0];
             var health = target.Get<Health>();
@@ -66,7 +90,7 @@ namespace LOP.Tests
         {
             var (buf, combat, stats) = NewCombat();
             var target = Player("B", stats, 10, 10, 1);   // 1 HP
-            combat.Attack(Player("A", stats, 20, 10), target, 10, 5, 0, 12345UL);
+            combat.Attack(Player("A", stats, 20, 10), target, 10, 5, 0, 12345UL, new AttackHitContext());
 
             var dmg = (DamageDealtEvent)buf.Snapshot[0];
             bool hasDeath = buf.Snapshot.Count > 1 && buf.Snapshot[1] is DeathEvent;
@@ -89,7 +113,7 @@ namespace LOP.Tests
             var attacker = new Entity("A"); attacker.Add(new Stats());
             var target = new Entity("B"); target.Add(new Health(100));
 
-            combat.Attack(attacker, target, 10, 5, 0, 12345UL);
+            combat.Attack(attacker, target, 10, 5, 0, 12345UL, new AttackHitContext());
 
             Assert.AreEqual(0, buf.Count);
             Assert.AreEqual(100, target.Get<Health>().Current);
@@ -100,8 +124,8 @@ namespace LOP.Tests
         {
             // 같은 시드/스탯, base만 다르게 → 회피/크리 판정 동일, 데미지는 base로 구동(MasterData 구동 확인).
             var low = NewCombat(); var high = NewCombat();
-            low.combat.Attack(Player("A", low.stats, 20, 10), Player("B", low.stats, 10, 10, 1000), 10, 5, 0, 42UL);
-            high.combat.Attack(Player("A", high.stats, 20, 10), Player("B", high.stats, 10, 10, 1000), 100, 5, 0, 42UL);
+            low.combat.Attack(Player("A", low.stats, 20, 10), Player("B", low.stats, 10, 10, 1000), 10, 5, 0, 42UL, new AttackHitContext());
+            high.combat.Attack(Player("A", high.stats, 20, 10), Player("B", high.stats, 10, 10, 1000), 100, 5, 0, 42UL, new AttackHitContext());
 
             var dl = (DamageDealtEvent)low.buf.Snapshot[0];
             var dh = (DamageDealtEvent)high.buf.Snapshot[0];

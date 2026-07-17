@@ -15,7 +15,7 @@ namespace LOP.Tests
             protected override void OnActiveTick(AbilityEffectContext ctx, T effect) => TickCount++;
         }
 
-        private static AbilityEffectContext Ctx() => new AbilityEffectContext(null, null, 0, 0);
+        private static AbilityEffectContext Ctx() => new AbilityEffectContext(null, null, 0, 0, new AttackHitContext());
 
         private class IndexCapturingHandler<T> : AbilityEffectHandler<T> where T : AbilityEffect
         {
@@ -35,7 +35,7 @@ namespace LOP.Tests
                 new DamageEffect(10, 1f, 90f),
             };
 
-            executor.OnActiveEnter(new AbilityEffectContext(null, null, 0, 0), effects);
+            executor.OnActiveEnter(new AbilityEffectContext(null, null, 0, 0, new AttackHitContext()), effects);
 
             Assert.That(damage.EnterIndices, Is.EqualTo(new[] { 0, 1, 2 }));
         }
