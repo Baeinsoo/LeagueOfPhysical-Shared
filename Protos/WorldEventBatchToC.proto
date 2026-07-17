@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+import "WorldEventToC.proto";
+
+// @auto_generate
+message WorldEventBatchToC
+{
+	int64 tick = 1;
+	repeated WorldEventToC events = 2;
+}

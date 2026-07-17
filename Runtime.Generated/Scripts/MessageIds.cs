@@ -3,6 +3,7 @@ namespace LOP
 {
     public static class MessageIds
     {
+        public const ushort WorldEventBatchToC             = 1;
         public const ushort DamageEventToC                 = 3;
         public const ushort EntityDespawnToC               = 4;
         public const ushort EntitySnapsToC                 = 5;

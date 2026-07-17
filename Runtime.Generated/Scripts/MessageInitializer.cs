@@ -20,6 +20,7 @@ namespace LOP
             MessageFactory.RegisterCreator(MessageIds.StatAllocationToC, () => new StatAllocationToC());
             MessageFactory.RegisterCreator(MessageIds.StatAllocationToS, () => new StatAllocationToS());
             MessageFactory.RegisterCreator(MessageIds.UserEntitySnapToC, () => new UserEntitySnapToC());
+            MessageFactory.RegisterCreator(MessageIds.WorldEventBatchToC, () => new WorldEventBatchToC());
         }
     }
 }

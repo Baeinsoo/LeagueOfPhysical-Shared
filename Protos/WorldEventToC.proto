@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+import "DamageEventToC.proto";
+import "AbilityActivatedToC.proto";
+
+// 폴리모픽 래퍼 — top-level 패킷 아님(@auto_generate 없음). WorldEventBatchToC 안에 담긴다.
+// 새 WorldEvent 타입 = oneof에 한 줄 추가.
+message WorldEventToC
+{
+	oneof event
+	{
+		DamageEventToC      damage            = 1;
+		AbilityActivatedToC ability_activated = 2;
+	}
+}
