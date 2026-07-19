@@ -1,14 +1,14 @@
-using GameFramework;
 using UnityEngine;
 
 namespace LOP
 {
     /// <summary>
-    /// World 모션을 Unity 물리 바디에 반영하는 공유 브릿지(포트 구현 1개 — UnityCollisionQuery와 동형).
+    /// World 모션을 Unity 물리 바디에 반영하는 공유 브릿지(IMotionBridge 구현 1개 — UnityCollisionQuery와 동형).
+    /// 엔티티의 물리 몸은 추상 포트 <see cref="GameFramework.World.PhysicsBody"/>로만 다룬다(구체 Rigidbody 미참조).
     /// 겹침 해소는 2패스: Depenetrate(지형) + Separate(캐릭터). 둘 다 full로 밀어냄 — 캐릭터는 서로 통과
     /// 못 하는 단단한 벽이고, 클·서가 동일해야 예측이 맞아 recon이 작다(soft 분리는 넷코드상 불가로 폐기).
     /// (배율 param은 seam으로 남겨둠 — 현재 클·서 모두 1.0.)
-    /// World.Transform이 진실원본, Rigidbody는 팔로워(kinematic이면 위치·회전 직접 밀어넣음).
+    /// World.Transform이 진실원본, 물리 바디는 팔로워(kinematic이면 위치·회전 직접 밀어넣음).
     /// </summary>
     public class MotionBridge : GameFramework.World.IMotionBridge
     {
@@ -39,40 +39,39 @@ namespace LOP
 
         private void ApplyPushOut(GameFramework.World.Entity entity, int layerMask, float scale)
         {
-            var body = entity.Get<PhysicsBody>();
+            var body = entity.Get<GameFramework.World.PhysicsBody>();
             var transform = entity.Get<GameFramework.World.Transform>();
-            if (body == null || body.Collider == null || transform == null)
+            if (body == null || transform == null)
             {
                 return;
             }
-            Vector3 push = KinematicDepenetration.ComputePushOut(body.Collider, layerMask);
-            if (push.sqrMagnitude > 0f)
+            System.Numerics.Vector3 push = body.ComputePushOut(layerMask);
+            if (push.LengthSquared() > 0f)
             {
-                transform.Position = (transform.Position.ToUnity() + push * scale).ToNumerics();
+                transform.Position += push * scale;
             }
         }
 
         public void PushMotion(GameFramework.World.Entity entity)
         {
-            var body = entity.Get<PhysicsBody>();
+            var body = entity.Get<GameFramework.World.PhysicsBody>();
             var transform = entity.Get<GameFramework.World.Transform>();
-            if (body == null || body.Rigidbody == null || transform == null)
+            if (body == null || transform == null)
             {
                 return;
             }
-            Rigidbody rb = body.Rigidbody;
-            if (rb.isKinematic)
+            if (body.IsKinematic)
             {
-                rb.position = transform.Position.ToUnity();
-                rb.rotation = transform.Rotation.ToUnity();
+                body.SetPosition(transform.Position);
+                body.SetRotation(transform.Rotation);
                 return;
             }
             var velocity = entity.Get<GameFramework.World.Velocity>();
             if (velocity != null)
             {
-                rb.linearVelocity = velocity.Linear.ToUnity();
+                body.SetVelocity(velocity.Linear);
             }
-            rb.rotation = transform.Rotation.ToUnity();
+            body.SetRotation(transform.Rotation);
         }
     }
 }
