@@ -25,6 +25,6 @@ namespace LOP
         public long ExpectedNextSequence { get; set; }
 
         /// <summary>입력 도착 타이밍 통계(Phase 4 서버 피드백). 서버만 채운다 — 클라는 사용 안 함.</summary>
-        public GameFramework.InputTimingTracker TimingTracker { get; } = new GameFramework.InputTimingTracker();
+        public GameFramework.Netcode.InputTimingTracker TimingTracker { get; } = new GameFramework.Netcode.InputTimingTracker();
     }
 }
