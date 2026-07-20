@@ -7,7 +7,7 @@ namespace LOP.Tests
 {
     public class DamageEffectHandlerTests
     {
-        private sealed class FakeOverlap : GameFramework.IOverlapQuery
+        private sealed class FakeOverlap : GameFramework.Physics.IOverlapQuery
         {
             private readonly string[] ids;
             public FakeOverlap(params string[] ids) { this.ids = ids; }
@@ -39,7 +39,7 @@ namespace LOP.Tests
             => (new EntityRegistry(), new WorldEventBuffer(), new StatsSystem());
 
         private static DamageEffectHandler Handler(EntityRegistry reg, WorldEventBuffer buf,
-                                                   StatsSystem stats, GameFramework.IOverlapQuery overlap)
+                                                   StatsSystem stats, GameFramework.Physics.IOverlapQuery overlap)
         {
             var combat = new LOPCombatSystem(buf, new HealthSystem(), stats,
                 new CombatConfig(0.05f, 0.95f, 0.05f, 0.50f, 1.25f, 1.75f));
