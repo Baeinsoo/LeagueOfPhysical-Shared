@@ -15,10 +15,10 @@ namespace LOP.Tests
             public void OnActiveTick(AbilityEffectContext ctx, AbilityEffect effect) { }
         }
 
-        private class FakeQuery : GameFramework.ICollisionQuery
+        private class FakeQuery : GameFramework.Physics.ICollisionQuery
         {
-            public GameFramework.CollisionHit CapsuleCast(UnityEngine.Vector3 p1, UnityEngine.Vector3 p2,
-                float radius, UnityEngine.Vector3 dir, float dist, int mask) => GameFramework.CollisionHit.None;
+            public GameFramework.Physics.CollisionHit CapsuleCast(UnityEngine.Vector3 p1, UnityEngine.Vector3 p2,
+                float radius, UnityEngine.Vector3 dir, float dist, int mask) => GameFramework.Physics.CollisionHit.None;
         }
         private class SpyBridge : GameFramework.World.IMotionBridge
         {

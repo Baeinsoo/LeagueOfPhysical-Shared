@@ -26,18 +26,18 @@ namespace LOP
 
         // 공격-대상 당 결정론 seed(effectIndex 없음). 닷지는 이걸, 크리는 여기에 effectIndex를 더한 seed를 쓴다.
         private static ulong AttackSeed(ulong matchSeed, long tick, string attackerId, string targetId)
-            => GameFramework.Hashing.Combine(
-                   GameFramework.Hashing.Combine(
-                       GameFramework.Hashing.Combine(matchSeed, (ulong)tick),
-                       GameFramework.Hashing.Fnv1a64(attackerId)),
-                   GameFramework.Hashing.Fnv1a64(targetId));
+            => GameFramework.Rng.Hashing.Combine(
+                   GameFramework.Rng.Hashing.Combine(
+                       GameFramework.Rng.Hashing.Combine(matchSeed, (ulong)tick),
+                       GameFramework.Rng.Hashing.Fnv1a64(attackerId)),
+                   GameFramework.Rng.Hashing.Fnv1a64(targetId));
 
         /// <summary>이 공격이 대상에게 회피당하는가(공격당 1회, effectIndex 무관). 결정론.</summary>
         public bool IsDodged(GameFramework.World.Entity attacker, GameFramework.World.Entity target, long tick, ulong matchSeed)
         {
             int attackerDex = DexOf(attacker);
             int targetDex = DexOf(target);
-            var rng = new GameFramework.DeterministicRandom(AttackSeed(matchSeed, tick, attacker.Id, target.Id));
+            var rng = new GameFramework.Rng.DeterministicRandom(AttackSeed(matchSeed, tick, attacker.Id, target.Id));
             float dodgeChance = (float)targetDex / (attackerDex + targetDex);
             dodgeChance = Mathf.Clamp(dodgeChance, config.DodgeChanceMin, config.DodgeChanceMax);
             return rng.Range(0.0f, 1.0f) < dodgeChance;
@@ -81,8 +81,8 @@ namespace LOP
             if (!isDodged)
             {
                 // 크리는 per-hit(effectIndex 포함 seed) — 닷지와 다른 스트림
-                var critRng = new GameFramework.DeterministicRandom(
-                    GameFramework.Hashing.Combine(AttackSeed(matchSeed, tick, attacker.Id, target.Id), (ulong)effectIndex));
+                var critRng = new GameFramework.Rng.DeterministicRandom(
+                    GameFramework.Rng.Hashing.Combine(AttackSeed(matchSeed, tick, attacker.Id, target.Id), (ulong)effectIndex));
                 isCritical = IsCritical(attackerStrength, targetStrength, ref critRng);
                 if (isCritical)
                 {
@@ -114,7 +114,7 @@ namespace LOP
             return s != null ? Mathf.RoundToInt(statsSystem.GetValue(s, (int)GameFramework.World.EntityStatType.Strength)) : 0;
         }
 
-        public bool IsCritical(int attackerStr, int targetStr, ref GameFramework.DeterministicRandom rng)
+        public bool IsCritical(int attackerStr, int targetStr, ref GameFramework.Rng.DeterministicRandom rng)
         {
             float critChance = (float)attackerStr / (attackerStr + targetStr);
             critChance = Mathf.Clamp(critChance, config.CritChanceMin, config.CritChanceMax);

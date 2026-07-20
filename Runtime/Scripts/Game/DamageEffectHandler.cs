@@ -9,12 +9,12 @@ namespace LOP
     public class DamageEffectHandler : AbilityEffectHandler<DamageEffect>
     {
         private readonly LOPCombatSystem combatSystem;
-        private readonly GameFramework.IOverlapQuery overlapQuery;
+        private readonly GameFramework.Physics.IOverlapQuery overlapQuery;
         private readonly IMatchSeed matchSeed;
         private readonly GameFramework.World.EntityRegistry entityRegistry;
 
         public DamageEffectHandler(LOPCombatSystem combatSystem,
-                                   GameFramework.IOverlapQuery overlapQuery,
+                                   GameFramework.Physics.IOverlapQuery overlapQuery,
                                    IMatchSeed matchSeed,
                                    GameFramework.World.EntityRegistry entityRegistry)
         {
