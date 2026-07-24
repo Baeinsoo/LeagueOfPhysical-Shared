@@ -15,6 +15,7 @@ namespace LOP
             MessageFactory.RegisterCreator(MessageIds.InputCommandToS, () => new InputCommandToS());
             MessageFactory.RegisterCreator(MessageIds.InputSequenceToC, () => new InputSequenceToC());
             MessageFactory.RegisterCreator(MessageIds.InputTimingToC, () => new InputTimingToC());
+            MessageFactory.RegisterCreator(MessageIds.MatchEndedToC, () => new MatchEndedToC());
             MessageFactory.RegisterCreator(MessageIds.StatAllocationToC, () => new StatAllocationToC());
             MessageFactory.RegisterCreator(MessageIds.StatAllocationToS, () => new StatAllocationToS());
             MessageFactory.RegisterCreator(MessageIds.UserEntitySnapToC, () => new UserEntitySnapToC());

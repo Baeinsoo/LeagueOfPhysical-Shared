@@ -4,6 +4,7 @@ namespace LOP
     public static class MessageIds
     {
         public const ushort WorldEventBatchToC             = 1;
+        public const ushort MatchEndedToC                  = 2;
         public const ushort EntityDespawnToC               = 4;
         public const ushort EntitySnapsToC                 = 5;
         public const ushort EntitySpawnToC                 = 6;
