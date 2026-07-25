@@ -41,6 +41,12 @@ namespace LOP
 
             transform.Position = result.position.ToNumerics();
             velocity.Linear = result.velocity.ToNumerics();
+
+            var groundState = entity.Get<GameFramework.World.GroundState>();
+            if (groundState != null)
+            {
+                groundState.IsGrounded = result.grounded;
+            }
         }
     }
 }

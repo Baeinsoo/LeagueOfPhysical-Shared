@@ -23,16 +23,17 @@ public static partial class EntitySnapReflection {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
           "ChBFbnRpdHlTbmFwLnByb3RvGhJQcm90b1ZlY3RvcjMucHJvdG8aHVByb3Rv",
-          "TW90aW9uQ29udHJpYnV0aW9uLnByb3RvIt4BCgpFbnRpdHlTbmFwEhEKCWVu",
+          "TW90aW9uQ29udHJpYnV0aW9uLnByb3RvIvABCgpFbnRpdHlTbmFwEhEKCWVu",
           "dGl0eV9pZBgBIAEoCRIfCghwb3NpdGlvbhgCIAEoCzINLlByb3RvVmVjdG9y",
           "MxIfCghyb3RhdGlvbhgDIAEoCzINLlByb3RvVmVjdG9yMxIfCgh2ZWxvY2l0",
           "eRgEIAEoCzINLlByb3RvVmVjdG9yMxIOCgZtYXhfSFAYBSABKAUSEgoKY3Vy",
           "cmVudF9IUBgGIAEoBRI2ChRtb3Rpb25fY29udHJpYnV0aW9ucxgHIAMoCzIY",
-          "LlByb3RvTW90aW9uQ29udHJpYnV0aW9uYgZwcm90bzM="));
+          "LlByb3RvTW90aW9uQ29udHJpYnV0aW9uEhAKCGdyb3VuZGVkGAggASgIYgZw",
+          "cm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::ProtoVector3Reflection.Descriptor, global::ProtoMotionContributionReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded" }, null, null, null, null)
         }));
   }
   #endregion
@@ -81,6 +82,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     maxHP_ = other.maxHP_;
     currentHP_ = other.currentHP_;
     motionContributions_ = other.motionContributions_.Clone();
+    grounded_ = other.grounded_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -173,6 +175,18 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     get { return motionContributions_; }
   }
 
+  /// <summary>Field number for the "grounded" field.</summary>
+  public const int GroundedFieldNumber = 8;
+  private bool grounded_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public bool Grounded {
+    get { return grounded_; }
+    set {
+      grounded_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -195,6 +209,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (MaxHP != other.MaxHP) return false;
     if (CurrentHP != other.CurrentHP) return false;
     if(!motionContributions_.Equals(other.motionContributions_)) return false;
+    if (Grounded != other.Grounded) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -209,6 +224,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (MaxHP != 0) hash ^= MaxHP.GetHashCode();
     if (CurrentHP != 0) hash ^= CurrentHP.GetHashCode();
     hash ^= motionContributions_.GetHashCode();
+    if (Grounded != false) hash ^= Grounded.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -252,6 +268,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteInt32(CurrentHP);
     }
     motionContributions_.WriteTo(output, _repeated_motionContributions_codec);
+    if (Grounded != false) {
+      output.WriteRawTag(64);
+      output.WriteBool(Grounded);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -287,6 +307,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteInt32(CurrentHP);
     }
     motionContributions_.WriteTo(ref output, _repeated_motionContributions_codec);
+    if (Grounded != false) {
+      output.WriteRawTag(64);
+      output.WriteBool(Grounded);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -316,6 +340,9 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       size += 1 + pb::CodedOutputStream.ComputeInt32Size(CurrentHP);
     }
     size += motionContributions_.CalculateSize(_repeated_motionContributions_codec);
+    if (Grounded != false) {
+      size += 1 + 1;
+    }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
     }
@@ -356,6 +383,9 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       CurrentHP = other.CurrentHP;
     }
     motionContributions_.Add(other.motionContributions_);
+    if (other.Grounded != false) {
+      Grounded = other.Grounded;
+    }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
 
@@ -412,6 +442,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
           motionContributions_.AddEntriesFrom(input, _repeated_motionContributions_codec);
           break;
         }
+        case 64: {
+          Grounded = input.ReadBool();
+          break;
+        }
       }
     }
   #endif
@@ -466,6 +500,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
         }
         case 58: {
           motionContributions_.AddEntriesFrom(ref input, _repeated_motionContributions_codec);
+          break;
+        }
+        case 64: {
+          Grounded = input.ReadBool();
           break;
         }
       }
