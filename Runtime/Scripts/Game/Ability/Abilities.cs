@@ -30,6 +30,12 @@ namespace LOP
         public readonly long StartupEndTick;
         public readonly long ActiveEndTick;
         public readonly long RecoveryEndTick;
+
+        /// <summary>
+        /// 발동 전에 미리 지목한 대상. 현재 모든 어빌리티가 self 또는 광역 스윕이라 항상 시전자가
+        /// 들어가며 읽는 곳이 없다 — 대상 지목형 스킬이 생길 때를 위한 자리.
+        /// 명중해서 정해지는 대상은 여기가 아니라 <see cref="AttackHitContext.LandedTargets"/>에 있다.
+        /// </summary>
         public readonly Entity Target;
         public readonly AbilityEffect[] Effects;
         public readonly float StartupMoveScale;
@@ -58,6 +64,19 @@ namespace LOP
         public ActiveAbility WithPhase(AbilityPhase phase)
             => new ActiveAbility(AbilityId, phase, StartupEndTick, ActiveEndTick, RecoveryEndTick, Target, Effects,
                                  StartupMoveScale, ActiveMoveScale, RecoveryMoveScale, BlockJump);
+
+        /// <summary>
+        /// 연출용 부분 복원 — 어빌리티 id와 페이즈 경계만 채운다(원격 엔티티 스냅샷 반영용).
+        /// 효과 목록·이동 스케일·점프 봉인 같은 시뮬 파라미터는 비운다: 클라는 원격 어빌리티를 실행하지 않는다.
+        /// Phase는 뷰가 <see cref="AbilityPlayback.Solve"/>로 매 프레임 다시 구하므로 의미 없는 초기값이다.
+        /// </summary>
+        public static ActiveAbility ForPresentation(int abilityId, long startupEndTick,
+                                                    long activeEndTick, long recoveryEndTick)
+        {
+            return new ActiveAbility(abilityId, AbilityPhase.Startup,
+                startupEndTick, activeEndTick, recoveryEndTick,
+                null, System.Array.Empty<AbilityEffect>(), 1f, 1f, 1f, false);
+        }
     }
 
     /// <summary>엔티티가 보유한 어빌리티 슬롯 집합(데이터 컴포넌트). AbilityId당 1 슬롯(InstancedPerActor).</summary>
