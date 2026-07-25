@@ -11,4 +11,6 @@ message EntitySnap
 	int32 current_HP = 6;
 	repeated ProtoMotionContribution motion_contributions = 7;
 	bool grounded = 8;
+	int32 active_ability_id = 9;    // 0 = 시전 중 아님
+	int64 ability_end_tick  = 10;   // 시전이 끝나는 절대 틱(= RecoveryEndTick)
 }
