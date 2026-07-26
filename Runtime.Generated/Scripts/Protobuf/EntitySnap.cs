@@ -23,17 +23,18 @@ public static partial class EntitySnapReflection {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
           "ChBFbnRpdHlTbmFwLnByb3RvGhJQcm90b1ZlY3RvcjMucHJvdG8aHVByb3Rv",
-          "TW90aW9uQ29udHJpYnV0aW9uLnByb3RvIvABCgpFbnRpdHlTbmFwEhEKCWVu",
+          "TW90aW9uQ29udHJpYnV0aW9uLnByb3RvIqUCCgpFbnRpdHlTbmFwEhEKCWVu",
           "dGl0eV9pZBgBIAEoCRIfCghwb3NpdGlvbhgCIAEoCzINLlByb3RvVmVjdG9y",
           "MxIfCghyb3RhdGlvbhgDIAEoCzINLlByb3RvVmVjdG9yMxIfCgh2ZWxvY2l0",
           "eRgEIAEoCzINLlByb3RvVmVjdG9yMxIOCgZtYXhfSFAYBSABKAUSEgoKY3Vy",
           "cmVudF9IUBgGIAEoBRI2ChRtb3Rpb25fY29udHJpYnV0aW9ucxgHIAMoCzIY",
-          "LlByb3RvTW90aW9uQ29udHJpYnV0aW9uEhAKCGdyb3VuZGVkGAggASgIYgZw",
-          "cm90bzM="));
+          "LlByb3RvTW90aW9uQ29udHJpYnV0aW9uEhAKCGdyb3VuZGVkGAggASgIEhkK",
+          "EWFjdGl2ZV9hYmlsaXR5X2lkGAkgASgFEhgKEGFiaWxpdHlfZW5kX3RpY2sY",
+          "CiABKANiBnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::ProtoVector3Reflection.Descriptor, global::ProtoMotionContributionReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick" }, null, null, null, null)
         }));
   }
   #endregion
@@ -83,6 +84,8 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     currentHP_ = other.currentHP_;
     motionContributions_ = other.motionContributions_.Clone();
     grounded_ = other.grounded_;
+    activeAbilityId_ = other.activeAbilityId_;
+    abilityEndTick_ = other.abilityEndTick_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -187,6 +190,36 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
   }
 
+  /// <summary>Field number for the "active_ability_id" field.</summary>
+  public const int ActiveAbilityIdFieldNumber = 9;
+  private int activeAbilityId_;
+  /// <summary>
+  /// 0 = 시전 중 아님
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int ActiveAbilityId {
+    get { return activeAbilityId_; }
+    set {
+      activeAbilityId_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "ability_end_tick" field.</summary>
+  public const int AbilityEndTickFieldNumber = 10;
+  private long abilityEndTick_;
+  /// <summary>
+  /// 시전이 끝나는 절대 틱(= RecoveryEndTick)
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long AbilityEndTick {
+    get { return abilityEndTick_; }
+    set {
+      abilityEndTick_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -210,6 +243,8 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (CurrentHP != other.CurrentHP) return false;
     if(!motionContributions_.Equals(other.motionContributions_)) return false;
     if (Grounded != other.Grounded) return false;
+    if (ActiveAbilityId != other.ActiveAbilityId) return false;
+    if (AbilityEndTick != other.AbilityEndTick) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -225,6 +260,8 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (CurrentHP != 0) hash ^= CurrentHP.GetHashCode();
     hash ^= motionContributions_.GetHashCode();
     if (Grounded != false) hash ^= Grounded.GetHashCode();
+    if (ActiveAbilityId != 0) hash ^= ActiveAbilityId.GetHashCode();
+    if (AbilityEndTick != 0L) hash ^= AbilityEndTick.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -272,6 +309,14 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(64);
       output.WriteBool(Grounded);
     }
+    if (ActiveAbilityId != 0) {
+      output.WriteRawTag(72);
+      output.WriteInt32(ActiveAbilityId);
+    }
+    if (AbilityEndTick != 0L) {
+      output.WriteRawTag(80);
+      output.WriteInt64(AbilityEndTick);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -311,6 +356,14 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(64);
       output.WriteBool(Grounded);
     }
+    if (ActiveAbilityId != 0) {
+      output.WriteRawTag(72);
+      output.WriteInt32(ActiveAbilityId);
+    }
+    if (AbilityEndTick != 0L) {
+      output.WriteRawTag(80);
+      output.WriteInt64(AbilityEndTick);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -342,6 +395,12 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     size += motionContributions_.CalculateSize(_repeated_motionContributions_codec);
     if (Grounded != false) {
       size += 1 + 1;
+    }
+    if (ActiveAbilityId != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(ActiveAbilityId);
+    }
+    if (AbilityEndTick != 0L) {
+      size += 1 + pb::CodedOutputStream.ComputeInt64Size(AbilityEndTick);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -385,6 +444,12 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     motionContributions_.Add(other.motionContributions_);
     if (other.Grounded != false) {
       Grounded = other.Grounded;
+    }
+    if (other.ActiveAbilityId != 0) {
+      ActiveAbilityId = other.ActiveAbilityId;
+    }
+    if (other.AbilityEndTick != 0L) {
+      AbilityEndTick = other.AbilityEndTick;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -446,6 +511,14 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
           Grounded = input.ReadBool();
           break;
         }
+        case 72: {
+          ActiveAbilityId = input.ReadInt32();
+          break;
+        }
+        case 80: {
+          AbilityEndTick = input.ReadInt64();
+          break;
+        }
       }
     }
   #endif
@@ -504,6 +577,14 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
         }
         case 64: {
           Grounded = input.ReadBool();
+          break;
+        }
+        case 72: {
+          ActiveAbilityId = input.ReadInt32();
+          break;
+        }
+        case 80: {
+          AbilityEndTick = input.ReadInt64();
           break;
         }
       }
