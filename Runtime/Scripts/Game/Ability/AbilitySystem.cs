@@ -6,7 +6,7 @@ namespace LOP
     /// 어빌리티 로직(상태 없음). GAS 생명주기(CanActivate→Commit→페이즈 머신)를 anemic으로 구현.
     /// 발동은 Startup→Active→Recovery 시간 페이즈(격투 frame data, 시뮬 틱 구동). Active 창에서
     /// effect 리스트를 <see cref="AbilityEffectExecutor"/>로 디스패치(진입 1회 + 매 틱).
-    /// 쿨다운은 절대 end-tick(파생 readiness). busy = ActiveAbility 진행 중.
+    /// 쿨다운은 절대 end-tick(파생 readiness). busy = AbilityActivation 진행 중.
     /// </summary>
     public class AbilitySystem
     {
@@ -23,7 +23,7 @@ namespace LOP
         /// </summary>
         public static bool HasActiveMotionEffect(Entity entity)
         {
-            var active = entity?.Get<Abilities>()?.ActiveAbility;
+            var active = entity?.Get<Abilities>()?.Current;
             if (active == null || active.Value.Phase != AbilityPhase.Active || active.Value.Effects == null)
             {
                 return false;
@@ -45,7 +45,7 @@ namespace LOP
         public static bool TryGetActiveMotionEffect(Entity entity, long currentTick, out MotionEffect motionEffect)
         {
             motionEffect = null;
-            var active = entity?.Get<Abilities>()?.ActiveAbility;
+            var active = entity?.Get<Abilities>()?.Current;
             if (active == null)
             {
                 return false;
@@ -69,7 +69,7 @@ namespace LOP
         /// <summary>진행 중 어빌리티의 현재 페이즈 이동배율(없으면 1=자유). 경계틱으로 판정 → 시스템 실행순서 무관.</summary>
         public static float GetMovementMultiplier(Entity entity, long currentTick)
         {
-            var active = entity?.Get<Abilities>()?.ActiveAbility;
+            var active = entity?.Get<Abilities>()?.Current;
             if (active == null)
             {
                 return 1f;
@@ -84,7 +84,7 @@ namespace LOP
         /// <summary>발동 창(RecoveryEnd 전) 안이고 BlockJump면 점프 차단. GetMovementMultiplier와 같은 경계틱 판정.</summary>
         public static bool IsJumpBlocked(Entity entity, long currentTick)
         {
-            var active = entity?.Get<Abilities>()?.ActiveAbility;
+            var active = entity?.Get<Abilities>()?.Current;
             return active != null && active.Value.BlockJump && currentTick < active.Value.RecoveryEndTick;
         }
 
@@ -107,7 +107,7 @@ namespace LOP
             {
                 return false;
             }
-            if (abilities.ActiveAbility != null)
+            if (abilities.Current != null)
             {
                 return false;   // busy — 다른 발동 진행 중(Startup/Active/Recovery)
             }
@@ -149,45 +149,45 @@ namespace LOP
             long startupEnd = currentTick + data.StartupTicks;
             long activeEnd = startupEnd + data.ActiveTicks;
             long recoveryEnd = activeEnd + data.RecoveryTicks;
-            abilities.ActiveAbility = new ActiveAbility(data.AbilityId, AbilityPhase.Startup,
+            abilities.Current = new AbilityActivation(data.AbilityId, AbilityPhase.Startup,
                 startupEnd, activeEnd, recoveryEnd, target, data.Effects,
                 data.StartupMoveScale, data.ActiveMoveScale, data.RecoveryMoveScale, data.BlockJump);
             return true;
         }
 
         /// <summary>
-        /// 진행 중인 <see cref="ActiveAbility"/>의 페이즈를 전진(매 틱, world.Tick에서). Startup→Active→Recovery,
-        /// Recovery 종료 시 Ready(null). ActiveAbility 없으면 no-op.
+        /// 진행 중인 <see cref="AbilityActivation"/>의 페이즈를 전진(매 틱, world.Tick에서). Startup→Active→Recovery,
+        /// Recovery 종료 시 Ready(null). AbilityActivation 없으면 no-op.
         /// <para>effect 적용은 여기서 하지 않는다 — host가 페이즈 전진 후 <see cref="AbilityEffectExecutor.DriveActiveEntity"/>로
         /// 구동한다(핸들러가 entityManager 등 side 자원을 ctx로 받아야 해서, DI 순환을 피하려 host-driven).</para>
         /// </summary>
         public void Tick(Entity entity, long currentTick)
         {
             var abilities = entity.Get<Abilities>();
-            if (abilities?.ActiveAbility == null)
+            if (abilities?.Current == null)
             {
                 return;
             }
 
-            var active = abilities.ActiveAbility.Value;
+            var active = abilities.Current.Value;
             switch (active.Phase)
             {
                 case AbilityPhase.Startup:
                     if (currentTick >= active.StartupEndTick)
                     {
-                        abilities.ActiveAbility = active.WithPhase(AbilityPhase.Active);
+                        abilities.Current = active.WithPhase(AbilityPhase.Active);
                     }
                     break;
                 case AbilityPhase.Active:
                     if (currentTick >= active.ActiveEndTick)
                     {
-                        abilities.ActiveAbility = active.WithPhase(AbilityPhase.Recovery);
+                        abilities.Current = active.WithPhase(AbilityPhase.Recovery);
                     }
                     break;
                 case AbilityPhase.Recovery:
                     if (currentTick >= active.RecoveryEndTick)
                     {
-                        abilities.ActiveAbility = null;
+                        abilities.Current = null;
                     }
                     break;
             }

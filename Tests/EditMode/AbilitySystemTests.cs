@@ -68,7 +68,7 @@ namespace LOP.Tests
         private long CooldownEnd(Entity e) => e.Get<Abilities>().Granted[AbilityId].CooldownEndTick;
         private int EffectCount(Entity e) => e.Get<StatusEffects>().Effects.Count;
         private float Dex(Entity e) => _stats.GetValue(e.Get<Stats>(), (int)EntityStatType.Dexterity);
-        private ActiveAbility? Active(Entity e) => e.Get<Abilities>().ActiveAbility;
+        private AbilityActivation? Active(Entity e) => e.Get<Abilities>().Current;
 
         [Test]
         public void Grant_AddsReadySlot()
