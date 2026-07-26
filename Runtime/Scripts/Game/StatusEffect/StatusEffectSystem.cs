@@ -15,7 +15,8 @@ namespace LOP
             _statsSystem = statsSystem;
         }
 
-        private static string SourceIdFor(int effectId) => "se:" + effectId;
+        /// <summary>상태이상 모디파이어의 SourceId 표기 규약의 단일 정의. 여기 말고 다른 곳에서 직접 문자열을 조립하지 않는다.</summary>
+        public static string SourceIdFor(int effectId) => "se:" + effectId;
 
         /// <summary>효과를 타깃에 적용한다(GAS ApplyGameplayEffectToTarget). 스택/지속/모디파이어 해소.</summary>
         public void Apply(Entity target, in StatusEffectData data, string sourceEntityId, long currentTick)
