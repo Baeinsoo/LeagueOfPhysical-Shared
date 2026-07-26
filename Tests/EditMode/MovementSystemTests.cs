@@ -204,7 +204,7 @@ namespace LOP.Tests
             // 대시 활성 창 안 → 모터가 forward×Speed를 직접 쓴다(입력 무시). 기본 rotation=identity → forward=+z.
             var entity = CreateControlledEntity(new Vector3(15f, 0f, 0f), new InputCommand { Vertical = 1f });
             var abilities = new Abilities();
-            abilities.Current = new AbilityActivation(2, AbilityPhase.Startup, 0, 100, 200, null,
+            abilities.Activation = new AbilityActivation(2, AbilityPhase.Startup, 0, 100, 200, null,
                 new AbilityEffect[] { new MotionEffect(15f) });   // 창 [0,100)
             entity.Add(abilities);
 
@@ -221,7 +221,7 @@ namespace LOP.Tests
             // 창 밖 tick이면 대시 아님 → 걷기(입력대로).
             var entity = CreateControlledEntity(Vector3.zero, new InputCommand { Horizontal = 1f });
             var abilities = new Abilities();
-            abilities.Current = new AbilityActivation(2, AbilityPhase.Startup, 0, 5, 10, null,
+            abilities.Activation = new AbilityActivation(2, AbilityPhase.Startup, 0, 5, 10, null,
                 new AbilityEffect[] { new MotionEffect(15f) });   // 창 [0,5)
             entity.Add(abilities);
 
@@ -251,7 +251,7 @@ namespace LOP.Tests
         private static void AttachAbility(GameFramework.World.Entity e, float active, bool blockJump)
         {
             var ab = new Abilities();
-            ab.Current = new AbilityActivation(3, AbilityPhase.Active, 10, 100, 200, null,
+            ab.Activation = new AbilityActivation(3, AbilityPhase.Active, 10, 100, 200, null,
                 new AbilityEffect[0], 1f, active, 1f, blockJump);
             e.Add(ab);
         }

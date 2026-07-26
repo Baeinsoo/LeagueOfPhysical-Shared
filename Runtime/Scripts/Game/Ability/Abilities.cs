@@ -94,6 +94,6 @@ namespace LOP
         public Dictionary<int, GrantedAbility> Granted { get; } = new Dictionary<int, GrantedAbility>();
 
         /// <summary>진행 중인 발동(없으면 null=Ready). 엔티티당 동시 1 — busy 판정.</summary>
-        public AbilityActivation? Current { get; set; }
+        public AbilityActivation? Activation { get; set; }
     }
 }
