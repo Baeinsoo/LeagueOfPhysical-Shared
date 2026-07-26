@@ -61,7 +61,7 @@ namespace LOP.Tests
         private static void AssertStateEqual(PredictedAbilityState expected, Entity actual, long atTick)
         {
             var abilities = actual.Get<Abilities>();
-            Assert.AreEqual(expected.Current?.Phase, abilities.Current?.Phase, $"tick {atTick}: phase");
+            Assert.AreEqual(expected.Activation?.Phase, abilities.Current?.Phase, $"tick {atTick}: phase");
             Assert.AreEqual(expected.Granted[AbilityId].CooldownEndTick,
                             abilities.Granted[AbilityId].CooldownEndTick, $"tick {atTick}: cooldown");
             Assert.AreEqual(expected.StatusEffects.Count,

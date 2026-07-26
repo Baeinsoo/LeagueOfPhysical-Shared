@@ -127,7 +127,7 @@ namespace LOP
         public bool CanActivate(Entity caster, in AbilityData data, long currentTick)
         {
             var abilities = caster.Get<Abilities>();
-            if (abilities == null || !abilities.Granted.TryGetValue(data.AbilityId, out var slot))
+            if (abilities == null || !abilities.Granted.TryGetValue(data.AbilityId, out var granted))
             {
                 return false;
             }
@@ -135,7 +135,7 @@ namespace LOP
             {
                 return false;   // busy — 다른 발동 진행 중(Startup/Active/Recovery)
             }
-            if (currentTick < slot.CooldownEndTick)
+            if (currentTick < granted.CooldownEndTick)
             {
                 return false;
             }

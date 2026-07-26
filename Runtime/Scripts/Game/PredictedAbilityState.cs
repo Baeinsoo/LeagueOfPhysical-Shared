@@ -9,7 +9,7 @@ namespace LOP
     /// </summary>
     public sealed class PredictedAbilityState
     {
-        public AbilityActivation? Current { get; private set; }
+        public AbilityActivation? Activation { get; private set; }
         public Dictionary<int, GrantedAbility> Granted { get; private set; }
         public List<ActiveEffect> StatusEffects { get; private set; }
         public Dictionary<int, float> BaseStats { get; private set; }
@@ -22,7 +22,7 @@ namespace LOP
         {
             var s = new PredictedAbilityState();
             var abilities = entity.Get<Abilities>();
-            s.Current = abilities?.Current;
+            s.Activation = abilities?.Current;
             s.Granted = abilities != null
                 ? new Dictionary<int, GrantedAbility>(abilities.Granted)
                 : new Dictionary<int, GrantedAbility>();
@@ -52,7 +52,7 @@ namespace LOP
             var abilities = entity.Get<Abilities>();
             if (abilities != null)
             {
-                abilities.Current = Current;
+                abilities.Current = Activation;
                 abilities.Granted.Clear();
                 foreach (var kv in Granted)
                 {
