@@ -1,6 +1,7 @@
 syntax = "proto3";
 import "ProtoVector3.proto";
 import "ProtoMotionContribution.proto";
+import "ProtoActiveEffect.proto";
 message EntitySnap
 {
 	string entity_id = 1;
@@ -13,4 +14,5 @@ message EntitySnap
 	bool grounded = 8;
 	int32 active_ability_id = 9;    // 0 = 시전 중 아님
 	int64 ability_end_tick  = 10;   // 시전이 끝나는 절대 틱(= RecoveryEndTick)
+	repeated ProtoActiveEffect status_effects = 11;
 }

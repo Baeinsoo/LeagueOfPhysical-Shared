@@ -26,7 +26,7 @@ namespace LOP.Tests
             _stats = new StatsSystem();
             _statusEffects = new StatusEffectSystem(_stats);
             // 상태효과 적용 핸들러(코어) — resolver 심으로 효과 id를 설정으로 푼다(MasterData 대신 테스트 데이터).
-            var statusHandler = new StatusEffectApplyEffectHandler(_statusEffects, Resolve);
+            var statusHandler = new StatusEffectApplyEffectHandler(_statusEffects, Resolve, new EntityRegistry());
             _executor = new AbilityEffectExecutor(new IAbilityEffectHandler[] { statusHandler });
             _system = new AbilitySystem(_mana);
         }
