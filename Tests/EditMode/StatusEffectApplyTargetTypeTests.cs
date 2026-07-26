@@ -92,5 +92,35 @@ namespace LOP.Tests.EditMode
         {
             Assert.AreEqual(TargetType.Self, new StatusEffectApplyEffect(SlowId).Target);
         }
+
+        [Test]
+        public void HitTargetsWithNullHitContextDoesNotThrow()
+        {
+            var (handler, registry) = Build();
+            var caster = MakeActor("caster");
+            registry.Add(caster);
+
+            var ctx = new AbilityEffectContext(caster, caster, 10, 0, null);
+
+            Assert.DoesNotThrow(() =>
+                handler.OnActiveEnter(ctx, new StatusEffectApplyEffect(SlowId, TargetType.HitTargets)));
+            Assert.IsFalse(HasSlow(caster));
+        }
+
+        [Test]
+        public void HitTargetsWithMissingTargetInRegistryDoesNotThrow()
+        {
+            var (handler, registry) = Build();
+            var caster = MakeActor("caster");
+            registry.Add(caster);
+
+            var hit = new AttackHitContext();
+            hit.MarkLanded("gone");  // Mark as landed but don't add to registry
+            var ctx = new AbilityEffectContext(caster, caster, 10, 0, hit);
+
+            Assert.DoesNotThrow(() =>
+                handler.OnActiveEnter(ctx, new StatusEffectApplyEffect(SlowId, TargetType.HitTargets)));
+            Assert.IsFalse(HasSlow(caster));
+        }
     }
 }
