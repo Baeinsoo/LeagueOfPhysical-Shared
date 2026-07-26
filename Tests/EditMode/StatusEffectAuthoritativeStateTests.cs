@@ -110,5 +110,35 @@ namespace LOP.Tests.EditMode
             Assert.DoesNotThrow(() => sys.ApplyAuthoritativeState(me, Server(999), Resolve));
             Assert.AreEqual(0, me.Get<StatusEffects>().Effects.Count);
         }
+
+        [Test]
+        public void OverwritesExpireTickWithServerValue()
+        {
+            var (sys, _) = Build();
+            var me = MakeActor();
+            sys.Apply(me, Data(SlowId, -0.3f), "me", 0);   // 로컬 만료틱 = 0 + 60 = 60
+
+            // 스택은 로컬과 동일(1)로 둬 스택 재계산 분기와 분리 — 만료틱 덮어쓰기만 검증.
+            var serverEffects = new List<ActiveEffect> { new ActiveEffect(SlowId, 999, 1, "server", "se:" + SlowId) };
+            sys.ApplyAuthoritativeState(me, serverEffects, Resolve);
+
+            var stored = me.Get<StatusEffects>().Effects.Find(e => e.EffectId == SlowId);
+            Assert.AreEqual(999, stored.ExpireTick);
+        }
+
+        [Test]
+        public void RecomputesModifiersWhenStackCountDiffers()
+        {
+            var (sys, statsSystem) = Build();
+            var me = MakeActor();
+            sys.Apply(me, Data(SlowId, -0.3f), "me", 0);   // 로컬 스택 1, 모디파이어 -0.3
+
+            // 서버는 스택 2로 알고 있다 — 모디파이어가 -0.6로 재배율되어야 한다.
+            var serverEffects = new List<ActiveEffect> { new ActiveEffect(SlowId, 200, 2, "server", "se:" + SlowId) };
+            sys.ApplyAuthoritativeState(me, serverEffects, Resolve);
+
+            // (10 + 0) × (1 + (-0.3 × 2)) = 4
+            Assert.AreEqual(4f, statsSystem.GetValue(me.Get<Stats>(), (int)EntityStatType.MoveSpeed), 0.001f);
+        }
     }
 }

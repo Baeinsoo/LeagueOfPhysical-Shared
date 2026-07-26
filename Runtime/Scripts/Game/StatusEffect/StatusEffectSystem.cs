@@ -129,6 +129,10 @@ namespace LOP
             {
                 return;
             }
+            if (authoritative == null)
+            {
+                return;
+            }
             var stats = entity.Get<Stats>();
 
             // 1) 서버에 없는 것 제거(모디파이어도 함께)
