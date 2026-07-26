@@ -3,13 +3,16 @@ using GameFramework.World;
 
 namespace LOP
 {
-    /// <summary>부여된 어빌리티 하나의 런타임 상태(데이터). 로직은 <see cref="AbilitySystem"/>에 둔다(Anemic).</summary>
-    public readonly struct AbilitySlot
+    /// <summary>
+    /// 이 엔티티가 부여받은 어빌리티 하나의 런타임 상태(데이터). 기록의 존재 자체가 보유 증명이다.
+    /// GAS의 FGameplayAbilitySpec 대응. 로직은 <see cref="AbilitySystem"/>에 둔다(Anemic).
+    /// </summary>
+    public readonly struct GrantedAbility
     {
         public readonly int AbilityId;
         public readonly long CooldownEndTick;   // currentTick >= 이 값이면 ready (초기 0)
 
-        public AbilitySlot(int abilityId, long cooldownEndTick)
+        public GrantedAbility(int abilityId, long cooldownEndTick)
         {
             AbilityId = abilityId;
             CooldownEndTick = cooldownEndTick;
@@ -79,10 +82,10 @@ namespace LOP
         }
     }
 
-    /// <summary>엔티티가 보유한 어빌리티 슬롯 집합(데이터 컴포넌트). AbilityId당 1 슬롯(InstancedPerActor).</summary>
+    /// <summary>엔티티가 부여받은 어빌리티 집합(데이터 컴포넌트). AbilityId당 1개.</summary>
     public class Abilities : Component
     {
-        public Dictionary<int, AbilitySlot> Slots { get; } = new Dictionary<int, AbilitySlot>();
+        public Dictionary<int, GrantedAbility> Granted { get; } = new Dictionary<int, GrantedAbility>();
 
         /// <summary>진행 중인 발동(없으면 null=Ready). 엔티티당 동시 1 — busy 판정.</summary>
         public ActiveAbility? ActiveAbility { get; set; }

@@ -96,14 +96,14 @@ namespace LOP
             {
                 return;
             }
-            abilities.Slots[abilityId] = new AbilitySlot(abilityId, 0);
+            abilities.Granted[abilityId] = new GrantedAbility(abilityId, 0);
         }
 
         /// <summary>발동 가능 여부(GAS CanActivateAbility): 보유 + not busy + 쿨다운 ready + 자원 충분. 순수 읽기.</summary>
         public bool CanActivate(Entity caster, in AbilityData data, long currentTick)
         {
             var abilities = caster.Get<Abilities>();
-            if (abilities == null || !abilities.Slots.TryGetValue(data.AbilityId, out var slot))
+            if (abilities == null || !abilities.Granted.TryGetValue(data.AbilityId, out var slot))
             {
                 return false;
             }
@@ -143,7 +143,7 @@ namespace LOP
                 _manaSystem.Spend(caster.Get<Mana>(), data.MpCost);
             }
             var abilities = caster.Get<Abilities>();
-            abilities.Slots[data.AbilityId] = new AbilitySlot(data.AbilityId, currentTick + data.CooldownTicks);
+            abilities.Granted[data.AbilityId] = new GrantedAbility(data.AbilityId, currentTick + data.CooldownTicks);
 
             // 페이즈 머신 시작 — 경계를 절대 틱으로 확정. effect는 Active 창에서 Tick이 디스패치.
             long startupEnd = currentTick + data.StartupTicks;

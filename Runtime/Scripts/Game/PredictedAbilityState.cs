@@ -10,7 +10,7 @@ namespace LOP
     public sealed class PredictedAbilityState
     {
         public ActiveAbility? ActiveAbility { get; private set; }
-        public Dictionary<int, AbilitySlot> Slots { get; private set; }
+        public Dictionary<int, GrantedAbility> Granted { get; private set; }
         public List<ActiveEffect> StatusEffects { get; private set; }
         public Dictionary<int, float> BaseStats { get; private set; }
         public List<StatModifier> Modifiers { get; private set; }
@@ -23,9 +23,9 @@ namespace LOP
             var s = new PredictedAbilityState();
             var abilities = entity.Get<Abilities>();
             s.ActiveAbility = abilities?.ActiveAbility;
-            s.Slots = abilities != null
-                ? new Dictionary<int, AbilitySlot>(abilities.Slots)
-                : new Dictionary<int, AbilitySlot>();
+            s.Granted = abilities != null
+                ? new Dictionary<int, GrantedAbility>(abilities.Granted)
+                : new Dictionary<int, GrantedAbility>();
 
             var status = entity.Get<StatusEffects>();
             s.StatusEffects = status != null
@@ -53,10 +53,10 @@ namespace LOP
             if (abilities != null)
             {
                 abilities.ActiveAbility = ActiveAbility;
-                abilities.Slots.Clear();
-                foreach (var kv in Slots)
+                abilities.Granted.Clear();
+                foreach (var kv in Granted)
                 {
-                    abilities.Slots[kv.Key] = kv.Value;
+                    abilities.Granted[kv.Key] = kv.Value;
                 }
             }
 

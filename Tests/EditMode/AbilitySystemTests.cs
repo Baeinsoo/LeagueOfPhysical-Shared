@@ -65,7 +65,7 @@ namespace LOP.Tests
                                new AbilityEffect[] { new StatusEffectApplyEffect(HasteEffectId) });
 
         private int Mana(Entity e) => e.Get<Mana>().Current;
-        private long CooldownEnd(Entity e) => e.Get<Abilities>().Slots[AbilityId].CooldownEndTick;
+        private long CooldownEnd(Entity e) => e.Get<Abilities>().Granted[AbilityId].CooldownEndTick;
         private int EffectCount(Entity e) => e.Get<StatusEffects>().Effects.Count;
         private float Dex(Entity e) => _stats.GetValue(e.Get<Stats>(), (int)EntityStatType.Dexterity);
         private ActiveAbility? Active(Entity e) => e.Get<Abilities>().ActiveAbility;

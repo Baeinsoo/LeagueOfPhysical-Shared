@@ -22,17 +22,17 @@ namespace LOP.Tests
         public void Capture_IsDeepCopy_LiveMutationDoesNotLeak()
         {
             var e = MakeEntity();
-            e.Get<Abilities>().Slots[7] = new AbilitySlot(7, 42);
+            e.Get<Abilities>().Granted[7] = new GrantedAbility(7, 42);
             e.Get<StatusEffects>().Effects.Add(new ActiveEffect(3, 50, 1, "src", "se:3"));
 
             var snap = PredictedAbilityState.Capture(e);
 
             // 캡처 후 라이브를 바꿔도 스냅은 그대로여야 한다.
-            e.Get<Abilities>().Slots[7] = new AbilitySlot(7, 999);
+            e.Get<Abilities>().Granted[7] = new GrantedAbility(7, 999);
             e.Get<StatusEffects>().Effects.Clear();
             e.Get<Mana>().Current = 0;
 
-            Assert.AreEqual(42, snap.Slots[7].CooldownEndTick);
+            Assert.AreEqual(42, snap.Granted[7].CooldownEndTick);
             Assert.AreEqual(1, snap.StatusEffects.Count);
             Assert.AreEqual(3, snap.StatusEffects[0].EffectId);
             Assert.AreEqual(100, snap.ManaCurrent);

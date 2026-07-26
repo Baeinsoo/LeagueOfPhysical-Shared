@@ -62,8 +62,8 @@ namespace LOP.Tests
         {
             var abilities = actual.Get<Abilities>();
             Assert.AreEqual(expected.ActiveAbility?.Phase, abilities.ActiveAbility?.Phase, $"tick {atTick}: phase");
-            Assert.AreEqual(expected.Slots[AbilityId].CooldownEndTick,
-                            abilities.Slots[AbilityId].CooldownEndTick, $"tick {atTick}: cooldown");
+            Assert.AreEqual(expected.Granted[AbilityId].CooldownEndTick,
+                            abilities.Granted[AbilityId].CooldownEndTick, $"tick {atTick}: cooldown");
             Assert.AreEqual(expected.StatusEffects.Count,
                             actual.Get<StatusEffects>().Effects.Count, $"tick {atTick}: status count");
             Assert.AreEqual(expected.ManaCurrent, actual.Get<Mana>().Current, $"tick {atTick}: mana");
