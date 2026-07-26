@@ -12,7 +12,7 @@ namespace LOP
         /// 시전 중이 아니면 false(출력은 Ready/0).
         /// </summary>
         /// <param name="totalTicks">startup+active+recovery 합 — 발동 틱을 역산하는 데 쓴다.</param>
-        public static bool Solve(in ActiveAbility active, long currentTick, long totalTicks,
+        public static bool Solve(in AbilityActivation active, long currentTick, long totalTicks,
                                  out AbilityPhase phase, out float normalizedTime)
         {
             phase = AbilityPhase.Ready;

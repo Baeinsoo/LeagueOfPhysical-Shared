@@ -65,16 +65,16 @@ namespace LOP.Tests
                                new AbilityEffect[] { new StatusEffectApplyEffect(HasteEffectId) });
 
         private int Mana(Entity e) => e.Get<Mana>().Current;
-        private long CooldownEnd(Entity e) => e.Get<Abilities>().Slots[AbilityId].CooldownEndTick;
+        private long CooldownEnd(Entity e) => e.Get<Abilities>().Granted[AbilityId].CooldownEndTick;
         private int EffectCount(Entity e) => e.Get<StatusEffects>().Effects.Count;
         private float Dex(Entity e) => _stats.GetValue(e.Get<Stats>(), (int)EntityStatType.Dexterity);
-        private ActiveAbility? Active(Entity e) => e.Get<Abilities>().ActiveAbility;
+        private AbilityActivation? Active(Entity e) => e.Get<Abilities>().Current;
 
         [Test]
         public void Grant_AddsReadySlot()
         {
             var e = MakeEntity(100, 10f);
-            _system.Grant(e, AbilityId);
+            _system.Grant(e, AbilityId, slot: 0);
 
             Assert.That(_system.CanActivate(e, Ability(), 0), Is.True);
         }
@@ -83,7 +83,7 @@ namespace LOP.Tests
         public void TryActivate_Commits_StartsMachine_NoImmediateEffect()
         {
             var e = MakeEntity(100, 10f);
-            _system.Grant(e, AbilityId);
+            _system.Grant(e, AbilityId, slot: 0);
 
             bool ok = _system.TryActivate(e, Ability(), e, 0);
 
@@ -99,7 +99,7 @@ namespace LOP.Tests
         public void Tick_StartupToActive_AppliesEffect()
         {
             var e = MakeEntity(100, 10f);
-            _system.Grant(e, AbilityId);
+            _system.Grant(e, AbilityId, slot: 0);
             _system.TryActivate(e, Ability(), e, 0);
 
             Advance(e,0);   // startup0 종료 → Active 진입 → executor가 상태효과 적용
@@ -113,7 +113,7 @@ namespace LOP.Tests
         public void Tick_RunsThroughRecoveryToReady()
         {
             var e = MakeEntity(100, 10f);
-            _system.Grant(e, AbilityId);
+            _system.Grant(e, AbilityId, slot: 0);
             _system.TryActivate(e, Ability(), e, 0);  // 0/1/0
 
             Advance(e,0);   // Startup -> Active
@@ -128,7 +128,7 @@ namespace LOP.Tests
         public void Busy_BlocksReactivation()
         {
             var e = MakeEntity(100, 10f);
-            _system.Grant(e, AbilityId);
+            _system.Grant(e, AbilityId, slot: 0);
             _system.TryActivate(e, Ability(), e, 0);   // 진행 중
 
             Assert.That(_system.CanActivate(e, Ability(), 0), Is.False, "busy");
@@ -142,7 +142,7 @@ namespace LOP.Tests
         public void Cooldown_AfterMachineDone_BlocksUntilElapsed()
         {
             var e = MakeEntity(100, 10f);
-            _system.Grant(e, AbilityId);
+            _system.Grant(e, AbilityId, slot: 0);
             _system.TryActivate(e, Ability(), e, 0);   // cd end @10
             Advance(e,0); Advance(e,1); Advance(e,2); // 머신 종료 -> Ready
 
@@ -155,7 +155,7 @@ namespace LOP.Tests
         public void TryActivate_AfterCooldown_Succeeds()
         {
             var e = MakeEntity(100, 10f);
-            _system.Grant(e, AbilityId);
+            _system.Grant(e, AbilityId, slot: 0);
             _system.TryActivate(e, Ability(), e, 0);   // cd end @10
             Advance(e,0); Advance(e,1); Advance(e,2); // -> Ready
 
@@ -170,7 +170,7 @@ namespace LOP.Tests
         public void CanActivate_InsufficientMana_False()
         {
             var e = MakeEntity(10, 10f); // max 10 < MpCost 20
-            _system.Grant(e, AbilityId);
+            _system.Grant(e, AbilityId, slot: 0);
 
             Assert.That(_system.CanActivate(e, Ability(), 0), Is.False);
 
@@ -197,7 +197,7 @@ namespace LOP.Tests
         public void TryActivate_NoEffects_CommitsNoEffect()
         {
             var e = MakeEntity(100, 10f);
-            _system.Grant(e, AbilityId);
+            _system.Grant(e, AbilityId, slot: 0);
 
             // effects 없는 어빌리티(빈 리스트) — 발동·쿨다운만, 효과 없음.
             var noEffectAbility = new AbilityData(AbilityId, Cooldown, MpCost, 0, 1, 0, new AbilityEffect[0]);
@@ -214,7 +214,7 @@ namespace LOP.Tests
         public void Startup_DelaysEffectUntilActive()
         {
             var e = MakeEntity(100, 10f);
-            _system.Grant(e, AbilityId);
+            _system.Grant(e, AbilityId, slot: 0);
             _system.TryActivate(e, Ability(startup: 3, active: 1, recovery: 0), e, 0);
 
             Advance(e,0); Advance(e,1); Advance(e,2);  // 0,1,2 < startupEnd(3)

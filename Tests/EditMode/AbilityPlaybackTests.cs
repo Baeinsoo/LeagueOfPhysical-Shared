@@ -6,8 +6,8 @@ namespace LOP.Tests
     {
         // startup 10틱, active 20틱, recovery 10틱 = 총 40틱. 발동 100틱 → 종료 140틱.
         private const long Total = 40;
-        private static ActiveAbility Make() =>
-            ActiveAbility.ForPresentation(abilityId: 7, startupEndTick: 110, activeEndTick: 130, recoveryEndTick: 140);
+        private static AbilityActivation Make() =>
+            AbilityActivation.ForPresentation(abilityId: 7, startupEndTick: 110, activeEndTick: 130, recoveryEndTick: 140);
 
         [Test]
         public void StartOfCastIsStartupAtZero()

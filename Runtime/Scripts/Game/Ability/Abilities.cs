@@ -3,27 +3,36 @@ using GameFramework.World;
 
 namespace LOP
 {
-    /// <summary>부여된 어빌리티 하나의 런타임 상태(데이터). 로직은 <see cref="AbilitySystem"/>에 둔다(Anemic).</summary>
-    public readonly struct AbilitySlot
+    /// <summary>
+    /// 이 엔티티가 부여받은 어빌리티 하나의 런타임 상태(데이터). 기록의 존재 자체가 보유 증명이다.
+    /// GAS의 FGameplayAbilitySpec 대응 — 어빌리티 참조 + 입력 바인딩(<see cref="Slot"/>) + 런타임 상태(쿨다운).
+    /// 로직은 <see cref="AbilitySystem"/>에 둔다(Anemic).
+    /// </summary>
+    public readonly struct GrantedAbility
     {
         public readonly int AbilityId;
+
+        /// <summary>장착 자리 번호(입력 바인딩). 0이면 입력에 붙지 않음 — GAS의 InputID = INDEX_NONE 대응.</summary>
+        public readonly int Slot;
+
         public readonly long CooldownEndTick;   // currentTick >= 이 값이면 ready (초기 0)
 
-        public AbilitySlot(int abilityId, long cooldownEndTick)
+        public GrantedAbility(int abilityId, int slot, long cooldownEndTick)
         {
             AbilityId = abilityId;
+            Slot = slot;
             CooldownEndTick = cooldownEndTick;
         }
     }
 
-    /// <summary>어빌리티 발동의 시간 페이즈(격투 frame data). null ⇔ Ready; <see cref="ActiveAbility"/>는 항상 Startup/Active/Recovery.</summary>
+    /// <summary>어빌리티 발동의 시간 페이즈(격투 frame data). null ⇔ Ready; <see cref="AbilityActivation"/>은 항상 Startup/Active/Recovery.</summary>
     public enum AbilityPhase { Ready, Startup, Active, Recovery }
 
     /// <summary>
     /// 진행 중인 어빌리티 발동 하나(transient). 엔티티당 동시 1. 페이즈 경계는 발동 시 절대 틱으로 확정.
     /// 데이터만 — 전진/적용 로직은 <see cref="AbilitySystem.Tick"/>.
     /// </summary>
-    public readonly struct ActiveAbility
+    public readonly struct AbilityActivation
     {
         public readonly int AbilityId;
         public readonly AbilityPhase Phase;
@@ -43,7 +52,7 @@ namespace LOP
         public readonly float RecoveryMoveScale;
         public readonly bool BlockJump;
 
-        public ActiveAbility(int abilityId, AbilityPhase phase, long startupEndTick, long activeEndTick,
+        public AbilityActivation(int abilityId, AbilityPhase phase, long startupEndTick, long activeEndTick,
                              long recoveryEndTick, Entity target, AbilityEffect[] effects,
                              float startupMoveScale = 1f, float activeMoveScale = 1f,
                              float recoveryMoveScale = 1f, bool blockJump = false)
@@ -61,8 +70,8 @@ namespace LOP
             BlockJump = blockJump;
         }
 
-        public ActiveAbility WithPhase(AbilityPhase phase)
-            => new ActiveAbility(AbilityId, phase, StartupEndTick, ActiveEndTick, RecoveryEndTick, Target, Effects,
+        public AbilityActivation WithPhase(AbilityPhase phase)
+            => new AbilityActivation(AbilityId, phase, StartupEndTick, ActiveEndTick, RecoveryEndTick, Target, Effects,
                                  StartupMoveScale, ActiveMoveScale, RecoveryMoveScale, BlockJump);
 
         /// <summary>
@@ -70,21 +79,21 @@ namespace LOP
         /// 효과 목록·이동 스케일·점프 봉인 같은 시뮬 파라미터는 비운다: 클라는 원격 어빌리티를 실행하지 않는다.
         /// Phase는 뷰가 <see cref="AbilityPlayback.Solve"/>로 매 프레임 다시 구하므로 의미 없는 초기값이다.
         /// </summary>
-        public static ActiveAbility ForPresentation(int abilityId, long startupEndTick,
+        public static AbilityActivation ForPresentation(int abilityId, long startupEndTick,
                                                     long activeEndTick, long recoveryEndTick)
         {
-            return new ActiveAbility(abilityId, AbilityPhase.Startup,
+            return new AbilityActivation(abilityId, AbilityPhase.Startup,
                 startupEndTick, activeEndTick, recoveryEndTick,
                 null, System.Array.Empty<AbilityEffect>(), 1f, 1f, 1f, false);
         }
     }
 
-    /// <summary>엔티티가 보유한 어빌리티 슬롯 집합(데이터 컴포넌트). AbilityId당 1 슬롯(InstancedPerActor).</summary>
+    /// <summary>엔티티가 부여받은 어빌리티 집합(데이터 컴포넌트). AbilityId당 1개.</summary>
     public class Abilities : Component
     {
-        public Dictionary<int, AbilitySlot> Slots { get; } = new Dictionary<int, AbilitySlot>();
+        public Dictionary<int, GrantedAbility> Granted { get; } = new Dictionary<int, GrantedAbility>();
 
         /// <summary>진행 중인 발동(없으면 null=Ready). 엔티티당 동시 1 — busy 판정.</summary>
-        public ActiveAbility? ActiveAbility { get; set; }
+        public AbilityActivation? Current { get; set; }
     }
 }

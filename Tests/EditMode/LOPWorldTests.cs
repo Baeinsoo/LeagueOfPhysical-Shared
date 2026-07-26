@@ -73,7 +73,7 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void Tick_DrivesActiveAbilityEffect_ViaAbsorbedPhase()
+        public void Tick_DrivesActivePhaseEffect_ViaAbsorbedPhase()
         {
             var registry = new EntityRegistry();
             var abilitySystem = new AbilitySystem(new ManaSystem());
@@ -92,7 +92,7 @@ namespace LOP.Tests
             entity.Add(new Simulated());
             registry.Add(entity);
 
-            abilitySystem.Grant(entity, 1);
+            abilitySystem.Grant(entity, 1, slot: 0);
             // startup0/active1/recovery0 + SpyEffect 1개 — Active 진입 틱에 OnActiveEnter 1회
             abilitySystem.TryActivate(entity,
                 new AbilityData(1, 0, 0, 0, 1, 0, new AbilityEffect[] { new SpyEffect() }), entity, 0);
@@ -179,18 +179,18 @@ namespace LOP.Tests
             entity.Add(new Simulated());   // Mutation이 Has<Simulated>만 순회
             registry.Add(entity);
 
-            abilitySystem.Grant(entity, 1);
+            abilitySystem.Grant(entity, 1, slot: 0);
             // startup0/active1/recovery0, 효과 없음 — 페이즈 전진만 검증
             abilitySystem.TryActivate(entity,
                 new AbilityData(1, 0, 0, 0, 1, 0, null), entity, 0);
-            Assert.That(entity.Get<Abilities>().ActiveAbility.Value.Phase, Is.EqualTo(AbilityPhase.Startup));
+            Assert.That(entity.Get<Abilities>().Current.Value.Phase, Is.EqualTo(AbilityPhase.Startup));
 
             world.Tick(0, 0.05f);   // Startup -> Active
-            Assert.That(entity.Get<Abilities>().ActiveAbility.Value.Phase, Is.EqualTo(AbilityPhase.Active));
+            Assert.That(entity.Get<Abilities>().Current.Value.Phase, Is.EqualTo(AbilityPhase.Active));
 
             world.Tick(1, 0.05f);   // Active -> Recovery
             world.Tick(2, 0.05f);   // Recovery -> Ready
-            Assert.That(entity.Get<Abilities>().ActiveAbility, Is.Null);
+            Assert.That(entity.Get<Abilities>().Current, Is.Null);
         }
     }
 }

@@ -61,9 +61,9 @@ namespace LOP.Tests
         private static void AssertStateEqual(PredictedAbilityState expected, Entity actual, long atTick)
         {
             var abilities = actual.Get<Abilities>();
-            Assert.AreEqual(expected.ActiveAbility?.Phase, abilities.ActiveAbility?.Phase, $"tick {atTick}: phase");
-            Assert.AreEqual(expected.Slots[AbilityId].CooldownEndTick,
-                            abilities.Slots[AbilityId].CooldownEndTick, $"tick {atTick}: cooldown");
+            Assert.AreEqual(expected.Current?.Phase, abilities.Current?.Phase, $"tick {atTick}: phase");
+            Assert.AreEqual(expected.Granted[AbilityId].CooldownEndTick,
+                            abilities.Granted[AbilityId].CooldownEndTick, $"tick {atTick}: cooldown");
             Assert.AreEqual(expected.StatusEffects.Count,
                             actual.Get<StatusEffects>().Effects.Count, $"tick {atTick}: status count");
             Assert.AreEqual(expected.ManaCurrent, actual.Get<Mana>().Current, $"tick {atTick}: mana");
@@ -79,7 +79,7 @@ namespace LOP.Tests
 
             // 1) 라이브 진행 — 틱 0에 발동, 매 틱 진행 후 상태 캡처.
             var e = MakeEntity();
-            _abilities.Grant(e, AbilityId);
+            _abilities.Grant(e, AbilityId, slot: 0);
             _abilities.TryActivate(e, Haste(), e, 0);
 
             var recorded = new Dictionary<long, PredictedAbilityState>();
