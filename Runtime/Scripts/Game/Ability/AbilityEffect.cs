@@ -24,14 +24,25 @@ namespace LOP
         }
     }
 
+    /// <summary>상태효과를 누구에게 걸지. 발동 전에 지목하는 대상(AbilityActivation.Target)과는 다른 축이다.</summary>
+    public enum TargetType
+    {
+        /// <summary>시전자 자신.</summary>
+        Self,
+        /// <summary>이번 발동에서 명중한 대상 전원(AttackHitContext).</summary>
+        HitTargets,
+    }
+
     /// <summary>상태효과를 건다(버프/디버프). 적용된 효과는 독립 <see cref="StatusEffects"/> 컴포넌트로 살아간다(수명 분리).</summary>
     public sealed class StatusEffectApplyEffect : AbilityEffect
     {
         public readonly int StatusEffectId;     // TbStatusEffect 참조(런타임 데이터는 핸들러가 resolve)
+        public readonly TargetType Target;
 
-        public StatusEffectApplyEffect(int statusEffectId)
+        public StatusEffectApplyEffect(int statusEffectId, TargetType target = TargetType.Self)
         {
             StatusEffectId = statusEffectId;
+            Target = target;
         }
     }
 

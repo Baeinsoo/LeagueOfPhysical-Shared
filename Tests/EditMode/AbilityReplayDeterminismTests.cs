@@ -23,7 +23,7 @@ namespace LOP.Tests
             _mana = new ManaSystem();
             _stats = new StatsSystem();
             _status = new StatusEffectSystem(_stats);
-            var handler = new StatusEffectApplyEffectHandler(_status, Resolve);
+            var handler = new StatusEffectApplyEffectHandler(_status, Resolve, new EntityRegistry());
             _executor = new AbilityEffectExecutor(new IAbilityEffectHandler[] { handler });
             _abilities = new AbilitySystem(_mana);
         }
