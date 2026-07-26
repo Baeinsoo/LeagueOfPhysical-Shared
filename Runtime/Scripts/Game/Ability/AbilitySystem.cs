@@ -23,7 +23,7 @@ namespace LOP
         /// </summary>
         public static bool HasActiveMotionEffect(Entity entity)
         {
-            var active = entity?.Get<Abilities>()?.Current;
+            var active = entity?.Get<Abilities>()?.Activation;
             if (active == null || active.Value.Phase != AbilityPhase.Active || active.Value.Effects == null)
             {
                 return false;
@@ -45,7 +45,7 @@ namespace LOP
         public static bool TryGetActiveMotionEffect(Entity entity, long currentTick, out MotionEffect motionEffect)
         {
             motionEffect = null;
-            var active = entity?.Get<Abilities>()?.Current;
+            var active = entity?.Get<Abilities>()?.Activation;
             if (active == null)
             {
                 return false;
@@ -69,7 +69,7 @@ namespace LOP
         /// <summary>진행 중 어빌리티의 현재 페이즈 이동배율(없으면 1=자유). 경계틱으로 판정 → 시스템 실행순서 무관.</summary>
         public static float GetMovementMultiplier(Entity entity, long currentTick)
         {
-            var active = entity?.Get<Abilities>()?.Current;
+            var active = entity?.Get<Abilities>()?.Activation;
             if (active == null)
             {
                 return 1f;
@@ -84,7 +84,7 @@ namespace LOP
         /// <summary>발동 창(RecoveryEnd 전) 안이고 BlockJump면 점프 차단. GetMovementMultiplier와 같은 경계틱 판정.</summary>
         public static bool IsJumpBlocked(Entity entity, long currentTick)
         {
-            var active = entity?.Get<Abilities>()?.Current;
+            var active = entity?.Get<Abilities>()?.Activation;
             return active != null && active.Value.BlockJump && currentTick < active.Value.RecoveryEndTick;
         }
 
@@ -131,7 +131,7 @@ namespace LOP
             {
                 return false;
             }
-            if (abilities.Current != null)
+            if (abilities.Activation != null)
             {
                 return false;   // busy — 다른 발동 진행 중(Startup/Active/Recovery)
             }
@@ -176,7 +176,7 @@ namespace LOP
             long startupEnd = currentTick + data.StartupTicks;
             long activeEnd = startupEnd + data.ActiveTicks;
             long recoveryEnd = activeEnd + data.RecoveryTicks;
-            abilities.Current = new AbilityActivation(data.AbilityId, AbilityPhase.Startup,
+            abilities.Activation = new AbilityActivation(data.AbilityId, AbilityPhase.Startup,
                 startupEnd, activeEnd, recoveryEnd, target, data.Effects,
                 data.StartupMoveScale, data.ActiveMoveScale, data.RecoveryMoveScale, data.BlockJump);
             return true;
@@ -191,30 +191,30 @@ namespace LOP
         public void Tick(Entity entity, long currentTick)
         {
             var abilities = entity.Get<Abilities>();
-            if (abilities?.Current == null)
+            if (abilities?.Activation == null)
             {
                 return;
             }
 
-            var active = abilities.Current.Value;
+            var active = abilities.Activation.Value;
             switch (active.Phase)
             {
                 case AbilityPhase.Startup:
                     if (currentTick >= active.StartupEndTick)
                     {
-                        abilities.Current = active.WithPhase(AbilityPhase.Active);
+                        abilities.Activation = active.WithPhase(AbilityPhase.Active);
                     }
                     break;
                 case AbilityPhase.Active:
                     if (currentTick >= active.ActiveEndTick)
                     {
-                        abilities.Current = active.WithPhase(AbilityPhase.Recovery);
+                        abilities.Activation = active.WithPhase(AbilityPhase.Recovery);
                     }
                     break;
                 case AbilityPhase.Recovery:
                     if (currentTick >= active.RecoveryEndTick)
                     {
-                        abilities.Current = null;
+                        abilities.Activation = null;
                     }
                     break;
             }

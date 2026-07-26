@@ -37,7 +37,7 @@ namespace LOP.Tests
         {
             var e = new Entity("e1");
             var ab = new Abilities();
-            ab.Current = active;
+            ab.Activation = active;
             e.Add(ab);
             return e;
         }
@@ -85,7 +85,7 @@ namespace LOP.Tests
 
             Assert.IsTrue(system.TryActivate(e, data, e, 0));
 
-            var a = e.Get<Abilities>().Current.Value;
+            var a = e.Get<Abilities>().Activation.Value;
             Assert.That(a.ActiveMoveScale, Is.EqualTo(0f));
             Assert.That(a.RecoveryMoveScale, Is.EqualTo(0.3f));
             Assert.That(a.BlockJump, Is.True);

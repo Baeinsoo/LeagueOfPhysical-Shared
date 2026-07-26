@@ -10,7 +10,7 @@ namespace LOP.Tests
             var e = new Entity("d");
             var abilities = new Abilities();
             // Phase는 무관(창 기반 판정) — 일부러 Startup으로 둬 전이-틱 파리티를 검증.
-            abilities.Current = new AbilityActivation(2, AbilityPhase.Startup, startupEnd, activeEnd, activeEnd + 5,
+            abilities.Activation = new AbilityActivation(2, AbilityPhase.Startup, startupEnd, activeEnd, activeEnd + 5,
                 null, new AbilityEffect[] { new MotionEffect(15f) });
             e.Add(abilities);
             return e;

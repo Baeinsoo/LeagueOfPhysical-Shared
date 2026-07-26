@@ -32,7 +32,7 @@ namespace LOP
         /// </summary>
         public void DriveActiveEntity(Entity caster, long currentTick)
         {
-            var active = caster?.Get<Abilities>()?.Current;
+            var active = caster?.Get<Abilities>()?.Activation;
             if (active == null || active.Value.Phase != AbilityPhase.Active)
             {
                 return;
