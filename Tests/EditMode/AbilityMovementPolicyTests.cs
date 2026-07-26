@@ -79,7 +79,7 @@ namespace LOP.Tests
             var system = new AbilitySystem(new ManaSystem());
             var e = new Entity("caster");
             e.Add(new Abilities());
-            system.Grant(e, 3);
+            system.Grant(e, 3, slot: 0);
             var data = new AbilityData(3, 10, 0, 2, 3, 2, new AbilityEffect[0],
                                        0.5f, 0f, 0.3f, blockJump: true);
 

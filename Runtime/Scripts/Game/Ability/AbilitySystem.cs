@@ -88,15 +88,39 @@ namespace LOP
             return active != null && active.Value.BlockJump && currentTick < active.Value.RecoveryEndTick;
         }
 
-        /// <summary>어빌리티를 엔티티에 부여한다(ready 슬롯 추가).</summary>
-        public void Grant(Entity entity, int abilityId)
+        /// <summary>어빌리티를 부여한다(GAS GiveAbility). slot=0이면 입력에 붙지 않는 부여.</summary>
+        public void Grant(Entity entity, int abilityId, int slot)
         {
             var abilities = entity.Get<Abilities>();
             if (abilities == null)
             {
                 return;
             }
-            abilities.Granted[abilityId] = new GrantedAbility(abilityId, 0);
+            abilities.Granted[abilityId] = new GrantedAbility(abilityId, slot, 0);
+        }
+
+        /// <summary>슬롯에 장착된 어빌리티 id를 찾는다(순수 읽기). 슬롯 0은 입력 대상이 아니라 항상 false.</summary>
+        public bool TryGetAbilityIdBySlot(Entity caster, int slot, out int abilityId)
+        {
+            abilityId = 0;
+            if (slot <= 0)
+            {
+                return false;
+            }
+            var abilities = caster?.Get<Abilities>();
+            if (abilities == null)
+            {
+                return false;
+            }
+            foreach (var granted in abilities.Granted.Values)
+            {
+                if (granted.Slot == slot)
+                {
+                    abilityId = granted.AbilityId;
+                    return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>발동 가능 여부(GAS CanActivateAbility): 보유 + not busy + 쿨다운 ready + 자원 충분. 순수 읽기.</summary>
@@ -143,7 +167,10 @@ namespace LOP
                 _manaSystem.Spend(caster.Get<Mana>(), data.MpCost);
             }
             var abilities = caster.Get<Abilities>();
-            abilities.Granted[data.AbilityId] = new GrantedAbility(data.AbilityId, currentTick + data.CooldownTicks);
+            // 쿨다운만 갱신 — 슬롯(장착 자리)은 보존해야 한다.
+            int grantedSlot = abilities.Granted[data.AbilityId].Slot;
+            abilities.Granted[data.AbilityId] =
+                new GrantedAbility(data.AbilityId, grantedSlot, currentTick + data.CooldownTicks);
 
             // 페이즈 머신 시작 — 경계를 절대 틱으로 확정. effect는 Active 창에서 Tick이 디스패치.
             long startupEnd = currentTick + data.StartupTicks;

@@ -79,7 +79,7 @@ namespace LOP.Tests
 
             // 1) 라이브 진행 — 틱 0에 발동, 매 틱 진행 후 상태 캡처.
             var e = MakeEntity();
-            _abilities.Grant(e, AbilityId);
+            _abilities.Grant(e, AbilityId, slot: 0);
             _abilities.TryActivate(e, Haste(), e, 0);
 
             var recorded = new Dictionary<long, PredictedAbilityState>();

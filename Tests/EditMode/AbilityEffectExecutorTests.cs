@@ -87,7 +87,7 @@ namespace LOP.Tests
 
             var e = new Entity("caster");
             e.Add(new Abilities());
-            system.Grant(e, 7);
+            system.Grant(e, 7, slot: 0);
 
             // id7, startup0/active3/recovery0, MotionEffect 1개, 코스트 0.
             var data = new AbilityData(7, 0, 0, 0, 3, 0, new AbilityEffect[] { new MotionEffect(5f) });

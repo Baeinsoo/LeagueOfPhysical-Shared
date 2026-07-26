@@ -5,16 +5,22 @@ namespace LOP
 {
     /// <summary>
     /// 이 엔티티가 부여받은 어빌리티 하나의 런타임 상태(데이터). 기록의 존재 자체가 보유 증명이다.
-    /// GAS의 FGameplayAbilitySpec 대응. 로직은 <see cref="AbilitySystem"/>에 둔다(Anemic).
+    /// GAS의 FGameplayAbilitySpec 대응 — 어빌리티 참조 + 입력 바인딩(<see cref="Slot"/>) + 런타임 상태(쿨다운).
+    /// 로직은 <see cref="AbilitySystem"/>에 둔다(Anemic).
     /// </summary>
     public readonly struct GrantedAbility
     {
         public readonly int AbilityId;
+
+        /// <summary>장착 자리 번호(입력 바인딩). 0이면 입력에 붙지 않음 — GAS의 InputID = INDEX_NONE 대응.</summary>
+        public readonly int Slot;
+
         public readonly long CooldownEndTick;   // currentTick >= 이 값이면 ready (초기 0)
 
-        public GrantedAbility(int abilityId, long cooldownEndTick)
+        public GrantedAbility(int abilityId, int slot, long cooldownEndTick)
         {
             AbilityId = abilityId;
+            Slot = slot;
             CooldownEndTick = cooldownEndTick;
         }
     }
