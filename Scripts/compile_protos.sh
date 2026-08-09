@@ -1,9 +1,15 @@
 #!/bin/bash
 
 # 변수 설정
-PROTOC="../Tools/Protobuf/protoc-28.2-win64/bin/protoc"
+# protoc은 플랫폼별 바이너리다 — 같은 버전(28.2)이면 어느 쪽으로 만들어도 출력이 바이트 단위로 같다.
+case "$(uname -s)" in
+    Darwin) PROTOC_HOME="../Tools/Protobuf/protoc-28.2-osx-universal" ;;
+    *)      PROTOC_HOME="../Tools/Protobuf/protoc-28.2-win64" ;;
+esac
+
+PROTOC="$PROTOC_HOME/bin/protoc"
 PROTO_PATH="../Protos"
-INCLUDE_PATH="../Tools/Protobuf/protoc-28.2-win64/include"
+INCLUDE_PATH="$PROTOC_HOME/include"
 OUT_PATH="../Runtime.Generated/Scripts/Protobuf"
 FILE_COUNT=0
 

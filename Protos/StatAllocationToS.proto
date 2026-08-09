@@ -3,6 +3,7 @@ syntax = "proto3";
 // @auto_generate
 message StatAllocationToS
 {
-	string session_id = 1;
+	// 신원은 연결에서 도출한다(1c) — 클라가 적어 보내지 않는다.
+	reserved 1;
     string stat = 2;
 }

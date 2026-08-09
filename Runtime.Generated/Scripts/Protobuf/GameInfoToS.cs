@@ -22,12 +22,12 @@ public static partial class GameInfoToSReflection {
   static GameInfoToSReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChFHYW1lSW5mb1RvUy5wcm90byIeCgtHYW1lSW5mb1RvUxIPCgd1c2VyX2lk",
-          "GAEgASgJYgZwcm90bzM="));
+          "ChFHYW1lSW5mb1RvUy5wcm90byITCgtHYW1lSW5mb1RvU0oECAEQAmIGcHJv",
+          "dG8z"));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::GameInfoToS), global::GameInfoToS.Parser, new[]{ "UserId" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::GameInfoToS), global::GameInfoToS.Parser, null, null, null, null, null)
         }));
   }
   #endregion
@@ -72,7 +72,6 @@ public sealed partial class GameInfoToS : pb::IMessage<GameInfoToS>
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public GameInfoToS(GameInfoToS other) : this() {
-    userId_ = other.userId_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -80,18 +79,6 @@ public sealed partial class GameInfoToS : pb::IMessage<GameInfoToS>
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public GameInfoToS Clone() {
     return new GameInfoToS(this);
-  }
-
-  /// <summary>Field number for the "user_id" field.</summary>
-  public const int UserIdFieldNumber = 1;
-  private string userId_ = "";
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public string UserId {
-    get { return userId_; }
-    set {
-      userId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-    }
   }
 
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -109,7 +96,6 @@ public sealed partial class GameInfoToS : pb::IMessage<GameInfoToS>
     if (ReferenceEquals(other, this)) {
       return true;
     }
-    if (UserId != other.UserId) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -117,7 +103,6 @@ public sealed partial class GameInfoToS : pb::IMessage<GameInfoToS>
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override int GetHashCode() {
     int hash = 1;
-    if (UserId.Length != 0) hash ^= UserId.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -136,10 +121,6 @@ public sealed partial class GameInfoToS : pb::IMessage<GameInfoToS>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
     output.WriteRawMessage(this);
   #else
-    if (UserId.Length != 0) {
-      output.WriteRawTag(10);
-      output.WriteString(UserId);
-    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -150,10 +131,6 @@ public sealed partial class GameInfoToS : pb::IMessage<GameInfoToS>
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-    if (UserId.Length != 0) {
-      output.WriteRawTag(10);
-      output.WriteString(UserId);
-    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -164,9 +141,6 @@ public sealed partial class GameInfoToS : pb::IMessage<GameInfoToS>
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public int CalculateSize() {
     int size = 0;
-    if (UserId.Length != 0) {
-      size += 1 + pb::CodedOutputStream.ComputeStringSize(UserId);
-    }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
     }
@@ -178,9 +152,6 @@ public sealed partial class GameInfoToS : pb::IMessage<GameInfoToS>
   public void MergeFrom(GameInfoToS other) {
     if (other == null) {
       return;
-    }
-    if (other.UserId.Length != 0) {
-      UserId = other.UserId;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -201,10 +172,6 @@ public sealed partial class GameInfoToS : pb::IMessage<GameInfoToS>
         default:
           _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
           break;
-        case 10: {
-          UserId = input.ReadString();
-          break;
-        }
       }
     }
   #endif
@@ -224,10 +191,6 @@ public sealed partial class GameInfoToS : pb::IMessage<GameInfoToS>
         default:
           _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
           break;
-        case 10: {
-          UserId = input.ReadString();
-          break;
-        }
       }
     }
   }
