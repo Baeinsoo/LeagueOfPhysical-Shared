@@ -13,7 +13,8 @@ message InputCommandEntry
 // @auto_generate
 message InputCommandToS
 {
-	string session_id = 1;
+	// 신원은 연결에서 도출한다(1c) — 클라가 적어 보내지 않는다.
+	reserved 1;
 	int64 tick = 2;
 	InputCommand input_command = 3;
 	ProtoTransform entity_transform = 4;

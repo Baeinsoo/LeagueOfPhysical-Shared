@@ -25,16 +25,15 @@ public static partial class InputCommandToSReflection {
           "ChVJbnB1dENvbW1hbmRUb1MucHJvdG8aEklucHV0Q29tbWFuZC5wcm90bxoU",
           "UHJvdG9UcmFuc2Zvcm0ucHJvdG8iRwoRSW5wdXRDb21tYW5kRW50cnkSDAoE",
           "dGljaxgBIAEoAxIkCg1pbnB1dF9jb21tYW5kGAIgASgLMg0uSW5wdXRDb21t",
-          "YW5kIq8BCg9JbnB1dENvbW1hbmRUb1MSEgoKc2Vzc2lvbl9pZBgBIAEoCRIM",
-          "CgR0aWNrGAIgASgDEiQKDWlucHV0X2NvbW1hbmQYAyABKAsyDS5JbnB1dENv",
-          "bW1hbmQSKQoQZW50aXR5X3RyYW5zZm9ybRgEIAEoCzIPLlByb3RvVHJhbnNm",
-          "b3JtEikKDXJlY2VudF9pbnB1dHMYBSADKAsyEi5JbnB1dENvbW1hbmRFbnRy",
-          "eWIGcHJvdG8z"));
+          "YW5kIqEBCg9JbnB1dENvbW1hbmRUb1MSDAoEdGljaxgCIAEoAxIkCg1pbnB1",
+          "dF9jb21tYW5kGAMgASgLMg0uSW5wdXRDb21tYW5kEikKEGVudGl0eV90cmFu",
+          "c2Zvcm0YBCABKAsyDy5Qcm90b1RyYW5zZm9ybRIpCg1yZWNlbnRfaW5wdXRz",
+          "GAUgAygLMhIuSW5wdXRDb21tYW5kRW50cnlKBAgBEAJiBnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::InputCommandReflection.Descriptor, global::ProtoTransformReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
           new pbr::GeneratedClrTypeInfo(typeof(global::InputCommandEntry), global::InputCommandEntry.Parser, new[]{ "Tick", "InputCommand" }, null, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::InputCommandToS), global::InputCommandToS.Parser, new[]{ "SessionId", "Tick", "InputCommand", "EntityTransform", "RecentInputs" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::InputCommandToS), global::InputCommandToS.Parser, new[]{ "Tick", "InputCommand", "EntityTransform", "RecentInputs" }, null, null, null, null)
         }));
   }
   #endregion
@@ -326,7 +325,6 @@ public sealed partial class InputCommandToS : pb::IMessage<InputCommandToS>
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public InputCommandToS(InputCommandToS other) : this() {
-    sessionId_ = other.sessionId_;
     tick_ = other.tick_;
     inputCommand_ = other.inputCommand_ != null ? other.inputCommand_.Clone() : null;
     entityTransform_ = other.entityTransform_ != null ? other.entityTransform_.Clone() : null;
@@ -338,18 +336,6 @@ public sealed partial class InputCommandToS : pb::IMessage<InputCommandToS>
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public InputCommandToS Clone() {
     return new InputCommandToS(this);
-  }
-
-  /// <summary>Field number for the "session_id" field.</summary>
-  public const int SessionIdFieldNumber = 1;
-  private string sessionId_ = "";
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public string SessionId {
-    get { return sessionId_; }
-    set {
-      sessionId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-    }
   }
 
   /// <summary>Field number for the "tick" field.</summary>
@@ -414,7 +400,6 @@ public sealed partial class InputCommandToS : pb::IMessage<InputCommandToS>
     if (ReferenceEquals(other, this)) {
       return true;
     }
-    if (SessionId != other.SessionId) return false;
     if (Tick != other.Tick) return false;
     if (!object.Equals(InputCommand, other.InputCommand)) return false;
     if (!object.Equals(EntityTransform, other.EntityTransform)) return false;
@@ -426,7 +411,6 @@ public sealed partial class InputCommandToS : pb::IMessage<InputCommandToS>
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override int GetHashCode() {
     int hash = 1;
-    if (SessionId.Length != 0) hash ^= SessionId.GetHashCode();
     if (Tick != 0L) hash ^= Tick.GetHashCode();
     if (inputCommand_ != null) hash ^= InputCommand.GetHashCode();
     if (entityTransform_ != null) hash ^= EntityTransform.GetHashCode();
@@ -449,10 +433,6 @@ public sealed partial class InputCommandToS : pb::IMessage<InputCommandToS>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
     output.WriteRawMessage(this);
   #else
-    if (SessionId.Length != 0) {
-      output.WriteRawTag(10);
-      output.WriteString(SessionId);
-    }
     if (Tick != 0L) {
       output.WriteRawTag(16);
       output.WriteInt64(Tick);
@@ -476,10 +456,6 @@ public sealed partial class InputCommandToS : pb::IMessage<InputCommandToS>
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-    if (SessionId.Length != 0) {
-      output.WriteRawTag(10);
-      output.WriteString(SessionId);
-    }
     if (Tick != 0L) {
       output.WriteRawTag(16);
       output.WriteInt64(Tick);
@@ -503,9 +479,6 @@ public sealed partial class InputCommandToS : pb::IMessage<InputCommandToS>
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public int CalculateSize() {
     int size = 0;
-    if (SessionId.Length != 0) {
-      size += 1 + pb::CodedOutputStream.ComputeStringSize(SessionId);
-    }
     if (Tick != 0L) {
       size += 1 + pb::CodedOutputStream.ComputeInt64Size(Tick);
     }
@@ -527,9 +500,6 @@ public sealed partial class InputCommandToS : pb::IMessage<InputCommandToS>
   public void MergeFrom(InputCommandToS other) {
     if (other == null) {
       return;
-    }
-    if (other.SessionId.Length != 0) {
-      SessionId = other.SessionId;
     }
     if (other.Tick != 0L) {
       Tick = other.Tick;
@@ -566,10 +536,6 @@ public sealed partial class InputCommandToS : pb::IMessage<InputCommandToS>
         default:
           _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
           break;
-        case 10: {
-          SessionId = input.ReadString();
-          break;
-        }
         case 16: {
           Tick = input.ReadInt64();
           break;
@@ -611,10 +577,6 @@ public sealed partial class InputCommandToS : pb::IMessage<InputCommandToS>
         default:
           _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
           break;
-        case 10: {
-          SessionId = input.ReadString();
-          break;
-        }
         case 16: {
           Tick = input.ReadInt64();
           break;

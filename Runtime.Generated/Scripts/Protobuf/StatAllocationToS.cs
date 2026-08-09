@@ -22,12 +22,12 @@ public static partial class StatAllocationToSReflection {
   static StatAllocationToSReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChdTdGF0QWxsb2NhdGlvblRvUy5wcm90byI1ChFTdGF0QWxsb2NhdGlvblRv",
-          "UxISCgpzZXNzaW9uX2lkGAEgASgJEgwKBHN0YXQYAiABKAliBnByb3RvMw=="));
+          "ChdTdGF0QWxsb2NhdGlvblRvUy5wcm90byInChFTdGF0QWxsb2NhdGlvblRv",
+          "UxIMCgRzdGF0GAIgASgJSgQIARACYgZwcm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::StatAllocationToS), global::StatAllocationToS.Parser, new[]{ "SessionId", "Stat" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::StatAllocationToS), global::StatAllocationToS.Parser, new[]{ "Stat" }, null, null, null, null)
         }));
   }
   #endregion
@@ -72,7 +72,6 @@ public sealed partial class StatAllocationToS : pb::IMessage<StatAllocationToS>
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public StatAllocationToS(StatAllocationToS other) : this() {
-    sessionId_ = other.sessionId_;
     stat_ = other.stat_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
@@ -81,18 +80,6 @@ public sealed partial class StatAllocationToS : pb::IMessage<StatAllocationToS>
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public StatAllocationToS Clone() {
     return new StatAllocationToS(this);
-  }
-
-  /// <summary>Field number for the "session_id" field.</summary>
-  public const int SessionIdFieldNumber = 1;
-  private string sessionId_ = "";
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public string SessionId {
-    get { return sessionId_; }
-    set {
-      sessionId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-    }
   }
 
   /// <summary>Field number for the "stat" field.</summary>
@@ -122,7 +109,6 @@ public sealed partial class StatAllocationToS : pb::IMessage<StatAllocationToS>
     if (ReferenceEquals(other, this)) {
       return true;
     }
-    if (SessionId != other.SessionId) return false;
     if (Stat != other.Stat) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
@@ -131,7 +117,6 @@ public sealed partial class StatAllocationToS : pb::IMessage<StatAllocationToS>
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override int GetHashCode() {
     int hash = 1;
-    if (SessionId.Length != 0) hash ^= SessionId.GetHashCode();
     if (Stat.Length != 0) hash ^= Stat.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
@@ -151,10 +136,6 @@ public sealed partial class StatAllocationToS : pb::IMessage<StatAllocationToS>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
     output.WriteRawMessage(this);
   #else
-    if (SessionId.Length != 0) {
-      output.WriteRawTag(10);
-      output.WriteString(SessionId);
-    }
     if (Stat.Length != 0) {
       output.WriteRawTag(18);
       output.WriteString(Stat);
@@ -169,10 +150,6 @@ public sealed partial class StatAllocationToS : pb::IMessage<StatAllocationToS>
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-    if (SessionId.Length != 0) {
-      output.WriteRawTag(10);
-      output.WriteString(SessionId);
-    }
     if (Stat.Length != 0) {
       output.WriteRawTag(18);
       output.WriteString(Stat);
@@ -187,9 +164,6 @@ public sealed partial class StatAllocationToS : pb::IMessage<StatAllocationToS>
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public int CalculateSize() {
     int size = 0;
-    if (SessionId.Length != 0) {
-      size += 1 + pb::CodedOutputStream.ComputeStringSize(SessionId);
-    }
     if (Stat.Length != 0) {
       size += 1 + pb::CodedOutputStream.ComputeStringSize(Stat);
     }
@@ -204,9 +178,6 @@ public sealed partial class StatAllocationToS : pb::IMessage<StatAllocationToS>
   public void MergeFrom(StatAllocationToS other) {
     if (other == null) {
       return;
-    }
-    if (other.SessionId.Length != 0) {
-      SessionId = other.SessionId;
     }
     if (other.Stat.Length != 0) {
       Stat = other.Stat;
@@ -230,10 +201,6 @@ public sealed partial class StatAllocationToS : pb::IMessage<StatAllocationToS>
         default:
           _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
           break;
-        case 10: {
-          SessionId = input.ReadString();
-          break;
-        }
         case 18: {
           Stat = input.ReadString();
           break;
@@ -257,10 +224,6 @@ public sealed partial class StatAllocationToS : pb::IMessage<StatAllocationToS>
         default:
           _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
           break;
-        case 10: {
-          SessionId = input.ReadString();
-          break;
-        }
         case 18: {
           Stat = input.ReadString();
           break;
