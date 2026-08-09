@@ -24,6 +24,12 @@ namespace LOP
         /// <summary>다음에 기대하는 시퀀스(재접속 seq 시드용).</summary>
         public long ExpectedNextSequence { get; set; }
 
+        /// <summary>마지막으로 실제 소비한 커맨드. 유실로 빈 틱을 메울 때(입력 예측) 쓴다.</summary>
+        public InputCommand LastReceived { get; set; }
+
+        /// <summary>연속으로 예측해 메운 틱 수. 진짜 커맨드가 오면 0으로 돌아간다.</summary>
+        public int PredictedTicks { get; set; }
+
         /// <summary>입력 도착 타이밍 통계(Phase 4 서버 피드백). 서버만 채운다 — 클라는 사용 안 함.</summary>
         public GameFramework.Netcode.InputTimingTracker TimingTracker { get; } = new GameFramework.Netcode.InputTimingTracker();
     }

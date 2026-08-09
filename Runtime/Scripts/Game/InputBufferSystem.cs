@@ -38,11 +38,44 @@ namespace LOP
                 buffer.Commands.Remove(tick);
                 buffer.LastProcessedSequence = command.SequenceNumber;
                 buffer.Current = command;
+
+                buffer.LastReceived = command;
+                buffer.PredictedTicks = 0;
                 return command;
             }
 
             buffer.Current = null;
             return null;
+        }
+
+        /// <summary>
+        /// 유실로 비어 있는 틱을 마지막으로 받은 커맨드로 메운다(입력 예측). 확정된 커맨드를 반환.
+        ///
+        /// <para>빈 칸은 비워둘 수 없다 — 서버는 그 틱을 어차피 굴려야 한다. 0으로 메우면 "제동하라"는
+        /// *능동적으로 틀린* 지시가 된다. 한 틱은 20ms라, 그 사이 손을 뗐을 확률보다 계속 누르고 있을
+        /// 확률이 압도적이므로 직전 이동을 이어 쓴다.</para>
+        ///
+        /// <para>이동만 이어 쓴다 — 점프·어빌리티는 1회성이라 반복하면 두 번 발동한다.
+        /// 연속 <paramref name="maxTicks"/>를 넘으면 중립으로 떨어뜨린다(연결이 끊긴 캐릭터가
+        /// 영영 달리면 안 된다).</para>
+        /// </summary>
+        public InputCommand PredictMissing(InputBuffer buffer, int maxTicks)
+        {
+            if (buffer.LastReceived == null || buffer.PredictedTicks >= maxTicks)
+            {
+                buffer.Current = new InputCommand();
+                return buffer.Current;
+            }
+
+            buffer.PredictedTicks++;
+
+            // 예측값은 받은 커맨드가 아니므로 시퀀스를 물려주지 않는다(dedup·seqGap 기준을 흐린다).
+            buffer.Current = new InputCommand
+            {
+                Horizontal = buffer.LastReceived.Horizontal,
+                Vertical = buffer.LastReceived.Vertical,
+            };
+            return buffer.Current;
         }
 
         /// <summary>이번 틱 커맨드를 직접 확정한다(클라 로컬 예측 — 방금 캡처한 커맨드 또는 무입력 0).</summary>
