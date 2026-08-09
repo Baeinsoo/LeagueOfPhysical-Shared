@@ -61,6 +61,73 @@ namespace LOP.Tests
             Assert.IsTrue(buffer.Commands.ContainsKey(8));
         }
 
+        //  입력 예측 — 유실로 빈 틱을 마지막으로 받은 커맨드로 메운다.
+        //  0으로 메우면 "제동하라"는 능동적으로 틀린 지시가 된다(한 틱은 20ms라, 그 사이 손을 뗐을
+        //  확률보다 계속 누르고 있을 확률이 압도적이다).
+
+        [Test]
+        public void PredictMissing_RepeatsLastReceivedMovement()
+        {
+            system.Enqueue(buffer, 10, Cmd(0, 0.8f));
+            system.Consume(buffer, 10);
+
+            var predicted = system.PredictMissing(buffer, maxTicks: 8);
+
+            Assert.That(predicted.Horizontal, Is.EqualTo(0.8f));
+            Assert.That(buffer.Current, Is.SameAs(predicted));
+        }
+
+        [Test]
+        public void PredictMissing_DoesNotRepeatJumpOrAbility()
+        {
+            system.Enqueue(buffer, 10, new InputCommand { SequenceNumber = 0, Horizontal = 0.8f, Jump = true, AbilityId = 7 });
+            system.Consume(buffer, 10);
+
+            var predicted = system.PredictMissing(buffer, maxTicks: 8);
+
+            Assert.That(predicted.Horizontal, Is.EqualTo(0.8f), "이동은 이어 쓴다");
+            Assert.IsFalse(predicted.Jump, "1회성 액션은 반복하면 두 번 발동한다");
+            Assert.That(predicted.AbilityId, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void PredictMissing_FallsBackToNeutral_AfterMaxTicks()
+        {
+            system.Enqueue(buffer, 10, Cmd(0, 0.8f));
+            system.Consume(buffer, 10);
+
+            for (int i = 0; i < 3; i++)
+            {
+                Assert.That(system.PredictMissing(buffer, maxTicks: 3).Horizontal, Is.EqualTo(0.8f));
+            }
+
+            Assert.That(system.PredictMissing(buffer, maxTicks: 3).Horizontal, Is.EqualTo(0f),
+                "상한을 넘으면 중립 — 끊긴 캐릭터가 영영 달리면 안 된다");
+        }
+
+        [Test]
+        public void PredictMissing_NeutralWhenNothingReceivedYet()
+        {
+            Assert.That(system.PredictMissing(buffer, maxTicks: 8).Horizontal, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void Consume_ResetsPredictionRun()
+        {
+            system.Enqueue(buffer, 10, Cmd(0, 0.8f));
+            system.Consume(buffer, 10);
+            system.PredictMissing(buffer, maxTicks: 3);
+            system.PredictMissing(buffer, maxTicks: 3);
+
+            system.Enqueue(buffer, 11, Cmd(1, 0.4f));
+            system.Consume(buffer, 11);   // 진짜 커맨드가 오면 예측 연속 카운트는 리셋
+
+            for (int i = 0; i < 3; i++)
+            {
+                Assert.That(system.PredictMissing(buffer, maxTicks: 3).Horizontal, Is.EqualTo(0.4f));
+            }
+        }
+
         [Test]
         public void TrimToWindow_KeepsMostRecent()
         {
