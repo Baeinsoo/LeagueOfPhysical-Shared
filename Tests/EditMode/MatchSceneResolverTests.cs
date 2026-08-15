@@ -54,4 +54,22 @@ public class MatchSceneResolverTests
         StringAssert.Contains("TbGameMode", e.Message);
         StringAssert.Contains("42", e.Message);
     }
+
+    [Test]
+    public void RequireRow_행이_있으면_그대로_돌려준다()
+    {
+        var row = "행";
+
+        Assert.AreSame(row, MatchSceneResolver.RequireRow("TbGameMode", 1, row));
+    }
+
+    [Test]
+    public void RequireRow_행이_없으면_예외_메시지에_테이블과_id가_들어간다()
+    {
+        var e = Assert.Throws<InvalidOperationException>(
+            () => MatchSceneResolver.RequireRow<string>("TbGameMode", 42, null));
+
+        StringAssert.Contains("TbGameMode", e.Message);
+        StringAssert.Contains("42", e.Message);
+    }
 }

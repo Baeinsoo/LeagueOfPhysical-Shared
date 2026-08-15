@@ -36,5 +36,19 @@ namespace LOP
 
             return scenePath;
         }
+
+        /// <summary>
+        /// 마스터데이터에서 찾은 행을 검증해 돌려준다.
+        /// 없는 id와 값이 빈 행은 원인이 달라, 뭉뚱그리면 데이터를 고칠 곳을 못 찾는다.
+        /// </summary>
+        public static T RequireRow<T>(string tableName, int id, T row) where T : class
+        {
+            if (row == null)
+            {
+                throw new InvalidOperationException($"{tableName}에 없는 id입니다. id: {id}");
+            }
+
+            return row;
+        }
     }
 }
