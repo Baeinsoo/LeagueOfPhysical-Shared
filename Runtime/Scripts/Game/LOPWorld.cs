@@ -9,6 +9,10 @@ namespace LOP
         private readonly KinematicMoveSystem _kinematicMoveSystem;
         private readonly GameFramework.World.IMotionBridge _motionBridge;
 
+        // 스킬·상태이상·스탯·마나의 틱별 사진. 위치·속도는 WorldBase가 담는다.
+        private readonly GameFramework.Netcode.SequenceBuffer<System.Collections.Generic.Dictionary<string, LOPSavedState>> _gameFrames
+            = new GameFramework.Netcode.SequenceBuffer<System.Collections.Generic.Dictionary<string, LOPSavedState>>(SaveCapacity);
+
         public LOPWorld(
             GameFramework.World.EntityRegistry entityRegistry,
             GameFramework.World.WorldEventBuffer eventBuffer,
@@ -72,6 +76,52 @@ namespace LOP
                     _motionBridge.PushMotion(entity);
                 }
             }
+        }
+
+        protected override void SaveGameState(long tick)
+        {
+            var frame = new System.Collections.Generic.Dictionary<string, LOPSavedState>();
+            foreach (var entity in EntityRegistry.All)
+            {
+                if (entity.Has<GameFramework.World.Simulated>())
+                {
+                    frame[entity.Id] = LOPSavedState.Capture(entity);
+                }
+            }
+            _gameFrames.Record(tick, frame);
+        }
+
+        protected override bool LoadGameState(long tick)
+        {
+            if (!_gameFrames.TryGet(tick, out var frame))
+            {
+                return false;
+            }
+            foreach (var pair in frame)
+            {
+                var entity = EntityRegistry.Get(pair.Key);
+                if (entity != null)
+                {
+                    pair.Value.RestoreTo(entity);
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 그 틱에 내가 예측했던 상태이상 목록. 서버 스냅과 <b>같은 시점끼리</b> 비교해야 해서
+        /// 클라 보정이 읽는다 — 지금 살아있는 목록과 비교하면 클라가 서버보다 앞서 달리는 만큼
+        /// 늘 달라 보여 불필요한 되돌리기가 매 스냅마다 일어난다.
+        /// </summary>
+        public bool TryGetSavedStatusEffects(long tick, string entityId, out System.Collections.Generic.List<ActiveEffect> effects)
+        {
+            effects = null;
+            if (_gameFrames.TryGet(tick, out var frame) && frame.TryGetValue(entityId, out var saved))
+            {
+                effects = saved.StatusEffects;
+                return true;
+            }
+            return false;
         }
     }
 }

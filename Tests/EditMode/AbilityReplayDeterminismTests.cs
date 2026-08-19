@@ -58,7 +58,7 @@ namespace LOP.Tests
             _executor.DriveActiveEntity(e, tick);
         }
 
-        private static void AssertStateEqual(PredictedAbilityState expected, Entity actual, long atTick)
+        private static void AssertStateEqual(LOPSavedState expected, Entity actual, long atTick)
         {
             var abilities = actual.Get<Abilities>();
             Assert.AreEqual(expected.Activation?.Phase, abilities.Activation?.Phase, $"tick {atTick}: phase");
@@ -82,11 +82,11 @@ namespace LOP.Tests
             _abilities.Grant(e, AbilityId, slot: 0);
             _abilities.TryActivate(e, Haste(), e, 0);
 
-            var recorded = new Dictionary<long, PredictedAbilityState>();
+            var recorded = new Dictionary<long, LOPSavedState>();
             for (long t = 0; t <= last; t++)
             {
                 AdvanceTick(e, t);
-                recorded[t] = PredictedAbilityState.Capture(e);
+                recorded[t] = LOPSavedState.Capture(e);
             }
 
             // 2) 앵커(anchor)로 복원 후 anchor+1..last 재진행.
