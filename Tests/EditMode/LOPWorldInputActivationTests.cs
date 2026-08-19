@@ -22,21 +22,33 @@ namespace LOP.Tests
             public void PushMotion(GameFramework.World.Entity e) { }
         }
 
+        // 조회 횟수 = 월드가 발동을 시도한 횟수. 시도 자체를 막았는지(가드) 보려면 결과만으론 부족하다.
+        private int resolveCalls;
+
+        [SetUp]
+        public void SetUp() => resolveCalls = 0;
+
         // 효과 없이 페이즈만 도는 최소 어빌리티. 발동 성공 여부만 볼 것이라 효과는 필요 없다.
-        private static AbilityData? Resolve(int id)
-            => id == AbilityId
+        private AbilityData? Resolve(int id)
+        {
+            resolveCalls++;
+            return id == AbilityId
                 ? (AbilityData?)new AbilityData(AbilityId, 10, 0, 2, 3, 2, new AbilityEffect[0])
                 : null;
+        }
 
-        private static LOPWorld MakeWorld(EntityRegistry registry)
+        private LOPWorld MakeWorld(EntityRegistry registry)
         {
             var eventBuffer = new WorldEventBuffer();
+            // 월드와 활성화기가 같은 인스턴스를 공유한다 — 실제 배선(DI)이 그렇다.
+            var manaSystem = new ManaSystem();
+            var abilitySystem = new AbilitySystem(manaSystem);
             return new LOPWorld(registry, eventBuffer,
                 new MovementSystem(new StatsSystem(), new MotionContributionSystem()),
-                new AbilitySystem(new ManaSystem()), new StatusEffectSystem(new StatsSystem()),
+                abilitySystem, new StatusEffectSystem(new StatsSystem()),
                 new AbilityEffectExecutor(null), new KinematicMoveSystem(new FakeQuery(), ~0),
                 new SpyBridge(),
-                new AbilityActivator(new AbilitySystem(new ManaSystem()), Resolve, registry, eventBuffer));
+                new AbilityActivator(abilitySystem, Resolve, registry, eventBuffer));
         }
 
         private static Entity MakeEntity(string id, bool simulated, InputCommand command)
@@ -82,6 +94,7 @@ namespace LOP.Tests
             MakeWorld(registry).Tick(1, 0.02f);
 
             Assert.IsNull(entity.Get<Abilities>().Activation);
+            Assert.AreEqual(0, resolveCalls, "id가 0이면 발동 시도조차 하지 않는다");
         }
 
         [Test]
