@@ -8,6 +8,7 @@ namespace LOP
         private readonly AbilityEffectExecutor _abilityEffectExecutor;
         private readonly KinematicMoveSystem _kinematicMoveSystem;
         private readonly GameFramework.World.IMotionBridge _motionBridge;
+        private readonly AbilityActivator _abilityActivator;
 
         // 스킬·상태이상·스탯·마나의 틱별 사진. 위치·속도는 WorldBase가 담는다.
         private readonly GameFramework.Netcode.SequenceBuffer<System.Collections.Generic.Dictionary<string, LOPSavedState>> _gameFrames
@@ -21,7 +22,8 @@ namespace LOP
             StatusEffectSystem statusEffectSystem,
             AbilityEffectExecutor abilityEffectExecutor,
             KinematicMoveSystem kinematicMoveSystem,
-            GameFramework.World.IMotionBridge motionBridge)
+            GameFramework.World.IMotionBridge motionBridge,
+            AbilityActivator abilityActivator)
             : base(entityRegistry, eventBuffer)
         {
             _movementSystem = movementSystem;
@@ -30,10 +32,26 @@ namespace LOP
             _abilityEffectExecutor = abilityEffectExecutor;
             _kinematicMoveSystem = kinematicMoveSystem;
             _motionBridge = motionBridge;
+            _abilityActivator = abilityActivator;
         }
 
         protected override void Mutation(long tick, float deltaTime)
         {
+            // 입력에 실린 어빌리티 발동. 이동보다 먼저 해야 한다 — 대시 발동 틱의 입력 게이트가
+            // 이 순서에 걸려 있고, 라이브(입력 캡처 → world.Tick)와 재생의 순서가 같아야 결과가 갈리지 않는다.
+            foreach (var entity in EntityRegistry.All)
+            {
+                if (!entity.Has<GameFramework.World.Simulated>())
+                {
+                    continue;
+                }
+                var command = entity.Get<InputBuffer>()?.Current;
+                if (command != null && command.AbilityId != 0)
+                {
+                    _abilityActivator.TryActivate(entity.Id, command.AbilityId, tick);
+                }
+            }
+
             // 이동은 어빌리티 페이즈 전진보다 먼저 — 대시 발동 틱의 입력 게이트 타이밍이 이 순서에 걸려 있다.
             foreach (var entity in EntityRegistry.All)
             {

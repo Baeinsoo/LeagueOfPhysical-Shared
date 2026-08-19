@@ -32,6 +32,10 @@ namespace LOP.Tests
             public void PushMotion(GameFramework.World.Entity e) => pushed.Add(e.Id);
         }
 
+        // 이 파일은 발동 라우팅을 보지 않는다 — 어떤 id도 해소하지 않는 활성화기를 넘겨 no-op으로 둔다.
+        private static AbilityActivator NoAbilities(EntityRegistry registry)
+            => new AbilityActivator(new AbilitySystem(new ManaSystem()), _ => null, registry, new WorldEventBuffer());
+
         [Test]
         public void Tick_RunsKinematicPhase_ForSimulatedEntities()
         {
@@ -40,7 +44,7 @@ namespace LOP.Tests
             var world = new LOPWorld(registry, new WorldEventBuffer(),
                 new MovementSystem(new StatsSystem(), new MotionContributionSystem()),
                 new AbilitySystem(new ManaSystem()), new StatusEffectSystem(new StatsSystem()),
-                new AbilityEffectExecutor(null), new KinematicMoveSystem(new FakeQuery(), ~0), bridge);
+                new AbilityEffectExecutor(null), new KinematicMoveSystem(new FakeQuery(), ~0), bridge, NoAbilities(registry));
 
             var entity = new Entity("e1");
             entity.Add(new Simulated());
@@ -61,7 +65,7 @@ namespace LOP.Tests
             var world = new LOPWorld(registry, new WorldEventBuffer(),
                 new MovementSystem(new StatsSystem(), new MotionContributionSystem()),
                 new AbilitySystem(new ManaSystem()), new StatusEffectSystem(new StatsSystem()),
-                new AbilityEffectExecutor(null), new KinematicMoveSystem(new FakeQuery(), ~0), bridge);
+                new AbilityEffectExecutor(null), new KinematicMoveSystem(new FakeQuery(), ~0), bridge, NoAbilities(registry));
 
             var entity = new Entity("e1");
             entity.Add(new Simulated());
@@ -82,7 +86,7 @@ namespace LOP.Tests
             var world = new LOPWorld(registry, new WorldEventBuffer(),
                 new MovementSystem(new StatsSystem(), new MotionContributionSystem()),
                 abilitySystem, new StatusEffectSystem(new StatsSystem()), executor,
-                new KinematicMoveSystem(new FakeQuery(), ~0), new SpyBridge());
+                new KinematicMoveSystem(new FakeQuery(), ~0), new SpyBridge(), NoAbilities(registry));
 
             var entity = new Entity("e1");
             entity.Add(new Abilities());
@@ -108,7 +112,7 @@ namespace LOP.Tests
             var buffer = new WorldEventBuffer();
             var statusEffects = new StatusEffectSystem(new StatsSystem());
             var abilitySystem = new AbilitySystem(new ManaSystem());
-            var world = new LOPWorld(registry, buffer, new MovementSystem(new StatsSystem(), new MotionContributionSystem()), abilitySystem, statusEffects, new AbilityEffectExecutor(null), new KinematicMoveSystem(new FakeQuery(), ~0), new SpyBridge());
+            var world = new LOPWorld(registry, buffer, new MovementSystem(new StatsSystem(), new MotionContributionSystem()), abilitySystem, statusEffects, new AbilityEffectExecutor(null), new KinematicMoveSystem(new FakeQuery(), ~0), new SpyBridge(), NoAbilities(registry));
 
             var entity = new Entity("e1");
             entity.Add(new Stats());
@@ -135,7 +139,7 @@ namespace LOP.Tests
             var registry = new EntityRegistry();
             var statusEffects = new StatusEffectSystem(new StatsSystem());
             var world = new LOPWorld(registry, new WorldEventBuffer(),
-                new MovementSystem(new StatsSystem(), new MotionContributionSystem()), new AbilitySystem(new ManaSystem()), statusEffects, new AbilityEffectExecutor(null), new KinematicMoveSystem(new FakeQuery(), ~0), new SpyBridge());
+                new MovementSystem(new StatsSystem(), new MotionContributionSystem()), new AbilitySystem(new ManaSystem()), statusEffects, new AbilityEffectExecutor(null), new KinematicMoveSystem(new FakeQuery(), ~0), new SpyBridge(), NoAbilities(registry));
             registry.Add(new Entity("bare"));   // StatusEffects/Abilities 없음
 
             Assert.DoesNotThrow(() => world.Tick(1, 0.05f));   // 가드로 no-op
@@ -148,7 +152,7 @@ namespace LOP.Tests
             var statusEffects = new StatusEffectSystem(new StatsSystem());
             var abilitySystem = new AbilitySystem(new ManaSystem());
             var world = new LOPWorld(registry, new WorldEventBuffer(),
-                new MovementSystem(new StatsSystem(), new MotionContributionSystem()), abilitySystem, statusEffects, new AbilityEffectExecutor(null), new KinematicMoveSystem(new FakeQuery(), ~0), new SpyBridge());
+                new MovementSystem(new StatsSystem(), new MotionContributionSystem()), abilitySystem, statusEffects, new AbilityEffectExecutor(null), new KinematicMoveSystem(new FakeQuery(), ~0), new SpyBridge(), NoAbilities(registry));
 
             var entity = new Entity("e1");
             entity.Add(new Stats());
@@ -169,7 +173,7 @@ namespace LOP.Tests
             var statusEffects = new StatusEffectSystem(new StatsSystem());
             var abilitySystem = new AbilitySystem(new ManaSystem());
             var world = new LOPWorld(registry, new WorldEventBuffer(),
-                new MovementSystem(new StatsSystem(), new MotionContributionSystem()), abilitySystem, statusEffects, new AbilityEffectExecutor(null), new KinematicMoveSystem(new FakeQuery(), ~0), new SpyBridge());
+                new MovementSystem(new StatsSystem(), new MotionContributionSystem()), abilitySystem, statusEffects, new AbilityEffectExecutor(null), new KinematicMoveSystem(new FakeQuery(), ~0), new SpyBridge(), NoAbilities(registry));
 
             var entity = new Entity("e1");
             entity.Add(new Abilities());

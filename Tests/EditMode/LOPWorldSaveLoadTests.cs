@@ -39,7 +39,9 @@ namespace LOP.Tests
                 new MovementSystem(new StatsSystem(), new MotionContributionSystem()),
                 new AbilitySystem(new ManaSystem()), new StatusEffectSystem(new StatsSystem()),
                 new AbilityEffectExecutor(null), new KinematicMoveSystem(new FakeQuery(), ~0),
-                new SpyBridge());
+                new SpyBridge(),
+                // 저장·복원만 보는 파일이라 발동은 관심 밖 — 어떤 id도 해소하지 않는 활성화기.
+                new AbilityActivator(new AbilitySystem(new ManaSystem()), _ => null, registry, new WorldEventBuffer()));
 
         [Test]
         public void LoadState_마나를_저장한_시점으로_되돌린다()
