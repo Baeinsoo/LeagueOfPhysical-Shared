@@ -12,5 +12,10 @@ namespace LOP
         public float Vertical { get; set; }
         public bool Jump { get; set; }
         public int AbilityId { get; set; }
+
+        // 진단 로그가 커맨드를 한 줄로 찍을 때 쓴다. 무엇이 실렸는지는 커맨드 자신이 안다 —
+        // 읽는 쪽(넷코드 로그)이 필드를 하나씩 나열하면 그쪽이 게임 내용을 알게 된다.
+        public override string ToString()
+            => $"h={Horizontal:F2} v={Vertical:F2} jump={Jump} ability={AbilityId}";
     }
 }

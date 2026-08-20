@@ -4,7 +4,7 @@ using NUnit.Framework;
 
 namespace LOP.Tests
 {
-    public class PredictedAbilityStateTests
+    public class LOPSavedStateTests
     {
         private static Entity MakeEntity()
         {
@@ -25,7 +25,7 @@ namespace LOP.Tests
             e.Get<Abilities>().Granted[7] = new GrantedAbility(7, slot: 0, cooldownEndTick: 42);
             e.Get<StatusEffects>().Effects.Add(new ActiveEffect(3, 50, 1, "src", "se:3"));
 
-            var snap = PredictedAbilityState.Capture(e);
+            var snap = LOPSavedState.Capture(e);
 
             // 캡처 후 라이브를 바꿔도 스냅은 그대로여야 한다.
             e.Get<Abilities>().Granted[7] = new GrantedAbility(7, slot: 0, cooldownEndTick: 999);
@@ -44,7 +44,7 @@ namespace LOP.Tests
             var e = MakeEntity();
             e.Get<Mana>().Current = 80;
             e.Get<StatusEffects>().Effects.Add(new ActiveEffect(3, 50, 1, "src", "se:3"));
-            var snap = PredictedAbilityState.Capture(e);
+            var snap = LOPSavedState.Capture(e);
 
             // 라이브를 다르게 바꾼 뒤 복원하면 스냅 시점으로 돌아와야 한다.
             e.Get<Mana>().Current = 10;

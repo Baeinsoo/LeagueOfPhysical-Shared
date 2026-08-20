@@ -8,6 +8,11 @@ namespace LOP
         private readonly AbilityEffectExecutor _abilityEffectExecutor;
         private readonly KinematicMoveSystem _kinematicMoveSystem;
         private readonly GameFramework.World.IMotionBridge _motionBridge;
+        private readonly AbilityActivator _abilityActivator;
+
+        // 스킬·상태이상·스탯·마나의 틱별 사진. 위치·속도는 WorldBase가 담는다.
+        private readonly GameFramework.Netcode.SequenceBuffer<System.Collections.Generic.Dictionary<string, LOPSavedState>> _gameFrames
+            = new GameFramework.Netcode.SequenceBuffer<System.Collections.Generic.Dictionary<string, LOPSavedState>>(SaveCapacity);
 
         public LOPWorld(
             GameFramework.World.EntityRegistry entityRegistry,
@@ -17,7 +22,8 @@ namespace LOP
             StatusEffectSystem statusEffectSystem,
             AbilityEffectExecutor abilityEffectExecutor,
             KinematicMoveSystem kinematicMoveSystem,
-            GameFramework.World.IMotionBridge motionBridge)
+            GameFramework.World.IMotionBridge motionBridge,
+            AbilityActivator abilityActivator)
             : base(entityRegistry, eventBuffer)
         {
             _movementSystem = movementSystem;
@@ -26,10 +32,26 @@ namespace LOP
             _abilityEffectExecutor = abilityEffectExecutor;
             _kinematicMoveSystem = kinematicMoveSystem;
             _motionBridge = motionBridge;
+            _abilityActivator = abilityActivator;
         }
 
         protected override void Mutation(long tick, float deltaTime)
         {
+            // 입력에 실린 어빌리티 발동. 이동보다 먼저 해야 한다 — 대시 발동 틱의 입력 게이트가
+            // 이 순서에 걸려 있고, 라이브(입력 캡처 → world.Tick)와 재생의 순서가 같아야 결과가 갈리지 않는다.
+            foreach (var entity in EntityRegistry.All)
+            {
+                if (!entity.Has<GameFramework.World.Simulated>())
+                {
+                    continue;
+                }
+                var command = entity.Get<InputBuffer>()?.Current;
+                if (command != null && command.AbilityId != 0)
+                {
+                    _abilityActivator.TryActivate(entity.Id, command.AbilityId, tick);
+                }
+            }
+
             // 이동은 어빌리티 페이즈 전진보다 먼저 — 대시 발동 틱의 입력 게이트 타이밍이 이 순서에 걸려 있다.
             foreach (var entity in EntityRegistry.All)
             {
@@ -72,6 +94,52 @@ namespace LOP
                     _motionBridge.PushMotion(entity);
                 }
             }
+        }
+
+        protected override void SaveGameState(long tick)
+        {
+            var frame = new System.Collections.Generic.Dictionary<string, LOPSavedState>();
+            foreach (var entity in EntityRegistry.All)
+            {
+                if (entity.Has<GameFramework.World.Simulated>())
+                {
+                    frame[entity.Id] = LOPSavedState.Capture(entity);
+                }
+            }
+            _gameFrames.Record(tick, frame);
+        }
+
+        protected override bool LoadGameState(long tick)
+        {
+            if (!_gameFrames.TryGet(tick, out var frame))
+            {
+                return false;
+            }
+            foreach (var pair in frame)
+            {
+                var entity = EntityRegistry.Get(pair.Key);
+                if (entity != null)
+                {
+                    pair.Value.RestoreTo(entity);
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 그 틱에 내가 예측했던 상태이상 목록. 서버 스냅과 <b>같은 시점끼리</b> 비교해야 해서
+        /// 클라 보정이 읽는다 — 지금 살아있는 목록과 비교하면 클라가 서버보다 앞서 달리는 만큼
+        /// 늘 달라 보여 불필요한 되돌리기가 매 스냅마다 일어난다.
+        /// </summary>
+        public bool TryGetSavedStatusEffects(long tick, string entityId, out System.Collections.Generic.List<ActiveEffect> effects)
+        {
+            effects = null;
+            if (_gameFrames.TryGet(tick, out var frame) && frame.TryGetValue(entityId, out var saved))
+            {
+                effects = saved.StatusEffects;
+                return true;
+            }
+            return false;
         }
     }
 }

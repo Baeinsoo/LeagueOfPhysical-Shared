@@ -4,10 +4,11 @@ using GameFramework.World;
 namespace LOP
 {
     /// <summary>
-    /// 내 캐릭 예측 재생용 어빌리티/상태이상/스탯/마나 상태의 한 틱 사진(깊은 복사).
-    /// 위치/속도는 별도(GameFramework.Netcode.EntitySnapshot). 롤백 재조정이 앵커 틱으로 복원 후 재생에 쓴다.
+    /// 되감기용으로 남기는 LOP 고유 상태의 한 틱 사진(깊은 복사) — 어빌리티·상태이상·스탯·마나.
+    /// 위치·속도는 <see cref="GameFramework.World.WorldBase"/>가 담으므로 여기엔 없다.
+    /// Unreal <c>FSavedMove_Character</c>를 게임이 서브클래싱해 자기 데이터를 얹는 것과 같은 자리.
     /// </summary>
-    public sealed class PredictedAbilityState
+    public sealed class LOPSavedState
     {
         public AbilityActivation? Activation { get; private set; }
         public Dictionary<int, GrantedAbility> Granted { get; private set; }
@@ -18,9 +19,9 @@ namespace LOP
         public int ManaCurrent { get; private set; }
         public int ManaMax { get; private set; }
 
-        public static PredictedAbilityState Capture(Entity entity)
+        public static LOPSavedState Capture(Entity entity)
         {
-            var s = new PredictedAbilityState();
+            var s = new LOPSavedState();
             var abilities = entity.Get<Abilities>();
             s.Activation = abilities?.Activation;
             s.Granted = abilities != null
