@@ -1,6 +1,12 @@
 syntax = "proto3";
 
+import "MatchPlacementInfo.proto";
+
 // @auto_generate
 message MatchEndedToC
 {
+	repeated MatchPlacementInfo placements = 1;
+	bool has_rating_change = 2;
+	int32 my_mmr_before = 3;
+	int32 my_mmr_after = 4;
 }
