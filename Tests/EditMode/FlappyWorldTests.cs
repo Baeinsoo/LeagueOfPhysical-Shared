@@ -30,6 +30,39 @@ namespace LOP.Tests
             public void PushMotion(Entity entity) { }
         }
 
+        // 수평 방향 sweep에만 고정 거리로 맞는 벽 — 수직(중력) sweep까지 맞히면 낙하가 막혀
+        // 계산이 복잡해지니 벽은 수평 전용으로 한정한다. 받은 인자를 기록해 phase ③이 실제로
+        // config 값(반지름)·월드에 넘긴 레이어마스크를 쓰는지 검증할 수 있게 한다.
+        private class WallAheadQuery : ICollisionQuery
+        {
+            private readonly float _hitDistance;
+            private readonly Vector3 _normal;
+
+            public float LastRadius;
+            public int LastLayerMask;
+            public int HorizontalCastCount;
+
+            public WallAheadQuery(float hitDistance, Vector3 normal)
+            {
+                _hitDistance = hitDistance;
+                _normal = normal;
+            }
+
+            public CollisionHit CapsuleCast(Vector3 point1, Vector3 point2, float radius,
+                Vector3 direction, float distance, int layerMask)
+            {
+                if (!Mathf.Approximately(direction.y, 0f))
+                {
+                    return CollisionHit.None;   // 수직 sweep(중력) — 벽이 막을 방향이 아니다
+                }
+
+                LastRadius = radius;
+                LastLayerMask = layerMask;
+                HorizontalCastCount++;
+                return new CollisionHit(true, _hitDistance, _normal, point1 + direction * _hitDistance);
+            }
+        }
+
         static FlappyConfig Config()
             => new FlappyConfig(forwardSpeed: 11f, flapImpulse: 23f, gravity: 70f, maxFallSpeed: 30f,
                                 bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f);
@@ -110,6 +143,31 @@ namespace LOP.Tests
 
             Assert.AreEqual(0, bridge.SeparateCalls);       // 겹침은 우리 계산이 이미 풀었다
             Assert.AreEqual(1, bridge.SyncTransformsCalls); // 옮긴 자리는 물리에 알려 준다
+        }
+
+        [Test]
+        public void 맵_콜라이더에_막히면_벽까지만_전진하고_수평속도가_깎인다()
+        {
+            var registry = new EntityRegistry();
+            var bird = Bird("bird-1", Vector3.zero, simulated: true);
+            registry.Add(bird);
+
+            var wallQuery = new WallAheadQuery(hitDistance: 0.5f, normal: Vector3.left);
+            const int layerMask = 1 << 5;   // ~0처럼 아무 값이나 통과하는 마스크가 아니라 실제로 넘겨지는지 구분할 값
+            var world = new FlappyWorld(registry, new WorldEventBuffer(),
+                                         new FlappyMoveSystem(Config()),
+                                         new FlappyBodyCollisionSystem(Config()),
+                                         wallQuery, new NoopMotionBridge(), Config(), layerMask);
+
+            world.Tick(1, 0.1f);
+
+            // 안 막혔으면 x=1.1(11×0.1)까지 갔을 것. 0.5m 앞 벽에 막혀 0.48(=0.5-SkinWidth)에서 멈춘다.
+            Assert.AreEqual(0.48f, PositionOf(bird).x, Tolerance);
+            Assert.AreEqual(0f, VelocityOf(bird).x, Tolerance);   // 벽 법선(-x)이 전진 속도를 그대로 깎는다
+
+            Assert.AreEqual(1, wallQuery.HorizontalCastCount);
+            Assert.AreEqual(Config().BodyRadius, wallQuery.LastRadius, Tolerance);
+            Assert.AreEqual(layerMask, wallQuery.LastLayerMask);
         }
     }
 }
