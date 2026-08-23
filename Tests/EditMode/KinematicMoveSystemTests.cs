@@ -25,6 +25,7 @@ namespace LOP.Tests
             var e = new GameFramework.World.Entity("e1");
             e.Add(new GameFramework.World.Transform { Position = pos.ToNumerics() });
             e.Add(new GameFramework.World.Velocity { Linear = vel.ToNumerics() });
+            e.Add(new GameFramework.World.CapsuleShape(0.35f, 1.5f));
             return e;
         }
 

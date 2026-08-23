@@ -37,6 +37,7 @@ namespace LOP.Tests
             var entity = new Entity(id);
             entity.Add(new GameFramework.World.Transform { Position = position.ToNumerics() });
             entity.Add(new Velocity { Linear = new Vector3(0f, initialVy, 0f).ToNumerics() });
+            entity.Add(new CapsuleShape(0.45f, 0.9f));
             entity.Add(new Simulated());
             return entity;
         }
@@ -45,7 +46,7 @@ namespace LOP.Tests
             => new FlappyWorld(registry, new WorldEventBuffer(),
                                new FlappyMoveSystem(Config()),
                                new FlappyBodyCollisionSystem(Config()),
-                               new EmptySkyQuery(), new NoopMotionBridge(), Config(), layerMask: ~0);
+                               new EmptySkyQuery(), new NoopMotionBridge(), layerMask: ~0);
 
         // 세 마리가 서로 겹치는 삼각형 배치 + 서로 다른 초기 세로속도.
         // 몸싸움이 세 쌍(1-2, 1-3, 2-3) 전부에서 실제로 걸리게 한 뒤, 쌍을 순서대로 푸는 과정에서

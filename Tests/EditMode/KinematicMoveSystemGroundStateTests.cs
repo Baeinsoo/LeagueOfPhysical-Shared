@@ -35,6 +35,7 @@ namespace LOP.Tests
             entity.Add(new GameFramework.World.Transform());
             entity.Add(new Velocity());
             entity.Add(new GroundState());
+            entity.Add(new GameFramework.World.CapsuleShape(0.35f, 1.5f));
             return entity;
         }
 
@@ -67,6 +68,7 @@ namespace LOP.Tests
             var entity = new Entity("c2");
             entity.Add(new GameFramework.World.Transform());
             entity.Add(new Velocity());
+            entity.Add(new GameFramework.World.CapsuleShape(0.35f, 1.5f));
             var system = new KinematicMoveSystem(new EmptyQuery(), layerMask: ~0);
 
             Assert.DoesNotThrow(() => system.Tick(entity, 0.02f));

@@ -12,8 +12,6 @@ namespace LOP
     public class KinematicMoveSystem
     {
         const float Gravity = -9.81f * 2f;   // 서버 Physics.gravity.y와 같은 값 유지(낙하 가속)
-        const float Radius = 0.35f;          // PhysicsComponent 캡슐과 일치
-        const float Height = 1.5f;
 
         private readonly ICollisionQuery _query;
         private readonly int _layerMask;
@@ -28,7 +26,8 @@ namespace LOP
         {
             var transform = entity.Get<GameFramework.World.Transform>();
             var velocity = entity.Get<GameFramework.World.Velocity>();
-            if (transform == null || velocity == null)
+            var body = entity.Get<GameFramework.World.CapsuleShape>();
+            if (transform == null || velocity == null || body == null)
             {
                 return;
             }
@@ -37,7 +36,7 @@ namespace LOP
             vel.y += Gravity * deltaTime;   // 중력 = 분리된 수직 스텝(컨트롤러 레이어). mover는 이걸 모름.
 
             var result = KinematicMover.Move(new KinematicMoveInput(
-                transform.Position.ToUnity(), vel, Radius, Height, deltaTime, _layerMask), _query);
+                transform.Position.ToUnity(), vel, body.Radius, body.Height, deltaTime, _layerMask), _query);
 
             transform.Position = result.position.ToNumerics();
             velocity.Linear = result.velocity.ToNumerics();

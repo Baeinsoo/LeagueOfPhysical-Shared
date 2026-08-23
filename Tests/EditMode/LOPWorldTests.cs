@@ -48,6 +48,7 @@ namespace LOP.Tests
 
             var entity = new Entity("e1");
             entity.Add(new Simulated());
+            entity.Add(new CapsuleShape(0.35f, 1.5f));
             registry.Add(entity);
 
             world.Tick(0, 0.05f);
@@ -69,6 +70,7 @@ namespace LOP.Tests
 
             var entity = new Entity("e1");
             entity.Add(new Simulated());
+            entity.Add(new CapsuleShape(0.35f, 1.5f));
             registry.Add(entity);
 
             world.Tick(0, 0.05f);
@@ -94,6 +96,7 @@ namespace LOP.Tests
             entity.Add(new Stats());
             entity.Add(new StatusEffects());
             entity.Add(new Simulated());
+            entity.Add(new CapsuleShape(0.35f, 1.5f));
             registry.Add(entity);
 
             abilitySystem.Grant(entity, 1, slot: 0);
@@ -118,6 +121,7 @@ namespace LOP.Tests
             entity.Add(new Stats());
             entity.Add(new StatusEffects());
             entity.Add(new Simulated());   // Mutation이 Has<Simulated>만 순회
+            entity.Add(new CapsuleShape(0.35f, 1.5f));
             registry.Add(entity);
 
             // 5틱 지속 효과(모디파이어 없음 — 만료 경로만) 적용
@@ -181,6 +185,7 @@ namespace LOP.Tests
             entity.Add(new Stats());
             entity.Add(new StatusEffects());
             entity.Add(new Simulated());   // Mutation이 Has<Simulated>만 순회
+            entity.Add(new CapsuleShape(0.35f, 1.5f));
             registry.Add(entity);
 
             abilitySystem.Grant(entity, 1, slot: 0);

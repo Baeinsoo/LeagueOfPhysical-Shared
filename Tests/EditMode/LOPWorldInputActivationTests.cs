@@ -60,6 +60,7 @@ namespace LOP.Tests
             }
             e.Add(new GameFramework.World.Transform());
             e.Add(new Velocity());
+            e.Add(new CapsuleShape(0.35f, 1.5f));
             var abilities = new Abilities();
             // 발동은 보유(부여)를 전제한다 — 부여가 없으면 CanActivate가 막아 발동 자체를 볼 수 없다.
             abilities.Granted[AbilityId] = new GrantedAbility(AbilityId, 0, 0);

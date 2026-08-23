@@ -67,11 +67,12 @@ namespace LOP.Tests
             => new FlappyConfig(forwardSpeed: 11f, flapImpulse: 23f, gravity: 70f, maxFallSpeed: 30f,
                                 bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f);
 
-        static Entity Bird(string id, Vector3 position, bool simulated)
+        static Entity Bird(string id, Vector3 position, bool simulated, float radius = 0.45f, float height = 0.9f)
         {
             var entity = new Entity(id);
             entity.Add(new GameFramework.World.Transform { Position = position.ToNumerics() });
             entity.Add(new Velocity());
+            entity.Add(new CapsuleShape(radius, height));
             if (simulated)
             {
                 entity.Add(new Simulated());
@@ -83,7 +84,7 @@ namespace LOP.Tests
             => new FlappyWorld(registry, new WorldEventBuffer(),
                                new FlappyMoveSystem(Config()),
                                new FlappyBodyCollisionSystem(Config()),
-                               new EmptySkyQuery(), bridge, Config(), layerMask: ~0);
+                               new EmptySkyQuery(), bridge, layerMask: ~0);
 
         static Vector3 PositionOf(Entity e) => e.Get<GameFramework.World.Transform>().Position.ToUnity();
         static Vector3 VelocityOf(Entity e) => e.Get<Velocity>().Linear.ToUnity();
@@ -157,7 +158,7 @@ namespace LOP.Tests
             var world = new FlappyWorld(registry, new WorldEventBuffer(),
                                          new FlappyMoveSystem(Config()),
                                          new FlappyBodyCollisionSystem(Config()),
-                                         wallQuery, new NoopMotionBridge(), Config(), layerMask);
+                                         wallQuery, new NoopMotionBridge(), layerMask);
 
             world.Tick(1, 0.1f);
 
@@ -168,6 +169,41 @@ namespace LOP.Tests
             Assert.AreEqual(1, wallQuery.HorizontalCastCount);
             Assert.AreEqual(Config().BodyRadius, wallQuery.LastRadius, Tolerance);
             Assert.AreEqual(layerMask, wallQuery.LastLayerMask);
+        }
+
+        [Test]
+        public void 맵_sweep은_엔티티가_들고_있는_몸_치수를_쓴다()
+        {
+            var registry = new EntityRegistry();
+            // 튜닝값(0.45)과 일부러 다른 몸을 준다 — 어느 쪽을 읽는지 구분되는 값이어야 한다.
+            var bird = Bird("bird-1", Vector3.zero, simulated: true, radius: 0.2f, height: 0.4f);
+            registry.Add(bird);
+
+            var wallQuery = new WallAheadQuery(hitDistance: 0.5f, normal: Vector3.left);
+            var world = new FlappyWorld(registry, new WorldEventBuffer(),
+                                        new FlappyMoveSystem(Config()),
+                                        new FlappyBodyCollisionSystem(Config()),
+                                        wallQuery, new NoopMotionBridge(), layerMask: ~0);
+
+            world.Tick(1, 0.1f);
+
+            Assert.AreEqual(0.2f, wallQuery.LastRadius, Tolerance);
+        }
+
+        [Test]
+        public void 몸이_없는_엔티티는_맵_이동을_하지_않는다()
+        {
+            var registry = new EntityRegistry();
+            var noBody = new Entity("bird-1");
+            noBody.Add(new GameFramework.World.Transform());
+            noBody.Add(new Velocity());
+            noBody.Add(new Simulated());
+            registry.Add(noBody);
+
+            // 속도는 정해지지만(전진·중력) 위치를 옮기는 단계는 몸 없이는 돌 수 없다.
+            World(registry, new NoopMotionBridge()).Tick(1, 0.1f);
+
+            Assert.AreEqual(Vector3.zero, PositionOf(noBody));
         }
     }
 }
