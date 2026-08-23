@@ -27,6 +27,7 @@ namespace LOP.Tests
             e.Add(new Simulated());
             e.Add(new GameFramework.World.Transform());
             e.Add(new Velocity());
+            e.Add(new CapsuleShape(0.35f, 1.5f));
             e.Add(new Abilities());
             e.Add(new StatusEffects());
             e.Add(new Stats());

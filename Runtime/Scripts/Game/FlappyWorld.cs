@@ -16,7 +16,6 @@ namespace LOP
         private readonly FlappyBodyCollisionSystem _bodyCollisionSystem;
         private readonly ICollisionQuery _collisionQuery;
         private readonly GameFramework.World.IMotionBridge _motionBridge;
-        private readonly FlappyConfig _config;
         private readonly int _layerMask;
 
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
@@ -29,7 +28,6 @@ namespace LOP
             FlappyBodyCollisionSystem bodyCollisionSystem,
             ICollisionQuery collisionQuery,
             GameFramework.World.IMotionBridge motionBridge,
-            FlappyConfig config,
             int layerMask)
             : base(entityRegistry, eventBuffer)
         {
@@ -37,7 +35,6 @@ namespace LOP
             _bodyCollisionSystem = bodyCollisionSystem;
             _collisionQuery = collisionQuery;
             _motionBridge = motionBridge;
-            _config = config;
             _layerMask = layerMask;
         }
 
@@ -81,7 +78,8 @@ namespace LOP
         {
             var transform = entity.Get<GameFramework.World.Transform>();
             var velocity = entity.Get<GameFramework.World.Velocity>();
-            if (transform == null || velocity == null)
+            var body = entity.Get<GameFramework.World.CapsuleShape>();
+            if (transform == null || velocity == null || body == null)
             {
                 return;
             }
@@ -90,7 +88,7 @@ namespace LOP
 
             var result = KinematicMover.Move(new KinematicMoveInput(
                 transform.Position.ToUnity(), velocity.Linear.ToUnity(),
-                _config.BodyRadius, _config.BodyHeight, deltaTime, _layerMask), _collisionQuery);
+                body.Radius, body.Height, deltaTime, _layerMask), _collisionQuery);
 
             transform.Position = result.position.ToNumerics();
             velocity.Linear = result.velocity.ToNumerics();
