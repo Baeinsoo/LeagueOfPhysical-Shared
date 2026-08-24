@@ -1,19 +1,22 @@
 using System.Collections.Generic;
 using GameFramework;
 using GameFramework.Physics;
+using UnityEngine;
 
 namespace LOP
 {
     /// <summary>
     /// Flappy Race의 시뮬 코어. 클·서가 같은 구체 클래스를 돌려 결과가 갈리지 않게 한다.
-    /// 한 틱: ① 속도(중력·플랩·고정 전진) → ② 새끼리 몸싸움 → ③ 맵에 막히며 이동.
-    /// ②를 전원의 ① 뒤에 두는 이유는, 한 마리씩 처리하면 먼저 나온 새가 아직 갱신되지 않은
+    /// 한 틱: ① 유령정지 시간 감소 → ② 속도(중력·플랩·고정 전진, 멈춰 있으면 스킵) → ③ 새끼리
+    /// 몸싸움 → ④ 맵은 막지 않고 통과 + 부딪히면 유령정지 진입.
+    /// ③을 전원의 ② 뒤에 두는 이유는, 한 마리씩 처리하면 먼저 나온 새가 아직 갱신되지 않은
     /// 상대 속도를 보게 돼 순서가 결과를 가르기 때문이다.
     /// </summary>
     public class FlappyWorld : GameFramework.World.WorldBase
     {
         private readonly FlappyMoveSystem _moveSystem;
         private readonly FlappyBodyCollisionSystem _bodyCollisionSystem;
+        private readonly FlappyGhostSystem _ghostSystem;
         private readonly ICollisionQuery _collisionQuery;
         private readonly GameFramework.World.IMotionBridge _motionBridge;
         private readonly int _layerMask;
@@ -26,6 +29,7 @@ namespace LOP
             GameFramework.World.WorldEventBuffer eventBuffer,
             FlappyMoveSystem moveSystem,
             FlappyBodyCollisionSystem bodyCollisionSystem,
+            FlappyGhostSystem ghostSystem,
             ICollisionQuery collisionQuery,
             GameFramework.World.IMotionBridge motionBridge,
             int layerMask)
@@ -33,6 +37,7 @@ namespace LOP
         {
             _moveSystem = moveSystem;
             _bodyCollisionSystem = bodyCollisionSystem;
+            _ghostSystem = ghostSystem;
             _collisionQuery = collisionQuery;
             _motionBridge = motionBridge;
             _layerMask = layerMask;
@@ -42,8 +47,20 @@ namespace LOP
         {
             CollectBirds();
 
+            // 시간 감소가 먼저다. 이번 틱에 풀릴 새는 이번 틱부터 움직인다.
             for (int i = 0; i < _birds.Count; i++)
             {
+                _ghostSystem.Tick(_birds[i], deltaTime);
+            }
+
+            for (int i = 0; i < _birds.Count; i++)
+            {
+                if (_ghostSystem.IsStopped(_birds[i]))
+                {
+                    // 멈춰 있는 새는 전진도 하지 않는다 — 시간 손실이 이 게임의 페널티다.
+                    _birds[i].Get<GameFramework.World.Velocity>().Linear = System.Numerics.Vector3.Zero;
+                    continue;
+                }
                 _moveSystem.Tick(_birds[i], deltaTime);
             }
 
@@ -74,6 +91,8 @@ namespace LOP
             _birds.Sort((left, right) => string.CompareOrdinal(left.Id, right.Id));
         }
 
+        // 맵은 더는 막지 않는다. 부딪혔는지만 보고 유령으로 넘긴다 —
+        // 전진 속도가 고정이라 "막기"로는 벽에 박힌 새가 수평으로 영영 빠져나오지 못한다.
         private void MoveThroughMap(GameFramework.World.Entity entity, float deltaTime)
         {
             var transform = entity.Get<GameFramework.World.Transform>();
@@ -84,15 +103,23 @@ namespace LOP
                 return;
             }
 
-            _motionBridge.Depenetrate(entity);
+            Vector3 start = transform.Position.ToUnity();
+            Vector3 delta = velocity.Linear.ToUnity() * deltaTime;
 
-            var result = KinematicMover.Move(new KinematicMoveInput(
-                transform.Position.ToUnity(), velocity.Linear.ToUnity(),
-                body.Radius, body.Height, deltaTime, _layerMask), _collisionQuery);
+            if (delta.sqrMagnitude > 0f)
+            {
+                // 캡슐 끝점 규약은 KinematicMover.Cast와 같다 — position은 발밑 기준.
+                Vector3 p1 = start + Vector3.up * body.Radius;
+                Vector3 p2 = start + Vector3.up * (body.Height - body.Radius);
+                var hit = _collisionQuery.CapsuleCast(
+                    p1, p2, body.Radius, delta.normalized, delta.magnitude, _layerMask);
+                if (hit.HasHit)
+                {
+                    _ghostSystem.Enter(entity);
+                }
+            }
 
-            transform.Position = result.position.ToNumerics();
-            velocity.Linear = result.velocity.ToNumerics();
-
+            transform.Position = (start + delta).ToNumerics();
             _motionBridge.PushMotion(entity);
         }
     }

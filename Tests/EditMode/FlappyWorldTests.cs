@@ -36,9 +36,10 @@ namespace LOP.Tests
             public void PushMotion(Entity entity) { }
         }
 
-        // 수평 방향 sweep에만 고정 거리로 맞는 벽 — 수직(중력) sweep까지 맞히면 낙하가 막혀
-        // 계산이 복잡해지니 벽은 수평 전용으로 한정한다. 받은 인자를 기록해 phase ③이 실제로
-        // config 값(반지름)·월드에 넘긴 레이어마스크를 쓰는지 검증할 수 있게 한다.
+        // 어느 방향으로 sweep하든 고정 거리로 맞는 벽. MoveThroughMap은 수평/수직을 나누지 않고
+        // 델타 전체 방향(중력이 섞여 y도 0이 아님)으로 캡슐을 한 번만 sweep하므로, 가짜도 방향을
+        // 가리지 않고 맞아야 실제로 호출됐는지 검증할 수 있다. 받은 인자를 기록해 phase ④가
+        // 실제로 엔티티가 들고 있는 몸 치수(반지름)·월드에 넘긴 레이어마스크를 쓰는지 검증한다.
         private class WallAheadQuery : ICollisionQuery
         {
             private readonly float _hitDistance;
@@ -46,7 +47,7 @@ namespace LOP.Tests
 
             public float LastRadius;
             public int LastLayerMask;
-            public int HorizontalCastCount;
+            public int CastCount;
 
             public WallAheadQuery(float hitDistance, Vector3 normal)
             {
@@ -57,11 +58,6 @@ namespace LOP.Tests
             public CollisionHit CapsuleCast(Vector3 point1, Vector3 point2, float radius,
                 Vector3 direction, float distance, int layerMask)
             {
-                if (!Mathf.Approximately(direction.y, 0f))
-                {
-                    return CollisionHit.None;   // 수직 sweep(중력) — 벽이 막을 방향이 아니다
-                }
-
                 LastRadius = radius;
                 LastLayerMask = layerMask;
                 HorizontalCastCount++;
@@ -86,6 +82,7 @@ namespace LOP.Tests
             entity.Add(new GameFramework.World.Transform { Position = position.ToNumerics() });
             entity.Add(new Velocity());
             entity.Add(new CapsuleShape(radius, height));
+            entity.Add(new FlappyGhost());   // 실제 크리에이터가 항상 붙이는 것과 같다 — 유령 진입 검증에 필요
             if (simulated)
             {
                 entity.Add(new Simulated());
@@ -97,6 +94,7 @@ namespace LOP.Tests
             => new FlappyWorld(registry, new WorldEventBuffer(),
                                new FlappyMoveSystem(Config()),
                                new FlappyBodyCollisionSystem(Config()),
+                               new FlappyGhostSystem(Config()),
                                new EmptySkyQuery(), bridge, layerMask: ~0);
 
         static Vector3 PositionOf(Entity e) => e.Get<GameFramework.World.Transform>().Position.ToUnity();
@@ -160,7 +158,7 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 맵_콜라이더에_막히면_벽까지만_전진하고_수평속도가_깎인다()
+        public void 맵에_부딪히면_통과하고_유령에_걸리며_반지름과_레이어마스크가_넘어간다()
         {
             var registry = new EntityRegistry();
             var bird = Bird("bird-1", Vector3.zero, simulated: true);
@@ -171,15 +169,19 @@ namespace LOP.Tests
             var world = new FlappyWorld(registry, new WorldEventBuffer(),
                                          new FlappyMoveSystem(Config()),
                                          new FlappyBodyCollisionSystem(Config()),
+                                         new FlappyGhostSystem(Config()),
                                          wallQuery, new NoopMotionBridge(), layerMask);
 
             world.Tick(1, 0.1f);
 
-            // 안 막혔으면 x=1.1(11×0.1)까지 갔을 것. 0.5m 앞 벽에 막혀 0.48(=0.5-SkinWidth)에서 멈춘다.
-            Assert.AreEqual(0.48f, PositionOf(bird).x, Tolerance);
-            Assert.AreEqual(0f, VelocityOf(bird).x, Tolerance);   // 벽 법선(-x)이 전진 속도를 그대로 깎는다
+            // 막히지 않는다 — 벽에 맞아도 델타 전체(x=1.1=11×0.1)만큼 그대로 전진한다.
+            Assert.AreEqual(1.1f, PositionOf(bird).x, Tolerance);
+            // 대신 유령정지에 걸린다 — 페널티는 위치 차단이 아니라 멈춰 있는 시간이다.
+            Assert.That(bird.Get<FlappyGhost>().Remaining, Is.GreaterThan(0f));
 
-            Assert.AreEqual(1, wallQuery.HorizontalCastCount);
+            // 그리고 그 판정은 실제로 한 번 일어났고, 엔티티 자신의 몸 치수·월드가 받은
+            // 레이어마스크로 이뤄졌다 — 이 세 가지는 "막기"가 없어져도 여전히 지켜야 한다.
+            Assert.AreEqual(1, wallQuery.CastCount);
             Assert.AreEqual(Config().BodyRadius, wallQuery.LastRadius, Tolerance);
             Assert.AreEqual(layerMask, wallQuery.LastLayerMask);
         }
@@ -196,6 +198,7 @@ namespace LOP.Tests
             var world = new FlappyWorld(registry, new WorldEventBuffer(),
                                         new FlappyMoveSystem(Config()),
                                         new FlappyBodyCollisionSystem(Config()),
+                                        new FlappyGhostSystem(Config()),
                                         wallQuery, new NoopMotionBridge(), layerMask: ~0);
 
             world.Tick(1, 0.1f);

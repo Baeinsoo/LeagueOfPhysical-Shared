@@ -53,6 +53,7 @@ namespace LOP.Tests
             => new FlappyWorld(registry, new WorldEventBuffer(),
                                new FlappyMoveSystem(Config()),
                                new FlappyBodyCollisionSystem(Config()),
+                               new FlappyGhostSystem(Config()),
                                new EmptySkyQuery(), new NoopMotionBridge(), layerMask: ~0);
 
         // 세 마리가 서로 겹치는 삼각형 배치 + 서로 다른 초기 세로속도.
