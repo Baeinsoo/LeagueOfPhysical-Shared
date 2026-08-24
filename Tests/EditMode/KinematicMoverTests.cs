@@ -23,6 +23,12 @@ namespace LOP.Tests
                 CallCount++;
                 return Responses.Count > 0 ? Responses.Dequeue() : CollisionHit.None;
             }
+
+            public CollisionHit Raycast(Vector3 origin, Vector3 direction, float distance, int layerMask)
+                => CollisionHit.None;
+
+            public CollisionHit[] OverlapSphere(Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<CollisionHit>();
         }
 
         // 평평한 지면(Plane)을 흉내내는 쿼리 — 캐스트 위치에 따라 응답한다(스크립트 큐와 달리 지오메트리 반영).
@@ -39,14 +45,20 @@ namespace LOP.Tests
                 if (direction.y < -0.5f)   // 아래로 캐스트 → 지면까지
                 {
                     float d = bottom - GroundY;
-                    return d <= distance ? new CollisionHit(true, Mathf.Max(d, 0f), Vector3.up, Vector3.zero)
+                    return d <= distance ? new CollisionHit(true, Mathf.Max(d, 0f), Vector3.up, Vector3.zero, null)
                                          : CollisionHit.None;
                 }
                 // 수평 캐스트: 바닥에 붙어있으면 지면과 grazing → 히트, 띄워졌으면 안 맞음
                 return bottom <= GroundY + 1e-4f
-                    ? new CollisionHit(true, 0f, Vector3.up, Vector3.zero)
+                    ? new CollisionHit(true, 0f, Vector3.up, Vector3.zero, null)
                     : CollisionHit.None;
             }
+
+            public CollisionHit Raycast(Vector3 origin, Vector3 direction, float distance, int layerMask)
+                => CollisionHit.None;
+
+            public CollisionHit[] OverlapSphere(Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<CollisionHit>();
         }
 
         private static KinematicMoveInput Input(Vector3 pos, Vector3 vel, float dt = 0.1f)
@@ -82,7 +94,7 @@ namespace LOP.Tests
         {
             var query = new FakeCollisionQuery();
             // 정면 벽: 거리 0.5에서 법선이 이동 반대(-x)
-            query.Responses.Enqueue(new CollisionHit(true, 0.5f, new Vector3(-1f, 0f, 0f), Vector3.zero));
+            query.Responses.Enqueue(new CollisionHit(true, 0.5f, new Vector3(-1f, 0f, 0f), Vector3.zero, null));
             var r = KinematicMover.Move(Input(Vector3.zero, new Vector3(10f, 0f, 0f)), query);
 
             // 접촉 전까지만(≈0.48, skin 여유), 목표(1.0)까지 안 감
@@ -98,7 +110,7 @@ namespace LOP.Tests
             var query = new FakeCollisionQuery();
             // 45도 벽: 법선=(-0.7071,0,-0.7071). 접촉 후 남은 이동이 벽면을 따라 미끄러짐.
             query.Responses.Enqueue(new CollisionHit(true, 0.3f,
-                new Vector3(-0.7071f, 0f, -0.7071f), Vector3.zero));
+                new Vector3(-0.7071f, 0f, -0.7071f), Vector3.zero, null));
             // 두 번째 sweep은 열림(None) → 미끄러진 나머지를 그대로 이동
             var r = KinematicMover.Move(Input(Vector3.zero, new Vector3(10f, 0f, 0f)), query);
 
@@ -115,7 +127,7 @@ namespace LOP.Tests
         {
             var query = new FakeCollisionQuery();
             // 아래로 낙하 중 바닥(법선 위) 접촉
-            query.Responses.Enqueue(new CollisionHit(true, 0.1f, new Vector3(0f, 1f, 0f), Vector3.zero));
+            query.Responses.Enqueue(new CollisionHit(true, 0.1f, new Vector3(0f, 1f, 0f), Vector3.zero, null));
             var r = KinematicMover.Move(Input(Vector3.zero, new Vector3(0f, -20f, 0f)), query);
 
             Assert.IsTrue(r.grounded, "바닥 법선(위쪽) 접촉 시 grounded");
@@ -130,7 +142,7 @@ namespace LOP.Tests
             for (int i = 0; i < 20; i++)
             {
                 query.Responses.Enqueue(new CollisionHit(true, 0.1f,
-                    new Vector3(-0.7071f, 0f, -0.7071f), Vector3.zero));
+                    new Vector3(-0.7071f, 0f, -0.7071f), Vector3.zero, null));
             }
             var r = KinematicMover.Move(Input(Vector3.zero, new Vector3(10f, 0f, 0f)), query);
 

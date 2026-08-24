@@ -17,6 +17,12 @@ namespace LOP.Tests
         {
             public CollisionHit CapsuleCast(Vector3 point1, Vector3 point2, float radius,
                 Vector3 direction, float distance, int layerMask) => CollisionHit.None;
+
+            public CollisionHit Raycast(Vector3 origin, Vector3 direction, float distance, int layerMask)
+                => CollisionHit.None;
+
+            public CollisionHit[] OverlapSphere(Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<CollisionHit>();
         }
 
         // 물리 바디가 없는 EditMode 테스트라 브릿지는 아무 일도 하지 않는다.
