@@ -4,7 +4,7 @@ using UnityEngine;
 namespace LOP
 {
     /// <summary>
-    /// 엔티티의 물리 몸(Rigidbody + 캡슐 콜라이더)을 만들어 <see cref="UnityPhysicsBody"/>로 감싼다.
+    /// 엔티티의 물리 몸(Rigidbody + 콜라이더)을 만들어 <see cref="UnityPhysicsBody"/>로 감싼다.
     ///
     /// 클·서가 **같은 몸**을 써야 예측과 권위가 어긋나지 않는다 — 그래서 캡슐 치수는 엔티티의
     /// <see cref="GameFramework.World.CapsuleShape"/>가 갖고 있고, 이 팩토리는 그 값을 읽어 쓸 뿐 다시
@@ -56,12 +56,18 @@ namespace LOP
             Collider collider;
             if (disc != null)
             {
-                var cylinder = root.AddComponent<CapsuleCollider>();
-                cylinder.direction = 1;              // Y축 — 원반은 눕힌 캡슐이 아니라 납작한 기둥이다
-                cylinder.radius = disc.Radius;
-                cylinder.height = disc.Thickness;
-                cylinder.center = Vector3.zero;
-                collider = cylinder;
+                //  캡슐은 쓸 수 없다 — 높이를 지름(2*반지름)보다 낮게 주면 유니티가 그냥 구로 만든다.
+                //  구는 면이 없어서 "엎어졌다/뒤집혔다"가 성립하지 않고, 중심이 반지름만큼 떠 있어
+                //  납작한 겉모습이 판 위에 붕 뜬다. 그래서 면이 있는 박스로 세운다.
+                //  (발자국이 원이 아니라 정사각형이 되지만 이 슬라이스에서는 허용한다.)
+                var box = root.AddComponent<BoxCollider>();
+                box.size = new Vector3(disc.Radius * 2f, disc.Thickness, disc.Radius * 2f);
+                box.center = Vector3.zero;
+                collider = box;
+
+                //  기본 회전 상한(프로젝트 설정 7)은 관성이 아주 작은 동전을 거의 항상 포화시켜
+                //  "어디를 쳤나"가 회전에 반영되지 않는다. 이 몸에서만 풀어 준다.
+                rigidbody.maxAngularVelocity = 100f;
             }
             else
             {
