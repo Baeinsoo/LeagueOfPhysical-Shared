@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+// 출발 예정 틱과 준비 현황. "지금 무슨 상태"가 아니라 "몇 틱에 출발"을 보내는 이유는,
+// 클라가 서버보다 앞선 시계로 달리고 틱을 되감아 재시뮬하기 때문이다 — 현재값으로는
+// "그 틱에 상태가 뭐였나"에 답할 수 없다. MatchEndedToC와 짝이 된다.
+// @auto_generate
+message MatchStartToC {
+  int64 start_tick  = 1;   // 아직 안 정해졌으면 -1
+  int32 ready_count = 2;
+  int32 total_count = 3;
+}
