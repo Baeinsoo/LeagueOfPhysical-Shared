@@ -12,7 +12,8 @@ namespace LOP.Tests
 
         static FlappyConfig Config()
             => new FlappyConfig(forwardSpeed: 11f, flapImpulse: 23f, gravity: 70f, maxFallSpeed: 30f,
-                                bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f);
+                                bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f,
+                                ghostTime: 0.8f, invulnTime: 0.6f);
 
         static Entity Bird(string id, Vector3 position, Vector3 velocity)
         {
