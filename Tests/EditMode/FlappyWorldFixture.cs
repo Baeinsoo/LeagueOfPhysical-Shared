@@ -23,6 +23,14 @@ namespace LOP.Tests
             public void PushMotion(Entity entity) { }
         }
 
+        /// <summary>새를 맵에 부딪혀 유령정지로 몰아넣고 싶을 때 쓰는 스텁 — 항상 맞았다고 답한다.</summary>
+        public class AlwaysHit : ICollisionQuery
+        {
+            public CollisionHit CapsuleCast(UnityEngine.Vector3 p1, UnityEngine.Vector3 p2, float radius,
+                UnityEngine.Vector3 direction, float distance, int layerMask)
+                => new CollisionHit(true, 0f, UnityEngine.Vector3.up, p1);
+        }
+
         /// <summary>
         /// 새 한 마리를 구성한다. <paramref name="simulated"/>가 false면 원격(남의 새) — 시뮬 대상이
         /// 아니라 스냅샷 보간으로만 움직이는 쪽을 흉내낼 때 쓴다(Task10).

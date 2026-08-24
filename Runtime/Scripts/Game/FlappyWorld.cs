@@ -24,6 +24,10 @@ namespace LOP
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
         private readonly List<GameFramework.World.Entity> _birds = new List<GameFramework.World.Entity>();
 
+        // 유령정지 타이머의 틱별 사진. 위치·속도는 WorldBase가 담는다.
+        private readonly GameFramework.Netcode.SequenceBuffer<Dictionary<string, FlappySavedState>> _gameFrames
+            = new GameFramework.Netcode.SequenceBuffer<Dictionary<string, FlappySavedState>>(SaveCapacity);
+
         public FlappyWorld(
             GameFramework.World.EntityRegistry entityRegistry,
             GameFramework.World.WorldEventBuffer eventBuffer,
@@ -74,6 +78,36 @@ namespace LOP
             {
                 MoveThroughMap(_birds[i], deltaTime);
             }
+        }
+
+        protected override void SaveGameState(long tick)
+        {
+            var frame = new Dictionary<string, FlappySavedState>();
+            foreach (var entity in EntityRegistry.All)
+            {
+                if (entity.Has<GameFramework.World.Simulated>())
+                {
+                    frame[entity.Id] = FlappySavedState.Capture(entity);
+                }
+            }
+            _gameFrames.Record(tick, frame);
+        }
+
+        protected override bool LoadGameState(long tick)
+        {
+            if (!_gameFrames.TryGet(tick, out var frame))
+            {
+                return false;
+            }
+            foreach (var pair in frame)
+            {
+                var entity = EntityRegistry.Get(pair.Key);
+                if (entity != null)
+                {
+                    pair.Value.RestoreTo(entity);
+                }
+            }
+            return true;
         }
 
         // 시뮬 대상만 모아 id 순으로 세운다. 레지스트리 순회 순서는 정해져 있지 않은데,
