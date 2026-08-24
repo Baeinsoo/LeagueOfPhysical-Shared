@@ -27,6 +27,7 @@ namespace LOP.Tests
         public void 맵에_닿으면_멈춘다_그러나_막히지는_않는다()
         {
             var world = FlappyWorldFixture.Create(new AlwaysHit(), out var bird);
+            world.GameplayStartTick = 0;   // 이 파일은 유령정지를 다룬다, 출발 게이트가 아니다
             Vector3 before = bird.Get<GameFramework.World.Transform>().Position.ToUnity();
 
             world.Tick(1, 0.02f);
@@ -42,6 +43,7 @@ namespace LOP.Tests
         public void 유령_중에는_속도가_0이다()
         {
             var world = FlappyWorldFixture.Create(new AlwaysHit(), out var bird);
+            world.GameplayStartTick = 0;   // 이 파일은 유령정지를 다룬다, 출발 게이트가 아니다
             // 유령 진입 전에 눈에 띄는 0 아닌 속도를 심어 둔다 — 새가 아예 수집조차 안 됐다면
             // (예: EntityKind 누락) 이 값이 그대로 남아 아래 "0이어야 한다" 단언이 그 경우를
             // 잡아낸다. 실제 경로에서는 tick1의 MoveSystem이 유령 진입보다 먼저 이 값을 자기
@@ -61,6 +63,7 @@ namespace LOP.Tests
         public void 맵에_안_닿으면_평소대로_전진한다()
         {
             var world = FlappyWorldFixture.Create(new NeverHit(), out var bird);
+            world.GameplayStartTick = 0;   // 이 파일은 유령정지를 다룬다, 출발 게이트가 아니다
 
             world.Tick(1, 0.02f);
 

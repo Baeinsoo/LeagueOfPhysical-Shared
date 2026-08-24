@@ -11,6 +11,7 @@ namespace LOP.Tests
         public void 되감으면_유령_타이머도_그_틱으로_돌아간다()
         {
             var world = FlappyWorldFixture.Create(new FlappyWorldFixture.AlwaysHit(), out var bird);
+            world.GameplayStartTick = 0;   // 이 파일은 되감기를 다룬다, 출발 게이트가 아니다
 
             world.Tick(1, 0.02f);        // 유령 진입
             world.SaveState(1);
@@ -31,6 +32,7 @@ namespace LOP.Tests
             // FlappySavedState.Capture/RestoreTo에서 지워도 이 파일은 계속 초록불이었다.
             // 그래서 무적 구간에 저장/복원해 InvulnRemaining도 round-trip하는지 따로 확인한다.
             var world = FlappyWorldFixture.Create(new FlappyWorldFixture.AlwaysHit(), out var bird);
+            world.GameplayStartTick = 0;   // 이 파일은 되감기를 다룬다, 출발 게이트가 아니다
 
             // 유령정지(0.8초)가 다 지나 무적(0.6초)으로 넘어가는 첫 틱까지 굴린다 — 그 순간이
             // Remaining=0, InvulnRemaining>0이라 InvulnRemaining round-trip을 확인할 수 있는 지점이다.

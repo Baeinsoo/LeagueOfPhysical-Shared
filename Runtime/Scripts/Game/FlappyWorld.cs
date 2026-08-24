@@ -7,7 +7,8 @@ namespace LOP
 {
     /// <summary>
     /// Flappy Race의 시뮬 코어. 클·서가 같은 구체 클래스를 돌려 결과가 갈리지 않게 한다.
-    /// 한 틱: ① 유령정지 시간 감소 → ② 속도(중력·플랩·고정 전진, 멈춰 있으면 스킵) → ③ 새끼리
+    /// 한 틱: ⓪ 출발틱 전이면 아무것도 굴리지 않고 속도만 0으로 둔다.
+    /// ① 유령정지 시간 감소 → ② 속도(중력·플랩·고정 전진, 멈춰 있으면 스킵) → ③ 새끼리
     /// 몸싸움 → ④ 맵은 막지 않고 통과 + 부딪히면 유령정지 진입.
     /// ③을 전원의 ② 뒤에 두는 이유는, 한 마리씩 처리하면 먼저 나온 새가 아직 갱신되지 않은
     /// 상대 속도를 보게 돼 순서가 결과를 가르기 때문이다.
@@ -54,6 +55,17 @@ namespace LOP
         protected override void Mutation(long tick, float deltaTime)
         {
             CollectBirds();
+
+            if (HasStarted(tick) == false)
+            {
+                // 출발선에서 대기 중. 속도를 명시적으로 0으로 두는 이유는 스냅샷과 물리 팔로워가
+                // 이 값을 읽기 때문이다 — 스폰 직후엔 어차피 0이지만 적어 두는 쪽이 안전하다.
+                for (int i = 0; i < _birds.Count; i++)
+                {
+                    _birds[i].Get<GameFramework.World.Velocity>().Linear = System.Numerics.Vector3.Zero;
+                }
+                return;
+            }
 
             // 시간 감소가 먼저다. 이번 틱에 풀릴 새는 이번 틱부터 움직인다.
             for (int i = 0; i < _birds.Count; i++)

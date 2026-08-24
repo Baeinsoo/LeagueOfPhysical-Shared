@@ -21,6 +21,7 @@ namespace LOP.Tests
         {
             // 내 새(Simulated) 하나 + 원격(Simulated 없음) 하나를 겹쳐 둔다.
             var world = FlappyWorldFixture.CreateWithRemoteBird(new EmptySkyQuery(), out var mine, out var remote);
+            world.GameplayStartTick = 0;   // 이 파일은 몸싸움 상대 여부를 다룬다, 출발 게이트가 아니다
             var remoteTransform = remote.Get<GameFramework.World.Transform>();
             var mineTransform = mine.Get<GameFramework.World.Transform>();
             mineTransform.Position = remoteTransform.Position;   // 완전히 겹침

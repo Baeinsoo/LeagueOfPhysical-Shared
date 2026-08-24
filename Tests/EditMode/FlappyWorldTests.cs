@@ -94,11 +94,16 @@ namespace LOP.Tests
         }
 
         static FlappyWorld World(EntityRegistry registry, GameFramework.World.IMotionBridge bridge)
-            => new FlappyWorld(registry, new WorldEventBuffer(),
+        {
+            // 이 파일의 테스트는 출발 게이트가 아니라 이동/충돌을 다룬다 — 이미 출발한 것으로 둔다.
+            var world = new FlappyWorld(registry, new WorldEventBuffer(),
                                new FlappyMoveSystem(Config()),
                                new FlappyBodyCollisionSystem(Config()),
                                new FlappyGhostSystem(Config()),
                                new EmptySkyQuery(), bridge, layerMask: ~0);
+            world.GameplayStartTick = 0;
+            return world;
+        }
 
         static Vector3 PositionOf(Entity e) => e.Get<GameFramework.World.Transform>().Position.ToUnity();
         static Vector3 VelocityOf(Entity e) => e.Get<Velocity>().Linear.ToUnity();
@@ -174,6 +179,7 @@ namespace LOP.Tests
                                          new FlappyBodyCollisionSystem(Config()),
                                          new FlappyGhostSystem(Config()),
                                          wallQuery, new NoopMotionBridge(), layerMask);
+            world.GameplayStartTick = 0;   // 이 테스트는 출발 게이트가 아니라 맵 충돌을 다룬다
 
             world.Tick(1, 0.1f);
 
@@ -203,6 +209,7 @@ namespace LOP.Tests
                                         new FlappyBodyCollisionSystem(Config()),
                                         new FlappyGhostSystem(Config()),
                                         wallQuery, new NoopMotionBridge(), layerMask: ~0);
+            world.GameplayStartTick = 0;   // 이 테스트는 출발 게이트가 아니라 맵 충돌을 다룬다
 
             world.Tick(1, 0.1f);
 
