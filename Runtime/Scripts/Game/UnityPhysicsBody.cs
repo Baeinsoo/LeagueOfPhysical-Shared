@@ -60,6 +60,26 @@ namespace LOP
             return _rigidbody == null ? System.Numerics.Vector3.Zero : _rigidbody.linearVelocity.ToNumerics();
         }
 
+        public override void AddImpulseAtPosition(System.Numerics.Vector3 impulse, System.Numerics.Vector3 worldPoint)
+        {
+            if (_rigidbody == null)
+            {
+                return;
+            }
+
+            // 키네마틱 몸은 PhysX가 힘을 무시한다. 조용히 넘어가면 "쳤는데 안 움직인다"의
+            // 원인을 런타임에 추적해야 하므로 여기서 알린다.
+            if (_rigidbody.isKinematic)
+            {
+                Debug.LogWarning($"[UnityPhysicsBody] 키네마틱 몸에 임펄스를 줬다 — 무시된다. {_rigidbody.name}");
+                return;
+            }
+
+            // 타격은 한 순간의 충격이다. ForceMode.Force로 주면 한 물리 스텝 동안만 적용돼
+            // 결과가 프레임 간격에 끌려간다.
+            _rigidbody.AddForceAtPosition(impulse.ToUnity(), worldPoint.ToUnity(), ForceMode.Impulse);
+        }
+
         public override System.Numerics.Vector3 ComputePushOut(int layerMask)
         {
             // 밀어내기는 캡슐 몸(우리 키네마틱 컨트롤러) 전용 — 원반 등 다른 콜라이더는 대상이 아니다.
