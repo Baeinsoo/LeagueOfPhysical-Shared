@@ -23,15 +23,16 @@ public static partial class EntityCreationDataReflection {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
           "ChhFbnRpdHlDcmVhdGlvbkRhdGEucHJvdG8aG0NoYXJhY3RlckNyZWF0aW9u",
-          "RGF0YS5wcm90bxoWSXRlbUNyZWF0aW9uRGF0YS5wcm90byKRAQoSRW50aXR5",
-          "Q3JlYXRpb25EYXRhEjkKF2NoYXJhY3Rlcl9jcmVhdGlvbl9kYXRhGAEgASgL",
-          "MhYuQ2hhcmFjdGVyQ3JlYXRpb25EYXRhSAASLwoSaXRlbV9jcmVhdGlvbl9k",
-          "YXRhGAIgASgLMhEuSXRlbUNyZWF0aW9uRGF0YUgAQg8KDWNyZWF0aW9uX2Rh",
-          "dGFiBnByb3RvMw=="));
+          "RGF0YS5wcm90bxoWSXRlbUNyZWF0aW9uRGF0YS5wcm90bxoWQ29pbkNyZWF0",
+          "aW9uRGF0YS5wcm90byLCAQoSRW50aXR5Q3JlYXRpb25EYXRhEjkKF2NoYXJh",
+          "Y3Rlcl9jcmVhdGlvbl9kYXRhGAEgASgLMhYuQ2hhcmFjdGVyQ3JlYXRpb25E",
+          "YXRhSAASLwoSaXRlbV9jcmVhdGlvbl9kYXRhGAIgASgLMhEuSXRlbUNyZWF0",
+          "aW9uRGF0YUgAEi8KEmNvaW5fY3JlYXRpb25fZGF0YRgDIAEoCzIRLkNvaW5D",
+          "cmVhdGlvbkRhdGFIAEIPCg1jcmVhdGlvbl9kYXRhYgZwcm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-        new pbr::FileDescriptor[] { global::CharacterCreationDataReflection.Descriptor, global::ItemCreationDataReflection.Descriptor, },
+        new pbr::FileDescriptor[] { global::CharacterCreationDataReflection.Descriptor, global::ItemCreationDataReflection.Descriptor, global::CoinCreationDataReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::EntityCreationData), global::EntityCreationData.Parser, new[]{ "CharacterCreationData", "ItemCreationData" }, new[]{ "CreationData" }, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::EntityCreationData), global::EntityCreationData.Parser, new[]{ "CharacterCreationData", "ItemCreationData", "CoinCreationData" }, new[]{ "CreationData" }, null, null, null)
         }));
   }
   #endregion
@@ -80,6 +81,9 @@ public sealed partial class EntityCreationData : pb::IMessage<EntityCreationData
       case CreationDataOneofCase.ItemCreationData:
         ItemCreationData = other.ItemCreationData.Clone();
         break;
+      case CreationDataOneofCase.CoinCreationData:
+        CoinCreationData = other.CoinCreationData.Clone();
+        break;
     }
 
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -115,12 +119,25 @@ public sealed partial class EntityCreationData : pb::IMessage<EntityCreationData
     }
   }
 
+  /// <summary>Field number for the "coin_creation_data" field.</summary>
+  public const int CoinCreationDataFieldNumber = 3;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public global::CoinCreationData CoinCreationData {
+    get { return creationDataCase_ == CreationDataOneofCase.CoinCreationData ? (global::CoinCreationData) creationData_ : null; }
+    set {
+      creationData_ = value;
+      creationDataCase_ = value == null ? CreationDataOneofCase.None : CreationDataOneofCase.CoinCreationData;
+    }
+  }
+
   private object creationData_;
   /// <summary>Enum of possible cases for the "creation_data" oneof.</summary>
   public enum CreationDataOneofCase {
     None = 0,
     CharacterCreationData = 1,
     ItemCreationData = 2,
+    CoinCreationData = 3,
   }
   private CreationDataOneofCase creationDataCase_ = CreationDataOneofCase.None;
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -153,6 +170,7 @@ public sealed partial class EntityCreationData : pb::IMessage<EntityCreationData
     }
     if (!object.Equals(CharacterCreationData, other.CharacterCreationData)) return false;
     if (!object.Equals(ItemCreationData, other.ItemCreationData)) return false;
+    if (!object.Equals(CoinCreationData, other.CoinCreationData)) return false;
     if (CreationDataCase != other.CreationDataCase) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
@@ -163,6 +181,7 @@ public sealed partial class EntityCreationData : pb::IMessage<EntityCreationData
     int hash = 1;
     if (creationDataCase_ == CreationDataOneofCase.CharacterCreationData) hash ^= CharacterCreationData.GetHashCode();
     if (creationDataCase_ == CreationDataOneofCase.ItemCreationData) hash ^= ItemCreationData.GetHashCode();
+    if (creationDataCase_ == CreationDataOneofCase.CoinCreationData) hash ^= CoinCreationData.GetHashCode();
     hash ^= (int) creationDataCase_;
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
@@ -190,6 +209,10 @@ public sealed partial class EntityCreationData : pb::IMessage<EntityCreationData
       output.WriteRawTag(18);
       output.WriteMessage(ItemCreationData);
     }
+    if (creationDataCase_ == CreationDataOneofCase.CoinCreationData) {
+      output.WriteRawTag(26);
+      output.WriteMessage(CoinCreationData);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -208,6 +231,10 @@ public sealed partial class EntityCreationData : pb::IMessage<EntityCreationData
       output.WriteRawTag(18);
       output.WriteMessage(ItemCreationData);
     }
+    if (creationDataCase_ == CreationDataOneofCase.CoinCreationData) {
+      output.WriteRawTag(26);
+      output.WriteMessage(CoinCreationData);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -223,6 +250,9 @@ public sealed partial class EntityCreationData : pb::IMessage<EntityCreationData
     }
     if (creationDataCase_ == CreationDataOneofCase.ItemCreationData) {
       size += 1 + pb::CodedOutputStream.ComputeMessageSize(ItemCreationData);
+    }
+    if (creationDataCase_ == CreationDataOneofCase.CoinCreationData) {
+      size += 1 + pb::CodedOutputStream.ComputeMessageSize(CoinCreationData);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -248,6 +278,12 @@ public sealed partial class EntityCreationData : pb::IMessage<EntityCreationData
           ItemCreationData = new global::ItemCreationData();
         }
         ItemCreationData.MergeFrom(other.ItemCreationData);
+        break;
+      case CreationDataOneofCase.CoinCreationData:
+        if (CoinCreationData == null) {
+          CoinCreationData = new global::CoinCreationData();
+        }
+        CoinCreationData.MergeFrom(other.CoinCreationData);
         break;
     }
 
@@ -288,6 +324,15 @@ public sealed partial class EntityCreationData : pb::IMessage<EntityCreationData
           ItemCreationData = subBuilder;
           break;
         }
+        case 26: {
+          global::CoinCreationData subBuilder = new global::CoinCreationData();
+          if (creationDataCase_ == CreationDataOneofCase.CoinCreationData) {
+            subBuilder.MergeFrom(CoinCreationData);
+          }
+          input.ReadMessage(subBuilder);
+          CoinCreationData = subBuilder;
+          break;
+        }
       }
     }
   #endif
@@ -323,6 +368,15 @@ public sealed partial class EntityCreationData : pb::IMessage<EntityCreationData
           }
           input.ReadMessage(subBuilder);
           ItemCreationData = subBuilder;
+          break;
+        }
+        case 26: {
+          global::CoinCreationData subBuilder = new global::CoinCreationData();
+          if (creationDataCase_ == CreationDataOneofCase.CoinCreationData) {
+            subBuilder.MergeFrom(CoinCreationData);
+          }
+          input.ReadMessage(subBuilder);
+          CoinCreationData = subBuilder;
           break;
         }
       }
