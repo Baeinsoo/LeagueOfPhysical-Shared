@@ -84,6 +84,11 @@ namespace LOP.Tests
             new FlappyBodyCollisionSystem(Config()).Resolve(singleList);
             new FlappyBodyCollisionSystem(Config()).Resolve(sameList, sameList);
 
+            // 두 겹친 새는 실제로 갈라지고 속도도 주고받아야 한다 — 이 확인이 없으면 두 오버로드가
+            // "둘 다 아무 일도 안 했다"로 우연히 같아져도 아래 비교를 통과해 버린다.
+            Assert.AreNotEqual(Vector3.zero, PositionOf(singleList[0]));
+            Assert.AreNotEqual(new Vector3(0f, -10f, 0f), VelocityOf(singleList[1]));
+
             Assert.AreEqual(PositionOf(singleList[0]), PositionOf(sameList[0]));
             Assert.AreEqual(PositionOf(singleList[1]), PositionOf(sameList[1]));
             Assert.AreEqual(VelocityOf(singleList[0]), VelocityOf(sameList[0]));
