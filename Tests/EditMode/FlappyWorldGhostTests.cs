@@ -42,6 +42,13 @@ namespace LOP.Tests
         public void 유령_중에는_속도가_0이다()
         {
             var world = FlappyWorldFixture.Create(new AlwaysHit(), out var bird);
+            // 유령 진입 전에 눈에 띄는 0 아닌 속도를 심어 둔다 — 새가 아예 수집조차 안 됐다면
+            // (예: EntityKind 누락) 이 값이 그대로 남아 아래 "0이어야 한다" 단언이 그 경우를
+            // 잡아낸다. 실제 경로에서는 tick1의 MoveSystem이 유령 진입보다 먼저 이 값을 자기
+            // 계산값으로 덮어쓰므로(진입은 MoveThroughMap에서 그 다음에 일어난다) 최종 결과에는
+            // 영향이 없다 — tick2에서 IsStopped 가드가 무조건 0으로 만든다.
+            bird.Get<GameFramework.World.Velocity>().Linear = new Vector3(5f, 5f, 5f).ToNumerics();
+
             world.Tick(1, 0.02f);   // 유령 진입
 
             world.Tick(2, 0.02f);
