@@ -11,7 +11,9 @@ namespace LOP
     public class DamageEffectHandler : AbilityEffectHandler<DamageEffect>
     {
         // 옛 LOPOverlapQuery가 안에 박아 두던 값 — 포트에서 나오면서 부르는 쪽으로 옮겨왔다.
-        private static readonly int CharacterLayerMask = UnityEngine.LayerMask.GetMask("Character");
+        // static 필드 초기화자에서 LayerMask.GetMask 호출은 Unity가 MonoBehaviour에서 금지하는
+        // 패턴이라, 이 클래스가 MonoBehaviour가 아니어도 생성자로 옮겨 그 패턴을 남기지 않는다.
+        private readonly int CharacterLayerMask;
 
         private readonly LOPCombatSystem combatSystem;
         private readonly GameFramework.Physics.ICollisionQuery collisionQuery;
@@ -27,6 +29,7 @@ namespace LOP
             this.collisionQuery = collisionQuery;
             this.matchSeed = matchSeed;
             this.entityRegistry = entityRegistry;
+            CharacterLayerMask = UnityEngine.LayerMask.GetMask("Character");
         }
 
         protected override void OnActiveEnter(AbilityEffectContext ctx, DamageEffect effect)
