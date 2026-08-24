@@ -135,6 +135,13 @@ namespace LOP
                 {
                     continue;   // 새가 아니다
                 }
+                // 알려진 한계: _bodies에는 원격(Simulated 아닌) 새도 들어간다. 그런데
+                // WorldBase.SaveState는 Simulated 엔티티의 위치·속도만 저장한다(LoadState도 그것만
+                // 되돌린다) — 되감기 재생(rollback replay) 중에는 원격 새의 위치가 "그 틱 당시" 값이
+                // 아니라 재생을 시작한 지금 프레임의 값 그대로 고정돼 있다. 그래서 재생 중 몸싸움
+                // 판정은 원격의 과거 위치가 아니라 현재 위치를 기준으로 계산된다. 원격도 그 틱 위치로
+                // 되감아야 하는 콘텐츠(예: 몸싸움 결과가 프레임 하나 차이로 크게 갈리는 상황)가 생기면
+                // 그때 원격 모션도 SaveState 대상에 넣는 걸 재검토한다.
                 _bodies.Add(entity);
                 if (entity.Has<GameFramework.World.Simulated>())
                 {
