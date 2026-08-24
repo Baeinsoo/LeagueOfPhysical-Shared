@@ -22,7 +22,11 @@ namespace LOP
         private readonly int _layerMask;
 
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
+        // _birds = 굴릴 대상(Simulated만). _bodies = 부딪힐 상대(새 전부 — 원격도 포함).
+        // 클라에서 원격 새는 굴리지 않지만(외삽으로 그린다) 내 새가 그 자리에 부딪히긴 해야 해서
+        // 두 목록으로 나눴다 — 합치면 서버 왕복 없이는 부딪힘을 알 방법이 없다.
         private readonly List<GameFramework.World.Entity> _birds = new List<GameFramework.World.Entity>();
+        private readonly List<GameFramework.World.Entity> _bodies = new List<GameFramework.World.Entity>();
 
         // 유령정지 타이머의 틱별 사진. 위치·속도는 WorldBase가 담는다.
         private readonly GameFramework.Netcode.SequenceBuffer<Dictionary<string, FlappySavedState>> _gameFrames
@@ -70,7 +74,9 @@ namespace LOP
 
             // 전원의 속도가 정해진 뒤 한 번(페이즈 배리어). 새끼리 겹침은 여기서 다 풀리므로
             // 아래 물리 브릿지의 Separate는 부르지 않는다.
-            _bodyCollisionSystem.Resolve(_birds);
+            // movers=_birds, bodies=_bodies — 서버는 둘이 같은 집합(모든 새가 Simulated)이라
+            // 지금과 같은 양방향 몸싸움이고, 클라는 원격을 밀어내지 못하는 한쪽 몸싸움이 된다.
+            _bodyCollisionSystem.Resolve(_birds, _bodies);
 
             // 스크립트로 옮긴 자리를 물리에 먼저 알려야 sweep이 한 틱 전 자리에서 이뤄지지 않는다.
             _motionBridge.SyncTransforms();
@@ -110,19 +116,33 @@ namespace LOP
             return true;
         }
 
-        // 시뮬 대상만 모아 id 순으로 세운다. 레지스트리 순회 순서는 정해져 있지 않은데,
-        // 몸싸움을 푸는 순서가 클·서에서 같아야 두 쪽이 같은 결과에 이른다.
+        // 굴리는 대상과 부딪히는 상대는 다르다. 클라에서 원격은 굴리지 않지만(외삽으로 그린다)
+        // 내 새가 그 자리에 부딪히기는 해야 한다 — 부딪힘이 서버 왕복 뒤에 보이면 반응이 굼뜨다.
+        // "새인가"는 EntityKind로 가린다 — FlappyGhost는 유령정지 *타이머*라 정체성 표식이
+        // 아니다(Task10 리뷰에서 교정: 우연히 유효했을 뿐 의미상 틀린 기준이었다). EntityKind가
+        // 이미 이 판별을 위해 쓰이는 곳(클라 OwnerPredictedRemotesExtrapolatedSyncPolicy, 서버
+        // FlapWangRuleSystem)과 같은 기준으로 맞춘다. CapsuleShape는 아이템도 갖고 있어(ItemCreator)
+        // 기준이 될 수 없다.
+        // 둘 다 id 순으로 세운다. 레지스트리 순회 순서는 정해져 있지 않은데, 몸싸움을 푸는 순서가
+        // 클·서에서 같아야 두 쪽이 같은 결과에 이른다.
         private void CollectBirds()
         {
             _birds.Clear();
+            _bodies.Clear();
             foreach (var entity in EntityRegistry.All)
             {
+                if (entity.Get<EntityKind>()?.Kind != EntityType.Character)
+                {
+                    continue;   // 새가 아니다
+                }
+                _bodies.Add(entity);
                 if (entity.Has<GameFramework.World.Simulated>())
                 {
                     _birds.Add(entity);
                 }
             }
             _birds.Sort((left, right) => string.CompareOrdinal(left.Id, right.Id));
+            _bodies.Sort((left, right) => string.CompareOrdinal(left.Id, right.Id));
         }
 
         // 맵은 더는 막지 않는다. 부딪혔는지만 보고 유령으로 넘긴다 —

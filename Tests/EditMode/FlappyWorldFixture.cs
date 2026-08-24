@@ -41,6 +41,7 @@ namespace LOP.Tests
             entity.Add(new GameFramework.World.Transform());
             entity.Add(new Velocity());
             entity.Add(new CapsuleShape(Config().BodyRadius, Config().BodyHeight));
+            entity.Add(new EntityKind(EntityType.Character));   // FlappyWorld.CollectBirds가 이걸로 "새"를 가린다
             entity.Add(new FlappyGhost());
             if (withInput)
             {

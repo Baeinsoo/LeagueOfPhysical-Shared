@@ -82,7 +82,10 @@ namespace LOP.Tests
             entity.Add(new GameFramework.World.Transform { Position = position.ToNumerics() });
             entity.Add(new Velocity());
             entity.Add(new CapsuleShape(radius, height));
-            entity.Add(new FlappyGhost());   // 실제 크리에이터가 항상 붙이는 것과 같다 — 유령 진입 검증에 필요
+            // 실제 크리에이터가 항상 붙이는 것과 같다 — EntityKind는 CollectBirds가 "새"를 가리는
+            // 기준(정체성), FlappyGhost는 유령 진입 검증에 필요(상태).
+            entity.Add(new EntityKind(EntityType.Character));
+            entity.Add(new FlappyGhost());
             if (simulated)
             {
                 entity.Add(new Simulated());
@@ -213,6 +216,10 @@ namespace LOP.Tests
             var noBody = new Entity("bird-1");
             noBody.Add(new GameFramework.World.Transform());
             noBody.Add(new Velocity());
+            // CapsuleShape는 일부러 안 붙인다 — 이게 이 테스트의 요점이다. 대신 CollectBirds가
+            // "새"로 집어 가려면 EntityKind(+FlappyGhost, 유령 시스템이 요구)는 있어야 한다.
+            noBody.Add(new EntityKind(EntityType.Character));
+            noBody.Add(new FlappyGhost());
             noBody.Add(new Simulated());
             registry.Add(noBody);
 
@@ -220,6 +227,8 @@ namespace LOP.Tests
             World(registry, new NoopMotionBridge()).Tick(1, 0.1f);
 
             Assert.AreEqual(Vector3.zero, PositionOf(noBody));
+            // 몸이 없어 "위치 이동"만 못 한다는 걸 못박는다 — 속도 계산(전진·중력)은 여전히 돌았다.
+            Assert.That(VelocityOf(noBody).x, Is.GreaterThan(0f));
         }
     }
 }

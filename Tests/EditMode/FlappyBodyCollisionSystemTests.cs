@@ -66,6 +66,47 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void movers와_bodies가_같으면_기존_한쪽_인자_결과와_같다()
+        {
+            // 서버는 모든 새가 Simulated라 movers==bodies다. 그 경우 새 오버로드가
+            // 기존 Resolve(단일 목록)와 정확히 같은 결과를 내야 서버 동작이 지금과 안 갈린다.
+            var singleList = new List<Entity>
+            {
+                Bird("bird-1", Vector3.zero, Vector3.zero),
+                Bird("bird-2", new Vector3(0f, 0.5f, 0f), new Vector3(0f, -10f, 0f)),
+            };
+            var sameList = new List<Entity>
+            {
+                Bird("bird-1", Vector3.zero, Vector3.zero),
+                Bird("bird-2", new Vector3(0f, 0.5f, 0f), new Vector3(0f, -10f, 0f)),
+            };
+
+            new FlappyBodyCollisionSystem(Config()).Resolve(singleList);
+            new FlappyBodyCollisionSystem(Config()).Resolve(sameList, sameList);
+
+            Assert.AreEqual(PositionOf(singleList[0]), PositionOf(sameList[0]));
+            Assert.AreEqual(PositionOf(singleList[1]), PositionOf(sameList[1]));
+            Assert.AreEqual(VelocityOf(singleList[0]), VelocityOf(sameList[0]));
+            Assert.AreEqual(VelocityOf(singleList[1]), VelocityOf(sameList[1]));
+        }
+
+        [Test]
+        public void bodies에만_있는_상대는_밀리지_않고_mover만_밀린다()
+        {
+            var mover = Bird("bird-1", Vector3.zero, Vector3.zero);
+            var remoteBody = Bird("bird-2", new Vector3(0f, 0.5f, 0f), new Vector3(0f, -10f, 0f));
+            var movers = new List<Entity> { mover };
+            var bodies = new List<Entity> { mover, remoteBody };
+
+            new FlappyBodyCollisionSystem(Config()).Resolve(movers, bodies);
+
+            // mover는 밀려났고(원래 위치 0,0,0에서 벗어남), 원격 상대는 자리도 속도도 그대로다.
+            Assert.AreNotEqual(Vector3.zero, PositionOf(mover));
+            Assert.AreEqual(new Vector3(0f, 0.5f, 0f), PositionOf(remoteBody));
+            Assert.AreEqual(new Vector3(0f, -10f, 0f), VelocityOf(remoteBody));
+        }
+
+        [Test]
         public void 두_새가_같은_충돌을_각자_보고_계산한다()
         {
             // 한쪽을 먼저 고쳐 놓고 다른 쪽이 그 새 값을 보면 순서가 결과를 바꾼다.
