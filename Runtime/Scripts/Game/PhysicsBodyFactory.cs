@@ -13,15 +13,23 @@ namespace LOP
     /// </summary>
     public static class PhysicsBodyFactory
     {
-        public static UnityPhysicsBody Create(GameObject root, GameFramework.World.Entity worldEntity, bool isKinematic, bool isTrigger)
+        public static UnityPhysicsBody Create(GameObject root, GameFramework.World.Entity worldEntity)
         {
-            var body = worldEntity.Get<GameFramework.World.CapsuleShape>();
-            if (body == null)
+            var config = worldEntity.Get<GameFramework.World.PhysicsConfig>();
+            if (config == null)
             {
-                // 몸 치수는 엔티티를 만드는 쪽(게임)이 정한다 — 여기서 기본값을 지어내면
-                // 시뮬이 쓰는 몸과 다시 어긋난다.
+                // 몸을 어떻게 세울지는 엔티티를 만드는 쪽(게임)이 정한다 — 여기서 기본값을
+                // 지어내면 시뮬이 쓰는 몸과 다시 어긋난다(CapsuleShape과 같은 이유).
                 throw new System.InvalidOperationException(
-                    $"[PhysicsBodyFactory] {worldEntity.Id}에 CapsuleShape이 없다 — 크리에이터가 붙여야 한다.");
+                    $"[PhysicsBodyFactory] {worldEntity.Id}에 PhysicsConfig가 없다 — 크리에이터가 붙여야 한다.");
+            }
+
+            var capsule = worldEntity.Get<GameFramework.World.CapsuleShape>();
+            var disc = worldEntity.Get<GameFramework.World.DiscShape>();
+            if (capsule == null && disc == null)
+            {
+                throw new System.InvalidOperationException(
+                    $"[PhysicsBodyFactory] {worldEntity.Id}에 몸 모양이 없다 — CapsuleShape이나 DiscShape을 붙여야 한다.");
             }
 
             var worldTransform = worldEntity.Get<GameFramework.World.Transform>();
@@ -36,18 +44,34 @@ namespace LOP
             var rigidbody = root.AddComponent<Rigidbody>();
             rigidbody.linearDamping = 0f;   //  수평 정지는 이동 모터가 0으로 제동한다. 수직은 순수 중력.
             rigidbody.angularDamping = 0.05f;
-            rigidbody.constraints = RigidbodyConstraints.FreezeRotation;
+            rigidbody.constraints = config.FreezeRotation
+                ? RigidbodyConstraints.FreezeRotation
+                : RigidbodyConstraints.None;
             rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
             rigidbody.position = worldTransform.Position.ToUnity();
             rigidbody.rotation = worldTransform.Rotation.ToUnity();
             rigidbody.linearVelocity = worldVelocity.Linear.ToUnity();
-            rigidbody.isKinematic = isKinematic;
+            rigidbody.isKinematic = config.Kind != GameFramework.World.BodyKind.Dynamic;
 
-            var collider = root.AddComponent<CapsuleCollider>();
-            collider.radius = body.Radius;
-            collider.height = body.Height;
-            collider.center = new Vector3(0, body.Height * 0.5f, 0);
-            collider.isTrigger = isTrigger;
+            Collider collider;
+            if (disc != null)
+            {
+                var cylinder = root.AddComponent<CapsuleCollider>();
+                cylinder.direction = 1;              // Y축 — 원반은 눕힌 캡슐이 아니라 납작한 기둥이다
+                cylinder.radius = disc.Radius;
+                cylinder.height = disc.Thickness;
+                cylinder.center = Vector3.zero;
+                collider = cylinder;
+            }
+            else
+            {
+                var capsuleCollider = root.AddComponent<CapsuleCollider>();
+                capsuleCollider.radius = capsule.Radius;
+                capsuleCollider.height = capsule.Height;
+                capsuleCollider.center = new Vector3(0, capsule.Height * 0.5f, 0);
+                collider = capsuleCollider;
+            }
+            collider.isTrigger = config.IsTrigger;
 
             return new UnityPhysicsBody(rigidbody, collider);
         }

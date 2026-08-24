@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "BaseEntityCreationData.proto";
+
+message CoinCreationData
+{
+	BaseEntityCreationData base_entity_creation_data = 1;
+	string visual_id = 2;
+}

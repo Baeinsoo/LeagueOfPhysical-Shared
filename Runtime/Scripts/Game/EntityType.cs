@@ -7,5 +7,6 @@ namespace LOP
         Projectile = 2,
         Item = 3,
         Environment = 4,
+        Coin = 5,
     }
 }
