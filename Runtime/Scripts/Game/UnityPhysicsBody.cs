@@ -11,9 +11,9 @@ namespace LOP
     public class UnityPhysicsBody : GameFramework.World.PhysicsBody
     {
         private readonly Rigidbody _rigidbody;
-        private readonly CapsuleCollider _collider;
+        private readonly Collider _collider;
 
-        public UnityPhysicsBody(Rigidbody rigidbody, CapsuleCollider collider)
+        public UnityPhysicsBody(Rigidbody rigidbody, Collider collider)
         {
             _rigidbody = rigidbody;
             _collider = collider;
@@ -45,13 +45,29 @@ namespace LOP
             }
         }
 
+        public override System.Numerics.Vector3 GetPosition()
+        {
+            return _rigidbody == null ? System.Numerics.Vector3.Zero : _rigidbody.position.ToNumerics();
+        }
+
+        public override System.Numerics.Quaternion GetRotation()
+        {
+            return _rigidbody == null ? System.Numerics.Quaternion.Identity : _rigidbody.rotation.ToNumerics();
+        }
+
+        public override System.Numerics.Vector3 GetVelocity()
+        {
+            return _rigidbody == null ? System.Numerics.Vector3.Zero : _rigidbody.linearVelocity.ToNumerics();
+        }
+
         public override System.Numerics.Vector3 ComputePushOut(int layerMask)
         {
-            if (_collider == null)
+            // 밀어내기는 캡슐 몸(우리 키네마틱 컨트롤러) 전용 — 원반 등 다른 콜라이더는 대상이 아니다.
+            if (_collider is not CapsuleCollider capsule)
             {
                 return System.Numerics.Vector3.Zero;
             }
-            return KinematicDepenetration.ComputePushOut(_collider, layerMask).ToNumerics();
+            return KinematicDepenetration.ComputePushOut(capsule, layerMask).ToNumerics();
         }
     }
 }
