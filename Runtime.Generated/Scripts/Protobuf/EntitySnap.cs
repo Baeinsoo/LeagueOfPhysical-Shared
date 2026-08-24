@@ -24,18 +24,19 @@ public static partial class EntitySnapReflection {
         string.Concat(
           "ChBFbnRpdHlTbmFwLnByb3RvGhJQcm90b1ZlY3RvcjMucHJvdG8aHVByb3Rv",
           "TW90aW9uQ29udHJpYnV0aW9uLnByb3RvGhdQcm90b0FjdGl2ZUVmZmVjdC5w",
-          "cm90byLRAgoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
+          "cm90byLgAgoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
           "aXRpb24YAiABKAsyDS5Qcm90b1ZlY3RvcjMSHwoIcm90YXRpb24YAyABKAsy",
           "DS5Qcm90b1ZlY3RvcjMSHwoIdmVsb2NpdHkYBCABKAsyDS5Qcm90b1ZlY3Rv",
           "cjMSDgoGbWF4X0hQGAUgASgFEhIKCmN1cnJlbnRfSFAYBiABKAUSNgoUbW90",
           "aW9uX2NvbnRyaWJ1dGlvbnMYByADKAsyGC5Qcm90b01vdGlvbkNvbnRyaWJ1",
           "dGlvbhIQCghncm91bmRlZBgIIAEoCBIZChFhY3RpdmVfYWJpbGl0eV9pZBgJ",
           "IAEoBRIYChBhYmlsaXR5X2VuZF90aWNrGAogASgDEioKDnN0YXR1c19lZmZl",
-          "Y3RzGAsgAygLMhIuUHJvdG9BY3RpdmVFZmZlY3RiBnByb3RvMw=="));
+          "Y3RzGAsgAygLMhIuUHJvdG9BY3RpdmVFZmZlY3QSDQoFZ2hvc3QYDCABKAhi",
+          "BnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::ProtoVector3Reflection.Descriptor, global::ProtoMotionContributionReflection.Descriptor, global::ProtoActiveEffectReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "Ghost" }, null, null, null, null)
         }));
   }
   #endregion
@@ -88,6 +89,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     activeAbilityId_ = other.activeAbilityId_;
     abilityEndTick_ = other.abilityEndTick_;
     statusEffects_ = other.statusEffects_.Clone();
+    ghost_ = other.ghost_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -233,6 +235,21 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     get { return statusEffects_; }
   }
 
+  /// <summary>Field number for the "ghost" field.</summary>
+  public const int GhostFieldNumber = 12;
+  private bool ghost_;
+  /// <summary>
+  /// Flappy: 맵에 부딪혀 멈춰 있는 중
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public bool Ghost {
+    get { return ghost_; }
+    set {
+      ghost_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -259,6 +276,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (ActiveAbilityId != other.ActiveAbilityId) return false;
     if (AbilityEndTick != other.AbilityEndTick) return false;
     if(!statusEffects_.Equals(other.statusEffects_)) return false;
+    if (Ghost != other.Ghost) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -277,6 +295,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (ActiveAbilityId != 0) hash ^= ActiveAbilityId.GetHashCode();
     if (AbilityEndTick != 0L) hash ^= AbilityEndTick.GetHashCode();
     hash ^= statusEffects_.GetHashCode();
+    if (Ghost != false) hash ^= Ghost.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -333,6 +352,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteInt64(AbilityEndTick);
     }
     statusEffects_.WriteTo(output, _repeated_statusEffects_codec);
+    if (Ghost != false) {
+      output.WriteRawTag(96);
+      output.WriteBool(Ghost);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -381,6 +404,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteInt64(AbilityEndTick);
     }
     statusEffects_.WriteTo(ref output, _repeated_statusEffects_codec);
+    if (Ghost != false) {
+      output.WriteRawTag(96);
+      output.WriteBool(Ghost);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -420,6 +447,9 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       size += 1 + pb::CodedOutputStream.ComputeInt64Size(AbilityEndTick);
     }
     size += statusEffects_.CalculateSize(_repeated_statusEffects_codec);
+    if (Ghost != false) {
+      size += 1 + 1;
+    }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
     }
@@ -470,6 +500,9 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       AbilityEndTick = other.AbilityEndTick;
     }
     statusEffects_.Add(other.statusEffects_);
+    if (other.Ghost != false) {
+      Ghost = other.Ghost;
+    }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
 
@@ -542,6 +575,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
           statusEffects_.AddEntriesFrom(input, _repeated_statusEffects_codec);
           break;
         }
+        case 96: {
+          Ghost = input.ReadBool();
+          break;
+        }
       }
     }
   #endif
@@ -612,6 +649,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
         }
         case 90: {
           statusEffects_.AddEntriesFrom(ref input, _repeated_statusEffects_codec);
+          break;
+        }
+        case 96: {
+          Ghost = input.ReadBool();
           break;
         }
       }
