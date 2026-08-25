@@ -112,6 +112,9 @@ namespace LOP.Tests
             //  미끄러짐은 남은 이동을 충돌면에 투영한다 — 법선에 z가 섞이면 매 틱 조금씩 옆으로
             //  새어 나가 새가 x-y 레인을 영영 벗어난다.
             Assert.AreEqual(0f, bird.Get<GameFramework.World.Transform>().Position.Z);
+            //  속도에 남은 z도 지워야 한다 — 스냅샷에 실려 나가면 남의 화면에서 그 속도로
+            //  외삽되는 동안 새가 레인 밖으로 벌어져 보인다.
+            Assert.AreEqual(0f, bird.Get<GameFramework.World.Velocity>().Linear.Z);
         }
 
         //  바닥만 있는 하늘 — 아래로 향하는 sweep만 맞는다.

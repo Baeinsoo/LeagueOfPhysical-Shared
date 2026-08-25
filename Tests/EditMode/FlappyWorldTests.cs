@@ -42,7 +42,7 @@ namespace LOP.Tests
 
         // 어느 방향으로 sweep하든 고정 거리로 맞는 벽. MoveBlockedByMap은 KinematicMover를 통해
         // 수평·수직을 나눠 따로 sweep하므로(각각 최대 한 번 이상) 호출 횟수는 방향 개수만큼 나온다.
-        // 받은 인자를 기록해 phase ⑥이 실제로 엔티티가 들고 있는 몸 치수(반지름)·월드가 받은
+        // 받은 인자를 기록해 phase ⑤가 실제로 엔티티가 들고 있는 몸 치수(반지름)·월드가 받은
         // 레이어마스크를 쓰는지 검증한다.
         private class WallAheadQuery : ICollisionQuery
         {

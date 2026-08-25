@@ -204,13 +204,17 @@ namespace LOP
             }
 
             // z는 0에 붙잡는다. 미끄러짐이 남은 이동을 충돌면에 투영하는데, 그 면의 법선에 z가
-            // 섞여 있으면 새가 조금씩 옆으로 새어 x-y 레인을 영영 벗어난다. 속도 z는 FlappyMoveSystem이
-            // 매 틱 0으로 잡지만 위치 z는 아무도 안 잡는다.
+            // 섞여 있으면 새가 조금씩 옆으로 새어 x-y 레인을 영영 벗어난다.
+            // 이 게임은 레이스 코스가 x-y 평면 한 장이라는 전제 위에 있다 — 스폰 지점도 z=0이다.
+            // 언젠가 z가 다른 맵을 만들면 이 줄이 새를 원점 평면으로 끌어당기므로 같이 손봐야 한다.
             var moved = result.position.ToNumerics();
             transform.Position = new System.Numerics.Vector3(moved.X, moved.Y, 0f);
             // 벽/바닥에 막힌 축의 속도도 같이 지워야 한다 — 안 지우면 다음 틱 중력 누적이
             // "막혀서 멈춘 적 없다는 듯" 옛 속도 위에 계속 쌓인다(KinematicMoveSystem과 같은 관례).
-            velocity.Linear = result.velocity.ToNumerics();
+            // 속도 z도 여기서 지운다. 위치만 잡고 두면 남은 z가 스냅샷에 실려 나가고, 남의 화면에서
+            // 그 속도로 외삽되는 동안 새가 레인 밖으로 벌어져 보인다(다음 스냅샷이 오면 되돌아온다).
+            var movedVelocity = result.velocity.ToNumerics();
+            velocity.Linear = new System.Numerics.Vector3(movedVelocity.X, movedVelocity.Y, 0f);
             _motionBridge.PushMotion(entity);
         }
 
