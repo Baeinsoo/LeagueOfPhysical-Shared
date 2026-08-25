@@ -60,6 +60,19 @@ namespace LOP
             return _rigidbody == null ? System.Numerics.Vector3.Zero : _rigidbody.linearVelocity.ToNumerics();
         }
 
+        public override System.Numerics.Vector3 GetAngularVelocity()
+        {
+            return _rigidbody == null ? System.Numerics.Vector3.Zero : _rigidbody.angularVelocity.ToNumerics();
+        }
+
+        public override void SetAngularVelocity(System.Numerics.Vector3 angular)
+        {
+            if (_rigidbody != null)
+            {
+                _rigidbody.angularVelocity = angular.ToUnity();
+            }
+        }
+
         public override void AddImpulseAtPosition(System.Numerics.Vector3 impulse, System.Numerics.Vector3 worldPoint)
         {
             if (_rigidbody == null)
