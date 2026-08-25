@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+// 판치기 턴 상태(서버 → 클라). 바뀔 때만 reliable로 간다.
+// 남은 시간은 마감을 *틱*으로 보내 클라가 공유 틱 시계로 직접 그린다 — 주기 전송이 필요 없다.
+// @auto_generate
+message PanchigiStateToC
+{
+	// 0 = Settling(동전이 구르는 중), 1 = Aiming(누군가 조준 중)
+	int32 phase = 1;
+	// 지금 칠 차례인 플레이어 엔티티. Settling이면 빈 문자열
+	string current_entity_id = 2;
+	// 조준 마감 틱. Aiming일 때만 유효
+	int64 aim_deadline_tick = 3;
+}
