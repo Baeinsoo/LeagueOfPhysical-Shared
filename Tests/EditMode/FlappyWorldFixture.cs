@@ -58,7 +58,7 @@ namespace LOP.Tests
         public static FlappyWorld Create(ICollisionQuery collisionQuery, out Entity bird)
             => Create(collisionQuery, new NoopMotionBridge(), out bird);
 
-        /// <summary>물리 브릿지 호출 여부까지 확인하고 싶을 때(예: SyncTransforms 카운트) 쓰는 오버로드.</summary>
+        /// <summary>물리 브릿지 호출 여부까지 확인하고 싶을 때(예: Depenetrate 카운트) 쓰는 오버로드.</summary>
         public static FlappyWorld Create(ICollisionQuery collisionQuery, IMotionBridge motionBridge, out Entity bird)
         {
             var registry = new EntityRegistry();

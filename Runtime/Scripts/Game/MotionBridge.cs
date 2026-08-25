@@ -8,7 +8,9 @@ namespace LOP
     /// 겹침 해소는 2패스: Depenetrate(지형) + Separate(캐릭터). 둘 다 full로 밀어냄 — 캐릭터는 서로 통과
     /// 못 하는 단단한 벽이고, 클·서가 동일해야 예측이 맞아 recon이 작다(soft 분리는 넷코드상 불가로 폐기).
     /// (배율 param은 seam으로 남겨둠 — 현재 클·서 모두 1.0.)
-    /// World.Transform이 진실원본, 물리 바디는 팔로워(kinematic이면 위치·회전 직접 밀어넣음).
+    /// World.Transform이 진실원본, 물리 바디는 팔로워(kinematic이면 위치·회전 직접 밀어넣음) —
+    /// 밀어내기가 겹침을 판정할 때 보는 자리도 그 진실원본이다. 엔진 트랜스폼을 읽으면 물리 스텝
+    /// 뒤에야 갱신되는 한 틱 전 자리를 보게 되고, 롤백 재생 중에는 그마저 얼어 있다.
     /// </summary>
     public class MotionBridge : GameFramework.World.IMotionBridge
     {
@@ -45,7 +47,7 @@ namespace LOP
             {
                 return;
             }
-            System.Numerics.Vector3 push = body.ComputePushOut(layerMask);
+            System.Numerics.Vector3 push = body.ComputePushOut(transform.Position, transform.Rotation, layerMask);
             if (push.LengthSquared() > 0f)
             {
                 transform.Position += push * scale;

@@ -24,22 +24,26 @@ namespace LOP.Tests
                 => System.Array.Empty<CollisionHit>();
         }
 
-        // 물리 바디가 아직 없는 단계라 브릿지는 아무 일도 하지 않는다(호출 여부만 세어 둔다).
+        // 물리 바디가 아직 없는 단계라 브릿지는 아무 일도 하지 않는다(호출 여부·순서만 세어 둔다).
+        // CallOrder는 지운 채로 둬도 두 스위트가 계속 초록이던 사각지대(밀어내기 순서)를 메우려고
+        // 있다 — "누가 몇 번 불렸나"만이 아니라 "무엇보다 먼저 불렸나"까지 pin한다.
         private class NoopMotionBridge : GameFramework.World.IMotionBridge
         {
             public int SyncTransformsCalls;
             public int SeparateCalls;
+            public int DepenetrateCalls;
+            public readonly List<string> CallOrder = new List<string>();
 
-            public void SyncTransforms() => SyncTransformsCalls++;
-            public void Depenetrate(Entity entity) { }
-            public void Separate(Entity entity) => SeparateCalls++;
-            public void PushMotion(Entity entity) { }
+            public void SyncTransforms() { SyncTransformsCalls++; CallOrder.Add("SyncTransforms"); }
+            public void Depenetrate(Entity entity) { DepenetrateCalls++; CallOrder.Add("Depenetrate"); }
+            public void Separate(Entity entity) { SeparateCalls++; CallOrder.Add("Separate"); }
+            public void PushMotion(Entity entity) => CallOrder.Add("PushMotion");
         }
 
-        // 어느 방향으로 sweep하든 고정 거리로 맞는 벽. MoveThroughMap은 수평/수직을 나누지 않고
-        // 델타 전체 방향(중력이 섞여 y도 0이 아님)으로 캡슐을 한 번만 sweep하므로, 가짜도 방향을
-        // 가리지 않고 맞아야 실제로 호출됐는지 검증할 수 있다. 받은 인자를 기록해 phase ④가
-        // 실제로 엔티티가 들고 있는 몸 치수(반지름)·월드에 넘긴 레이어마스크를 쓰는지 검증한다.
+        // 어느 방향으로 sweep하든 고정 거리로 맞는 벽. MoveBlockedByMap은 KinematicMover를 통해
+        // 수평·수직을 나눠 따로 sweep하므로(각각 최대 한 번 이상) 호출 횟수는 방향 개수만큼 나온다.
+        // 받은 인자를 기록해 phase ⑥이 실제로 엔티티가 들고 있는 몸 치수(반지름)·월드가 받은
+        // 레이어마스크를 쓰는지 검증한다.
         private class WallAheadQuery : ICollisionQuery
         {
             private readonly float _hitDistance;
@@ -162,11 +166,47 @@ namespace LOP.Tests
             World(registry, bridge).Tick(1, 0.1f);
 
             Assert.AreEqual(0, bridge.SeparateCalls);       // 겹침은 우리 계산이 이미 풀었다
-            Assert.AreEqual(1, bridge.SyncTransformsCalls); // 옮긴 자리는 물리에 알려 준다
+            // 엔진에 자리를 알려 줄 일도 없다 — 밀어내기가 World.Transform을 직접 읽으므로
+            // 물리 트랜스폼을 미리 맞춰 둘 이유가 사라졌다.
+            Assert.AreEqual(0, bridge.SyncTransformsCalls);
         }
 
         [Test]
-        public void 맵에_부딪히면_통과하고_유령에_걸리며_반지름과_레이어마스크가_넘어간다()
+        public void 맵에서_밀어내기가_새마다_매_틱_불린다()
+        {
+            // 이 테스트를 지우고 Mutation의 Depenetrate 루프를 통째로 지워도 두 스위트가
+            // 계속 초록이었다 — NoopMotionBridge.Depenetrate가 아무 일도 안 하는 빈 메서드라
+            // 호출 자체를 아무도 세지 않았기 때문이다. 새 2마리 × 틱 2번 = 4번으로 그 사각지대를 막는다.
+            var registry = new EntityRegistry();
+            registry.Add(Bird("bird-1", Vector3.zero, simulated: true));
+            registry.Add(Bird("bird-2", new Vector3(5f, 0f, 0f), simulated: true));
+            var bridge = new NoopMotionBridge();
+
+            var world = World(registry, bridge);
+            world.Tick(1, 0.1f);
+            world.Tick(2, 0.1f);
+
+            Assert.AreEqual(4, bridge.DepenetrateCalls);
+        }
+
+        [Test]
+        public void 맵에서_밀어내기가_이동보다_먼저_불린다()
+        {
+            // 밀어내기는 복구, sweep은 예방이다. 밀어내기가 이동 뒤에 오면 sweep이 아직 벽 안에
+            // 있는 자리에서 출발해 거리 0을 받고 그대로 낀다 — 밀어낸 결과를 쓰지 못한다.
+            // 그래서 "Depenetrate가 Move보다 앞"이라는 순서 자체를 pin한다.
+            var registry = new EntityRegistry();
+            registry.Add(Bird("bird-1", Vector3.zero, simulated: true));
+            var bridge = new NoopMotionBridge();
+
+            World(registry, bridge).Tick(1, 0.1f);
+
+            // Depenetrate(밀어내기) → PushMotion(MoveBlockedByMap이 마지막에 최종 자리를 반영).
+            CollectionAssert.AreEqual(new[] { "Depenetrate", "PushMotion" }, bridge.CallOrder);
+        }
+
+        [Test]
+        public void 맵에_부딪히면_막히고_스턴에_걸리며_반지름과_레이어마스크가_넘어간다()
         {
             var registry = new EntityRegistry();
             var bird = Bird("bird-1", Vector3.zero, simulated: true);
@@ -183,14 +223,14 @@ namespace LOP.Tests
 
             world.Tick(1, 0.1f);
 
-            // 막히지 않는다 — 벽에 맞아도 델타 전체(x=1.1=11×0.1)만큼 그대로 전진한다.
-            Assert.AreEqual(1.1f, PositionOf(bird).x, Tolerance);
-            // 대신 스턴에 걸린다 — 페널티는 위치 차단이 아니라 멈춰 있는 시간이다.
+            // 막힌다 — 델타(x=1.1)까지 못 가고 벽 앞(거리 0.5 − SkinWidth 0.02)에서 멈춘다.
+            Assert.AreEqual(0.48f, PositionOf(bird).x, Tolerance);
+            // 대신 스턴에 걸린다 — 페널티는 위치 차단과 별개로 여전히 멈춰 있는 시간이다.
             Assert.That(bird.Get<FlappyStun>().StunRemaining, Is.GreaterThan(0f));
 
-            // 그리고 그 판정은 실제로 한 번 일어났고, 엔티티 자신의 몸 치수·월드가 받은
-            // 레이어마스크로 이뤄졌다 — 이 세 가지는 "막기"가 없어져도 여전히 지켜야 한다.
-            Assert.AreEqual(1, wallQuery.CastCount);
+            // 그리고 그 판정은 실제로 일어났고(수평·수직 각 sweep에서 한 번씩, 총 두 번),
+            // 엔티티 자신의 몸 치수·월드가 받은 레이어마스크로 이뤄졌다.
+            Assert.AreEqual(2, wallQuery.CastCount);
             Assert.AreEqual(Config().BodyRadius, wallQuery.LastRadius, Tolerance);
             Assert.AreEqual(layerMask, wallQuery.LastLayerMask);
         }

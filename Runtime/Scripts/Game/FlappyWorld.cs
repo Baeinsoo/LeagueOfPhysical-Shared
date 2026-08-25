@@ -8,8 +8,9 @@ namespace LOP
     /// <summary>
     /// Flappy Race의 시뮬 코어. 클·서가 같은 구체 클래스를 돌려 결과가 갈리지 않게 한다.
     /// 한 틱: ⓪ 출발틱 전이면 아무것도 굴리지 않고 속도만 0으로 둔다.
-    /// ① 스턴 시간 감소 → ② 속도(중력·플랩·고정 전진, 스턴 중이면 스킵) → ③ 새끼리
-    /// 몸싸움 → ④ 맵은 막지 않고 통과 + 부딪히면 스턴 진입.
+    /// ① 스턴 시간 감소 → ② 속도(중력·플랩·고정 전진, 스턴 중이면 스킵) → ③ 새끼리 몸싸움 →
+    /// ④ 맵에서 밀어내기(③이 벽 안으로 민 것을 되돌림) → ⑤ 맵은 막으며 이동(MoveBlockedByMap)
+    /// + 부딪히면 스턴 진입(무적 중에도 막힘, 재진입만 안 함).
     /// ③을 전원의 ② 뒤에 두는 이유는, 한 마리씩 처리하면 먼저 나온 새가 아직 갱신되지 않은
     /// 상대 속도를 보게 돼 순서가 결과를 가르기 때문이다.
     /// </summary>
@@ -28,6 +29,10 @@ namespace LOP
         // 두 목록으로 나눴다 — 합치면 서버 왕복 없이는 부딪힘을 알 방법이 없다.
         private readonly List<GameFramework.World.Entity> _birds = new List<GameFramework.World.Entity>();
         private readonly List<GameFramework.World.Entity> _bodies = new List<GameFramework.World.Entity>();
+
+        // KinematicMover.Move에게 넘길 실제 쿼리를 감싸, sweep 도중(수평·수직 어느 스텝이든) 한 번이라도
+        // 히트가 있었는지만 기록한다. 매 틱 재사용해 새 인스턴스를 만들지 않는다.
+        private readonly HitTrackingQuery _hitTracker = new HitTrackingQuery();
 
         // 스턴 타이머의 틱별 사진. 위치·속도는 WorldBase가 담는다.
         private readonly GameFramework.Netcode.SequenceBuffer<Dictionary<string, FlappySavedState>> _gameFrames
@@ -90,11 +95,19 @@ namespace LOP
             // 지금과 같은 양방향 몸싸움이고, 클라는 원격을 밀어내지 못하는 한쪽 몸싸움이 된다.
             _bodyCollisionSystem.Resolve(_birds, _bodies);
 
-            // 스크립트로 옮긴 자리를 물리에 먼저 알려야 sweep이 한 틱 전 자리에서 이뤄지지 않는다.
-            _motionBridge.SyncTransforms();
+            // 벽 안이면 밖으로 밀어낸다 — 스폰 겹침이든 방금 몸싸움이 처박은 것이든. 겹침이
+            // 없으면 0을 돌려주므로 매 틱 불러도 공짜고, 그래서 "단단한 몸"이 상시 성립한다.
+            // 겹침 판정은 World.Transform(진실원본) 자리로 한다. 엔진 트랜스폼을 보면 물리 스텝
+            // 뒤에야 갱신되는 한 틱 전 자리를 보고, 롤백 재생 중엔 물리를 안 돌려 아예 얼어 있다
+            // — 그러면 같은 코드가 라이브와 재생에서 다른 답을 낸다.
             for (int i = 0; i < _birds.Count; i++)
             {
-                MoveThroughMap(_birds[i], deltaTime);
+                _motionBridge.Depenetrate(_birds[i]);
+            }
+
+            for (int i = 0; i < _birds.Count; i++)
+            {
+                MoveBlockedByMap(_birds[i], deltaTime);
             }
         }
 
@@ -164,9 +177,12 @@ namespace LOP
             _bodies.Sort((left, right) => string.CompareOrdinal(left.Id, right.Id));
         }
 
-        // 맵은 더는 막지 않는다. 부딪혔는지만 보고 스턴으로 넘긴다 —
-        // 전진 속도가 고정이라 "막기"로는 벽에 박힌 새가 수평으로 영영 빠져나오지 못한다.
-        private void MoveThroughMap(GameFramework.World.Entity entity, float deltaTime)
+        // 맵은 막는다 — KinematicMover가 벽까지만 이동시키고 미끄러뜨린다(collide-and-slide).
+        // (이름 참고: 예전엔 "MoveThroughMap"이었다 — 그 이름이 뜻하던 통과가 이 슬라이스의
+        // 취지였다. 지금은 반대로 막으므로 이름도 그에 맞춘다.)
+        // "부딪혔는가"는 스턴 진입에 따로 필요하다 — KinematicMoveResult엔 그 정보가 없어서
+        // (grounded만 있음) _hitTracker로 실제 쿼리를 감싸 sweep 도중 히트가 있었는지 기록한다.
+        private void MoveBlockedByMap(GameFramework.World.Entity entity, float deltaTime)
         {
             var transform = entity.Get<GameFramework.World.Transform>();
             var velocity = entity.Get<GameFramework.World.Velocity>();
@@ -176,24 +192,49 @@ namespace LOP
                 return;
             }
 
-            Vector3 start = transform.Position.ToUnity();
-            Vector3 delta = velocity.Linear.ToUnity() * deltaTime;
+            _hitTracker.Reset(_collisionQuery);
+            var result = KinematicMover.Move(new KinematicMoveInput(
+                transform.Position.ToUnity(), velocity.Linear.ToUnity(),
+                body.Radius, body.Height, deltaTime, _layerMask), _hitTracker);
 
-            if (delta.sqrMagnitude > 0f)
+            if (_hitTracker.SawHit)
             {
-                // 캡슐 끝점 규약은 KinematicMover.Cast와 같다 — position은 발밑 기준.
-                Vector3 p1 = start + Vector3.up * body.Radius;
-                Vector3 p2 = start + Vector3.up * (body.Height - body.Radius);
-                var hit = _collisionQuery.CapsuleCast(
-                    p1, p2, body.Radius, delta.normalized, delta.magnitude, _layerMask);
-                if (hit.HasHit)
-                {
-                    _stunSystem.Enter(entity);
-                }
+                // 무적 중이면 Enter가 알아서 무시한다 — 여기선 "닿았다"만 알리면 된다.
+                _stunSystem.Enter(entity);
             }
 
-            transform.Position = (start + delta).ToNumerics();
+            // z는 0에 붙잡는다. 미끄러짐이 남은 이동을 충돌면에 투영하는데, 그 면의 법선에 z가
+            // 섞여 있으면 새가 조금씩 옆으로 새어 x-y 레인을 영영 벗어난다. 속도 z는 FlappyMoveSystem이
+            // 매 틱 0으로 잡지만 위치 z는 아무도 안 잡는다.
+            var moved = result.position.ToNumerics();
+            transform.Position = new System.Numerics.Vector3(moved.X, moved.Y, 0f);
+            // 벽/바닥에 막힌 축의 속도도 같이 지워야 한다 — 안 지우면 다음 틱 중력 누적이
+            // "막혀서 멈춘 적 없다는 듯" 옛 속도 위에 계속 쌓인다(KinematicMoveSystem과 같은 관례).
+            velocity.Linear = result.velocity.ToNumerics();
             _motionBridge.PushMotion(entity);
+        }
+
+        private sealed class HitTrackingQuery : ICollisionQuery
+        {
+            private ICollisionQuery _inner;
+            public bool SawHit { get; private set; }
+
+            public void Reset(ICollisionQuery inner)
+            {
+                _inner = inner;
+                SawHit = false;
+            }
+
+            public CollisionHit CapsuleCast(Vector3 point1, Vector3 point2, float radius,
+                Vector3 direction, float distance, int layerMask)
+            {
+                var hit = _inner.CapsuleCast(point1, point2, radius, direction, distance, layerMask);
+                if (hit.HasHit)
+                {
+                    SawHit = true;
+                }
+                return hit;
+            }
         }
     }
 }
