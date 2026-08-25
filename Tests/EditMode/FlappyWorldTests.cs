@@ -74,7 +74,7 @@ namespace LOP.Tests
         static FlappyConfig Config()
             => new FlappyConfig(forwardSpeed: 11f, flapImpulse: 23f, gravity: 70f, maxFallSpeed: 30f,
                                 bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f,
-                                ghostTime: 0.8f, invulnTime: 0.6f);
+                                stunTime: 0.8f, invulnTime: 0.6f);
 
         static Entity Bird(string id, Vector3 position, bool simulated, float radius = 0.45f, float height = 0.9f)
         {
@@ -83,9 +83,9 @@ namespace LOP.Tests
             entity.Add(new Velocity());
             entity.Add(new CapsuleShape(radius, height));
             // 실제 크리에이터가 항상 붙이는 것과 같다 — EntityKind는 CollectBirds가 "새"를 가리는
-            // 기준(정체성), FlappyGhost는 유령 진입 검증에 필요(상태).
+            // 기준(정체성), FlappyStun은 스턴 진입 검증에 필요(상태).
             entity.Add(new EntityKind(EntityType.Character));
-            entity.Add(new FlappyGhost());
+            entity.Add(new FlappyStun());
             if (simulated)
             {
                 entity.Add(new Simulated());
@@ -99,7 +99,7 @@ namespace LOP.Tests
             var world = new FlappyWorld(registry, new WorldEventBuffer(),
                                new FlappyMoveSystem(Config()),
                                new FlappyBodyCollisionSystem(Config()),
-                               new FlappyGhostSystem(Config()),
+                               new FlappyStunSystem(Config()),
                                new EmptySkyQuery(), bridge, layerMask: ~0);
             world.GameplayStartTick = 0;
             return world;
@@ -177,7 +177,7 @@ namespace LOP.Tests
             var world = new FlappyWorld(registry, new WorldEventBuffer(),
                                          new FlappyMoveSystem(Config()),
                                          new FlappyBodyCollisionSystem(Config()),
-                                         new FlappyGhostSystem(Config()),
+                                         new FlappyStunSystem(Config()),
                                          wallQuery, new NoopMotionBridge(), layerMask);
             world.GameplayStartTick = 0;   // 이 테스트는 출발 게이트가 아니라 맵 충돌을 다룬다
 
@@ -185,8 +185,8 @@ namespace LOP.Tests
 
             // 막히지 않는다 — 벽에 맞아도 델타 전체(x=1.1=11×0.1)만큼 그대로 전진한다.
             Assert.AreEqual(1.1f, PositionOf(bird).x, Tolerance);
-            // 대신 유령정지에 걸린다 — 페널티는 위치 차단이 아니라 멈춰 있는 시간이다.
-            Assert.That(bird.Get<FlappyGhost>().Remaining, Is.GreaterThan(0f));
+            // 대신 스턴에 걸린다 — 페널티는 위치 차단이 아니라 멈춰 있는 시간이다.
+            Assert.That(bird.Get<FlappyStun>().StunRemaining, Is.GreaterThan(0f));
 
             // 그리고 그 판정은 실제로 한 번 일어났고, 엔티티 자신의 몸 치수·월드가 받은
             // 레이어마스크로 이뤄졌다 — 이 세 가지는 "막기"가 없어져도 여전히 지켜야 한다.
@@ -207,7 +207,7 @@ namespace LOP.Tests
             var world = new FlappyWorld(registry, new WorldEventBuffer(),
                                         new FlappyMoveSystem(Config()),
                                         new FlappyBodyCollisionSystem(Config()),
-                                        new FlappyGhostSystem(Config()),
+                                        new FlappyStunSystem(Config()),
                                         wallQuery, new NoopMotionBridge(), layerMask: ~0);
             world.GameplayStartTick = 0;   // 이 테스트는 출발 게이트가 아니라 맵 충돌을 다룬다
 
@@ -224,9 +224,9 @@ namespace LOP.Tests
             noBody.Add(new GameFramework.World.Transform());
             noBody.Add(new Velocity());
             // CapsuleShape는 일부러 안 붙인다 — 이게 이 테스트의 요점이다. 대신 CollectBirds가
-            // "새"로 집어 가려면 EntityKind(+FlappyGhost, 유령 시스템이 요구)는 있어야 한다.
+            // "새"로 집어 가려면 EntityKind(+FlappyStun, 스턴 시스템이 요구)는 있어야 한다.
             noBody.Add(new EntityKind(EntityType.Character));
-            noBody.Add(new FlappyGhost());
+            noBody.Add(new FlappyStun());
             noBody.Add(new Simulated());
             registry.Add(noBody);
 

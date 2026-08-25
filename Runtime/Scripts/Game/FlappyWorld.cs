@@ -8,8 +8,8 @@ namespace LOP
     /// <summary>
     /// Flappy Race의 시뮬 코어. 클·서가 같은 구체 클래스를 돌려 결과가 갈리지 않게 한다.
     /// 한 틱: ⓪ 출발틱 전이면 아무것도 굴리지 않고 속도만 0으로 둔다.
-    /// ① 유령정지 시간 감소 → ② 속도(중력·플랩·고정 전진, 멈춰 있으면 스킵) → ③ 새끼리
-    /// 몸싸움 → ④ 맵은 막지 않고 통과 + 부딪히면 유령정지 진입.
+    /// ① 스턴 시간 감소 → ② 속도(중력·플랩·고정 전진, 스턴 중이면 스킵) → ③ 새끼리
+    /// 몸싸움 → ④ 맵은 막지 않고 통과 + 부딪히면 스턴 진입.
     /// ③을 전원의 ② 뒤에 두는 이유는, 한 마리씩 처리하면 먼저 나온 새가 아직 갱신되지 않은
     /// 상대 속도를 보게 돼 순서가 결과를 가르기 때문이다.
     /// </summary>
@@ -17,7 +17,7 @@ namespace LOP
     {
         private readonly FlappyMoveSystem _moveSystem;
         private readonly FlappyBodyCollisionSystem _bodyCollisionSystem;
-        private readonly FlappyGhostSystem _ghostSystem;
+        private readonly FlappyStunSystem _stunSystem;
         private readonly ICollisionQuery _collisionQuery;
         private readonly GameFramework.World.IMotionBridge _motionBridge;
         private readonly int _layerMask;
@@ -29,7 +29,7 @@ namespace LOP
         private readonly List<GameFramework.World.Entity> _birds = new List<GameFramework.World.Entity>();
         private readonly List<GameFramework.World.Entity> _bodies = new List<GameFramework.World.Entity>();
 
-        // 유령정지 타이머의 틱별 사진. 위치·속도는 WorldBase가 담는다.
+        // 스턴 타이머의 틱별 사진. 위치·속도는 WorldBase가 담는다.
         private readonly GameFramework.Netcode.SequenceBuffer<Dictionary<string, FlappySavedState>> _gameFrames
             = new GameFramework.Netcode.SequenceBuffer<Dictionary<string, FlappySavedState>>(SaveCapacity);
 
@@ -38,7 +38,7 @@ namespace LOP
             GameFramework.World.WorldEventBuffer eventBuffer,
             FlappyMoveSystem moveSystem,
             FlappyBodyCollisionSystem bodyCollisionSystem,
-            FlappyGhostSystem ghostSystem,
+            FlappyStunSystem stunSystem,
             ICollisionQuery collisionQuery,
             GameFramework.World.IMotionBridge motionBridge,
             int layerMask)
@@ -46,7 +46,7 @@ namespace LOP
         {
             _moveSystem = moveSystem;
             _bodyCollisionSystem = bodyCollisionSystem;
-            _ghostSystem = ghostSystem;
+            _stunSystem = stunSystem;
             _collisionQuery = collisionQuery;
             _motionBridge = motionBridge;
             _layerMask = layerMask;
@@ -70,14 +70,14 @@ namespace LOP
             // 시간 감소가 먼저다. 이번 틱에 풀릴 새는 이번 틱부터 움직인다.
             for (int i = 0; i < _birds.Count; i++)
             {
-                _ghostSystem.Tick(_birds[i], deltaTime);
+                _stunSystem.Tick(_birds[i], deltaTime);
             }
 
             for (int i = 0; i < _birds.Count; i++)
             {
-                if (_ghostSystem.IsStopped(_birds[i]))
+                if (_stunSystem.IsStunned(_birds[i]))
                 {
-                    // 멈춰 있는 새는 전진도 하지 않는다 — 시간 손실이 이 게임의 페널티다.
+                    // 스턴 중인 새는 전진도 하지 않는다 — 시간 손실이 이 게임의 페널티다.
                     _birds[i].Get<GameFramework.World.Velocity>().Linear = System.Numerics.Vector3.Zero;
                     continue;
                 }
@@ -130,7 +130,7 @@ namespace LOP
 
         // 굴리는 대상과 부딪히는 상대는 다르다. 클라에서 원격은 굴리지 않지만(외삽으로 그린다)
         // 내 새가 그 자리에 부딪히기는 해야 한다 — 부딪힘이 서버 왕복 뒤에 보이면 반응이 굼뜨다.
-        // "새인가"는 EntityKind로 가린다 — FlappyGhost는 유령정지 *타이머*라 정체성 표식이
+        // "새인가"는 EntityKind로 가린다 — FlappyStun은 스턴 *타이머*라 정체성 표식이
         // 아니다(Task10 리뷰에서 교정: 우연히 유효했을 뿐 의미상 틀린 기준이었다). EntityKind가
         // 이미 이 판별을 위해 쓰이는 곳(클라 OwnerPredictedRemotesExtrapolatedSyncPolicy, 서버
         // FlapWangRuleSystem)과 같은 기준으로 맞춘다. CapsuleShape는 아이템도 갖고 있어(ItemCreator)
@@ -164,7 +164,7 @@ namespace LOP
             _bodies.Sort((left, right) => string.CompareOrdinal(left.Id, right.Id));
         }
 
-        // 맵은 더는 막지 않는다. 부딪혔는지만 보고 유령으로 넘긴다 —
+        // 맵은 더는 막지 않는다. 부딪혔는지만 보고 스턴으로 넘긴다 —
         // 전진 속도가 고정이라 "막기"로는 벽에 박힌 새가 수평으로 영영 빠져나오지 못한다.
         private void MoveThroughMap(GameFramework.World.Entity entity, float deltaTime)
         {
@@ -188,7 +188,7 @@ namespace LOP
                     p1, p2, body.Radius, delta.normalized, delta.magnitude, _layerMask);
                 if (hit.HasHit)
                 {
-                    _ghostSystem.Enter(entity);
+                    _stunSystem.Enter(entity);
                 }
             }
 

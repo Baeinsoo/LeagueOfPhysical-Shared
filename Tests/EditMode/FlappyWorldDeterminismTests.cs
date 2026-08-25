@@ -37,7 +37,7 @@ namespace LOP.Tests
         static FlappyConfig Config()
             => new FlappyConfig(forwardSpeed: 11f, flapImpulse: 23f, gravity: 70f, maxFallSpeed: 30f,
                                 bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f,
-                                ghostTime: 0.8f, invulnTime: 0.6f);
+                                stunTime: 0.8f, invulnTime: 0.6f);
 
         static Entity Bird(string id, Vector3 position, float initialVy)
         {
@@ -48,7 +48,7 @@ namespace LOP.Tests
             // 실제 크리에이터(FlappyBirdCreator)가 항상 붙이는 것과 같다 — 이게 없으면
             // FlappyWorld.CollectBirds가 "새가 아니다"로 보고 아예 건드리지 않는다.
             entity.Add(new EntityKind(EntityType.Character));
-            entity.Add(new FlappyGhost());
+            entity.Add(new FlappyStun());
             entity.Add(new Simulated());
             return entity;
         }
@@ -59,7 +59,7 @@ namespace LOP.Tests
             var world = new FlappyWorld(registry, new WorldEventBuffer(),
                                new FlappyMoveSystem(Config()),
                                new FlappyBodyCollisionSystem(Config()),
-                               new FlappyGhostSystem(Config()),
+                               new FlappyStunSystem(Config()),
                                new EmptySkyQuery(), new NoopMotionBridge(), layerMask: ~0);
             world.GameplayStartTick = 0;
             return world;

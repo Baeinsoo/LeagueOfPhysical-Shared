@@ -4,7 +4,7 @@ using GameFramework.World;
 namespace LOP.Tests
 {
     /// <summary>
-    /// FlappyWorld를 조립하는 공용 테스트 픽스처. 유령정지(Task3)·저장복원(Task4)·원격 새 보간(Task10)
+    /// FlappyWorld를 조립하는 공용 테스트 픽스처. 스턴(Task3)·저장복원(Task4)·원격 새 보간(Task10)
     /// 테스트가 같은 조립 코드를 반복해서 베끼지 않도록 여기 한 곳에 둔다.
     /// </summary>
     internal static class FlappyWorldFixture
@@ -12,7 +12,7 @@ namespace LOP.Tests
         public static FlappyConfig Config()
             => new FlappyConfig(forwardSpeed: 11f, flapImpulse: 23f, gravity: 70f, maxFallSpeed: 30f,
                                 bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f,
-                                ghostTime: 0.8f, invulnTime: 0.6f);
+                                stunTime: 0.8f, invulnTime: 0.6f);
 
         /// <summary>물리 바디가 없는 EditMode 테스트라 아무 일도 하지 않는 빈 구현.</summary>
         public class NoopMotionBridge : IMotionBridge
@@ -23,7 +23,7 @@ namespace LOP.Tests
             public void PushMotion(Entity entity) { }
         }
 
-        /// <summary>새를 맵에 부딪혀 유령정지로 몰아넣고 싶을 때 쓰는 스텁 — 항상 맞았다고 답한다.</summary>
+        /// <summary>새를 맵에 부딪혀 스턴으로 몰아넣고 싶을 때 쓰는 스텁 — 항상 맞았다고 답한다.</summary>
         public class AlwaysHit : ICollisionQuery
         {
             public CollisionHit CapsuleCast(UnityEngine.Vector3 p1, UnityEngine.Vector3 p2, float radius,
@@ -42,7 +42,7 @@ namespace LOP.Tests
             entity.Add(new Velocity());
             entity.Add(new CapsuleShape(Config().BodyRadius, Config().BodyHeight));
             entity.Add(new EntityKind(EntityType.Character));   // FlappyWorld.CollectBirds가 이걸로 "새"를 가린다
-            entity.Add(new FlappyGhost());
+            entity.Add(new FlappyStun());
             if (withInput)
             {
                 entity.Add(new InputBuffer());
@@ -85,6 +85,6 @@ namespace LOP.Tests
         private static FlappyWorld Build(EntityRegistry registry, ICollisionQuery collisionQuery, IMotionBridge motionBridge)
             => new FlappyWorld(registry, new WorldEventBuffer(),
                 new FlappyMoveSystem(Config()), new FlappyBodyCollisionSystem(Config()),
-                new FlappyGhostSystem(Config()), collisionQuery, motionBridge, layerMask: ~0);
+                new FlappyStunSystem(Config()), collisionQuery, motionBridge, layerMask: ~0);
     }
 }
