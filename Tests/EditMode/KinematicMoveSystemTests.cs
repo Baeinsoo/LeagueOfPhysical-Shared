@@ -18,6 +18,12 @@ namespace LOP.Tests
             public CollisionHit CapsuleCast(Vector3 p1, Vector3 p2, float radius,
                 Vector3 dir, float dist, int mask)
                 => Responses.Count > 0 ? Responses.Dequeue() : CollisionHit.None;
+
+            public CollisionHit Raycast(Vector3 origin, Vector3 direction, float distance, int layerMask)
+                => CollisionHit.None;
+
+            public CollisionHit[] OverlapSphere(Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<CollisionHit>();
         }
 
         private static GameFramework.World.Entity Entity(Vector3 pos, Vector3 vel)
@@ -47,7 +53,7 @@ namespace LOP.Tests
         public void Ground_StopsFall_ZeroesVerticalVelocity()
         {
             var q = new FakeCollisionQuery();
-            q.Responses.Enqueue(new CollisionHit(true, 0.05f, new Vector3(0f, 1f, 0f), Vector3.zero)); // 바닥(법선 위)
+            q.Responses.Enqueue(new CollisionHit(true, 0.05f, new Vector3(0f, 1f, 0f), Vector3.zero, null)); // 바닥(법선 위)
             var sys = new KinematicMoveSystem(q, ~0);
             var e = Entity(new Vector3(0f, 0.1f, 0f), Vector3.zero);
 

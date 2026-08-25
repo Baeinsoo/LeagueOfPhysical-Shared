@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+import "ProtoVector3.proto";
+
+// @auto_generate
+message PanchigiStrikeToS
+{
+	// 신원은 연결에서 도출한다 — 클라가 적어 보내지 않는다.
+	ProtoVector3 strike_point = 1;   // 판 위 월드 좌표
+	ProtoVector3 drag_delta   = 2;   // 판 평면 변위 (y = 0)
+	float        hold_time    = 3;   // 초. 클라가 이미 상한을 적용해 보낸다
+}

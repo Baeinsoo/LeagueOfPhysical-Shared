@@ -11,6 +11,12 @@ namespace LOP.Tests
         {
             public GameFramework.Physics.CollisionHit CapsuleCast(UnityEngine.Vector3 p1, UnityEngine.Vector3 p2,
                 float radius, UnityEngine.Vector3 dir, float dist, int mask) => GameFramework.Physics.CollisionHit.None;
+
+            public GameFramework.Physics.CollisionHit Raycast(UnityEngine.Vector3 origin, UnityEngine.Vector3 direction,
+                float distance, int layerMask) => GameFramework.Physics.CollisionHit.None;
+
+            public GameFramework.Physics.CollisionHit[] OverlapSphere(UnityEngine.Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<GameFramework.Physics.CollisionHit>();
         }
 
         private class SpyBridge : GameFramework.World.IMotionBridge

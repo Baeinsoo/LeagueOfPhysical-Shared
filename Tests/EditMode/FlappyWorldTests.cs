@@ -16,6 +16,12 @@ namespace LOP.Tests
         {
             public CollisionHit CapsuleCast(Vector3 point1, Vector3 point2, float radius,
                 Vector3 direction, float distance, int layerMask) => CollisionHit.None;
+
+            public CollisionHit Raycast(Vector3 origin, Vector3 direction, float distance, int layerMask)
+                => CollisionHit.None;
+
+            public CollisionHit[] OverlapSphere(Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<CollisionHit>();
         }
 
         // 물리 바디가 아직 없는 단계라 브릿지는 아무 일도 하지 않는다(호출 여부만 세어 둔다).
@@ -59,8 +65,14 @@ namespace LOP.Tests
                 LastRadius = radius;
                 LastLayerMask = layerMask;
                 HorizontalCastCount++;
-                return new CollisionHit(true, _hitDistance, _normal, point1 + direction * _hitDistance);
+                return new CollisionHit(true, _hitDistance, _normal, point1 + direction * _hitDistance, null);
             }
+
+            public CollisionHit Raycast(Vector3 origin, Vector3 direction, float distance, int layerMask)
+                => CollisionHit.None;
+
+            public CollisionHit[] OverlapSphere(Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<CollisionHit>();
         }
 
         static FlappyConfig Config()

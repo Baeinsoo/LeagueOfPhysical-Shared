@@ -15,10 +15,16 @@ namespace LOP.Tests
             {
                 if (direction.y < 0f)
                 {
-                    return new CollisionHit(true, 0f, Vector3.up, point1);
+                    return new CollisionHit(true, 0f, Vector3.up, point1, null);
                 }
                 return CollisionHit.None;
             }
+
+            public CollisionHit Raycast(Vector3 origin, Vector3 direction, float distance, int layerMask)
+                => CollisionHit.None;
+
+            public CollisionHit[] OverlapSphere(Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<CollisionHit>();
         }
 
         // 아무것도 막지 않음 — 공중.
@@ -27,6 +33,12 @@ namespace LOP.Tests
             public CollisionHit CapsuleCast(Vector3 point1, Vector3 point2, float radius,
                                             Vector3 direction, float distance, int layerMask)
                 => CollisionHit.None;
+
+            public CollisionHit Raycast(Vector3 origin, Vector3 direction, float distance, int layerMask)
+                => CollisionHit.None;
+
+            public CollisionHit[] OverlapSphere(Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<CollisionHit>();
         }
 
         private static Entity MakeCharacter()
