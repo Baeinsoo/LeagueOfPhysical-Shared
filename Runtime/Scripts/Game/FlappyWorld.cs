@@ -102,7 +102,7 @@ namespace LOP
             // — 그러면 같은 코드가 라이브와 재생에서 다른 답을 낸다.
             for (int i = 0; i < _birds.Count; i++)
             {
-                _motionBridge.Depenetrate(_birds[i]);
+                ClearVelocityIntoSurface(_birds[i], _motionBridge.Depenetrate(_birds[i]));
             }
 
             for (int i = 0; i < _birds.Count; i++)
@@ -182,6 +182,31 @@ namespace LOP
         // 취지였다. 지금은 반대로 막으므로 이름도 그에 맞춘다.)
         // "부딪혔는가"는 스턴 진입에 따로 필요하다 — KinematicMoveResult엔 그 정보가 없어서
         // (grounded만 있음) _hitTracker로 실제 쿼리를 감싸 sweep 도중 히트가 있었는지 기록한다.
+        //  파묻힌 데서 밀려 나왔다면, 그 벽 쪽으로 파고들던 속도는 지운다.
+        //  안 지우면: 캡슐이 콜라이더 *안*에서 시작한 sweep은 히트를 못 내(시작 겹침은 무시된다)
+        //  "닿았으니 속도 0" 경로가 안 돌고, 막혀 있는데 중력만 계속 쌓인다. 그 상태로 밀어내기와
+        //  줄다리기가 붙어 새가 제자리에서 갈리고, 그 미세한 차이가 클·서에서 갈려 보정이 계속 난다
+        //  (실측: 낙하속도가 -14까지 쌓이는 동안 실제로는 0.11밖에 안 내려갔다).
+        //  민 방향의 반대 성분만 덜어낸다 — 벽을 따라 흐르던 속도는 살려 둬야 미끄러져 빠져나온다.
+        private static void ClearVelocityIntoSurface(GameFramework.World.Entity bird, System.Numerics.Vector3 push)
+        {
+            if (push.LengthSquared() <= 0f)
+            {
+                return;
+            }
+            var velocity = bird.Get<GameFramework.World.Velocity>();
+            if (velocity == null)
+            {
+                return;
+            }
+            System.Numerics.Vector3 outward = System.Numerics.Vector3.Normalize(push);
+            float into = System.Numerics.Vector3.Dot(velocity.Linear, outward);
+            if (into < 0f)
+            {
+                velocity.Linear -= outward * into;
+            }
+        }
+
         private void MoveBlockedByMap(GameFramework.World.Entity entity, float deltaTime)
         {
             var transform = entity.Get<GameFramework.World.Transform>();

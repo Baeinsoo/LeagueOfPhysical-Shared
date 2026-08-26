@@ -33,10 +33,13 @@ namespace LOP.Tests
             Assert.That(mineTransform.Position, Is.Not.EqualTo(remoteTransform.Position));
             Assert.That(remoteTransform.Position, Is.EqualTo(remoteStart));
 
-            // "그냥 떨어져서 우연히 달라진 것"이 아님을 못박는다 — 중력만으로는 이번 dt(0.02) 동안
-            // y가 -0.03 근처로만 움직인다(밀어내기 없이). 완전 겹침을 -0.89만큼 아래로 밀어내는
-            // 부딪힘이 실제로 일어나야만 y가 -0.5보다 훨씬 아래로 내려간다.
-            Assert.That(mineTransform.Position.Y, Is.LessThan(-0.5f));
+            // "그냥 떨어져서 우연히 달라진 것"이 아님을 값으로 못박는다.
+            //   완전 겹침 0.9 - 허용겹침 0.01 = 0.89, 그 절반 0.445만큼 밀린다.
+            //   + 중력 한 틱(70 * 0.02 * 0.02 = 0.028)
+            // 절반인 이유: 서버는 두 마리 다 굴려 내 새를 절반만 민다. 클라가 전부 떠안으면 예측이
+            // 서버보다 앞서 나가 새가 붙어 있는 내내 보정이 난다(FlappyBodyCollisionSystem 참고).
+            // 밀어내기가 아예 없었다면 중력만으로 -0.028 근처에 머문다 — 자릿수가 달라 구분된다.
+            Assert.That(mineTransform.Position.Y, Is.EqualTo(-0.473f).Within(1e-3f));
         }
     }
 }

@@ -96,6 +96,27 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 클라가_민_거리가_서버가_민_거리와_같다()
+        {
+            //  이 슬라이스에서 제일 중요한 불변식이다. 서버는 두 마리 다 굴려 내 새를 "절반" 밀고,
+            //  클라는 내 새만 굴린다 — 이때 클라가 겹침 전체를 떠안으면 예측이 서버보다 절반만큼
+            //  앞서 나가고, 새가 붙어 있는 내내 그 차이가 보정으로 돌아온다(실측된 렉의 정체).
+            var serverMine = Bird("bird-1", Vector3.zero, Vector3.zero);
+            var serverOther = Bird("bird-2", new Vector3(0f, 0.5f, 0f), Vector3.zero);
+            var serverAll = new List<Entity> { serverMine, serverOther };
+            new FlappyBodyCollisionSystem(Config()).Resolve(serverAll, serverAll);
+
+            var clientMine = Bird("bird-1", Vector3.zero, Vector3.zero);
+            var clientOther = Bird("bird-2", new Vector3(0f, 0.5f, 0f), Vector3.zero);
+            new FlappyBodyCollisionSystem(Config()).Resolve(
+                new List<Entity> { clientMine },
+                new List<Entity> { clientMine, clientOther });
+
+            Assert.AreEqual(PositionOf(serverMine).y, PositionOf(clientMine).y, Tolerance);
+            Assert.AreEqual(VelocityOf(serverMine).y, VelocityOf(clientMine).y, Tolerance);
+        }
+
+        [Test]
         public void bodies에만_있는_상대는_밀리지_않고_mover만_밀린다()
         {
             var mover = Bird("bird-1", Vector3.zero, Vector3.zero);

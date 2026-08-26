@@ -35,7 +35,15 @@ namespace LOP.Tests
             public readonly List<string> CallOrder = new List<string>();
 
             public void SyncTransforms() { SyncTransformsCalls++; CallOrder.Add("SyncTransforms"); }
-            public void Depenetrate(Entity entity) { DepenetrateCalls++; CallOrder.Add("Depenetrate"); }
+            public System.Numerics.Vector3 Depenetrate(Entity entity)
+            {
+                DepenetrateCalls++;
+                CallOrder.Add("Depenetrate");
+                return PushToReturn;
+            }
+
+            /// <summary>밀어냈다고 답할 벡터. 기본값 0 = 안 밀었다.</summary>
+            public System.Numerics.Vector3 PushToReturn;
             public void Separate(Entity entity) { SeparateCalls++; CallOrder.Add("Separate"); }
             public void PushMotion(Entity entity) => CallOrder.Add("PushMotion");
         }
@@ -111,6 +119,38 @@ namespace LOP.Tests
 
         static Vector3 PositionOf(Entity e) => e.Get<GameFramework.World.Transform>().Position.ToUnity();
         static Vector3 VelocityOf(Entity e) => e.Get<Velocity>().Linear.ToUnity();
+
+        [Test]
+        public void 벽에서_밀려났으면_그_방향으로_파고들던_속도를_지운다()
+        {
+            var registry = new EntityRegistry();
+            var bird = Bird("bird-1", Vector3.zero, simulated: true);
+            registry.Add(bird);
+
+            //  바닥에 파묻힌 상황: 밀어내기가 위로 밀어낸다.
+            var bridge = new NoopMotionBridge { PushToReturn = new System.Numerics.Vector3(0f, 0.15f, 0f) };
+
+            World(registry, bridge).Tick(1, 0.1f);
+
+            //  안 지우면 중력이 그대로 남아(-7) 다음 틱에 또 파고들고, 밀어내기와 줄다리기가 된다.
+            //  실제로 그렇게 낙하속도가 -14까지 쌓이는 동안 새는 0.11밖에 안 내려갔다.
+            Assert.AreEqual(0f, VelocityOf(bird).y, Tolerance);
+        }
+
+        [Test]
+        public void 밀려난_방향과_무관한_속도는_남긴다()
+        {
+            var registry = new EntityRegistry();
+            var bird = Bird("bird-1", Vector3.zero, simulated: true);
+            registry.Add(bird);
+
+            var bridge = new NoopMotionBridge { PushToReturn = new System.Numerics.Vector3(0f, 0.15f, 0f) };
+
+            World(registry, bridge).Tick(1, 0.1f);
+
+            //  위로 밀렸다고 전진까지 멈추면 벽에 붙은 새가 미끄러져 빠져나올 길이 없어진다.
+            Assert.AreEqual(11f, VelocityOf(bird).x, Tolerance);
+        }
 
         [Test]
         public void 한_틱이면_전진하면서_중력만큼_떨어진다()

@@ -18,7 +18,7 @@ namespace LOP.Tests
         public class NoopMotionBridge : IMotionBridge
         {
             public void SyncTransforms() { }
-            public void Depenetrate(Entity entity) { }
+            public System.Numerics.Vector3 Depenetrate(Entity entity) => System.Numerics.Vector3.Zero;
             public void Separate(Entity entity) { }
             public void PushMotion(Entity entity) { }
         }

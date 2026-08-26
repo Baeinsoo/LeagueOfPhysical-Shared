@@ -27,10 +27,10 @@ namespace LOP
 
         public void SyncTransforms() => Physics.SyncTransforms();
 
-        public void Depenetrate(GameFramework.World.Entity entity)
+        public System.Numerics.Vector3 Depenetrate(GameFramework.World.Entity entity)
         {
             // 지형 겹침(스폰 flush 등)에서 캡슐을 밖으로 — 지면은 안 움직이니 전부 해소.
-            ApplyPushOut(entity, _envMask, 1f);
+            return ApplyPushOut(entity, _envMask, 1f);
         }
 
         public void Separate(GameFramework.World.Entity entity)
@@ -39,19 +39,22 @@ namespace LOP
             ApplyPushOut(entity, _charMask, _separationScale);
         }
 
-        private void ApplyPushOut(GameFramework.World.Entity entity, int layerMask, float scale)
+        private System.Numerics.Vector3 ApplyPushOut(GameFramework.World.Entity entity, int layerMask, float scale)
         {
             var body = entity.Get<GameFramework.World.PhysicsBody>();
             var transform = entity.Get<GameFramework.World.Transform>();
             if (body == null || transform == null)
             {
-                return;
+                return System.Numerics.Vector3.Zero;
             }
             System.Numerics.Vector3 push = body.ComputePushOut(transform.Position, transform.Rotation, layerMask);
-            if (push.LengthSquared() > 0f)
+            if (push.LengthSquared() <= 0f)
             {
-                transform.Position += push * scale;
+                return System.Numerics.Vector3.Zero;
             }
+            System.Numerics.Vector3 applied = push * scale;
+            transform.Position += applied;
+            return applied;
         }
 
         public void PushMotion(GameFramework.World.Entity entity)
