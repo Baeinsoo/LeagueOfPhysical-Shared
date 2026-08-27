@@ -80,8 +80,8 @@ namespace LOP.Tests
                 => System.Array.Empty<CollisionHit>();
         }
 
-        private static KinematicMoveInput Input(Vector3 pos, Vector3 vel, float dt = 0.1f)
-            => new KinematicMoveInput(pos, vel, 0.35f, 1.5f, dt, ~0);
+        private static KinematicMoveInput Input(Vector3 pos, Vector3 vel, float dt = 0.1f, float stepOffset = 0f)
+            => new KinematicMoveInput(pos, vel, 0.35f, 1.5f, dt, ~0, stepOffset);
 
         [Test]
         public void GroundedHorizontalMove_MovesAlongGround_NotBlockedByFloor()

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace LOP
 {
-    /// <summary>이동 커널 입력: 시작 위치·속도·캡슐 규격·dt·충돌 레이어.</summary>
+    /// <summary>이동 커널 입력: 시작 위치·속도·캡슐 규격·dt·충돌 레이어·턱 높이.</summary>
     public readonly struct KinematicMoveInput
     {
         public readonly Vector3 position;   // 발밑 기준
@@ -13,9 +13,13 @@ namespace LOP
         public readonly float height;
         public readonly float deltaTime;
         public readonly int layerMask;
+        //  막혔을 때 이 높이까지는 넘어가 본다. 0이면 턱 오르기를 아예 안 한다.
+        //  예전엔 커널 상수로 모든 수평 sweep을 이만큼 들어올렸는데, 그게 오르막에서 몸을
+        //  파묻히게 만들었다. 이제는 "막혔을 때만" 쓰는 값이라 게임이 정한다.
+        public readonly float stepOffset;
 
         public KinematicMoveInput(Vector3 position, Vector3 velocity, float radius,
-            float height, float deltaTime, int layerMask)
+            float height, float deltaTime, int layerMask, float stepOffset)
         {
             this.position = position;
             this.velocity = velocity;
@@ -23,6 +27,7 @@ namespace LOP
             this.height = height;
             this.deltaTime = deltaTime;
             this.layerMask = layerMask;
+            this.stepOffset = stepOffset;
         }
     }
 
@@ -50,13 +55,14 @@ namespace LOP
         const int MaxSlides = 4;         // 미끄러짐 반복 상한(과회전·무한루프 방지)
         const float SkinWidth = 0.02f;   // 벽에서 살짝 띄우는 여유(끼임 방지)
         const float GroundNormalY = 0.7f;  // 면 법선의 위쪽 성분이 이보다 크면 바닥(≈45도)
-        const float StepOffset = 0.1f;   // 수평 sweep을 이만큼 띄운다 — 발밑 바닥에 안 걸려(캐칭 방지) + 이 높이 이하 턱은 올라감(표준 step offset)
         const float GroundProbe = 0.05f; // 발밑을 이만큼 아래까지 훑어 지면을 찾는다. 한 틱 낙하분(≈0.028)보다 넉넉하되, 떠 있는 몸을 지면으로 오인하지 않을 만큼 짧게.
 
         /// <summary>
         /// 표준 컨트롤러처럼 수평/수직 스텝을 분리한다. 합쳐서 처리하면 "걷는 바닥"이 수평 이동을
         /// 취소해(발이 바닥에 붙어 있어 sweep이 바닥을 dist≈0로 맞음) 제자리에 낀다. 나눠서:
-        /// (1) 수평은 캡슐을 StepOffset만큼 띄워 sweep → 벽만 막고 발밑 바닥은 통과.
+        /// (0) 먼저 발밑 지면을 찾는다 — 있으면 이동을 그 평면에 투영해 경사를 따라간다.
+        /// (1) 수평은 실제 몸 자리에서 sweep → 지면 위면 정면으로 안 부딪히니 안 막힌다. 벽처럼
+        ///     못 걷는 면에 막히면 그때만 턱 오르기를 시도한다.
         /// (2) 수직은 발밑에서 sweep → 바닥/천장에서 멈추고 접지 판정.
         /// </summary>
         public static KinematicMoveResult Move(in KinematicMoveInput input, ICollisionQuery query)
@@ -82,9 +88,16 @@ namespace LOP
                 }
             }
 
-            // (1) 수평 collide-and-slide — 캡슐을 StepOffset 띄워 sweep(발밑 바닥 캐칭 방지).
+            // (1) 수평 collide-and-slide — 실제 몸 자리에서 검사한다.
+            //     지면 위면 이동을 지면 평면에 투영해 경사를 "따라" 간다. 그래야 sweep이 바닥을
+            //     정면으로 만나지 않아, 예전처럼 캡슐을 들어올려 속일 필요가 없다.
+            //     (들어올리면 검사한 몸과 옮기는 몸이 달라져 오르막에서 실제 몸이 언덕에 파묻혔다.)
             Vector3 horizVel = new Vector3(input.velocity.x, 0f, input.velocity.z);
             Vector3 remaining = horizVel * input.deltaTime;
+            if (onGround)
+            {
+                remaining = Vector3.ProjectOnPlane(remaining, groundNormal);
+            }
             for (int i = 0; i < MaxSlides; i++)
             {
                 float dist = remaining.magnitude;
@@ -93,7 +106,7 @@ namespace LOP
                     break;
                 }
                 Vector3 dir = remaining / dist;
-                CollisionHit hit = Cast(pos, StepOffset, dir, dist + SkinWidth, input, query);
+                CollisionHit hit = Cast(pos, 0f, dir, dist + SkinWidth, input, query);
                 if (hit.HasHit == false)
                 {
                     pos += remaining;
@@ -102,6 +115,14 @@ namespace LOP
                 float moveDist = Mathf.Max(hit.Distance - SkinWidth, 0f);
                 pos += dir * moveDist;
                 Vector3 leftover = remaining - dir * moveDist;
+
+                //  걸을 수 없는 면(벽·턱)에 막혔을 때만 넘어가 본다.
+                if (input.stepOffset > 0f && hit.Normal.y < GroundNormalY
+                    && TryStepUp(ref pos, leftover, input, query))
+                {
+                    break;
+                }
+
                 remaining = Vector3.ProjectOnPlane(leftover, hit.Normal);
                 horizVel = Vector3.ProjectOnPlane(horizVel, hit.Normal);
             }
@@ -130,6 +151,45 @@ namespace LOP
             }
 
             return new KinematicMoveResult(pos, new Vector3(horizVel.x, vy, horizVel.z), grounded);
+        }
+
+        // 막힌 앞을 넘어가 본다: 위로 들었다 → 앞으로 쓸고 → 다시 내려 착지.
+        // 착지면이 걸을 수 있는 면일 때만 채택한다 — 그래야 벽을 기어오르지 않는다.
+        // 성공하면 pos를 옮기고 true. 표준 컨트롤러(언리얼 CMC StepUp)의 3-sweep 그대로다.
+        private static bool TryStepUp(ref Vector3 pos, Vector3 leftover,
+            in KinematicMoveInput input, ICollisionQuery query)
+        {
+            float dist = leftover.magnitude;
+            if (dist < 1e-5f)
+            {
+                return false;
+            }
+            Vector3 dir = leftover / dist;
+
+            CollisionHit up = Cast(pos, 0f, Vector3.up, input.stepOffset + SkinWidth, input, query);
+            float rise = up.HasHit ? Mathf.Max(up.Distance - SkinWidth, 0f) : input.stepOffset;
+            if (rise <= SkinWidth)
+            {
+                return false;   // 머리 위가 막혀 못 올라간다
+            }
+
+            Vector3 lifted = pos + Vector3.up * rise;
+            CollisionHit forward = Cast(lifted, 0f, dir, dist + SkinWidth, input, query);
+            float advance = forward.HasHit ? Mathf.Max(forward.Distance - SkinWidth, 0f) : dist;
+            if (advance <= SkinWidth)
+            {
+                return false;   // 올려도 못 지나간다 = 진짜 벽
+            }
+
+            Vector3 ahead = lifted + dir * advance;
+            CollisionHit down = Cast(ahead, 0f, Vector3.down, rise + SkinWidth, input, query);
+            if (down.HasHit == false || down.Normal.y < GroundNormalY)
+            {
+                return false;   // 발 디딜 곳이 아니다
+            }
+
+            pos = ahead + Vector3.down * Mathf.Max(down.Distance - SkinWidth, 0f);
+            return true;
         }
 
         // 발밑(pos)에서 lift만큼 올린 캡슐로 sweep. lift=0이면 발밑 기준.

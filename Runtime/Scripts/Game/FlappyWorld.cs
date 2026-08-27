@@ -228,9 +228,10 @@ namespace LOP
             }
 
             _hitTracker.Reset(_collisionQuery);
+            //  새는 날아다니므로 턱을 오를 이유가 없다. 0을 준다.
             var result = KinematicMover.Move(new KinematicMoveInput(
                 transform.Position.ToUnity(), velocity.Linear.ToUnity(),
-                body.Radius, body.Height, deltaTime, _layerMask), _hitTracker);
+                body.Radius, body.Height, deltaTime, _layerMask, stepOffset: 0f), _hitTracker);
 
             if (_hitTracker.SawHit)
             {
