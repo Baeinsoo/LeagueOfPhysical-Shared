@@ -60,11 +60,17 @@ namespace LOP.Tests
             var world = FlappyWorldFixture.Create(new FlappyWorldFixture.AlwaysHit(), out var bird);
             world.GameplayStartTick = 0;
 
-            for (long t = 1; t <= 5; t++) { world.Tick(t, 0.02f); world.SaveState(t); }
+            world.Tick(5, 0.02f);
+            world.SaveState(5);
             float atFive = bird.Get<FlappyStun>().StunRemaining;
+
+            for (long t = 6; t <= 10; t++) { world.Tick(t, 0.02f); world.SaveState(t); }
+            float afterMore = bird.Get<FlappyStun>().StunRemaining;
+            Assert.That(afterMore, Is.LessThan(atFive));   // 줄었다 — 저장된 값과 현재 값이 다르다
 
             Assert.IsTrue(world.TryGetSavedStun(5, bird.Id, out var saved));
             Assert.AreEqual(atFive, saved.StunRemaining, 1e-4f);
+            Assert.That(saved.StunRemaining, Is.GreaterThan(afterMore));   // 돌려준 값이 현재와 다르다 = 저장된 프레임을 읽었다
         }
 
         [Test]
