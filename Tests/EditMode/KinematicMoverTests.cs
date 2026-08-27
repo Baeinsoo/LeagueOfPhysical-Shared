@@ -11,17 +11,36 @@ namespace LOP.Tests
     {
         const float Tolerance = 1e-3f;
 
-        // 스크립트된 충돌 응답을 순서대로 돌려주는 테스트용 쿼리(씬 없이 collide-and-slide 로직만 검증).
+        // 스크립트된 충돌 응답을 돌려주는 테스트용 쿼리(씬 없이 collide-and-slide 로직만 검증).
+        // 수평/수직 큐를 나눈 이유: 커널이 이동 전에 발밑을 훑는 캐스트를 한 번 하므로,
+        // 큐가 하나면 그 탐침이 수평용 응답을 먹어 버린다.
         private class FakeCollisionQuery : ICollisionQuery
         {
-            public readonly Queue<CollisionHit> Responses = new Queue<CollisionHit>();
-            public int CallCount;
+            public readonly Queue<CollisionHit> Horizontal = new Queue<CollisionHit>();
+            public readonly Queue<CollisionHit> Vertical = new Queue<CollisionHit>();
+            public int HorizontalCallCount;
 
             public CollisionHit CapsuleCast(Vector3 point1, Vector3 point2, float radius,
                 Vector3 direction, float distance, int layerMask)
             {
-                CallCount++;
-                return Responses.Count > 0 ? Responses.Dequeue() : CollisionHit.None;
+                if (Mathf.Abs(direction.y) > 0.5f)
+                {
+                    return Take(Vertical, distance);
+                }
+                HorizontalCallCount++;
+                return Take(Horizontal, distance);
+            }
+
+            //  실제 sweep은 요청한 거리 밖의 것을 못 본다 — 스크립트 응답도 같게 다룬다.
+            //  이게 없으면 이동 전 지면 탐침(짧은 거리)이 수직 스텝용 응답을 먼저 먹어,
+            //  GroundHit_SetsGrounded_AndZeroesVerticalVelocity가 엉뚱하게 깨진다.
+            private static CollisionHit Take(Queue<CollisionHit> queue, float distance)
+            {
+                if (queue.Count == 0 || queue.Peek().Distance > distance)
+                {
+                    return CollisionHit.None;
+                }
+                return queue.Dequeue();
             }
 
             public CollisionHit Raycast(Vector3 origin, Vector3 direction, float distance, int layerMask)
@@ -94,7 +113,7 @@ namespace LOP.Tests
         {
             var query = new FakeCollisionQuery();
             // 정면 벽: 거리 0.5에서 법선이 이동 반대(-x)
-            query.Responses.Enqueue(new CollisionHit(true, 0.5f, new Vector3(-1f, 0f, 0f), Vector3.zero, null));
+            query.Horizontal.Enqueue(new CollisionHit(true, 0.5f, new Vector3(-1f, 0f, 0f), Vector3.zero, null));
             var r = KinematicMover.Move(Input(Vector3.zero, new Vector3(10f, 0f, 0f)), query);
 
             // 접촉 전까지만(≈0.48, skin 여유), 목표(1.0)까지 안 감
@@ -109,7 +128,7 @@ namespace LOP.Tests
         {
             var query = new FakeCollisionQuery();
             // 45도 벽: 법선=(-0.7071,0,-0.7071). 접촉 후 남은 이동이 벽면을 따라 미끄러짐.
-            query.Responses.Enqueue(new CollisionHit(true, 0.3f,
+            query.Horizontal.Enqueue(new CollisionHit(true, 0.3f,
                 new Vector3(-0.7071f, 0f, -0.7071f), Vector3.zero, null));
             // 두 번째 sweep은 열림(None) → 미끄러진 나머지를 그대로 이동
             var r = KinematicMover.Move(Input(Vector3.zero, new Vector3(10f, 0f, 0f)), query);
@@ -127,7 +146,7 @@ namespace LOP.Tests
         {
             var query = new FakeCollisionQuery();
             // 아래로 낙하 중 바닥(법선 위) 접촉
-            query.Responses.Enqueue(new CollisionHit(true, 0.1f, new Vector3(0f, 1f, 0f), Vector3.zero, null));
+            query.Vertical.Enqueue(new CollisionHit(true, 0.1f, new Vector3(0f, 1f, 0f), Vector3.zero, null));
             var r = KinematicMover.Move(Input(Vector3.zero, new Vector3(0f, -20f, 0f)), query);
 
             Assert.IsTrue(r.grounded, "바닥 법선(위쪽) 접촉 시 grounded");
@@ -141,12 +160,12 @@ namespace LOP.Tests
             // 매 sweep마다 같은 각진 벽 → 잔여가 계속 남아도 상한(MaxSlides) 내에서 종료해야 함
             for (int i = 0; i < 20; i++)
             {
-                query.Responses.Enqueue(new CollisionHit(true, 0.1f,
+                query.Horizontal.Enqueue(new CollisionHit(true, 0.1f,
                     new Vector3(-0.7071f, 0f, -0.7071f), Vector3.zero, null));
             }
             var r = KinematicMover.Move(Input(Vector3.zero, new Vector3(10f, 0f, 0f)), query);
 
-            Assert.That(query.CallCount, Is.LessThanOrEqualTo(4), "MaxSlides 상한 내에서 종료(무한루프 방지)");
+            Assert.That(query.HorizontalCallCount, Is.LessThanOrEqualTo(4), "MaxSlides 상한 내에서 종료(무한루프 방지)");
         }
     }
 }

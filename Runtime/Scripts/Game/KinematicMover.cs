@@ -51,6 +51,7 @@ namespace LOP
         const float SkinWidth = 0.02f;   // 벽에서 살짝 띄우는 여유(끼임 방지)
         const float GroundNormalY = 0.7f;  // 면 법선의 위쪽 성분이 이보다 크면 바닥(≈45도)
         const float StepOffset = 0.1f;   // 수평 sweep을 이만큼 띄운다 — 발밑 바닥에 안 걸려(캐칭 방지) + 이 높이 이하 턱은 올라감(표준 step offset)
+        const float GroundProbe = 0.05f; // 발밑을 이만큼 아래까지 훑어 지면을 찾는다. 한 틱 낙하분(≈0.028)보다 넉넉하되, 떠 있는 몸을 지면으로 오인하지 않을 만큼 짧게.
 
         /// <summary>
         /// 표준 컨트롤러처럼 수평/수직 스텝을 분리한다. 합쳐서 처리하면 "걷는 바닥"이 수평 이동을
@@ -61,6 +62,25 @@ namespace LOP
         public static KinematicMoveResult Move(in KinematicMoveInput input, ICollisionQuery query)
         {
             Vector3 pos = input.position;
+
+            // (0) 지면 찾기 — 매 틱 다시 잰다(상태를 들지 않아야 롤백 재생이 라이브와 같은 답을 낸다).
+            //     찾으면 바닥에서 SkinWidth만큼 띄운다: 딱 붙은 채로 수평 sweep을 쏘면 거리 0으로
+            //     맞아 한 발도 못 나간다.
+            //     올라가는 중에는 지면으로 치지 않는다 — 그러면 날갯짓해 뜨는 몸을 도로 붙여 버린다.
+            bool onGround = false;
+            Vector3 groundNormal = Vector3.up;
+            if (input.velocity.y <= 0f)
+            {
+                CollisionHit floor = Cast(pos, SkinWidth, Vector3.down, SkinWidth + GroundProbe, input, query);
+                if (floor.HasHit && floor.Normal.y >= GroundNormalY)
+                {
+                    onGround = true;
+                    groundNormal = floor.Normal;
+                    //  탐침은 SkinWidth 올린 자리에서 쐈으므로 실제 여유 = Distance - SkinWidth.
+                    //  그 여유를 SkinWidth로 맞춘다.
+                    pos.y += 2f * SkinWidth - floor.Distance;
+                }
+            }
 
             // (1) 수평 collide-and-slide — 캡슐을 StepOffset 띄워 sweep(발밑 바닥 캐칭 방지).
             Vector3 horizVel = new Vector3(input.velocity.x, 0f, input.velocity.z);
@@ -87,7 +107,7 @@ namespace LOP
             }
 
             // (2) 수직 스텝(중력/점프) — 발밑에서 sweep. 바닥/천장에 닿으면 멈추고 수직 속도 소멸.
-            bool grounded = false;
+            bool grounded = onGround;
             float vy = input.velocity.y;
             float vDist = Mathf.Abs(vy) * input.deltaTime;
             if (vDist > 1e-5f)
