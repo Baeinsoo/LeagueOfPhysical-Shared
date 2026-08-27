@@ -103,6 +103,10 @@ namespace LOP.Tests
             //  "밖"으로 뜨는 방향이라 파묻힘 자체가 구조적으로 생기지 않는다 — 그래도 회귀로
             //  고정해 둔다: 세로 속도가 위를 향하거나(오르막 버그의 재발 신호) 몸이 경사 안으로
             //  들어가면 잡아낸다.
+            //  ⚠️ 이 두 단언은 옛(버그) 커널에서도 통과한다 — 내리막은 구조적으로 안 깨지는
+            //  방향이라 "이번 수정의 증거"가 아니라 "미래 회귀를 막는 가드"일 뿐이다. 내리막이
+            //  실제로 매끄럽다는 근거는 이 단언이 아니라 이 태스크의 Step 7에서 직접 찍어 본
+            //  궤적(dy/dx가 매 틱 -tan32°와 정확히 일치, 계단식 튐 없음)이다.
             var map = new HalfSpaceQuery();
             map.AddSlope(-32f, Vector3.zero);   // 내리막
             Vector3 pos = new Vector3(-1f, 0.6f, 0f);
@@ -125,6 +129,72 @@ namespace LOP.Tests
                 Assert.That(clear, Is.GreaterThan(-1e-3f),
                     $"t{tick}: 이동 뒤 몸이 경사 안으로 {-clear:F4}m 파묻혔다");
             }
+        }
+
+        [Test]
+        public void 완전히_멈춘_몸도_지면_탐침을_받아_바닥에서_뜬다()
+        {
+            //  지면 탐침 게이트는 `velocity.y <= 0f`다 — `< 0f`가 아니다. 스턴 중인 새처럼
+            //  velocity 전체가 정확히 0인 몸도 게이트를 통과해야 한다. `< 0f`로 바꾸면 이 탐침이
+            //  안 돌아 몸이 바닥에 딱 붙은 채로 남고, 다음 틱 수평 sweep이 거리 0으로 막혀
+            //  제자리에 낀다 — 이 슬라이스가 고친 "캐칭" 버그가 그대로 재발한다.
+            //  (실제로 게이트를 `< 0f`로 바꿔 돌려서 이 테스트가 빨간불이 되는 것을 확인했다 —
+            //  task-3-report.md의 "2번 확인" 절 참고.)
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);
+
+            var result = KinematicMover.Move(
+                new KinematicMoveInput(Vector3.zero, Vector3.zero, Radius, Height, DeltaTime, ~0, stepOffset: 0f), map);
+
+            Assert.That(result.position.y, Is.EqualTo(0.02f).Within(1e-3f),
+                "완전히 멈춘 몸도 SkinWidth만큼 떠야 한다");
+            Assert.IsTrue(result.grounded);
+        }
+
+        [Test]
+        public void 턱_오르기를_켠_채_계속_막혀도_캐스트_예산_안에서_끝난다()
+        {
+            //  FlapWang이 실제로 쓰는 stepOffset(0.1)로, 낙하 중(중력 있음) 벽에 막힌 채 미는
+            //  경로를 재현한다. stepOffset=0인 AlwaysBlocked_TerminatesWithinMaxSlides
+            //  (KinematicMoverTests.cs)는 이 경로를 안 밟는다 — 턱 오르기가 막힐 때마다 위·앞
+            //  2-sweep을 추가로 쓰기 때문에(아래로는 못 내려가 착지 sweep까진 안 감 — "올려도
+            //  못 지나간다"에서 먼저 실패) 예산이 다르다.
+            //  실측: 지면 탐침 1 + 슬라이드 4회×(주 sweep 1 + TryStepUp 2) + 수직 스텝 1 = 14.
+            //  여유를 얹어 20을 예산으로 잡는다 — "무한 루프 방지"가 아니라 "이 예산을 넘지
+            //  않는다"를 지키는 게 이 테스트의 목적이다.
+            const int ExpectedBudget = 20;
+            var query = new AlwaysBlockedCountingQuery();
+            KinematicMover.Move(
+                new KinematicMoveInput(Vector3.zero, new Vector3(10f, -5f, 0f), Radius, Height, DeltaTime, ~0,
+                    stepOffset: 0.1f), query);
+
+            Assert.That(query.CastCount, Is.LessThanOrEqualTo(ExpectedBudget),
+                $"턱 오르기를 켠 채 계속 막히면 캐스트가 예산({ExpectedBudget})을 넘으면 안 된다");
+        }
+
+        //  어느 방향으로 sweep하든 못 걷는 벽(수평 법선)으로 막는다 — TryStepUp의 위/아래 sweep도
+        //  다 막아 "올려도 못 지나간다"로 매번 실패시켜, 슬라이드 루프가 상한까지 도는 최악 경로를 만든다.
+        private class AlwaysBlockedCountingQuery : GameFramework.Physics.ICollisionQuery
+        {
+            public int CastCount;
+
+            public GameFramework.Physics.CollisionHit CapsuleCast(Vector3 p1, Vector3 p2, float radius,
+                Vector3 direction, float distance, int layerMask)
+            {
+                CastCount++;
+                if (Mathf.Abs(direction.y) > 0.5f)
+                {
+                    return GameFramework.Physics.CollisionHit.None;   // 위/아래는 뚫려 있다 — 턱 오르기 시도 자체는 계속 일어나야 최악 경로가 나온다
+                }
+                return new GameFramework.Physics.CollisionHit(true, 0.01f,
+                    new Vector3(-0.7071f, 0f, -0.7071f), Vector3.zero, null);
+            }
+
+            public GameFramework.Physics.CollisionHit Raycast(Vector3 origin, Vector3 direction, float distance, int layerMask)
+                => GameFramework.Physics.CollisionHit.None;
+
+            public GameFramework.Physics.CollisionHit[] OverlapSphere(Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<GameFramework.Physics.CollisionHit>();
         }
     }
 }

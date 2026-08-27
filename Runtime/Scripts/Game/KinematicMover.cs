@@ -96,7 +96,12 @@ namespace LOP
             Vector3 remaining = horizVel * input.deltaTime;
             if (onGround)
             {
-                remaining = Vector3.ProjectOnPlane(remaining, groundNormal);
+                //  경사를 "따라" 가되 수평 진행은 깎지 않는다. 평면에 그냥 투영하면 수평 성분이
+                //  cos²θ만큼 줄어 언덕이 감속 구간이 되고, 내리막이 평지보다 느려진다(32°에서 -28%).
+                //  수평 성분은 그대로 두고 세로만 램프에 얹는다 — 언리얼 CMC의 기본값
+                //  (bMaintainHorizontalGroundVelocity)이 하는 것과 같다.
+                //  groundNormal.y >= GroundNormalY(0.7)이므로 0으로 나눌 일은 없다.
+                remaining.y = -(remaining.x * groundNormal.x + remaining.z * groundNormal.z) / groundNormal.y;
             }
             for (int i = 0; i < MaxSlides; i++)
             {
