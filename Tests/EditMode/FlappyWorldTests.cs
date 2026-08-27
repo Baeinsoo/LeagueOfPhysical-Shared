@@ -299,10 +299,13 @@ namespace LOP.Tests
         [Test]
         public void 입력이_안_들어온_새는_안_누른_것으로_굴러간다()
         {
-            //  남의 새는 클라에서 InputBuffer 컴포넌트 자체를 갖지 않는다(CharacterCreator/
-            //  FlappyBirdCreator가 내 새에만 붙인다 — Bird() 헬퍼도 안 붙인 채로 둔다).
-            //  FlappyMoveSystem은 Get<InputBuffer>()가 null이면 null-조건부로 그냥 넘어가므로,
-            //  컴포넌트가 없는 새는 몇 틱을 굴리든 한 번도 날갯짓하지 않고 중력만 먹어야 한다.
+            //  이 Bird()가 InputBuffer를 안 붙인 채로 두는 건 임의 선택이 아니라, 클라의
+            //  CharacterCreator/FlappyBirdCreator가 실제로 하는 일을 그대로 옮긴 것이다 —
+            //  둘 다 worldEntity.Add(new InputBuffer())를 isUserEntity일 때만 부르므로, 남의
+            //  새는 그 컴포넌트가 아예 없다. FlappyMoveSystem은 Get<InputBuffer>()가 null이면
+            //  null-조건부로 그냥 넘어가므로, 컴포넌트가 없는 새는 몇 틱을 굴리든 한 번도
+            //  날갯짓하지 않고 중력만 먹어야 한다 — 이게 실제 프로덕션에서 남의 새가 굴러가는
+            //  방식이다.
             var registry = new EntityRegistry();
             var bird = Bird("bird-1", Vector3.zero, simulated: true);
             registry.Add(bird);
