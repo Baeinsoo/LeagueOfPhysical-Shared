@@ -52,6 +52,9 @@ namespace LOP.Tests
         // 수평·수직을 나눠 따로 sweep하므로(각각 최대 한 번 이상) 호출 횟수는 방향 개수만큼 나온다.
         // 받은 인자를 기록해 phase ⑤가 실제로 엔티티가 들고 있는 몸 치수(반지름)·월드가 받은
         // 레이어마스크를 쓰는지 검증한다.
+        // 이 스텁이 흉내내려는 건 앞을 막는 벽이다. 방향을 안 가리면 이동 전 지면 탐침(아래 방향)까지
+        // 벽으로 답해 법선이 위를 향하고, 커널이 그걸 지면으로 오인한다. 그래서 수직 방향(위/아래)
+        // 캐스트는 None으로 흘려보낸다 — 몇 번 불렸는지는 여전히 세어(CastCount) 둔다.
         private class WallAheadQuery : ICollisionQuery
         {
             private readonly float _hitDistance;
@@ -72,7 +75,11 @@ namespace LOP.Tests
             {
                 LastRadius = radius;
                 LastLayerMask = layerMask;
-                CastCount++;   // 수평·수직 sweep을 둘 다 센다
+                CastCount++;   // 이동 전 지면 탐침 + 수평 + 수직 sweep을 전부 센다
+                if (Mathf.Abs(direction.y) > 0.5f)
+                {
+                    return CollisionHit.None;
+                }
                 return new CollisionHit(true, _hitDistance, _normal, point1 + direction * _hitDistance, null);
             }
 
@@ -268,9 +275,10 @@ namespace LOP.Tests
             // 대신 스턴에 걸린다 — 페널티는 위치 차단과 별개로 여전히 멈춰 있는 시간이다.
             Assert.That(bird.Get<FlappyStun>().StunRemaining, Is.GreaterThan(0f));
 
-            // 그리고 그 판정은 실제로 일어났고(수평·수직 각 sweep에서 한 번씩, 총 두 번),
+            // 그리고 그 판정은 실제로 일어났고(이동 전 지면 탐침 1 + 수평 sweep 1 + 수직 sweep 1,
+            // 총 세 번 — 지면 탐침은 낙하 중일 때만 도는 별도 아래 방향 캐스트다),
             // 엔티티 자신의 몸 치수·월드가 받은 레이어마스크로 이뤄졌다.
-            Assert.AreEqual(2, wallQuery.CastCount);
+            Assert.AreEqual(3, wallQuery.CastCount);
             Assert.AreEqual(Config().BodyRadius, wallQuery.LastRadius, Tolerance);
             Assert.AreEqual(layerMask, wallQuery.LastLayerMask);
         }

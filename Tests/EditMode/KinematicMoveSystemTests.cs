@@ -12,12 +12,27 @@ namespace LOP.Tests
         const float Dt = 0.1f;
         const float Gravity = -9.81f * 2f;   // KinematicMoveSystem의 중력 상수와 같은 값
 
+        //  스크립트된 충돌 응답을 돌려주는 테스트용 쿼리(KinematicMoverTests.cs와 같은 모양).
+        //  수평/수직 큐를 나눈 이유도 같다 — 커널이 이동 전에 발밑을 훑는 지면 탐침을 한 번
+        //  더 쏘므로, 큐가 하나면 그 탐침이 수직용 응답을 먼저 먹어 버린다.
         private class FakeCollisionQuery : ICollisionQuery
         {
-            public readonly Queue<CollisionHit> Responses = new Queue<CollisionHit>();
+            public readonly Queue<CollisionHit> Horizontal = new Queue<CollisionHit>();
+            public readonly Queue<CollisionHit> Vertical = new Queue<CollisionHit>();
+
             public CollisionHit CapsuleCast(Vector3 p1, Vector3 p2, float radius,
                 Vector3 dir, float dist, int mask)
-                => Responses.Count > 0 ? Responses.Dequeue() : CollisionHit.None;
+                => Mathf.Abs(dir.y) > 0.5f ? Take(Vertical, dist) : Take(Horizontal, dist);
+
+            //  실제 sweep은 요청한 거리 밖의 것을 못 본다 — 스크립트 응답도 같게 다룬다.
+            private static CollisionHit Take(Queue<CollisionHit> queue, float distance)
+            {
+                if (queue.Count == 0 || queue.Peek().Distance > distance)
+                {
+                    return CollisionHit.None;
+                }
+                return queue.Dequeue();
+            }
 
             public CollisionHit Raycast(Vector3 origin, Vector3 direction, float distance, int layerMask)
                 => CollisionHit.None;
@@ -53,7 +68,10 @@ namespace LOP.Tests
         public void Ground_StopsFall_ZeroesVerticalVelocity()
         {
             var q = new FakeCollisionQuery();
-            q.Responses.Enqueue(new CollisionHit(true, 0.05f, new Vector3(0f, 1f, 0f), Vector3.zero, null)); // 바닥(법선 위)
+            // 바닥(법선 위). 거리 0.05는 지면 탐침(0.07까지 봄)에도, 실제 수직 스텝에도 잡힌다 —
+            // 큐는 한 번 꺼내면 사라지지만 진짜 바닥은 두 번 다 그 자리에 있으므로 같은 응답을 둘 다에 준다.
+            q.Vertical.Enqueue(new CollisionHit(true, 0.05f, new Vector3(0f, 1f, 0f), Vector3.zero, null));
+            q.Vertical.Enqueue(new CollisionHit(true, 0.05f, new Vector3(0f, 1f, 0f), Vector3.zero, null));
             var sys = new KinematicMoveSystem(q, ~0);
             var e = Entity(new Vector3(0f, 0.1f, 0f), Vector3.zero);
 
