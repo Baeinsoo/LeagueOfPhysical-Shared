@@ -141,6 +141,17 @@ namespace LOP
             return true;
         }
 
+        /// <summary>그 틱에 저장해 둔 스턴 상태. 서버 스냅과 비교해 되돌릴지 정할 때 쓴다.</summary>
+        public bool TryGetSavedStun(long tick, string entityId, out FlappySavedState state)
+        {
+            if (_gameFrames.TryGet(tick, out var frame) && frame.TryGetValue(entityId, out state))
+            {
+                return true;
+            }
+            state = default;
+            return false;
+        }
+
         // 굴리는 대상과 부딪히는 상대는 다르다. 클라에서 원격은 굴리지 않지만(외삽으로 그린다)
         // 내 새가 그 자리에 부딪히기는 해야 한다 — 부딪힘이 서버 왕복 뒤에 보이면 반응이 굼뜨다.
         // "새인가"는 EntityKind로 가린다 — FlappyStun은 스턴 *타이머*라 정체성 표식이

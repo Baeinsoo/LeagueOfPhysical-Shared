@@ -52,5 +52,28 @@ namespace LOP.Tests
             Assert.That(bird.Get<FlappyStun>().StunRemaining, Is.EqualTo(stunAtSave).Within(0.0001f));
             Assert.That(bird.Get<FlappyStun>().InvulnRemaining, Is.EqualTo(invulnAtSave).Within(0.0001f));
         }
+
+        [Test]
+        public void 저장된_틱의_스턴을_되돌려_읽을_수_있다()
+        {
+            //  보정 핸들러가 "그 틱에 내가 뭘 예측했나"를 서버 값과 비교하려면 이 조회가 필요하다.
+            var world = FlappyWorldFixture.Create(new FlappyWorldFixture.AlwaysHit(), out var bird);
+            world.GameplayStartTick = 0;
+
+            for (long t = 1; t <= 5; t++) { world.Tick(t, 0.02f); world.SaveState(t); }
+            float atFive = bird.Get<FlappyStun>().StunRemaining;
+
+            Assert.IsTrue(world.TryGetSavedStun(5, bird.Id, out var saved));
+            Assert.AreEqual(atFive, saved.StunRemaining, 1e-4f);
+        }
+
+        [Test]
+        public void 저장이_없는_틱은_false다()
+        {
+            var world = FlappyWorldFixture.Create(new FlappyWorldFixture.AlwaysHit(), out var bird);
+            world.GameplayStartTick = 0;
+
+            Assert.IsFalse(world.TryGetSavedStun(999, bird.Id, out _));
+        }
     }
 }
