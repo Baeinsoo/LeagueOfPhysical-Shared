@@ -108,6 +108,86 @@ namespace LOP.Tests
             Assert.AreEqual(0, turn.GetDropOutCount(passer), "패스는 낙이 아니다");
         }
 
+        //  아래 여섯은 서버 레포의 수기 검증 스크립트(PanchigiVerification)가 지키던 것을 옮겨온
+        //  것이다. 진행 규칙이 패키지로 오면서 진짜 테스트를 붙일 수 있게 됐고, 두 벌을 두면
+        //  시그니처가 바뀔 때 한쪽만 고쳐져 조용히 어긋난다(실제로 배포가 그렇게 깨졌다).
+
+        [Test]
+        public void 판이_시작되면_첫_사람이_조준한다()
+        {
+            var turn = new PanchigiTurn(TwoPlayers, 60, 3);
+
+            turn.OnRested(false, false);
+
+            Assert.AreEqual(PanchigiPhase.Aiming, turn.Phase);
+            Assert.AreEqual("A", turn.CurrentEntityId);
+            Assert.AreEqual(0, turn.TurnCount, "아무도 아직 안 쳤다");
+        }
+
+        [Test]
+        public void 치면_동전이_멎을_때까지_기다린다()
+        {
+            var turn = Aiming(TwoPlayers);
+
+            turn.OnStruck("A");
+
+            Assert.AreEqual(PanchigiPhase.Settling, turn.Phase);
+            Assert.AreEqual(1, turn.TurnCount);
+            Assert.IsNull(turn.CurrentEntityId, "구르는 동안은 아무도 조준하지 않는다");
+        }
+
+        [Test]
+        public void 패스도_턴으로_세고_차례는_넘어간다()
+        {
+            //  안 세면 전원이 계속 패스해 판이 영영 안 끝난다.
+            var turn = Aiming(TwoPlayers);
+
+            turn.OnAimTimeout();
+
+            Assert.AreEqual(PanchigiPhase.Aiming, turn.Phase);
+            Assert.AreEqual("B", turn.CurrentEntityId);
+            Assert.AreEqual(1, turn.TurnCount);
+        }
+
+        [Test]
+        public void 다_뒤집으면_그렇게_만든_사람이_이긴다()
+        {
+            var turn = Aiming(TwoPlayers);
+
+            turn.OnStruck("A");
+            turn.OnRested(true, false);
+
+            Assert.AreEqual(PanchigiPhase.Over, turn.Phase);
+            Assert.AreEqual("A", turn.WinnerEntityId);
+        }
+
+        [Test]
+        public void 턴_상한에_닿으면_무승부로_끝난다_패스로()
+        {
+            var turn = new PanchigiTurn(TwoPlayers, 1, 3);
+            turn.OnRested(false, false);
+
+            turn.OnAimTimeout();          // TurnCount 1 == 상한
+            turn.OnAimTimeout();          // 이미 끝나서 무시돼야 한다
+
+            Assert.AreEqual(PanchigiPhase.Over, turn.Phase);
+            Assert.IsNull(turn.WinnerEntityId);
+        }
+
+        [Test]
+        public void 턴_상한에_닿으면_무승부로_끝난다_타격으로()
+        {
+            //  위와 같은 상한이지만 들어오는 문이 다르다 - 여긴 OnRested가 끝을 낸다.
+            var turn = new PanchigiTurn(TwoPlayers, 1, 3);
+            turn.OnRested(false, false);
+
+            turn.OnStruck("A");
+            turn.OnRested(false, false);
+
+            Assert.AreEqual(PanchigiPhase.Over, turn.Phase);
+            Assert.IsNull(turn.WinnerEntityId, "쳤지만 안 뒤집혔으니 승자가 아니다");
+        }
+
         [Test]
         public void 한도가_영이면_탈락시키지_않는다()
         {
