@@ -91,8 +91,8 @@ namespace LOP
 
             // 전원의 속도가 정해진 뒤 한 번(페이즈 배리어). 새끼리 겹침은 여기서 다 풀리므로
             // 아래 물리 브릿지의 Separate는 부르지 않는다.
-            // movers=_birds, bodies=_bodies — 서버는 둘이 같은 집합(모든 새가 Simulated)이라
-            // 지금과 같은 양방향 몸싸움이고, 클라는 원격을 밀어내지 못하는 한쪽 몸싸움이 된다.
+            // movers=_birds, bodies=_bodies — 지금은 클·서 모두 두 목록이 같은 집합이다(모든 새가
+            // Simulated). 그래서 양쪽 다 서로를 밀어내는 양방향 몸싸움이고 결과도 같다.
             _bodyCollisionSystem.Resolve(_birds, _bodies);
 
             // 벽 안이면 밖으로 밀어낸다 — 스폰 겹침이든 방금 몸싸움이 처박은 것이든. 겹침이
@@ -171,13 +171,12 @@ namespace LOP
                 {
                     continue;   // 새가 아니다
                 }
-                // 알려진 한계: _bodies에는 원격(Simulated 아닌) 새도 들어간다. 그런데
-                // WorldBase.SaveState는 Simulated 엔티티의 위치·속도만 저장한다(LoadState도 그것만
-                // 되돌린다) — 되감기 재생(rollback replay) 중에는 원격 새의 위치가 "그 틱 당시" 값이
-                // 아니라 재생을 시작한 지금 프레임의 값 그대로 고정돼 있다. 그래서 재생 중 몸싸움
-                // 판정은 원격의 과거 위치가 아니라 현재 위치를 기준으로 계산된다. 원격도 그 틱 위치로
-                // 되감아야 하는 콘텐츠(예: 몸싸움 결과가 프레임 하나 차이로 크게 갈리는 상황)가 생기면
-                // 그때 원격 모션도 SaveState 대상에 넣는 걸 재검토한다.
+                // 지금은 모든 새가 Simulated라 두 목록이 같아진다. WorldBase.SaveState/LoadState가
+                // Simulated 엔티티의 위치·속도를 담으므로 되감기 재생 중에도 남의 새가 "그 틱 당시"
+                // 자리로 돌아간다 — 예전에 여기 적혀 있던 "재생이 원격을 못 되감는다"는 한계는
+                // 남의 새를 시뮬 대상에 넣으면서 사라졌다.
+                // 두 목록을 그대로 두는 이유는, 굴릴 대상과 부딪힐 상대가 개념상 다른 축이라
+                // 사이드 정책(Simulated를 누구에게 주는가)이 바뀌어도 이 코드가 그대로여야 해서다.
                 _bodies.Add(entity);
                 if (entity.Has<GameFramework.World.Simulated>())
                 {
