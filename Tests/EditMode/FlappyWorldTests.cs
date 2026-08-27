@@ -342,5 +342,87 @@ namespace LOP.Tests
             // 몸이 없어 "위치 이동"만 못 한다는 걸 못박는다 — 속도 계산(전진·중력)은 여전히 돌았다.
             Assert.That(VelocityOf(noBody).x, Is.GreaterThan(0f));
         }
+
+        [Test]
+        public void 조용한_구간은_9틱_전_상태에서_다시_굴려도_정확히_일치하고_날갯짓_구간은_그렇지_않다()
+        {
+            //  이 테스트가 이 슬라이스 전체의 값어치다(스펙 §8.2). 외삽(마지막 속도로 이어 그리기)은
+            //  날갯짓이 하나도 없는 조용한 구간에서도 진실과 항상 어긋났다(실측 0.126m, 빠르게
+            //  떨어질 땐 1.13m까지). 시뮬은 그 구간에서 "9틱 전의 진짜 상태에서 다시 굴리면 지금과
+            //  정확히 같다"는, 외삽으로는 절대 못 만드는 성질을 가져야 한다.
+            //
+            //  대신 시뮬도 만능은 아니다 — 그 9틱 사이에 날갯짓이 실제로 있었다면, 입력이 안 온
+            //  재현은 그 날갯짓을 모르니 갈라진다. 아래 두 번째 assert가 그 대조다: "조용하면
+            //  정확히 맞고, 날갯짓이 끼면 안 맞는다"는 비대칭 자체가 이 설계가 사는 이유다.
+            var registry = new EntityRegistry();
+            var truth = Bird("truth", Vector3.zero, simulated: true);
+            truth.Add(new InputBuffer());
+            registry.Add(truth);
+            var world = World(registry, new NoopMotionBridge());
+
+            //  틱 5에서 딱 한 번만 날갯짓한다. 그 외 틱은 매번 새로 "안 눌렀다"를 세운다 —
+            //  PlayerInputManager가 매 프레임 pendingJump를 소비한 뒤 리셋하는 것과 같은 모양이다
+            //  (Current를 stale하게 남겨두는 시나리오가 아니다).
+            const int FlapTick = 5;
+            const int TotalTicks = 20;
+            const int Window = 9;
+            var positions = new Vector3[TotalTicks + 1];
+            var velocities = new Vector3[TotalTicks + 1];
+            positions[0] = Vector3.zero;
+            velocities[0] = Vector3.zero;
+
+            for (int t = 1; t <= TotalTicks; t++)
+            {
+                truth.Get<InputBuffer>().Current = new InputCommand { Jump = t == FlapTick };
+                world.Tick(t, 0.02f);
+                positions[t] = PositionOf(truth);
+                velocities[t] = VelocityOf(truth);
+            }
+
+            // --- 조용한 구간: (T-9, T]에 날갯짓이 없다. T=20이면 창은 틱 12~20 — 날갯짓(틱 5)은 그 전에
+            // 이미 끝나 창 밖이다. 9틱 전(틱 11) 상태만 들고 다시 굴리면 틱 20의 진실과 맞아야 한다.
+            const int QuietTargetTick = 20;
+            int quietSourceTick = QuietTargetTick - Window;   // 11
+
+            var quietRegistry = new EntityRegistry();
+            var quietBird = Bird("quiet-repro", positions[quietSourceTick], simulated: true);
+            quietBird.Get<Velocity>().Linear = velocities[quietSourceTick].ToNumerics();
+            //  InputBuffer를 아예 안 붙인다 — 남의 새가 실제로 클라에서 굴러가는 모양(입력 자체가 없음)이다.
+            quietRegistry.Add(quietBird);
+            var quietWorld = World(quietRegistry, new NoopMotionBridge());
+            for (int t = 1; t <= Window; t++)
+            {
+                quietWorld.Tick(t, 0.02f);
+            }
+
+            //  느슨한 허용오차가 아니라 float 잡음 수준(1e-4)으로 본다 — 헐거우면 회귀도 통과시키고,
+            //  옛 외삽 공식과도 구분이 안 된다(외삽은 조용한 구간에서도 0.126m씩 어긋났다).
+            const float ExactTolerance = 1e-4f;
+            Assert.AreEqual(positions[QuietTargetTick].x, PositionOf(quietBird).x, ExactTolerance);
+            Assert.AreEqual(positions[QuietTargetTick].y, PositionOf(quietBird).y, ExactTolerance);
+            Assert.AreEqual(velocities[QuietTargetTick].y, VelocityOf(quietBird).y, ExactTolerance);
+
+            // --- 대조: (T'-9, T']에 날갯짓이 낀 구간. T'=10이면 창은 틱 2~10 — 날갯짓(틱 5)이 그 안에
+            // 있다. 9틱 전(틱 1) 상태에서 입력 없이 다시 굴리면, 진짜로는 있었던 날갯짓을 재현이 모르니
+            // 틱 10의 진실과 갈라져야 한다 — 안 갈라지면 위 "정확히 일치"가 우연이라는 뜻이다.
+            const int FlapTargetTick = 10;
+            int flapSourceTick = FlapTargetTick - Window;   // 1
+
+            var flapRegistry = new EntityRegistry();
+            var flapBird = Bird("flap-repro", positions[flapSourceTick], simulated: true);
+            flapBird.Get<Velocity>().Linear = velocities[flapSourceTick].ToNumerics();
+            flapRegistry.Add(flapBird);
+            var flapWorld = World(flapRegistry, new NoopMotionBridge());
+            for (int t = 1; t <= Window; t++)
+            {
+                flapWorld.Tick(t, 0.02f);
+            }
+
+            //  1cm는 float 잡음(1e-4)보다 훨씬 크면서, 날갯짓 하나가 만드는 실제 벌어짐보다는
+            //  훨씬 작다 — "그냥 안 같다" 정도가 아니라 "확실히, 의미 있게 안 같다"를 본다.
+            const float DivergenceFloor = 0.01f;
+            float divergence = Mathf.Abs(positions[FlapTargetTick].y - PositionOf(flapBird).y);
+            Assert.That(divergence, Is.GreaterThan(DivergenceFloor));
+        }
     }
 }
