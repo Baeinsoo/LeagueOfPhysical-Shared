@@ -12,7 +12,8 @@ namespace LOP.Tests
 
         static FlappyConfig Config()
             => new FlappyConfig(forwardSpeed: 11f, flapImpulse: 23f, gravity: 70f, maxFallSpeed: 30f,
-                                bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f);
+                                bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f,
+                                stunTime: 0.8f, invulnTime: 0.6f);
 
         static Entity Bird(string id, Vector3 position, Vector3 velocity)
         {
@@ -62,6 +63,73 @@ namespace LOP.Tests
             Assert.AreEqual(Vector3.zero, PositionOf(a));
             Assert.AreEqual(-10f, VelocityOf(a).y, Tolerance);
             Assert.AreEqual(0f, VelocityOf(b).y, Tolerance);
+        }
+
+        [Test]
+        public void movers와_bodies가_같으면_기존_한쪽_인자_결과와_같다()
+        {
+            // 서버는 모든 새가 Simulated라 movers==bodies다. 그 경우 새 오버로드가
+            // 기존 Resolve(단일 목록)와 정확히 같은 결과를 내야 서버 동작이 지금과 안 갈린다.
+            var singleList = new List<Entity>
+            {
+                Bird("bird-1", Vector3.zero, Vector3.zero),
+                Bird("bird-2", new Vector3(0f, 0.5f, 0f), new Vector3(0f, -10f, 0f)),
+            };
+            var sameList = new List<Entity>
+            {
+                Bird("bird-1", Vector3.zero, Vector3.zero),
+                Bird("bird-2", new Vector3(0f, 0.5f, 0f), new Vector3(0f, -10f, 0f)),
+            };
+
+            new FlappyBodyCollisionSystem(Config()).Resolve(singleList);
+            new FlappyBodyCollisionSystem(Config()).Resolve(sameList, sameList);
+
+            // 두 겹친 새는 실제로 갈라지고 속도도 주고받아야 한다 — 이 확인이 없으면 두 오버로드가
+            // "둘 다 아무 일도 안 했다"로 우연히 같아져도 아래 비교를 통과해 버린다.
+            Assert.AreNotEqual(Vector3.zero, PositionOf(singleList[0]));
+            Assert.AreNotEqual(new Vector3(0f, -10f, 0f), VelocityOf(singleList[1]));
+
+            Assert.AreEqual(PositionOf(singleList[0]), PositionOf(sameList[0]));
+            Assert.AreEqual(PositionOf(singleList[1]), PositionOf(sameList[1]));
+            Assert.AreEqual(VelocityOf(singleList[0]), VelocityOf(sameList[0]));
+            Assert.AreEqual(VelocityOf(singleList[1]), VelocityOf(sameList[1]));
+        }
+
+        [Test]
+        public void 클라가_민_거리가_서버가_민_거리와_같다()
+        {
+            //  이 슬라이스에서 제일 중요한 불변식이다. 서버는 두 마리 다 굴려 내 새를 "절반" 밀고,
+            //  클라는 내 새만 굴린다 — 이때 클라가 겹침 전체를 떠안으면 예측이 서버보다 절반만큼
+            //  앞서 나가고, 새가 붙어 있는 내내 그 차이가 보정으로 돌아온다(실측된 렉의 정체).
+            var serverMine = Bird("bird-1", Vector3.zero, Vector3.zero);
+            var serverOther = Bird("bird-2", new Vector3(0f, 0.5f, 0f), Vector3.zero);
+            var serverAll = new List<Entity> { serverMine, serverOther };
+            new FlappyBodyCollisionSystem(Config()).Resolve(serverAll, serverAll);
+
+            var clientMine = Bird("bird-1", Vector3.zero, Vector3.zero);
+            var clientOther = Bird("bird-2", new Vector3(0f, 0.5f, 0f), Vector3.zero);
+            new FlappyBodyCollisionSystem(Config()).Resolve(
+                new List<Entity> { clientMine },
+                new List<Entity> { clientMine, clientOther });
+
+            Assert.AreEqual(PositionOf(serverMine).y, PositionOf(clientMine).y, Tolerance);
+            Assert.AreEqual(VelocityOf(serverMine).y, VelocityOf(clientMine).y, Tolerance);
+        }
+
+        [Test]
+        public void bodies에만_있는_상대는_밀리지_않고_mover만_밀린다()
+        {
+            var mover = Bird("bird-1", Vector3.zero, Vector3.zero);
+            var remoteBody = Bird("bird-2", new Vector3(0f, 0.5f, 0f), new Vector3(0f, -10f, 0f));
+            var movers = new List<Entity> { mover };
+            var bodies = new List<Entity> { mover, remoteBody };
+
+            new FlappyBodyCollisionSystem(Config()).Resolve(movers, bodies);
+
+            // mover는 밀려났고(원래 위치 0,0,0에서 벗어남), 원격 상대는 자리도 속도도 그대로다.
+            Assert.AreNotEqual(Vector3.zero, PositionOf(mover));
+            Assert.AreEqual(new Vector3(0f, 0.5f, 0f), PositionOf(remoteBody));
+            Assert.AreEqual(new Vector3(0f, -10f, 0f), VelocityOf(remoteBody));
         }
 
         [Test]

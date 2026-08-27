@@ -16,6 +16,8 @@ namespace LOP
             MessageFactory.RegisterCreator(MessageIds.InputSequenceToC, () => new InputSequenceToC());
             MessageFactory.RegisterCreator(MessageIds.InputTimingToC, () => new InputTimingToC());
             MessageFactory.RegisterCreator(MessageIds.MatchEndedToC, () => new MatchEndedToC());
+            MessageFactory.RegisterCreator(MessageIds.MatchReadyToS, () => new MatchReadyToS());
+            MessageFactory.RegisterCreator(MessageIds.MatchStartToC, () => new MatchStartToC());
             MessageFactory.RegisterCreator(MessageIds.PanchigiStateToC, () => new PanchigiStateToC());
             MessageFactory.RegisterCreator(MessageIds.PanchigiStrikeToS, () => new PanchigiStrikeToS());
             MessageFactory.RegisterCreator(MessageIds.StatAllocationToC, () => new StatAllocationToC());

@@ -15,4 +15,6 @@ message EntitySnap
 	int32 active_ability_id = 9;    // 0 = 시전 중 아님
 	int64 ability_end_tick  = 10;   // 시전이 끝나는 절대 틱(= RecoveryEndTick)
 	repeated ProtoActiveEffect status_effects = 11;
+	bool stunned = 12;              // Flappy: 맵에 부딪혀 멈춰 있는 중
+	bool invulnerable = 13;         // Flappy: 스턴이 풀린 뒤 잠시 다시 안 걸리는 중
 }

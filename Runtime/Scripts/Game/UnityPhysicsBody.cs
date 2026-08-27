@@ -93,14 +93,19 @@ namespace LOP
             _rigidbody.AddForceAtPosition(impulse.ToUnity(), worldPoint.ToUnity(), ForceMode.Impulse);
         }
 
-        public override System.Numerics.Vector3 ComputePushOut(int layerMask)
+        public override System.Numerics.Vector3 ComputePushOut(
+            System.Numerics.Vector3 position, System.Numerics.Quaternion rotation, int layerMask)
         {
             // 밀어내기는 캡슐 몸(우리 키네마틱 컨트롤러) 전용 — 원반 등 다른 콜라이더는 대상이 아니다.
             if (_collider is not CapsuleCollider capsule)
             {
                 return System.Numerics.Vector3.Zero;
             }
-            return KinematicDepenetration.ComputePushOut(capsule, layerMask).ToNumerics();
+            // 겹침 판정 포즈는 rb/트랜스폼이 아니라 호출부가 준 값을 쓴다 — rb.position은 다음 물리
+            // 스텝에야 트랜스폼에 반영되고, 롤백 재생 중에는 물리를 돌리지 않아 아예 멈춰 있다.
+            return KinematicDepenetration
+                .ComputePushOut(capsule, position.ToUnity(), rotation.ToUnity(), layerMask)
+                .ToNumerics();
         }
     }
 }

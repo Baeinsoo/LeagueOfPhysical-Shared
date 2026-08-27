@@ -27,8 +27,15 @@ namespace LOP
         /// <summary>몸싸움 반발계수 — 0이면 부딪힌 자리에 얹히고, 1이면 온전히 튕겨 나간다.</summary>
         public readonly float Restitution;
 
+        /// <summary>맵에 부딪혔을 때 그 자리에 멈춰 있는 시간(초). 이 시간 손실이 페널티다.</summary>
+        public readonly float StunTime;
+
+        /// <summary>스턴이 풀린 뒤 다시 걸리지 않는 시간(초). 같은 벽에 연달아 걸리는 것을 막는다.</summary>
+        public readonly float InvulnTime;
+
         public FlappyConfig(float forwardSpeed, float flapImpulse, float gravity, float maxFallSpeed,
-                            float bodyRadius, float bodyHeight, float restitution)
+                            float bodyRadius, float bodyHeight, float restitution,
+                            float stunTime, float invulnTime)
         {
             ForwardSpeed = forwardSpeed;
             FlapImpulse = flapImpulse;
@@ -37,6 +44,8 @@ namespace LOP
             BodyRadius = bodyRadius;
             BodyHeight = bodyHeight;
             Restitution = restitution;
+            StunTime = stunTime;
+            InvulnTime = invulnTime;
         }
     }
 }

@@ -18,5 +18,7 @@ namespace LOP
         public const ushort UserEntitySnapToC              = 13;
         public const ushort InputTimingToC                 = 14;
         public const ushort PanchigiStateToC               = 15;
+        public const ushort MatchStartToC                  = 16;
+        public const ushort MatchReadyToS                  = 17;
     }
 }

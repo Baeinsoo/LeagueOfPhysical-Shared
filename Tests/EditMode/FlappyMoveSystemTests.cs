@@ -12,7 +12,8 @@ namespace LOP.Tests
         // TbFlappyConfig 기본값
         static FlappyConfig Config()
             => new FlappyConfig(forwardSpeed: 11f, flapImpulse: 23f, gravity: 70f, maxFallSpeed: 30f,
-                                bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f);
+                                bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f,
+                                stunTime: 0.8f, invulnTime: 0.6f);
 
         static Entity Bird(Vector3 velocity, bool? jump = null)
         {

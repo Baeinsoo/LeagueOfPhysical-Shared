@@ -29,14 +29,15 @@ namespace LOP.Tests
         private class NoopMotionBridge : IMotionBridge
         {
             public void SyncTransforms() { }
-            public void Depenetrate(Entity entity) { }
+            public System.Numerics.Vector3 Depenetrate(Entity entity) => System.Numerics.Vector3.Zero;
             public void Separate(Entity entity) { }
             public void PushMotion(Entity entity) { }
         }
 
         static FlappyConfig Config()
             => new FlappyConfig(forwardSpeed: 11f, flapImpulse: 23f, gravity: 70f, maxFallSpeed: 30f,
-                                bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f);
+                                bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f,
+                                stunTime: 0.8f, invulnTime: 0.6f);
 
         static Entity Bird(string id, Vector3 position, float initialVy)
         {
@@ -44,15 +45,25 @@ namespace LOP.Tests
             entity.Add(new GameFramework.World.Transform { Position = position.ToNumerics() });
             entity.Add(new Velocity { Linear = new Vector3(0f, initialVy, 0f).ToNumerics() });
             entity.Add(new CapsuleShape(0.45f, 0.9f));
+            // 실제 크리에이터(FlappyBirdCreator)가 항상 붙이는 것과 같다 — 이게 없으면
+            // FlappyWorld.CollectBirds가 "새가 아니다"로 보고 아예 건드리지 않는다.
+            entity.Add(new EntityKind(EntityType.Character));
+            entity.Add(new FlappyStun());
             entity.Add(new Simulated());
             return entity;
         }
 
         static FlappyWorld World(EntityRegistry registry)
-            => new FlappyWorld(registry, new WorldEventBuffer(),
+        {
+            // 이 파일은 결정론(등록 순서 무관)을 다룬다, 출발 게이트가 아니다 — 이미 출발한 것으로 둔다.
+            var world = new FlappyWorld(registry, new WorldEventBuffer(),
                                new FlappyMoveSystem(Config()),
                                new FlappyBodyCollisionSystem(Config()),
+                               new FlappyStunSystem(Config()),
                                new EmptySkyQuery(), new NoopMotionBridge(), layerMask: ~0);
+            world.GameplayStartTick = 0;
+            return world;
+        }
 
         // 세 마리가 서로 겹치는 삼각형 배치 + 서로 다른 초기 세로속도.
         // 몸싸움이 세 쌍(1-2, 1-3, 2-3) 전부에서 실제로 걸리게 한 뒤, 쌍을 순서대로 푸는 과정에서
@@ -88,6 +99,14 @@ namespace LOP.Tests
                 worldForward.Tick(tick, 0.1f);
                 worldReversed.Tick(tick, 0.1f);
             }
+
+            // 무언가 실제로 움직였는지부터 확인한다 — 안 그러면 "둘 다 아무것도 안 움직여서
+            // 우연히 같다"가 아래 비교를 통과시켜 버린다(CollectBirds가 새를 못 찾아 다 건너뛴
+            // 채로도 이 테스트는 초록불이었다 — Task10 리뷰에서 실제로 벌어졌던 함정). 전진
+            // 속도는 상수라 5틱 뒤엔 눈에 띄게 앞으로 가 있어야 한다.
+            Assert.That(forward.Get("bird-1").Get<GameFramework.World.Transform>().Position.X,
+                        Is.GreaterThan(1f),
+                        "bird-1이 전혀 움직이지 않았다 — CollectBirds가 새를 못 찾고 있을 수 있다");
 
             foreach (var id in new[] { "bird-1", "bird-2", "bird-3" })
             {

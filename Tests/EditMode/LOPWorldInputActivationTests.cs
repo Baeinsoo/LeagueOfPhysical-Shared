@@ -23,7 +23,7 @@ namespace LOP.Tests
         private class SpyBridge : GameFramework.World.IMotionBridge
         {
             public void SyncTransforms() { }
-            public void Depenetrate(GameFramework.World.Entity e) { }
+            public System.Numerics.Vector3 Depenetrate(GameFramework.World.Entity e) => System.Numerics.Vector3.Zero;
             public void Separate(GameFramework.World.Entity e) { }
             public void PushMotion(GameFramework.World.Entity e) { }
         }
