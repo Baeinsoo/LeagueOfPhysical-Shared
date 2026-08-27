@@ -297,6 +297,28 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 입력이_안_들어온_새는_안_누른_것으로_굴러간다()
+        {
+            //  남의 새는 클라에서 InputBuffer 컴포넌트 자체를 갖지 않는다(CharacterCreator/
+            //  FlappyBirdCreator가 내 새에만 붙인다 — Bird() 헬퍼도 안 붙인 채로 둔다).
+            //  FlappyMoveSystem은 Get<InputBuffer>()가 null이면 null-조건부로 그냥 넘어가므로,
+            //  컴포넌트가 없는 새는 몇 틱을 굴리든 한 번도 날갯짓하지 않고 중력만 먹어야 한다.
+            var registry = new EntityRegistry();
+            var bird = Bird("bird-1", Vector3.zero, simulated: true);
+            registry.Add(bird);
+            var world = World(registry, new NoopMotionBridge());
+
+            for (long t = 1; t <= 5; t++)
+            {
+                world.Tick(t, 0.02f);
+            }
+
+            //  순수 중력 누적(−70 × 0.02 × 5)과 정확히 같아야 한다 — 날갯짓이 단 한 번이라도
+            //  끼어들었다면 이 값이 FlapImpulse(23)로 덮여 크게 벌어진다.
+            Assert.AreEqual(-7f, VelocityOf(bird).y, Tolerance);
+        }
+
+        [Test]
         public void 몸이_없는_엔티티는_맵_이동을_하지_않는다()
         {
             var registry = new EntityRegistry();
