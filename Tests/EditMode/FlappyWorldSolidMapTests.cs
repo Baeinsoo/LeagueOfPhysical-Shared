@@ -10,7 +10,14 @@ namespace LOP.Tests
         {
             public CollisionHit CapsuleCast(UnityEngine.Vector3 p1, UnityEngine.Vector3 p2, float radius,
                 UnityEngine.Vector3 direction, float distance, int layerMask)
-                => new CollisionHit(true, 0f, -direction, p1);
+                => new CollisionHit(true, 0f, -direction, p1, null);
+
+            public CollisionHit Raycast(UnityEngine.Vector3 origin, UnityEngine.Vector3 direction, float distance, int layerMask)
+                => CollisionHit.None;
+
+            public CollisionHit[] OverlapSphere(UnityEngine.Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<CollisionHit>();
+
         }
 
         private const float Dt = 0.02f;
@@ -123,8 +130,15 @@ namespace LOP.Tests
             public CollisionHit CapsuleCast(UnityEngine.Vector3 p1, UnityEngine.Vector3 p2, float radius,
                 UnityEngine.Vector3 direction, float distance, int layerMask)
                 => direction.y < 0f
-                    ? new CollisionHit(true, 0f, UnityEngine.Vector3.up, p1)
+                    ? new CollisionHit(true, 0f, UnityEngine.Vector3.up, p1, null)
                     : CollisionHit.None;
+
+            public CollisionHit Raycast(UnityEngine.Vector3 origin, UnityEngine.Vector3 direction, float distance, int layerMask)
+                => CollisionHit.None;
+
+            public CollisionHit[] OverlapSphere(UnityEngine.Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<CollisionHit>();
+
         }
 
         //  비스듬히 선 벽 — 법선에 z가 섞여 있어 미끄러짐이 새를 레인 밖으로 밀어낸다.
@@ -136,7 +150,14 @@ namespace LOP.Tests
                 => direction.y != 0f
                     ? CollisionHit.None
                     : new CollisionHit(true, 0.05f, new UnityEngine.Vector3(-0.707f, 0f, -0.707f),
-                                       p1 + direction * 0.05f);
+                                       p1 + direction * 0.05f, null);
+
+            public CollisionHit Raycast(UnityEngine.Vector3 origin, UnityEngine.Vector3 direction, float distance, int layerMask)
+                => CollisionHit.None;
+
+            public CollisionHit[] OverlapSphere(UnityEngine.Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<CollisionHit>();
+
         }
 
         //  이웃 테스트 파일들과 같은 모양의 "아무것도 안 맞는" 스텁.
@@ -145,6 +166,13 @@ namespace LOP.Tests
             public CollisionHit CapsuleCast(UnityEngine.Vector3 p1, UnityEngine.Vector3 p2, float radius,
                 UnityEngine.Vector3 direction, float distance, int layerMask)
                 => CollisionHit.None;
+
+            public CollisionHit Raycast(UnityEngine.Vector3 origin, UnityEngine.Vector3 direction, float distance, int layerMask)
+                => CollisionHit.None;
+
+            public CollisionHit[] OverlapSphere(UnityEngine.Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<CollisionHit>();
+
         }
     }
 }

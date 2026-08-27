@@ -12,6 +12,13 @@ namespace LOP.Tests
             public CollisionHit CapsuleCast(UnityEngine.Vector3 p1, UnityEngine.Vector3 p2, float radius,
                 UnityEngine.Vector3 direction, float distance, int layerMask)
                 => CollisionHit.None;
+
+            public CollisionHit Raycast(UnityEngine.Vector3 origin, UnityEngine.Vector3 direction, float distance, int layerMask)
+                => CollisionHit.None;
+
+            public CollisionHit[] OverlapSphere(UnityEngine.Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<CollisionHit>();
+
         }
 
         private const float Dt = 0.02f;

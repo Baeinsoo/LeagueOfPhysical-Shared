@@ -264,6 +264,14 @@ namespace LOP
                 }
                 return hit;
             }
+
+            //  아래 둘은 그대로 넘기기만 한다. 이 데코레이터가 보려는 건 "이동이 벽에 막혔나"뿐이고,
+            //  그건 sweep(CapsuleCast)만 답한다 — 시야 검사나 범위 조회는 이동을 막지 않는다.
+            public CollisionHit Raycast(Vector3 origin, Vector3 direction, float distance, int layerMask)
+                => _inner.Raycast(origin, direction, distance, layerMask);
+
+            public CollisionHit[] OverlapSphere(Vector3 center, float radius, int layerMask)
+                => _inner.OverlapSphere(center, radius, layerMask);
         }
     }
 }

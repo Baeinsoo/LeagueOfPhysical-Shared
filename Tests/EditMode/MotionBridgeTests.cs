@@ -30,6 +30,11 @@ namespace LOP.Tests
             public override System.Numerics.Quaternion GetRotation() => System.Numerics.Quaternion.Identity;
             public override System.Numerics.Vector3 GetVelocity() => System.Numerics.Vector3.Zero;
 
+            //  이 테스트가 보는 건 밀어내기에 넘어가는 포즈뿐이라 나머지는 답만 맞춰 둔다.
+            public override System.Numerics.Vector3 GetAngularVelocity() => System.Numerics.Vector3.Zero;
+            public override void SetAngularVelocity(System.Numerics.Vector3 angular) { }
+            public override void AddImpulseAtPosition(System.Numerics.Vector3 impulse, System.Numerics.Vector3 worldPoint) { }
+
             public override System.Numerics.Vector3 ComputePushOut(
                 System.Numerics.Vector3 position, System.Numerics.Quaternion rotation, int layerMask)
             {

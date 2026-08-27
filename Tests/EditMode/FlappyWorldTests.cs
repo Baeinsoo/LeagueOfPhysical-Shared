@@ -72,7 +72,7 @@ namespace LOP.Tests
             {
                 LastRadius = radius;
                 LastLayerMask = layerMask;
-                HorizontalCastCount++;
+                CastCount++;   // 수평·수직 sweep을 둘 다 센다
                 return new CollisionHit(true, _hitDistance, _normal, point1 + direction * _hitDistance, null);
             }
 
