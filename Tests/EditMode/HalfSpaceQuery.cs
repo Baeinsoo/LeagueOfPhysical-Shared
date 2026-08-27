@@ -22,9 +22,6 @@ namespace LOP.Tests
         public void AddGround(float y)
             => Faces.Add(new Face { Point = new Vector3(0f, y, 0f), Normal = Vector3.up });
 
-        public void AddWall(float x)
-            => Faces.Add(new Face { Point = new Vector3(x, 0f, 0f), Normal = Vector3.left });
-
         /// <param name="degrees">+x로 갈수록 높아지는 오르막의 각도.</param>
         public void AddSlope(float degrees, Vector3 through)
         {
