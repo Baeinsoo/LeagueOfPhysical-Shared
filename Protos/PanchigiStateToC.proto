@@ -11,4 +11,9 @@ message PanchigiStateToC
 	string current_entity_id = 2;
 	// 조준 마감 틱. Aiming일 때만 유효
 	int64 aim_deadline_tick = 3;
+	// 플레이어 엔티티별 낙(落) 횟수. 한 번도 안 떨어뜨린 사람은 아예 안 들어온다.
+	// 한도(몇 번까지 봐주는지)는 클라도 마스터데이터에서 직접 읽으므로 싣지 않는다.
+	map<string, int32> drop_out_counts = 4;
+	// 판에서 빠진(탈락한) 플레이어 엔티티들
+	repeated string eliminated_entity_ids = 5;
 }
