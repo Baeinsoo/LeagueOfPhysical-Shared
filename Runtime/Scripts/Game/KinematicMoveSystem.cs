@@ -12,6 +12,8 @@ namespace LOP
     public class KinematicMoveSystem
     {
         const float Gravity = -9.81f * 2f;   // 서버 Physics.gravity.y와 같은 값 유지(낙하 가속)
+        //  캐릭터가 넘어갈 수 있는 턱 높이. 예전엔 커널 상수였다.
+        const float StepOffset = 0.1f;
 
         private readonly ICollisionQuery _query;
         private readonly int _layerMask;
@@ -36,7 +38,8 @@ namespace LOP
             vel.y += Gravity * deltaTime;   // 중력 = 분리된 수직 스텝(컨트롤러 레이어). mover는 이걸 모름.
 
             var result = KinematicMover.Move(new KinematicMoveInput(
-                transform.Position.ToUnity(), vel, body.Radius, body.Height, deltaTime, _layerMask), _query);
+                transform.Position.ToUnity(), vel, body.Radius, body.Height, deltaTime,
+                _layerMask, stepOffset: StepOffset), _query);
 
             transform.Position = result.position.ToNumerics();
             velocity.Linear = result.velocity.ToNumerics();

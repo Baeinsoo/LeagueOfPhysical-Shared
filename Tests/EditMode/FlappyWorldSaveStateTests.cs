@@ -52,5 +52,34 @@ namespace LOP.Tests
             Assert.That(bird.Get<FlappyStun>().StunRemaining, Is.EqualTo(stunAtSave).Within(0.0001f));
             Assert.That(bird.Get<FlappyStun>().InvulnRemaining, Is.EqualTo(invulnAtSave).Within(0.0001f));
         }
+
+        [Test]
+        public void 저장된_틱의_스턴을_되돌려_읽을_수_있다()
+        {
+            //  보정 핸들러가 "그 틱에 내가 뭘 예측했나"를 서버 값과 비교하려면 이 조회가 필요하다.
+            var world = FlappyWorldFixture.Create(new FlappyWorldFixture.AlwaysHit(), out var bird);
+            world.GameplayStartTick = 0;
+
+            world.Tick(5, 0.02f);
+            world.SaveState(5);
+            float atFive = bird.Get<FlappyStun>().StunRemaining;
+
+            for (long t = 6; t <= 10; t++) { world.Tick(t, 0.02f); world.SaveState(t); }
+            float afterMore = bird.Get<FlappyStun>().StunRemaining;
+            Assert.That(afterMore, Is.LessThan(atFive));   // 줄었다 — 저장된 값과 현재 값이 다르다
+
+            Assert.IsTrue(world.TryGetSavedStun(5, bird.Id, out var saved));
+            Assert.AreEqual(atFive, saved.StunRemaining, 1e-4f);
+            Assert.That(saved.StunRemaining, Is.GreaterThan(afterMore));   // 돌려준 값이 현재와 다르다 = 저장된 프레임을 읽었다
+        }
+
+        [Test]
+        public void 저장이_없는_틱은_false다()
+        {
+            var world = FlappyWorldFixture.Create(new FlappyWorldFixture.AlwaysHit(), out var bird);
+            world.GameplayStartTick = 0;
+
+            Assert.IsFalse(world.TryGetSavedStun(999, bird.Id, out _));
+        }
     }
 }

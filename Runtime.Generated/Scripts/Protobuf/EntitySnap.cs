@@ -24,19 +24,20 @@ public static partial class EntitySnapReflection {
         string.Concat(
           "ChBFbnRpdHlTbmFwLnByb3RvGhJQcm90b1ZlY3RvcjMucHJvdG8aHVByb3Rv",
           "TW90aW9uQ29udHJpYnV0aW9uLnByb3RvGhdQcm90b0FjdGl2ZUVmZmVjdC5w",
-          "cm90byL4AgoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
+          "cm90byKNAwoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
           "aXRpb24YAiABKAsyDS5Qcm90b1ZlY3RvcjMSHwoIcm90YXRpb24YAyABKAsy",
           "DS5Qcm90b1ZlY3RvcjMSHwoIdmVsb2NpdHkYBCABKAsyDS5Qcm90b1ZlY3Rv",
           "cjMSDgoGbWF4X0hQGAUgASgFEhIKCmN1cnJlbnRfSFAYBiABKAUSNgoUbW90",
           "aW9uX2NvbnRyaWJ1dGlvbnMYByADKAsyGC5Qcm90b01vdGlvbkNvbnRyaWJ1",
           "dGlvbhIQCghncm91bmRlZBgIIAEoCBIZChFhY3RpdmVfYWJpbGl0eV9pZBgJ",
           "IAEoBRIYChBhYmlsaXR5X2VuZF90aWNrGAogASgDEioKDnN0YXR1c19lZmZl",
-          "Y3RzGAsgAygLMhIuUHJvdG9BY3RpdmVFZmZlY3QSDwoHc3R1bm5lZBgMIAEo",
-          "CBIUCgxpbnZ1bG5lcmFibGUYDSABKAhiBnByb3RvMw=="));
+          "Y3RzGAsgAygLMhIuUHJvdG9BY3RpdmVFZmZlY3QSFQoNc3R1bl9lbmRfdGlj",
+          "axgOIAEoAxIXCg9pbnZ1bG5fZW5kX3RpY2sYDyABKANKBAgMEA1KBAgNEA5i",
+          "BnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::ProtoVector3Reflection.Descriptor, global::ProtoMotionContributionReflection.Descriptor, global::ProtoActiveEffectReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "Stunned", "Invulnerable" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick" }, null, null, null, null)
         }));
   }
   #endregion
@@ -89,8 +90,8 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     activeAbilityId_ = other.activeAbilityId_;
     abilityEndTick_ = other.abilityEndTick_;
     statusEffects_ = other.statusEffects_.Clone();
-    stunned_ = other.stunned_;
-    invulnerable_ = other.invulnerable_;
+    stunEndTick_ = other.stunEndTick_;
+    invulnEndTick_ = other.invulnEndTick_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -236,33 +237,33 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     get { return statusEffects_; }
   }
 
-  /// <summary>Field number for the "stunned" field.</summary>
-  public const int StunnedFieldNumber = 12;
-  private bool stunned_;
+  /// <summary>Field number for the "stun_end_tick" field.</summary>
+  public const int StunEndTickFieldNumber = 14;
+  private long stunEndTick_;
   /// <summary>
-  /// Flappy: 맵에 부딪혀 멈춰 있는 중
+  /// Flappy: 멈춤이 풀리는 절대 틱. 0 = 안 멈춤
   /// </summary>
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public bool Stunned {
-    get { return stunned_; }
+  public long StunEndTick {
+    get { return stunEndTick_; }
     set {
-      stunned_ = value;
+      stunEndTick_ = value;
     }
   }
 
-  /// <summary>Field number for the "invulnerable" field.</summary>
-  public const int InvulnerableFieldNumber = 13;
-  private bool invulnerable_;
+  /// <summary>Field number for the "invuln_end_tick" field.</summary>
+  public const int InvulnEndTickFieldNumber = 15;
+  private long invulnEndTick_;
   /// <summary>
-  /// Flappy: 스턴이 풀린 뒤 잠시 다시 안 걸리는 중
+  /// Flappy: 다시 안 걸리는 구간이 끝나는 절대 틱. 0 = 아님
   /// </summary>
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public bool Invulnerable {
-    get { return invulnerable_; }
+  public long InvulnEndTick {
+    get { return invulnEndTick_; }
     set {
-      invulnerable_ = value;
+      invulnEndTick_ = value;
     }
   }
 
@@ -292,8 +293,8 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (ActiveAbilityId != other.ActiveAbilityId) return false;
     if (AbilityEndTick != other.AbilityEndTick) return false;
     if(!statusEffects_.Equals(other.statusEffects_)) return false;
-    if (Stunned != other.Stunned) return false;
-    if (Invulnerable != other.Invulnerable) return false;
+    if (StunEndTick != other.StunEndTick) return false;
+    if (InvulnEndTick != other.InvulnEndTick) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -312,8 +313,8 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (ActiveAbilityId != 0) hash ^= ActiveAbilityId.GetHashCode();
     if (AbilityEndTick != 0L) hash ^= AbilityEndTick.GetHashCode();
     hash ^= statusEffects_.GetHashCode();
-    if (Stunned != false) hash ^= Stunned.GetHashCode();
-    if (Invulnerable != false) hash ^= Invulnerable.GetHashCode();
+    if (StunEndTick != 0L) hash ^= StunEndTick.GetHashCode();
+    if (InvulnEndTick != 0L) hash ^= InvulnEndTick.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -370,13 +371,13 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteInt64(AbilityEndTick);
     }
     statusEffects_.WriteTo(output, _repeated_statusEffects_codec);
-    if (Stunned != false) {
-      output.WriteRawTag(96);
-      output.WriteBool(Stunned);
+    if (StunEndTick != 0L) {
+      output.WriteRawTag(112);
+      output.WriteInt64(StunEndTick);
     }
-    if (Invulnerable != false) {
-      output.WriteRawTag(104);
-      output.WriteBool(Invulnerable);
+    if (InvulnEndTick != 0L) {
+      output.WriteRawTag(120);
+      output.WriteInt64(InvulnEndTick);
     }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
@@ -426,13 +427,13 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteInt64(AbilityEndTick);
     }
     statusEffects_.WriteTo(ref output, _repeated_statusEffects_codec);
-    if (Stunned != false) {
-      output.WriteRawTag(96);
-      output.WriteBool(Stunned);
+    if (StunEndTick != 0L) {
+      output.WriteRawTag(112);
+      output.WriteInt64(StunEndTick);
     }
-    if (Invulnerable != false) {
-      output.WriteRawTag(104);
-      output.WriteBool(Invulnerable);
+    if (InvulnEndTick != 0L) {
+      output.WriteRawTag(120);
+      output.WriteInt64(InvulnEndTick);
     }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
@@ -473,11 +474,11 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       size += 1 + pb::CodedOutputStream.ComputeInt64Size(AbilityEndTick);
     }
     size += statusEffects_.CalculateSize(_repeated_statusEffects_codec);
-    if (Stunned != false) {
-      size += 1 + 1;
+    if (StunEndTick != 0L) {
+      size += 1 + pb::CodedOutputStream.ComputeInt64Size(StunEndTick);
     }
-    if (Invulnerable != false) {
-      size += 1 + 1;
+    if (InvulnEndTick != 0L) {
+      size += 1 + pb::CodedOutputStream.ComputeInt64Size(InvulnEndTick);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -529,11 +530,11 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       AbilityEndTick = other.AbilityEndTick;
     }
     statusEffects_.Add(other.statusEffects_);
-    if (other.Stunned != false) {
-      Stunned = other.Stunned;
+    if (other.StunEndTick != 0L) {
+      StunEndTick = other.StunEndTick;
     }
-    if (other.Invulnerable != false) {
-      Invulnerable = other.Invulnerable;
+    if (other.InvulnEndTick != 0L) {
+      InvulnEndTick = other.InvulnEndTick;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -607,12 +608,12 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
           statusEffects_.AddEntriesFrom(input, _repeated_statusEffects_codec);
           break;
         }
-        case 96: {
-          Stunned = input.ReadBool();
+        case 112: {
+          StunEndTick = input.ReadInt64();
           break;
         }
-        case 104: {
-          Invulnerable = input.ReadBool();
+        case 120: {
+          InvulnEndTick = input.ReadInt64();
           break;
         }
       }
@@ -687,12 +688,12 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
           statusEffects_.AddEntriesFrom(ref input, _repeated_statusEffects_codec);
           break;
         }
-        case 96: {
-          Stunned = input.ReadBool();
+        case 112: {
+          StunEndTick = input.ReadInt64();
           break;
         }
-        case 104: {
-          Invulnerable = input.ReadBool();
+        case 120: {
+          InvulnEndTick = input.ReadInt64();
           break;
         }
       }

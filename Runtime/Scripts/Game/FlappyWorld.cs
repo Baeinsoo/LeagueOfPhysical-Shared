@@ -30,8 +30,12 @@ namespace LOP
         private readonly List<GameFramework.World.Entity> _birds = new List<GameFramework.World.Entity>();
         private readonly List<GameFramework.World.Entity> _bodies = new List<GameFramework.World.Entity>();
 
-        // KinematicMover.Move에게 넘길 실제 쿼리를 감싸, sweep 도중(수평·수직 어느 스텝이든) 한 번이라도
-        // 히트가 있었는지만 기록한다. 매 틱 재사용해 새 인스턴스를 만들지 않는다.
+        // KinematicMover.Move에게 넘길 실제 쿼리를 감싸, sweep 도중 한 번이라도 히트가 있었는지만
+        // 기록한다. 매 틱 재사용해 새 인스턴스를 만들지 않는다.
+        // ⚠️ 센다: 이동 전 지면 탐침 + 수평 + 수직(+ stepOffset>0이면 턱 오르기 최대 3개 더).
+        // 지면 탐침도 여기 잡힌다 — 커널이 "지면을 찾으려고" 쏜 캐스트가 실제 sweep이라 Flappy에선
+        // "맵에 부딪혔다"로 읽힌다(아래 MoveBlockedByMap의 SawHit→Enter). 열린 항목 O4, 라이브에서
+        // 먼저 본다(design §9).
         private readonly HitTrackingQuery _hitTracker = new HitTrackingQuery();
 
         // 스턴 타이머의 틱별 사진. 위치·속도는 WorldBase가 담는다.
@@ -91,8 +95,8 @@ namespace LOP
 
             // 전원의 속도가 정해진 뒤 한 번(페이즈 배리어). 새끼리 겹침은 여기서 다 풀리므로
             // 아래 물리 브릿지의 Separate는 부르지 않는다.
-            // movers=_birds, bodies=_bodies — 서버는 둘이 같은 집합(모든 새가 Simulated)이라
-            // 지금과 같은 양방향 몸싸움이고, 클라는 원격을 밀어내지 못하는 한쪽 몸싸움이 된다.
+            // movers=_birds, bodies=_bodies — 지금은 클·서 모두 두 목록이 같은 집합이다(모든 새가
+            // Simulated). 그래서 양쪽 다 서로를 밀어내는 양방향 몸싸움이고 결과도 같다.
             _bodyCollisionSystem.Resolve(_birds, _bodies);
 
             // 벽 안이면 밖으로 밀어낸다 — 스폰 겹침이든 방금 몸싸움이 처박은 것이든. 겹침이
@@ -141,6 +145,17 @@ namespace LOP
             return true;
         }
 
+        /// <summary>그 틱에 저장해 둔 스턴 상태. 서버 스냅과 비교해 되돌릴지 정할 때 쓴다.</summary>
+        public bool TryGetSavedStun(long tick, string entityId, out FlappySavedState state)
+        {
+            if (_gameFrames.TryGet(tick, out var frame) && frame.TryGetValue(entityId, out state))
+            {
+                return true;
+            }
+            state = default;
+            return false;
+        }
+
         // 굴리는 대상과 부딪히는 상대는 다르다. 클라에서 원격은 굴리지 않지만(외삽으로 그린다)
         // 내 새가 그 자리에 부딪히기는 해야 한다 — 부딪힘이 서버 왕복 뒤에 보이면 반응이 굼뜨다.
         // "새인가"는 EntityKind로 가린다 — FlappyStun은 스턴 *타이머*라 정체성 표식이
@@ -160,13 +175,12 @@ namespace LOP
                 {
                     continue;   // 새가 아니다
                 }
-                // 알려진 한계: _bodies에는 원격(Simulated 아닌) 새도 들어간다. 그런데
-                // WorldBase.SaveState는 Simulated 엔티티의 위치·속도만 저장한다(LoadState도 그것만
-                // 되돌린다) — 되감기 재생(rollback replay) 중에는 원격 새의 위치가 "그 틱 당시" 값이
-                // 아니라 재생을 시작한 지금 프레임의 값 그대로 고정돼 있다. 그래서 재생 중 몸싸움
-                // 판정은 원격의 과거 위치가 아니라 현재 위치를 기준으로 계산된다. 원격도 그 틱 위치로
-                // 되감아야 하는 콘텐츠(예: 몸싸움 결과가 프레임 하나 차이로 크게 갈리는 상황)가 생기면
-                // 그때 원격 모션도 SaveState 대상에 넣는 걸 재검토한다.
+                // 지금은 모든 새가 Simulated라 두 목록이 같아진다. WorldBase.SaveState/LoadState가
+                // Simulated 엔티티의 위치·속도를 담으므로 되감기 재생 중에도 남의 새가 "그 틱 당시"
+                // 자리로 돌아간다 — 예전에 여기 적혀 있던 "재생이 원격을 못 되감는다"는 한계는
+                // 남의 새를 시뮬 대상에 넣으면서 사라졌다.
+                // 두 목록을 그대로 두는 이유는, 굴릴 대상과 부딪힐 상대가 개념상 다른 축이라
+                // 사이드 정책(Simulated를 누구에게 주는가)이 바뀌어도 이 코드가 그대로여야 해서다.
                 _bodies.Add(entity);
                 if (entity.Has<GameFramework.World.Simulated>())
                 {
@@ -182,11 +196,20 @@ namespace LOP
         // 취지였다. 지금은 반대로 막으므로 이름도 그에 맞춘다.)
         // "부딪혔는가"는 스턴 진입에 따로 필요하다 — KinematicMoveResult엔 그 정보가 없어서
         // (grounded만 있음) _hitTracker로 실제 쿼리를 감싸 sweep 도중 히트가 있었는지 기록한다.
+        // ⚠️ 이 히트에는 이동 전 지면 탐침(맨 위 _hitTracker 선언부 참고)도 섞여 있다 — 그래서
+        // 지면 5cm 이내에서 세로 속도가 (-1.4, 0]이면(플랩 포물선 꼭짓점 부근) 맵에 안 닿았어도
+        // 스턴이 걸릴 수 있다. 열린 항목 O4, 라이브에서 먼저 본다.
         //  파묻힌 데서 밀려 나왔다면, 그 벽 쪽으로 파고들던 속도는 지운다.
         //  안 지우면: 캡슐이 콜라이더 *안*에서 시작한 sweep은 히트를 못 내(시작 겹침은 무시된다)
         //  "닿았으니 속도 0" 경로가 안 돌고, 막혀 있는데 중력만 계속 쌓인다. 그 상태로 밀어내기와
-        //  줄다리기가 붙어 새가 제자리에서 갈리고, 그 미세한 차이가 클·서에서 갈려 보정이 계속 난다
-        //  (실측: 낙하속도가 -14까지 쌓이는 동안 실제로는 0.11밖에 안 내려갔다).
+        //  줄다리기가 붙어 새가 제자리에서 갈리고, 그 미세한 차이가 클·서에서 갈려 보정이 계속 난다.
+        //  (역사: 이 실측(-14까지 쌓이는 동안 실제로는 0.11밖에 안 내려감)은 수평 sweep이 몸을
+        //  들어올려 검사하던 시절 — 즉 오르막에서 파묻힘이 상시 일어나던 시절 — 값이다. 이 브랜치가
+        //  그 파묻힘을 없앴으므로 지금은 상시 근거가 아니라 "왜 이 코드가 생겼는지"의 역사다.
+        //  지금 이 함수가 실제로 발동하는 경로는 셋뿐이다: ① _bodyCollisionSystem.Resolve가 새를
+        //  지형 안으로 처박을 때 ② 스폰 겹침 ③ MoveBlockedByMap의 z=0 클램프가 몸을 벽 안으로
+        //  되밀 때. 발동할 때 세로 속도를 만드는 게 커널 규칙 D5("경사는 세로 속도를 안 늘린다")와
+        //  어긋난다는 점은 열린 항목 O1로 남아 있다.)
         //  민 방향의 반대 성분만 덜어낸다 — 벽을 따라 흐르던 속도는 살려 둬야 미끄러져 빠져나온다.
         private static void ClearVelocityIntoSurface(GameFramework.World.Entity bird, System.Numerics.Vector3 push)
         {
@@ -218,9 +241,10 @@ namespace LOP
             }
 
             _hitTracker.Reset(_collisionQuery);
+            //  새는 날아다니므로 턱을 오를 이유가 없다. 0을 준다.
             var result = KinematicMover.Move(new KinematicMoveInput(
                 transform.Position.ToUnity(), velocity.Linear.ToUnity(),
-                body.Radius, body.Height, deltaTime, _layerMask), _hitTracker);
+                body.Radius, body.Height, deltaTime, _layerMask, stepOffset: 0f), _hitTracker);
 
             if (_hitTracker.SawHit)
             {

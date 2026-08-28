@@ -52,6 +52,9 @@ namespace LOP.Tests
         // 수평·수직을 나눠 따로 sweep하므로(각각 최대 한 번 이상) 호출 횟수는 방향 개수만큼 나온다.
         // 받은 인자를 기록해 phase ⑤가 실제로 엔티티가 들고 있는 몸 치수(반지름)·월드가 받은
         // 레이어마스크를 쓰는지 검증한다.
+        // 이 스텁이 흉내내려는 건 앞을 막는 벽이다. 방향을 안 가리면 이동 전 지면 탐침(아래 방향)까지
+        // 벽으로 답해 법선이 위를 향하고, 커널이 그걸 지면으로 오인한다. 그래서 수직 방향(위/아래)
+        // 캐스트는 None으로 흘려보낸다 — 몇 번 불렸는지는 여전히 세어(CastCount) 둔다.
         private class WallAheadQuery : ICollisionQuery
         {
             private readonly float _hitDistance;
@@ -72,7 +75,11 @@ namespace LOP.Tests
             {
                 LastRadius = radius;
                 LastLayerMask = layerMask;
-                CastCount++;   // 수평·수직 sweep을 둘 다 센다
+                CastCount++;   // 이동 전 지면 탐침 + 수평 + 수직 sweep을 전부 센다
+                if (Mathf.Abs(direction.y) > 0.5f)
+                {
+                    return CollisionHit.None;
+                }
                 return new CollisionHit(true, _hitDistance, _normal, point1 + direction * _hitDistance, null);
             }
 
@@ -268,9 +275,10 @@ namespace LOP.Tests
             // 대신 스턴에 걸린다 — 페널티는 위치 차단과 별개로 여전히 멈춰 있는 시간이다.
             Assert.That(bird.Get<FlappyStun>().StunRemaining, Is.GreaterThan(0f));
 
-            // 그리고 그 판정은 실제로 일어났고(수평·수직 각 sweep에서 한 번씩, 총 두 번),
+            // 그리고 그 판정은 실제로 일어났고(이동 전 지면 탐침 1 + 수평 sweep 1 + 수직 sweep 1,
+            // 총 세 번 — 지면 탐침은 낙하 중일 때만 도는 별도 아래 방향 캐스트다),
             // 엔티티 자신의 몸 치수·월드가 받은 레이어마스크로 이뤄졌다.
-            Assert.AreEqual(2, wallQuery.CastCount);
+            Assert.AreEqual(3, wallQuery.CastCount);
             Assert.AreEqual(Config().BodyRadius, wallQuery.LastRadius, Tolerance);
             Assert.AreEqual(layerMask, wallQuery.LastLayerMask);
         }
@@ -297,6 +305,31 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 입력이_안_들어온_새는_안_누른_것으로_굴러간다()
+        {
+            //  이 Bird()가 InputBuffer를 안 붙인 채로 두는 건 임의 선택이 아니라, 클라의
+            //  CharacterCreator/FlappyBirdCreator가 실제로 하는 일을 그대로 옮긴 것이다 —
+            //  둘 다 worldEntity.Add(new InputBuffer())를 isUserEntity일 때만 부르므로, 남의
+            //  새는 그 컴포넌트가 아예 없다. FlappyMoveSystem은 Get<InputBuffer>()가 null이면
+            //  null-조건부로 그냥 넘어가므로, 컴포넌트가 없는 새는 몇 틱을 굴리든 한 번도
+            //  날갯짓하지 않고 중력만 먹어야 한다 — 이게 실제 프로덕션에서 남의 새가 굴러가는
+            //  방식이다.
+            var registry = new EntityRegistry();
+            var bird = Bird("bird-1", Vector3.zero, simulated: true);
+            registry.Add(bird);
+            var world = World(registry, new NoopMotionBridge());
+
+            for (long t = 1; t <= 5; t++)
+            {
+                world.Tick(t, 0.02f);
+            }
+
+            //  순수 중력 누적(−70 × 0.02 × 5)과 정확히 같아야 한다 — 날갯짓이 단 한 번이라도
+            //  끼어들었다면 이 값이 FlapImpulse(23)로 덮여 크게 벌어진다.
+            Assert.AreEqual(-7f, VelocityOf(bird).y, Tolerance);
+        }
+
+        [Test]
         public void 몸이_없는_엔티티는_맵_이동을_하지_않는다()
         {
             var registry = new EntityRegistry();
@@ -316,6 +349,88 @@ namespace LOP.Tests
             Assert.AreEqual(Vector3.zero, PositionOf(noBody));
             // 몸이 없어 "위치 이동"만 못 한다는 걸 못박는다 — 속도 계산(전진·중력)은 여전히 돌았다.
             Assert.That(VelocityOf(noBody).x, Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void 조용한_구간은_9틱_전_상태에서_다시_굴려도_정확히_일치하고_날갯짓_구간은_그렇지_않다()
+        {
+            //  이 테스트가 이 슬라이스 전체의 값어치다(스펙 §8.2). 외삽(마지막 속도로 이어 그리기)은
+            //  날갯짓이 하나도 없는 조용한 구간에서도 진실과 항상 어긋났다(실측 0.126m, 빠르게
+            //  떨어질 땐 1.13m까지). 시뮬은 그 구간에서 "9틱 전의 진짜 상태에서 다시 굴리면 지금과
+            //  정확히 같다"는, 외삽으로는 절대 못 만드는 성질을 가져야 한다.
+            //
+            //  대신 시뮬도 만능은 아니다 — 그 9틱 사이에 날갯짓이 실제로 있었다면, 입력이 안 온
+            //  재현은 그 날갯짓을 모르니 갈라진다. 아래 두 번째 assert가 그 대조다: "조용하면
+            //  정확히 맞고, 날갯짓이 끼면 안 맞는다"는 비대칭 자체가 이 설계가 사는 이유다.
+            var registry = new EntityRegistry();
+            var truth = Bird("truth", Vector3.zero, simulated: true);
+            truth.Add(new InputBuffer());
+            registry.Add(truth);
+            var world = World(registry, new NoopMotionBridge());
+
+            //  틱 5에서 딱 한 번만 날갯짓한다. 그 외 틱은 매번 새로 "안 눌렀다"를 세운다 —
+            //  PlayerInputManager가 매 프레임 pendingJump를 소비한 뒤 리셋하는 것과 같은 모양이다
+            //  (Current를 stale하게 남겨두는 시나리오가 아니다).
+            const int FlapTick = 5;
+            const int TotalTicks = 20;
+            const int Window = 9;
+            var positions = new Vector3[TotalTicks + 1];
+            var velocities = new Vector3[TotalTicks + 1];
+            positions[0] = Vector3.zero;
+            velocities[0] = Vector3.zero;
+
+            for (int t = 1; t <= TotalTicks; t++)
+            {
+                truth.Get<InputBuffer>().Current = new InputCommand { Jump = t == FlapTick };
+                world.Tick(t, 0.02f);
+                positions[t] = PositionOf(truth);
+                velocities[t] = VelocityOf(truth);
+            }
+
+            // --- 조용한 구간: (T-9, T]에 날갯짓이 없다. T=20이면 창은 틱 12~20 — 날갯짓(틱 5)은 그 전에
+            // 이미 끝나 창 밖이다. 9틱 전(틱 11) 상태만 들고 다시 굴리면 틱 20의 진실과 맞아야 한다.
+            const int QuietTargetTick = 20;
+            int quietSourceTick = QuietTargetTick - Window;   // 11
+
+            var quietRegistry = new EntityRegistry();
+            var quietBird = Bird("quiet-repro", positions[quietSourceTick], simulated: true);
+            quietBird.Get<Velocity>().Linear = velocities[quietSourceTick].ToNumerics();
+            //  InputBuffer를 아예 안 붙인다 — 남의 새가 실제로 클라에서 굴러가는 모양(입력 자체가 없음)이다.
+            quietRegistry.Add(quietBird);
+            var quietWorld = World(quietRegistry, new NoopMotionBridge());
+            for (int t = 1; t <= Window; t++)
+            {
+                quietWorld.Tick(t, 0.02f);
+            }
+
+            //  느슨한 허용오차가 아니라 float 잡음 수준(1e-4)으로 본다 — 헐거우면 회귀도 통과시키고,
+            //  옛 외삽 공식과도 구분이 안 된다(외삽은 조용한 구간에서도 0.126m씩 어긋났다).
+            const float ExactTolerance = 1e-4f;
+            Assert.AreEqual(positions[QuietTargetTick].x, PositionOf(quietBird).x, ExactTolerance);
+            Assert.AreEqual(positions[QuietTargetTick].y, PositionOf(quietBird).y, ExactTolerance);
+            Assert.AreEqual(velocities[QuietTargetTick].y, VelocityOf(quietBird).y, ExactTolerance);
+
+            // --- 대조: (T'-9, T']에 날갯짓이 낀 구간. T'=10이면 창은 틱 2~10 — 날갯짓(틱 5)이 그 안에
+            // 있다. 9틱 전(틱 1) 상태에서 입력 없이 다시 굴리면, 진짜로는 있었던 날갯짓을 재현이 모르니
+            // 틱 10의 진실과 갈라져야 한다 — 안 갈라지면 위 "정확히 일치"가 우연이라는 뜻이다.
+            const int FlapTargetTick = 10;
+            int flapSourceTick = FlapTargetTick - Window;   // 1
+
+            var flapRegistry = new EntityRegistry();
+            var flapBird = Bird("flap-repro", positions[flapSourceTick], simulated: true);
+            flapBird.Get<Velocity>().Linear = velocities[flapSourceTick].ToNumerics();
+            flapRegistry.Add(flapBird);
+            var flapWorld = World(flapRegistry, new NoopMotionBridge());
+            for (int t = 1; t <= Window; t++)
+            {
+                flapWorld.Tick(t, 0.02f);
+            }
+
+            //  1cm는 float 잡음(1e-4)보다 훨씬 크면서, 날갯짓 하나가 만드는 실제 벌어짐보다는
+            //  훨씬 작다 — "그냥 안 같다" 정도가 아니라 "확실히, 의미 있게 안 같다"를 본다.
+            const float DivergenceFloor = 0.01f;
+            float divergence = Mathf.Abs(positions[FlapTargetTick].y - PositionOf(flapBird).y);
+            Assert.That(divergence, Is.GreaterThan(DivergenceFloor));
         }
     }
 }

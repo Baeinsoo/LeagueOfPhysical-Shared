@@ -5,12 +5,22 @@ namespace LOP.Tests
 {
     public class FlappyWorldSolidMapTests
     {
-        //  앞을 막는 벽. 이웃 테스트 파일들의 스텁과 같은 모양으로 둔다.
+        //  이 스텁의 뜻은 "사방이 벽"이다. 벽의 법선은 수평이다 — 아래로 쏜 캐스트에 위쪽 법선을
+        //  돌려주면 커널의 이동 전 지면 탐침이 이 catch-all 벽을 바닥으로 오인해, 몸을 매 틱
+        //  SkinWidth 간격까지 밀어 올린다(그래서 (0,0,0) 기대가 (0,0.04,0)으로 깨졌다).
+        //  법선을 수평으로 고정하면: 수평 이동은 예전 그대로 막히고(진행 방향의 반대), 수직도
+        //  거리 0으로 막혀 중력이 그대로 취소되며, 다만 지면으로는 오인되지 않는다.
         private class WallQuery : ICollisionQuery
         {
             public CollisionHit CapsuleCast(UnityEngine.Vector3 p1, UnityEngine.Vector3 p2, float radius,
                 UnityEngine.Vector3 direction, float distance, int layerMask)
-                => new CollisionHit(true, 0f, -direction, p1, null);
+                => new CollisionHit(true, 0f, BlockingNormal(direction), p1, null);
+
+            private static UnityEngine.Vector3 BlockingNormal(UnityEngine.Vector3 direction)
+            {
+                UnityEngine.Vector3 flat = new UnityEngine.Vector3(-direction.x, 0f, -direction.z);
+                return flat.sqrMagnitude > 1e-6f ? flat.normalized : UnityEngine.Vector3.left;
+            }
 
             public CollisionHit Raycast(UnityEngine.Vector3 origin, UnityEngine.Vector3 direction, float distance, int layerMask)
                 => CollisionHit.None;
