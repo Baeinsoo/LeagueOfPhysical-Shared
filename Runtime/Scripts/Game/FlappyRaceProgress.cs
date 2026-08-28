@@ -5,7 +5,9 @@ namespace LOP
     /// <summary>
     /// Flappy Race의 완주 판정. 물리도 엔티티도 모르고 <b>x 좌표만</b> 받아 답한다.
     /// 코스가 +x 한 줄이고 새는 뒤로 가지 않아서 한 축이면 충분하다.
-    /// (판치기의 <see cref="PanchigiTurn"/>과 같은 자리 — 룰은 공용 순수 C#, 서버는 배선만.)
+    /// (판치기의 진행 규칙 <c>PanchigiTurn</c>은 서버 전용이라 서버(LeagueOfPhysical-Server)로
+    /// 돌아갔다 — 이건 반대로, x 좌표 비교뿐인 순수 함수라 클라도 언젠가 같은 답을 로컬로 내야 할
+    /// 수 있어 공용에 남긴다.)
     /// </summary>
     public class FlappyRaceProgress
     {
