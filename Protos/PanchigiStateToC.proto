@@ -16,4 +16,6 @@ message PanchigiStateToC
 	map<string, int32> drop_out_counts = 4;
 	// 판에서 빠진(탈락한) 플레이어 엔티티들
 	repeated string eliminated_entity_ids = 5;
+	// 지금까지 지나간 턴 수(친 것 + 패스한 것). 상한은 클라도 마스터데이터에서 직접 읽는다.
+	int32 turn_count = 6;
 }

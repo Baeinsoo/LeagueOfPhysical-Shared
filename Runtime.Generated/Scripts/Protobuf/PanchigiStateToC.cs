@@ -22,16 +22,17 @@ public static partial class PanchigiStateToCReflection {
   static PanchigiStateToCReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChZQYW5jaGlnaVN0YXRlVG9DLnByb3RvIusBChBQYW5jaGlnaVN0YXRlVG9D",
+          "ChZQYW5jaGlnaVN0YXRlVG9DLnByb3RvIv8BChBQYW5jaGlnaVN0YXRlVG9D",
           "Eg0KBXBoYXNlGAEgASgFEhkKEWN1cnJlbnRfZW50aXR5X2lkGAIgASgJEhkK",
           "EWFpbV9kZWFkbGluZV90aWNrGAMgASgDEj0KD2Ryb3Bfb3V0X2NvdW50cxgE",
           "IAMoCzIkLlBhbmNoaWdpU3RhdGVUb0MuRHJvcE91dENvdW50c0VudHJ5Eh0K",
-          "FWVsaW1pbmF0ZWRfZW50aXR5X2lkcxgFIAMoCRo0ChJEcm9wT3V0Q291bnRz",
-          "RW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4AWIGcHJvdG8z"));
+          "FWVsaW1pbmF0ZWRfZW50aXR5X2lkcxgFIAMoCRISCgp0dXJuX2NvdW50GAYg",
+          "ASgFGjQKEkRyb3BPdXRDb3VudHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFs",
+          "dWUYAiABKAU6AjgBYgZwcm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::PanchigiStateToC), global::PanchigiStateToC.Parser, new[]{ "Phase", "CurrentEntityId", "AimDeadlineTick", "DropOutCounts", "EliminatedEntityIds" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, })
+          new pbr::GeneratedClrTypeInfo(typeof(global::PanchigiStateToC), global::PanchigiStateToC.Parser, new[]{ "Phase", "CurrentEntityId", "AimDeadlineTick", "DropOutCounts", "EliminatedEntityIds", "TurnCount" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, })
         }));
   }
   #endregion
@@ -83,6 +84,7 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
     aimDeadlineTick_ = other.aimDeadlineTick_;
     dropOutCounts_ = other.dropOutCounts_.Clone();
     eliminatedEntityIds_ = other.eliminatedEntityIds_.Clone();
+    turnCount_ = other.turnCount_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -166,6 +168,21 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
     get { return eliminatedEntityIds_; }
   }
 
+  /// <summary>Field number for the "turn_count" field.</summary>
+  public const int TurnCountFieldNumber = 6;
+  private int turnCount_;
+  /// <summary>
+  /// 지금까지 지나간 턴 수(친 것 + 패스한 것). 상한은 클라도 마스터데이터에서 직접 읽는다.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int TurnCount {
+    get { return turnCount_; }
+    set {
+      turnCount_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -186,6 +203,7 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
     if (AimDeadlineTick != other.AimDeadlineTick) return false;
     if (!DropOutCounts.Equals(other.DropOutCounts)) return false;
     if(!eliminatedEntityIds_.Equals(other.eliminatedEntityIds_)) return false;
+    if (TurnCount != other.TurnCount) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -198,6 +216,7 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
     if (AimDeadlineTick != 0L) hash ^= AimDeadlineTick.GetHashCode();
     hash ^= DropOutCounts.GetHashCode();
     hash ^= eliminatedEntityIds_.GetHashCode();
+    if (TurnCount != 0) hash ^= TurnCount.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -230,6 +249,10 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
     }
     dropOutCounts_.WriteTo(output, _map_dropOutCounts_codec);
     eliminatedEntityIds_.WriteTo(output, _repeated_eliminatedEntityIds_codec);
+    if (TurnCount != 0) {
+      output.WriteRawTag(48);
+      output.WriteInt32(TurnCount);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -254,6 +277,10 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
     }
     dropOutCounts_.WriteTo(ref output, _map_dropOutCounts_codec);
     eliminatedEntityIds_.WriteTo(ref output, _repeated_eliminatedEntityIds_codec);
+    if (TurnCount != 0) {
+      output.WriteRawTag(48);
+      output.WriteInt32(TurnCount);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -275,6 +302,9 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
     }
     size += dropOutCounts_.CalculateSize(_map_dropOutCounts_codec);
     size += eliminatedEntityIds_.CalculateSize(_repeated_eliminatedEntityIds_codec);
+    if (TurnCount != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(TurnCount);
+    }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
     }
@@ -298,6 +328,9 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
     }
     dropOutCounts_.MergeFrom(other.dropOutCounts_);
     eliminatedEntityIds_.Add(other.eliminatedEntityIds_);
+    if (other.TurnCount != 0) {
+      TurnCount = other.TurnCount;
+    }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
 
@@ -337,6 +370,10 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
           eliminatedEntityIds_.AddEntriesFrom(input, _repeated_eliminatedEntityIds_codec);
           break;
         }
+        case 48: {
+          TurnCount = input.ReadInt32();
+          break;
+        }
       }
     }
   #endif
@@ -374,6 +411,10 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
         }
         case 42: {
           eliminatedEntityIds_.AddEntriesFrom(ref input, _repeated_eliminatedEntityIds_codec);
+          break;
+        }
+        case 48: {
+          TurnCount = input.ReadInt32();
           break;
         }
       }
