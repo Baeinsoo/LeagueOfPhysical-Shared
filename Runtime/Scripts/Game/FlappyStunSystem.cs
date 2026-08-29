@@ -34,6 +34,31 @@ namespace LOP
             stun.StunRemaining = config.StunTime;
         }
 
+        /// <summary>
+        /// 남은 시간을 "끝나는 절대 틱"으로 바꾼다. 와이어로 나가는 유일한 표현이다.
+        ///
+        /// <para><see cref="Epsilon"/>을 먼저 빼는 것이 핵심이다. 매 틱 float를 빼면 0.8초가
+        /// 0.780000031처럼 아주 조금 크게 남는데, 시뮬은 그 조각을 "끝"으로 보지만(<see cref="Tick"/>)
+        /// 올림은 한 틱으로 세어 버린다. 그러면 받는 쪽만 한 틱 더 얼어 있게 되고, 그 한 틱은
+        /// 전진과 중력을 통째로 잃어 같은 틱인데 위치가 다른 상태가 된다(라이브 실측).</para>
+        /// </summary>
+        public static long EndTick(float remaining, long tick, float deltaTime)
+        {
+            //  Epsilon 이하는 시뮬이 이번 틱에 이미 0으로 만든다 = 남은 틱 없음.
+            if (remaining <= Epsilon || deltaTime <= 0f)
+            {
+                return 0;
+            }
+            return tick + (long)System.Math.Ceiling((remaining - Epsilon) / deltaTime);
+        }
+
+        /// <summary>끝나는 절대 틱에서 지금 틱을 빼 남은 시간(초)으로. 이미 지났거나 같으면 0.</summary>
+        public static float RemainingSeconds(long endTick, long tick, float deltaTime)
+        {
+            long remainingTicks = endTick - tick;
+            return remainingTicks > 0 ? remainingTicks * deltaTime : 0f;
+        }
+
         public void Tick(GameFramework.World.Entity entity, float deltaTime)
         {
             var stun = entity.Get<FlappyStun>();
