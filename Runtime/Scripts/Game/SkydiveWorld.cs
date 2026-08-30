@@ -32,7 +32,12 @@ namespace LOP
                 // 출발 전. 속도를 명시적으로 0으로 둔다 — 스냅샷과 물리 팔로워가 이 값을 읽는다.
                 for (int i = 0; i < _divers.Count; i++)
                 {
-                    _divers[i].Get<GameFramework.World.Velocity>().Linear = System.Numerics.Vector3.Zero;
+                    var velocity = _divers[i].Get<GameFramework.World.Velocity>();
+                    if (velocity == null)
+                    {
+                        continue;
+                    }
+                    velocity.Linear = System.Numerics.Vector3.Zero;
                 }
                 return;
             }
