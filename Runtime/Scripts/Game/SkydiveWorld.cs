@@ -11,6 +11,16 @@ namespace LOP
     {
         private readonly SkydiveMoveSystem _moveSystem;
 
+        // TODO(Task 2): SkydiveMoveSystem.Tick이 자세 기반 3인자로 바뀌면서 컴파일만 맞춘 자리다.
+        // 진짜 config는 Task 2가 생성자로 주입한다(MasterData TbSkydiveConfig 연동).
+        private static readonly SkydiveConfig _placeholderConfig = new SkydiveConfig(
+            spreadFallSpeed: 25f, diveFallSpeed: 45f, glideFallSpeed: 6f,
+            spreadMoveSpeed: 12f, diveMoveSpeed: 18f, glideMoveSpeed: 14f,
+            spreadTurnAccel: 22f, diveTurnAccel: 6f, glideTurnAccel: 18f,
+            fallApproach: 30f, postureRate: 4f,
+            bodyRadius: 0.4f, bodyHeight: 1.8f, groundY: 0f,
+            staminaMax: 100f, glideDrain: 20f, groundRecover: 40f, emergencyGlideTime: 1f);
+
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
         private readonly List<GameFramework.World.Entity> _divers = new List<GameFramework.World.Entity>();
 
@@ -44,7 +54,7 @@ namespace LOP
 
             for (int i = 0; i < _divers.Count; i++)
             {
-                _moveSystem.Tick(_divers[i], deltaTime);
+                _moveSystem.Tick(_divers[i], deltaTime, _placeholderConfig);
             }
         }
 
