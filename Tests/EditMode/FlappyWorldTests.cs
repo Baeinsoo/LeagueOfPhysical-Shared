@@ -117,7 +117,6 @@ namespace LOP.Tests
             // 이 파일의 테스트는 출발 게이트가 아니라 이동/충돌을 다룬다 — 이미 출발한 것으로 둔다.
             var world = new FlappyWorld(registry, new WorldEventBuffer(),
                                new FlappyMoveSystem(Config()),
-                               new FlappyBodyCollisionSystem(Config()),
                                new FlappyStunSystem(Config()),
                                new EmptySkyQuery(), bridge, layerMask: ~0);
             world.GameplayStartTick = 0;
@@ -189,7 +188,7 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 겹쳐_있던_두_새는_이동_전에_갈라진다()
+        public void 겹쳐_있던_두_새는_갈라지지_않고_그대로_통과한다()
         {
             var registry = new EntityRegistry();
             var lower = Bird("bird-1", Vector3.zero, simulated: true);
@@ -199,8 +198,10 @@ namespace LOP.Tests
 
             World(registry, new NoopMotionBridge()).Tick(1, 0.1f);
 
-            // 몸싸움으로 위아래 0.39만큼 갈라진 뒤 각자 이동한다 — 서로 파고든 채로 남지 않는다
-            Assert.Greater(PositionOf(upper).y - PositionOf(lower).y, 0.5f);
+            //  새끼리는 안 부딪힌다 — 둘 다 같은 중력을 먹으므로 사이 간격이 처음 그대로다.
+            //  몸싸움이 살아 있었다면 0.5보다 벌어진다(예전 기대값이 그것이었다).
+            //  왜 없앴는지는 FlappyWorld 클래스 주석 참고.
+            Assert.That(PositionOf(upper).y - PositionOf(lower).y, Is.EqualTo(0.5f).Within(1e-4f));
         }
 
         [Test]
@@ -263,7 +264,6 @@ namespace LOP.Tests
             const int layerMask = 1 << 5;   // ~0처럼 아무 값이나 통과하는 마스크가 아니라 실제로 넘겨지는지 구분할 값
             var world = new FlappyWorld(registry, new WorldEventBuffer(),
                                          new FlappyMoveSystem(Config()),
-                                         new FlappyBodyCollisionSystem(Config()),
                                          new FlappyStunSystem(Config()),
                                          wallQuery, new NoopMotionBridge(), layerMask);
             world.GameplayStartTick = 0;   // 이 테스트는 출발 게이트가 아니라 맵 충돌을 다룬다
@@ -294,7 +294,6 @@ namespace LOP.Tests
             var wallQuery = new WallAheadQuery(hitDistance: 0.5f, normal: Vector3.left);
             var world = new FlappyWorld(registry, new WorldEventBuffer(),
                                         new FlappyMoveSystem(Config()),
-                                        new FlappyBodyCollisionSystem(Config()),
                                         new FlappyStunSystem(Config()),
                                         wallQuery, new NoopMotionBridge(), layerMask: ~0);
             world.GameplayStartTick = 0;   // 이 테스트는 출발 게이트가 아니라 맵 충돌을 다룬다

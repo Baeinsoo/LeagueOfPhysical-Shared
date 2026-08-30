@@ -91,7 +91,7 @@ namespace LOP.Tests
 
         private static FlappyWorld Build(EntityRegistry registry, ICollisionQuery collisionQuery, IMotionBridge motionBridge)
             => new FlappyWorld(registry, new WorldEventBuffer(),
-                new FlappyMoveSystem(Config()), new FlappyBodyCollisionSystem(Config()),
+                new FlappyMoveSystem(Config()),
                 new FlappyStunSystem(Config()), collisionQuery, motionBridge, layerMask: ~0);
     }
 }
