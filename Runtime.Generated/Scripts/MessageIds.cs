@@ -20,5 +20,6 @@ namespace LOP
         public const ushort PanchigiStateToC               = 15;
         public const ushort MatchStartToC                  = 16;
         public const ushort MatchReadyToS                  = 17;
+        public const ushort EntityInputsToC                = 18;
     }
 }

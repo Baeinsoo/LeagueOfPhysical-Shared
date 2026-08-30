@@ -98,6 +98,20 @@ namespace LOP
         }
 
         /// <summary>최근 N틱만 남긴다(클라 redundancy 윈도우 유지 — 유실 대비 재전송분).</summary>
+        /// <summary>
+        /// 지정 틱의 커맨드를 이번 틱 소비분(<see cref="InputBuffer.Current"/>)으로 확정하되
+        /// <b>버퍼에서 빼지 않는다.</b> 없으면 Current=null.
+        ///
+        /// <para><see cref="Consume"/>과 다른 이유: 클라는 같은 틱을 <b>여러 번</b> 굴린다(되감기
+        /// 재생). 빼 버리면 두 번째 재생에서 그 입력이 사라져 라이브와 다른 답이 나온다. 서버는
+        /// 한 틱을 한 번만 굴리므로 빼도 되고, 빼야 지각 판정(PruneBefore)이 성립한다.</para>
+        /// </summary>
+        public InputCommand Apply(InputBuffer buffer, long tick)
+        {
+            buffer.Current = buffer.Commands.TryGetValue(tick, out var command) ? command : null;
+            return buffer.Current;
+        }
+
         public void TrimToWindow(InputBuffer buffer, int window)
         {
             while (buffer.Commands.Count > window)
