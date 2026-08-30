@@ -57,17 +57,19 @@ namespace LOP
             if (disc != null)
             {
                 //  캡슐은 쓸 수 없다 — 높이를 지름(2*반지름)보다 낮게 주면 유니티가 그냥 구로 만든다.
-                //  구는 면이 없어서 "엎어졌다/뒤집혔다"가 성립하지 않고, 중심이 반지름만큼 떠 있어
-                //  납작한 겉모습이 판 위에 붕 뜬다. 그래서 면이 있는 박스로 세운다.
-                //  (발자국이 원이 아니라 정사각형이 되지만 이 슬라이스에서는 허용한다.)
-                var box = root.AddComponent<BoxCollider>();
-                box.size = new Vector3(disc.Radius * 2f, disc.Thickness, disc.Radius * 2f);
-                box.center = Vector3.zero;
-                collider = box;
+                //  구는 면이 없어서 "엎어졌다/뒤집혔다"가 성립하지 않는다.
+                //  박스도 쓸 수 없다 — 옆면이 평평해서 **모로 세우면 그대로 안정하게 선다**(실측: 기울기
+                //  7도까지 버팀). 실제 동전이 못 서는 이유는 얇아서가 아니라 옆면이 둥글어 굴러서다.
+                //  그래서 옆면을 촘촘한 다각형으로 깎은 원기둥을 볼록 메시로 쓴다.
+                var mesh = root.AddComponent<MeshCollider>();
+                mesh.sharedMesh = DiscMesh.Get(disc.Radius, disc.Thickness);
+                mesh.convex = true;
+                collider = mesh;
 
                 //  기본 회전 상한(프로젝트 설정 7)은 관성이 아주 작은 동전을 거의 항상 포화시켜
                 //  "어디를 쳤나"가 회전에 반영되지 않는다. 이 몸에서만 풀어 준다.
                 rigidbody.maxAngularVelocity = 100f;
+
             }
             else
             {
