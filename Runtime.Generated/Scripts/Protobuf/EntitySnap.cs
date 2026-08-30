@@ -24,7 +24,7 @@ public static partial class EntitySnapReflection {
         string.Concat(
           "ChBFbnRpdHlTbmFwLnByb3RvGhJQcm90b1ZlY3RvcjMucHJvdG8aHVByb3Rv",
           "TW90aW9uQ29udHJpYnV0aW9uLnByb3RvGhdQcm90b0FjdGl2ZUVmZmVjdC5w",
-          "cm90byKNAwoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
+          "cm90byLFAwoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
           "aXRpb24YAiABKAsyDS5Qcm90b1ZlY3RvcjMSHwoIcm90YXRpb24YAyABKAsy",
           "DS5Qcm90b1ZlY3RvcjMSHwoIdmVsb2NpdHkYBCABKAsyDS5Qcm90b1ZlY3Rv",
           "cjMSDgoGbWF4X0hQGAUgASgFEhIKCmN1cnJlbnRfSFAYBiABKAUSNgoUbW90",
@@ -32,12 +32,13 @@ public static partial class EntitySnapReflection {
           "dGlvbhIQCghncm91bmRlZBgIIAEoCBIZChFhY3RpdmVfYWJpbGl0eV9pZBgJ",
           "IAEoBRIYChBhYmlsaXR5X2VuZF90aWNrGAogASgDEioKDnN0YXR1c19lZmZl",
           "Y3RzGAsgAygLMhIuUHJvdG9BY3RpdmVFZmZlY3QSFQoNc3R1bl9lbmRfdGlj",
-          "axgOIAEoAxIXCg9pbnZ1bG5fZW5kX3RpY2sYDyABKANKBAgMEA1KBAgNEA5i",
-          "BnByb3RvMw=="));
+          "axgOIAEoAxIXCg9pbnZ1bG5fZW5kX3RpY2sYDyABKAMSFAoMcG9zdHVyZV9h",
+          "eGlzGBAgASgCEg8KB2dsaWRpbmcYESABKAgSDwoHc3RhbWluYRgSIAEoAkoE",
+          "CAwQDUoECA0QDmIGcHJvdG8z"));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::ProtoVector3Reflection.Descriptor, global::ProtoMotionContributionReflection.Descriptor, global::ProtoActiveEffectReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick", "PostureAxis", "Gliding", "Stamina" }, null, null, null, null)
         }));
   }
   #endregion
@@ -92,6 +93,9 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     statusEffects_ = other.statusEffects_.Clone();
     stunEndTick_ = other.stunEndTick_;
     invulnEndTick_ = other.invulnEndTick_;
+    postureAxis_ = other.postureAxis_;
+    gliding_ = other.gliding_;
+    stamina_ = other.stamina_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -267,6 +271,51 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
   }
 
+  /// <summary>Field number for the "posture_axis" field.</summary>
+  public const int PostureAxisFieldNumber = 16;
+  private float postureAxis_;
+  /// <summary>
+  /// Skydive: 0 = 대자, 1 = 다이브
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public float PostureAxis {
+    get { return postureAxis_; }
+    set {
+      postureAxis_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "gliding" field.</summary>
+  public const int GlidingFieldNumber = 17;
+  private bool gliding_;
+  /// <summary>
+  /// Skydive: 패러세일을 폈나
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public bool Gliding {
+    get { return gliding_; }
+    set {
+      gliding_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "stamina" field.</summary>
+  public const int StaminaFieldNumber = 18;
+  private float stamina_;
+  /// <summary>
+  /// Skydive: 남은 활공 자원
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public float Stamina {
+    get { return stamina_; }
+    set {
+      stamina_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -295,6 +344,9 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if(!statusEffects_.Equals(other.statusEffects_)) return false;
     if (StunEndTick != other.StunEndTick) return false;
     if (InvulnEndTick != other.InvulnEndTick) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(PostureAxis, other.PostureAxis)) return false;
+    if (Gliding != other.Gliding) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(Stamina, other.Stamina)) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -315,6 +367,9 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     hash ^= statusEffects_.GetHashCode();
     if (StunEndTick != 0L) hash ^= StunEndTick.GetHashCode();
     if (InvulnEndTick != 0L) hash ^= InvulnEndTick.GetHashCode();
+    if (PostureAxis != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(PostureAxis);
+    if (Gliding != false) hash ^= Gliding.GetHashCode();
+    if (Stamina != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(Stamina);
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -379,6 +434,18 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(120);
       output.WriteInt64(InvulnEndTick);
     }
+    if (PostureAxis != 0F) {
+      output.WriteRawTag(133, 1);
+      output.WriteFloat(PostureAxis);
+    }
+    if (Gliding != false) {
+      output.WriteRawTag(136, 1);
+      output.WriteBool(Gliding);
+    }
+    if (Stamina != 0F) {
+      output.WriteRawTag(149, 1);
+      output.WriteFloat(Stamina);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -435,6 +502,18 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(120);
       output.WriteInt64(InvulnEndTick);
     }
+    if (PostureAxis != 0F) {
+      output.WriteRawTag(133, 1);
+      output.WriteFloat(PostureAxis);
+    }
+    if (Gliding != false) {
+      output.WriteRawTag(136, 1);
+      output.WriteBool(Gliding);
+    }
+    if (Stamina != 0F) {
+      output.WriteRawTag(149, 1);
+      output.WriteFloat(Stamina);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -479,6 +558,15 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
     if (InvulnEndTick != 0L) {
       size += 1 + pb::CodedOutputStream.ComputeInt64Size(InvulnEndTick);
+    }
+    if (PostureAxis != 0F) {
+      size += 2 + 4;
+    }
+    if (Gliding != false) {
+      size += 2 + 1;
+    }
+    if (Stamina != 0F) {
+      size += 2 + 4;
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -535,6 +623,15 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
     if (other.InvulnEndTick != 0L) {
       InvulnEndTick = other.InvulnEndTick;
+    }
+    if (other.PostureAxis != 0F) {
+      PostureAxis = other.PostureAxis;
+    }
+    if (other.Gliding != false) {
+      Gliding = other.Gliding;
+    }
+    if (other.Stamina != 0F) {
+      Stamina = other.Stamina;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -616,6 +713,18 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
           InvulnEndTick = input.ReadInt64();
           break;
         }
+        case 133: {
+          PostureAxis = input.ReadFloat();
+          break;
+        }
+        case 136: {
+          Gliding = input.ReadBool();
+          break;
+        }
+        case 149: {
+          Stamina = input.ReadFloat();
+          break;
+        }
       }
     }
   #endif
@@ -694,6 +803,18 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
         }
         case 120: {
           InvulnEndTick = input.ReadInt64();
+          break;
+        }
+        case 133: {
+          PostureAxis = input.ReadFloat();
+          break;
+        }
+        case 136: {
+          Gliding = input.ReadBool();
+          break;
+        }
+        case 149: {
+          Stamina = input.ReadFloat();
           break;
         }
       }

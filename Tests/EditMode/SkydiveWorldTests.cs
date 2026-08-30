@@ -191,6 +191,61 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 저장된_틱의_자세를_되돌려_읽을_수_있다()
+        {
+            //  보정 핸들러(SkydiveServerCorrectionHandler)가 "그 틱에 내가 뭘 예측했나"를
+            //  서버 스냅과 비교하려면 이 조회가 필요하다.
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            diver.Get<InputBuffer>().Current = new InputCommand { Posture = 1f };
+            registry.Add(diver);
+            var world = World(registry);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);
+            world.SaveState(0);
+            float axisAt0 = diver.Get<Posture>().Axis;
+
+            for (int i = 1; i <= 20; i++) { world.Tick(i, 0.02f); world.SaveState(i); }
+            float axisAfterMore = diver.Get<Posture>().Axis;
+            Assert.AreNotEqual(axisAt0, axisAfterMore, "20틱 뒤엔 달라져 있어야 한다");
+
+            Assert.IsTrue(world.TryGetSavedPosture(0, diver.Id, out var saved));
+            Assert.AreEqual(axisAt0, saved.Axis, Tolerance);
+            Assert.AreNotEqual(axisAfterMore, saved.Axis, "돌려준 값이 현재와 달라야 저장된 프레임을 읽은 것");
+        }
+
+        [Test]
+        public void 저장_안_한_틱을_조회하면_false다()
+        {
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            registry.Add(diver);
+            var world = World(registry);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);
+            world.SaveState(0);
+
+            Assert.IsFalse(world.TryGetSavedPosture(999, diver.Id, out _));
+        }
+
+        [Test]
+        public void 없는_엔티티_id를_조회하면_false다()
+        {
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            registry.Add(diver);
+            var world = World(registry);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);
+            world.SaveState(0);
+
+            Assert.IsFalse(world.TryGetSavedPosture(0, "no-such-entity", out _));
+        }
+
+        [Test]
         public void 컴포넌트가_없어도_예외가_나지_않는다()
         {
             var registry = new EntityRegistry();

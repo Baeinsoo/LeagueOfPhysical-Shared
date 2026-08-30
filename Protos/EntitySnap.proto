@@ -18,4 +18,7 @@ message EntitySnap
 	reserved 12, 13;                // 옛 bool stunned / invulnerable — 남은 시간을 못 담아 은퇴
 	int64 stun_end_tick = 14;       // Flappy: 멈춤이 풀리는 절대 틱. 0 = 안 멈춤
 	int64 invuln_end_tick = 15;     // Flappy: 다시 안 걸리는 구간이 끝나는 절대 틱. 0 = 아님
+	float posture_axis = 16;        // Skydive: 0 = 대자, 1 = 다이브
+	bool gliding = 17;              // Skydive: 패러세일을 폈나
+	float stamina = 18;             // Skydive: 남은 활공 자원
 }

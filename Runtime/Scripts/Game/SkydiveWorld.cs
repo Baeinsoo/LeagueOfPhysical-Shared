@@ -159,5 +159,19 @@ namespace LOP
             }
             return true;
         }
+
+        /// <summary>
+        /// 그 틱에 내가 예측했던 자세·스태미나. 서버 스냅과 <b>같은 시점끼리</b> 비교하려면 필요하다 —
+        /// 지금 살아 있는 값과 비교하면 클라가 앞서 달리는 구간 내내 시점이 어긋나 보인다.
+        /// </summary>
+        public bool TryGetSavedPosture(long tick, string entityId, out SkydiveSavedState state)
+        {
+            if (_gameFrames.TryGet(tick, out var frame) && frame.TryGetValue(entityId, out state))
+            {
+                return true;
+            }
+            state = default;
+            return false;
+        }
     }
 }
