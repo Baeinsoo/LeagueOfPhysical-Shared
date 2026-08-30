@@ -8,27 +8,29 @@ namespace LOP
     /// <summary>
     /// Flappy Race의 시뮬 코어. 클·서가 같은 구체 클래스를 돌려 결과가 갈리지 않게 한다.
     /// 한 틱: ⓪ 출발틱 전이면 아무것도 굴리지 않고 속도만 0으로 둔다.
-    /// ① 스턴 시간 감소 → ② 속도(중력·플랩·고정 전진, 스턴 중이면 스킵) → ③ 새끼리 몸싸움 →
-    /// ④ 맵에서 밀어내기(③이 벽 안으로 민 것을 되돌림) → ⑤ 맵은 막으며 이동(MoveBlockedByMap)
+    /// ① 스턴 시간 감소 → ② 속도(중력·플랩·고정 전진, 스턴 중이면 스킵) →
+    /// ③ 맵에서 밀어내기(스폰 겹침 등) → ④ 맵은 막으며 이동(MoveBlockedByMap)
     /// + 부딪히면 스턴 진입(무적 중에도 막힘, 재진입만 안 함).
-    /// ③을 전원의 ② 뒤에 두는 이유는, 한 마리씩 처리하면 먼저 나온 새가 아직 갱신되지 않은
-    /// 상대 속도를 보게 돼 순서가 결과를 가르기 때문이다.
+    ///
+    /// <para><b>새끼리는 부딪히지 않는다 — 서로 통과한다.</b> 몸싸움을 두면 남의 새도 클라가
+    /// 굴려야 하는데(안 굴리면 부딪힐 상대가 없다), 남의 입력은 오지 않으므로 "안 눌렀다"로
+    /// 굴러 상대가 날갯짓할 때마다 크게 어긋났다. 몸싸움을 버리는 대신 남의 새를 <b>지연 스냅샷
+    /// 보간</b>으로 그린다 — 클라가 굴리지 않으니 예측 오차가 아예 없다. 부수 효과로 내 새의
+    /// 보정도 줄었다(보정의 80%가 옆에 새가 있을 때 났다 — 원인이 몸싸움이었다).
+    /// 몸싸움 코드(<c>BodyCollisionSystem</c>·<c>BodyOverlap</c>·<c>VerticalBounce</c>)는
+    /// 지우지 않았다 — 다른 게임이 쓴다.</para>
     /// </summary>
     public class FlappyWorld : GameFramework.World.WorldBase
     {
         private readonly FlappyMoveSystem _moveSystem;
-        private readonly FlappyBodyCollisionSystem _bodyCollisionSystem;
         private readonly FlappyStunSystem _stunSystem;
         private readonly ICollisionQuery _collisionQuery;
         private readonly GameFramework.World.IMotionBridge _motionBridge;
         private readonly int _layerMask;
 
-        // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
-        // _birds = 굴릴 대상(Simulated만). _bodies = 부딪힐 상대(새 전부 — 원격도 포함).
-        // 클라에서 원격 새는 굴리지 않지만(외삽으로 그린다) 내 새가 그 자리에 부딪히긴 해야 해서
-        // 두 목록으로 나눴다 — 합치면 서버 왕복 없이는 부딪힘을 알 방법이 없다.
+        // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다. 굴릴 대상(Simulated)만 담는다
+        // — 새끼리 안 부딪히므로 "부딪힐 상대" 목록이 따로 필요 없다.
         private readonly List<GameFramework.World.Entity> _birds = new List<GameFramework.World.Entity>();
-        private readonly List<GameFramework.World.Entity> _bodies = new List<GameFramework.World.Entity>();
 
         // KinematicMover.Move에게 넘길 실제 쿼리를 감싸, sweep 도중 한 번이라도 히트가 있었는지만
         // 기록한다. 매 틱 재사용해 새 인스턴스를 만들지 않는다.
@@ -46,7 +48,6 @@ namespace LOP
             GameFramework.World.EntityRegistry entityRegistry,
             GameFramework.World.WorldEventBuffer eventBuffer,
             FlappyMoveSystem moveSystem,
-            FlappyBodyCollisionSystem bodyCollisionSystem,
             FlappyStunSystem stunSystem,
             ICollisionQuery collisionQuery,
             GameFramework.World.IMotionBridge motionBridge,
@@ -54,7 +55,6 @@ namespace LOP
             : base(entityRegistry, eventBuffer)
         {
             _moveSystem = moveSystem;
-            _bodyCollisionSystem = bodyCollisionSystem;
             _stunSystem = stunSystem;
             _collisionQuery = collisionQuery;
             _motionBridge = motionBridge;
@@ -93,13 +93,7 @@ namespace LOP
                 _moveSystem.Tick(_birds[i], deltaTime);
             }
 
-            // 전원의 속도가 정해진 뒤 한 번(페이즈 배리어). 새끼리 겹침은 여기서 다 풀리므로
-            // 아래 물리 브릿지의 Separate는 부르지 않는다.
-            // movers=_birds, bodies=_bodies — 지금은 클·서 모두 두 목록이 같은 집합이다(모든 새가
-            // Simulated). 그래서 양쪽 다 서로를 밀어내는 양방향 몸싸움이고 결과도 같다.
-            _bodyCollisionSystem.Resolve(_birds, _bodies);
-
-            // 벽 안이면 밖으로 밀어낸다 — 스폰 겹침이든 방금 몸싸움이 처박은 것이든. 겹침이
+            // 벽 안이면 밖으로 밀어낸다 — 스폰 겹침 등. 겹침이
             // 없으면 0을 돌려주므로 매 틱 불러도 공짜고, 그래서 "단단한 몸"이 상시 성립한다.
             // 겹침 판정은 World.Transform(진실원본) 자리로 한다. 엔진 트랜스폼을 보면 물리 스텝
             // 뒤에야 갱신되는 한 틱 전 자리를 보고, 롤백 재생 중엔 물리를 안 돌려 아예 얼어 있다
@@ -156,39 +150,29 @@ namespace LOP
             return false;
         }
 
-        // 굴리는 대상과 부딪히는 상대는 다르다. 클라에서 원격은 굴리지 않지만(외삽으로 그린다)
-        // 내 새가 그 자리에 부딪히기는 해야 한다 — 부딪힘이 서버 왕복 뒤에 보이면 반응이 굼뜨다.
+        // 굴릴 대상만 모은다(Simulated). 서버는 모든 새에, 클라는 내 새에만 그 표식이 붙는다
+        // — 남의 새는 클라가 굴리지 않고 지연 스냅샷 보간으로 그린다.
         // "새인가"는 EntityKind로 가린다 — FlappyStun은 스턴 *타이머*라 정체성 표식이
-        // 아니다(Task10 리뷰에서 교정: 우연히 유효했을 뿐 의미상 틀린 기준이었다). EntityKind가
-        // 이미 이 판별을 위해 쓰이는 곳(클라 OwnerPredictedRemotesExtrapolatedSyncPolicy, 서버
-        // FlapWangRuleSystem)과 같은 기준으로 맞춘다. CapsuleShape는 아이템도 갖고 있어(ItemCreator)
-        // 기준이 될 수 없다.
-        // 둘 다 id 순으로 세운다. 레지스트리 순회 순서는 정해져 있지 않은데, 몸싸움을 푸는 순서가
-        // 클·서에서 같아야 두 쪽이 같은 결과에 이른다.
+        // 아니다(Task10 리뷰에서 교정: 우연히 유효했을 뿐 의미상 틀린 기준이었다).
+        // CapsuleShape는 아이템도 갖고 있어(ItemCreator) 기준이 될 수 없다.
+        // id 순으로 세운다. 레지스트리 순회 순서는 정해져 있지 않은데, 처리 순서가 클·서에서
+        // 같아야 두 쪽이 같은 결과에 이른다.
         private void CollectBirds()
         {
             _birds.Clear();
-            _bodies.Clear();
             foreach (var entity in EntityRegistry.All)
             {
                 if (entity.Get<EntityKind>()?.Kind != EntityType.Character)
                 {
                     continue;   // 새가 아니다
                 }
-                // 지금은 모든 새가 Simulated라 두 목록이 같아진다. WorldBase.SaveState/LoadState가
-                // Simulated 엔티티의 위치·속도를 담으므로 되감기 재생 중에도 남의 새가 "그 틱 당시"
-                // 자리로 돌아간다 — 예전에 여기 적혀 있던 "재생이 원격을 못 되감는다"는 한계는
-                // 남의 새를 시뮬 대상에 넣으면서 사라졌다.
-                // 두 목록을 그대로 두는 이유는, 굴릴 대상과 부딪힐 상대가 개념상 다른 축이라
-                // 사이드 정책(Simulated를 누구에게 주는가)이 바뀌어도 이 코드가 그대로여야 해서다.
-                _bodies.Add(entity);
-                if (entity.Has<GameFramework.World.Simulated>())
+                if (entity.Has<GameFramework.World.Simulated>() == false)
                 {
-                    _birds.Add(entity);
+                    continue;   // 클라에서 남의 새 — 보간으로 그린다
                 }
+                _birds.Add(entity);
             }
             _birds.Sort((left, right) => string.CompareOrdinal(left.Id, right.Id));
-            _bodies.Sort((left, right) => string.CompareOrdinal(left.Id, right.Id));
         }
 
         // 맵은 막는다 — KinematicMover가 벽까지만 이동시키고 미끄러뜨린다(collide-and-slide).
@@ -206,10 +190,10 @@ namespace LOP
         //  (역사: 이 실측(-14까지 쌓이는 동안 실제로는 0.11밖에 안 내려감)은 수평 sweep이 몸을
         //  들어올려 검사하던 시절 — 즉 오르막에서 파묻힘이 상시 일어나던 시절 — 값이다. 이 브랜치가
         //  그 파묻힘을 없앴으므로 지금은 상시 근거가 아니라 "왜 이 코드가 생겼는지"의 역사다.
-        //  지금 이 함수가 실제로 발동하는 경로는 셋뿐이다: ① _bodyCollisionSystem.Resolve가 새를
-        //  지형 안으로 처박을 때 ② 스폰 겹침 ③ MoveBlockedByMap의 z=0 클램프가 몸을 벽 안으로
-        //  되밀 때. 발동할 때 세로 속도를 만드는 게 커널 규칙 D5("경사는 세로 속도를 안 늘린다")와
-        //  어긋난다는 점은 열린 항목 O1로 남아 있다.)
+        //  지금 이 함수가 실제로 발동하는 경로는 둘뿐이다: ① 스폰 겹침 ② MoveBlockedByMap의
+        //  z=0 클램프가 몸을 벽 안으로 되밀 때. (셋째였던 "몸싸움이 새를 지형 안으로 처박을 때"는
+        //  새끼리 안 부딪히게 되면서 사라졌다.) 발동할 때 세로 속도를 만드는 게 커널 규칙
+        //  D5("경사는 세로 속도를 안 늘린다")와 어긋난다는 점은 열린 항목 O1로 남아 있다.)
         //  민 방향의 반대 성분만 덜어낸다 — 벽을 따라 흐르던 속도는 살려 둬야 미끄러져 빠져나온다.
         private static void ClearVelocityIntoSurface(GameFramework.World.Entity bird, System.Numerics.Vector3 push)
         {

@@ -5,24 +5,38 @@ using UnityEngine;
 namespace LOP
 {
     /// <summary>
-    /// 새끼리 부딪히면 서로 밀어내고 세로 속도를 주고받는다(맵 장애물과 달리 정지 페널티 없이 자리싸움만).
-    /// 겹침은 <see cref="FlappyBodyOverlap"/>이 산수로 구하고, 속도 교환은 <see cref="FlappyBounce"/>가 맡는다.
+    /// 캐릭터끼리 부딪히면 서로 밀어내고 속도를 주고받는다(맵 장애물과 달리 정지 페널티 없이
+    /// 자리싸움만). 몸↔맵 밀어내기는 <c>IMotionBridge.Depenetrate</c>가 맡고, 이쪽은 몸↔몸이다.
+    /// 겹침은 <see cref="BodyOverlap"/>이 산수로 구하고, 속도 교환은 <see cref="VerticalBounce"/>가 맡는다.
+    ///
+    /// <para>게임 비종속이다 — 몸 규격과 반발계수를 숫자로 받는다. 값을 어디서 얻는지는 각 게임의
+    /// LifetimeScope가 정한다.</para>
+    ///
+    /// <para><b>다른 게임에 가져다 쓸 때 갈아끼울 곳:</b> 속도 교환이
+    /// <see cref="VerticalBounce"/>라 <b>세로 성분만</b> 오간다. 전진 속도가 상수라 손댈 수 없던
+    /// 게임(Flappy Race)의 전제다. <b>가로로도 밀리는 게임은 이 단계를 접촉 법선 방향의 일반
+    /// 충격량으로 바꿔야 한다.</b> 짝 순회·id 순서·절반씩 밀기·"양쪽 속도를 읽고 나서 쓴다"
+    /// 규칙은 결정론을 위한 것이라 그대로 두는 편이 좋다.</para>
     /// </summary>
-    public class FlappyBodyCollisionSystem
+    public class BodyCollisionSystem
     {
         /// <summary>허용 겹침. 딱 붙는 지점까지 밀어내면 다음 틱에 또 파고들어 떤다.</summary>
         private const float Slop = 0.01f;
 
-        private readonly FlappyConfig config;
+        private readonly float bodyRadius;
+        private readonly float bodyHeight;
+        private readonly float restitution;
 
-        public FlappyBodyCollisionSystem(FlappyConfig config)
+        public BodyCollisionSystem(float bodyRadius, float bodyHeight, float restitution)
         {
-            this.config = config;
+            this.bodyRadius = bodyRadius;
+            this.bodyHeight = bodyHeight;
+            this.restitution = restitution;
         }
 
         /// <summary>
-        /// 넘겨받은 새들을 두 마리씩 모두 맞대어 겹친 짝을 푼다.
-        /// 부르는 쪽은 <b>모든 새의 속도가 정해진 뒤</b> 한 번만 부르고, 목록을 엔티티 id 순으로 세워
+        /// 넘겨받은 몸들을 둘씩 모두 맞대어 겹친 짝을 푼다.
+        /// 부르는 쪽은 <b>모두의 속도가 정해진 뒤</b> 한 번만 부르고, 목록을 엔티티 id 순으로 세워
         /// 넘긴다 — 푸는 순서가 클·서에서 같아야 두 쪽이 같은 결과에 이른다.
         /// </summary>
         public void Resolve(IReadOnlyList<GameFramework.World.Entity> birds)
@@ -100,7 +114,7 @@ namespace LOP
 
             Vector3 positionA = transformA.Position.ToUnity();
             Vector3 positionB = transformB.Position.ToUnity();
-            if (!FlappyBodyOverlap.TryCompute(positionA, positionB, config.BodyRadius, config.BodyHeight,
+            if (!BodyOverlap.TryCompute(positionA, positionB, bodyRadius, bodyHeight,
                                               out Vector3 pushDir, out float depth))
             {
                 return;
@@ -117,8 +131,8 @@ namespace LOP
             Vector3 linearB = velocityB.Linear.ToUnity();
             float beforeA = linearA.y;
             float beforeB = linearB.y;
-            linearA.y = FlappyBounce.ResolveVy(beforeA, beforeB, pushDir.y, config.Restitution);
-            linearB.y = FlappyBounce.ResolveVy(beforeB, beforeA, -pushDir.y, config.Restitution);
+            linearA.y = VerticalBounce.ResolveVy(beforeA, beforeB, pushDir.y, restitution);
+            linearB.y = VerticalBounce.ResolveVy(beforeB, beforeA, -pushDir.y, restitution);
             velocityA.Linear = linearA.ToNumerics();
             velocityB.Linear = linearB.ToNumerics();
         }
@@ -141,7 +155,7 @@ namespace LOP
 
             Vector3 positionMover = transformMover.Position.ToUnity();
             Vector3 positionBody = transformBody.Position.ToUnity();
-            if (!FlappyBodyOverlap.TryCompute(positionMover, positionBody, config.BodyRadius, config.BodyHeight,
+            if (!BodyOverlap.TryCompute(positionMover, positionBody, bodyRadius, bodyHeight,
                                               out Vector3 pushDir, out float depth))
             {
                 return;
@@ -153,7 +167,7 @@ namespace LOP
             // body 쪽 속도는 읽기만 한다 — 안 밀리는 쪽이니 세로 속도도 이 함수 밖에서는 그대로다.
             Vector3 linearMover = velocityMover.Linear.ToUnity();
             float vyBody = velocityBody.Linear.ToUnity().y;
-            linearMover.y = FlappyBounce.ResolveVy(linearMover.y, vyBody, pushDir.y, config.Restitution);
+            linearMover.y = VerticalBounce.ResolveVy(linearMover.y, vyBody, pushDir.y, restitution);
             velocityMover.Linear = linearMover.ToNumerics();
         }
     }

@@ -58,7 +58,6 @@ namespace LOP.Tests
             // 이 파일은 결정론(등록 순서 무관)을 다룬다, 출발 게이트가 아니다 — 이미 출발한 것으로 둔다.
             var world = new FlappyWorld(registry, new WorldEventBuffer(),
                                new FlappyMoveSystem(Config()),
-                               new FlappyBodyCollisionSystem(Config()),
                                new FlappyStunSystem(Config()),
                                new EmptySkyQuery(), new NoopMotionBridge(), layerMask: ~0);
             world.GameplayStartTick = 0;

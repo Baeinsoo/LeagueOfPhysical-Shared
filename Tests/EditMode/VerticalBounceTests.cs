@@ -2,15 +2,15 @@ using NUnit.Framework;
 
 namespace LOP.Tests
 {
-    public class FlappyBounceTests
+    public class VerticalBounceTests
     {
         const float E = 0.35f;   // TbFlappyConfig의 restitution 기본값
 
         // 위에 있는 새(normalY=+1)와 아래 있는 새(normalY=-1)가 같은 충돌을 각자 계산한다.
         static void Exchange(float vyUpper, float vyLower, float e, out float upperAfter, out float lowerAfter)
         {
-            upperAfter = FlappyBounce.ResolveVy(vyUpper, vyLower, 1f, e);
-            lowerAfter = FlappyBounce.ResolveVy(vyLower, vyUpper, -1f, e);
+            upperAfter = VerticalBounce.ResolveVy(vyUpper, vyLower, 1f, e);
+            lowerAfter = VerticalBounce.ResolveVy(vyLower, vyUpper, -1f, e);
         }
 
         [Test]
@@ -44,13 +44,13 @@ namespace LOP.Tests
         public void 이미_멀어지는_중이면_속도를_건드리지_않는다()
         {
             // 위 새가 위로 올라가는 중 — 부딪힌 게 아니라 떨어지고 있다
-            Assert.AreEqual(5f, FlappyBounce.ResolveVy(5f, 0f, 1f, E), 1e-4f);
+            Assert.AreEqual(5f, VerticalBounce.ResolveVy(5f, 0f, 1f, E), 1e-4f);
         }
 
         [Test]
         public void 옆으로_스치면_세로_속도가_안_바뀐다()
         {
-            Assert.AreEqual(-10f, FlappyBounce.ResolveVy(-10f, 0f, 0f, E), 1e-4f);
+            Assert.AreEqual(-10f, VerticalBounce.ResolveVy(-10f, 0f, 0f, E), 1e-4f);
         }
 
         [Test]
@@ -59,7 +59,7 @@ namespace LOP.Tests
             // 접근 속도가 RestingSpeed 미만이면 반발 0 = 완전 비탄성 → 두 속도가 같아진다
             Exchange(-1f, 0f, E, out float upper, out float lower);
 
-            Assert.Less(1f, FlappyBounce.RestingSpeed);
+            Assert.Less(1f, VerticalBounce.RestingSpeed);
             Assert.AreEqual(-0.5f, upper, 1e-4f);
             Assert.AreEqual(-0.5f, lower, 1e-4f);
             Assert.AreEqual(upper, lower, 1e-4f);   // 같은 속도 = 더 이상 파고들지 않음
@@ -79,8 +79,8 @@ namespace LOP.Tests
         [Test]
         public void 비스듬히_부딪히면_정면보다_약하게_주고받는다()
         {
-            float straight = FlappyBounce.ResolveVy(-10f, 0f, 1f, E);
-            float glancing = FlappyBounce.ResolveVy(-10f, 0f, 0.5f, E);
+            float straight = VerticalBounce.ResolveVy(-10f, 0f, 1f, E);
+            float glancing = VerticalBounce.ResolveVy(-10f, 0f, 0.5f, E);
 
             Assert.Greater(straight, -10f);            // 정면은 크게 바뀌고
             Assert.Greater(glancing, -10f);            // 비스듬해도 바뀌긴 하지만

@@ -6,14 +6,14 @@ using UnityEngine;
 
 namespace LOP.Tests
 {
-    public class FlappyBodyCollisionSystemTests
+    public class BodyCollisionSystemTests
     {
         const float Tolerance = 1e-4f;
 
-        static FlappyConfig Config()
-            => new FlappyConfig(forwardSpeed: 11f, flapImpulse: 23f, gravity: 70f, maxFallSpeed: 30f,
-                                bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f,
-                                stunTime: 0.8f, invulnTime: 0.6f);
+        //  이 시스템은 게임을 모른다 — 몸 규격과 반발계수만 받는다.
+        //  값은 Flappy Race가 쓰던 것 그대로라 아래 기대값도 그대로 유효하다.
+        static BodyCollisionSystem System()
+            => new BodyCollisionSystem(bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f);
 
         static Entity Bird(string id, Vector3 position, Vector3 velocity)
         {
@@ -32,7 +32,7 @@ namespace LOP.Tests
             var lower = Bird("bird-1", Vector3.zero, Vector3.zero);
             var upper = Bird("bird-2", new Vector3(0f, 0.5f, 0f), Vector3.zero);
 
-            new FlappyBodyCollisionSystem(Config()).Resolve(new List<Entity> { lower, upper });
+            System().Resolve(new List<Entity> { lower, upper });
 
             // 겹침 0.4에서 허용 겹침 0.01을 뺀 0.39를 반씩 나눠 갖는다
             Assert.AreEqual(-0.195f, PositionOf(lower).y, Tolerance);
@@ -45,9 +45,9 @@ namespace LOP.Tests
             var lower = Bird("bird-1", Vector3.zero, Vector3.zero);
             var upper = Bird("bird-2", new Vector3(0f, 0.5f, 0f), new Vector3(0f, -10f, 0f));
 
-            new FlappyBodyCollisionSystem(Config()).Resolve(new List<Entity> { lower, upper });
+            System().Resolve(new List<Entity> { lower, upper });
 
-            // FlappyBounce와 같은 값 — 위는 덜 떨어지고 아래는 더 밀린다
+            // VerticalBounce와 같은 값 — 위는 덜 떨어지고 아래는 더 밀린다
             Assert.AreEqual(-3.25f, VelocityOf(upper).y, Tolerance);
             Assert.AreEqual(-6.75f, VelocityOf(lower).y, Tolerance);
         }
@@ -58,7 +58,7 @@ namespace LOP.Tests
             var a = Bird("bird-1", Vector3.zero, new Vector3(0f, -10f, 0f));
             var b = Bird("bird-2", new Vector3(0f, 5f, 0f), Vector3.zero);
 
-            new FlappyBodyCollisionSystem(Config()).Resolve(new List<Entity> { a, b });
+            System().Resolve(new List<Entity> { a, b });
 
             Assert.AreEqual(Vector3.zero, PositionOf(a));
             Assert.AreEqual(-10f, VelocityOf(a).y, Tolerance);
@@ -81,8 +81,8 @@ namespace LOP.Tests
                 Bird("bird-2", new Vector3(0f, 0.5f, 0f), new Vector3(0f, -10f, 0f)),
             };
 
-            new FlappyBodyCollisionSystem(Config()).Resolve(singleList);
-            new FlappyBodyCollisionSystem(Config()).Resolve(sameList, sameList);
+            System().Resolve(singleList);
+            System().Resolve(sameList, sameList);
 
             // 두 겹친 새는 실제로 갈라지고 속도도 주고받아야 한다 — 이 확인이 없으면 두 오버로드가
             // "둘 다 아무 일도 안 했다"로 우연히 같아져도 아래 비교를 통과해 버린다.
@@ -104,11 +104,11 @@ namespace LOP.Tests
             var serverMine = Bird("bird-1", Vector3.zero, Vector3.zero);
             var serverOther = Bird("bird-2", new Vector3(0f, 0.5f, 0f), Vector3.zero);
             var serverAll = new List<Entity> { serverMine, serverOther };
-            new FlappyBodyCollisionSystem(Config()).Resolve(serverAll, serverAll);
+            System().Resolve(serverAll, serverAll);
 
             var clientMine = Bird("bird-1", Vector3.zero, Vector3.zero);
             var clientOther = Bird("bird-2", new Vector3(0f, 0.5f, 0f), Vector3.zero);
-            new FlappyBodyCollisionSystem(Config()).Resolve(
+            System().Resolve(
                 new List<Entity> { clientMine },
                 new List<Entity> { clientMine, clientOther });
 
@@ -124,7 +124,7 @@ namespace LOP.Tests
             var movers = new List<Entity> { mover };
             var bodies = new List<Entity> { mover, remoteBody };
 
-            new FlappyBodyCollisionSystem(Config()).Resolve(movers, bodies);
+            System().Resolve(movers, bodies);
 
             // mover는 밀려났고(원래 위치 0,0,0에서 벗어남), 원격 상대는 자리도 속도도 그대로다.
             Assert.AreNotEqual(Vector3.zero, PositionOf(mover));
@@ -148,8 +148,8 @@ namespace LOP.Tests
                 Bird("bird-1", Vector3.zero, Vector3.zero),
             };
 
-            new FlappyBodyCollisionSystem(Config()).Resolve(forward);
-            new FlappyBodyCollisionSystem(Config()).Resolve(reversed);
+            System().Resolve(forward);
+            System().Resolve(reversed);
 
             Assert.AreEqual(VelocityOf(forward[0]).y, VelocityOf(reversed[1]).y, Tolerance);
             Assert.AreEqual(VelocityOf(forward[1]).y, VelocityOf(reversed[0]).y, Tolerance);
