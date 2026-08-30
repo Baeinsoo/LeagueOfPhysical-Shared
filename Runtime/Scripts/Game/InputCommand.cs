@@ -13,9 +13,15 @@ namespace LOP
         public bool Jump { get; set; }
         public int AbilityId { get; set; }
 
+        /// <summary>자세 축. 0이면 대자, 1이면 다이브. 사이는 연속이다.</summary>
+        public float Posture { get; set; }
+
+        /// <summary>패러세일을 펴고 있나. 자세 축과 무관한 별개 도구다.</summary>
+        public bool Glide { get; set; }
+
         // 진단 로그가 커맨드를 한 줄로 찍을 때 쓴다. 무엇이 실렸는지는 커맨드 자신이 안다 —
         // 읽는 쪽(넷코드 로그)이 필드를 하나씩 나열하면 그쪽이 게임 내용을 알게 된다.
         public override string ToString()
-            => $"h={Horizontal:F2} v={Vertical:F2} jump={Jump} ability={AbilityId}";
+            => $"h={Horizontal:F2} v={Vertical:F2} jump={Jump} ability={AbilityId} posture={Posture:F2} glide={Glide}";
     }
 }
