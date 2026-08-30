@@ -10,7 +10,8 @@ namespace LOP
     /// 씬 주입을 끊는다. (Unreal의 ATriggerVolume 계열 골 마커에 대응 — 좌표를 코드가 아니라
     /// 맵이 정한다.)
     ///
-    /// 판정은 x 한 축만 본다 — 코스가 +x 방향 한 줄이고 새는 뒤로 가지 않는다.
+    /// 어느 축을 읽을지는 마커가 아니라 <b>게임 룰이 정한다</b> — 마커는 좌표만 내줄 뿐이다.
+    /// Flappy Race는 x(<see cref="FlappyRaceProgress"/>), Skydive는 y(<see cref="SkydiveProgress"/>)를 읽는다.
     /// </summary>
     public class FinishLine : MonoBehaviour
     {
