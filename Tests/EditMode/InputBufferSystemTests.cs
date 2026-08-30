@@ -78,6 +78,20 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void PredictMissing_RepeatsLastReceivedPostureAndGlide()
+        {
+            // Posture/Glide도 Horizontal/Vertical과 같은 축의 연속값이다 — 유실 틱에 접히면(Glide=false)
+            // 하강속도가 튀고 스태미나 소모가 그 틱만 빠져 서버·클라 잔고가 갈라진다.
+            system.Enqueue(buffer, 10, new InputCommand { SequenceNumber = 0, Posture = 1f, Glide = true });
+            system.Consume(buffer, 10);
+
+            var predicted = system.PredictMissing(buffer, maxTicks: 8);
+
+            Assert.That(predicted.Posture, Is.EqualTo(1f), "자세는 이어 쓴다");
+            Assert.IsTrue(predicted.Glide, "활공은 이어 쓴다 — 접히면 안 된다");
+        }
+
+        [Test]
         public void PredictMissing_DoesNotRepeatJumpOrAbility()
         {
             system.Enqueue(buffer, 10, new InputCommand { SequenceNumber = 0, Horizontal = 0.8f, Jump = true, AbilityId = 7 });
@@ -93,16 +107,22 @@ namespace LOP.Tests
         [Test]
         public void PredictMissing_FallsBackToNeutral_AfterMaxTicks()
         {
-            system.Enqueue(buffer, 10, Cmd(0, 0.8f));
+            system.Enqueue(buffer, 10, new InputCommand { SequenceNumber = 0, Horizontal = 0.8f, Posture = 1f, Glide = true });
             system.Consume(buffer, 10);
 
             for (int i = 0; i < 3; i++)
             {
-                Assert.That(system.PredictMissing(buffer, maxTicks: 3).Horizontal, Is.EqualTo(0.8f));
+                var predicted = system.PredictMissing(buffer, maxTicks: 3);
+                Assert.That(predicted.Horizontal, Is.EqualTo(0.8f));
+                Assert.That(predicted.Posture, Is.EqualTo(1f));
+                Assert.IsTrue(predicted.Glide);
             }
 
-            Assert.That(system.PredictMissing(buffer, maxTicks: 3).Horizontal, Is.EqualTo(0f),
+            var neutral = system.PredictMissing(buffer, maxTicks: 3);
+            Assert.That(neutral.Horizontal, Is.EqualTo(0f),
                 "상한을 넘으면 중립 — 끊긴 캐릭터가 영영 달리면 안 된다");
+            Assert.That(neutral.Posture, Is.EqualTo(0f), "자세도 상한을 넘으면 중립으로 떨어진다");
+            Assert.IsFalse(neutral.Glide, "활공도 상한을 넘으면 접힌다");
         }
 
         [Test]

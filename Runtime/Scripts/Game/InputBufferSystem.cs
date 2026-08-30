@@ -55,9 +55,9 @@ namespace LOP
         /// *능동적으로 틀린* 지시가 된다. 한 틱은 20ms라, 그 사이 손을 뗐을 확률보다 계속 누르고 있을
         /// 확률이 압도적이므로 직전 이동을 이어 쓴다.</para>
         ///
-        /// <para>이동만 이어 쓴다 — 점프·어빌리티는 1회성이라 반복하면 두 번 발동한다.
-        /// 연속 <paramref name="maxTicks"/>를 넘으면 중립으로 떨어뜨린다(연결이 끊긴 캐릭터가
-        /// 영영 달리면 안 된다).</para>
+        /// <para>연속값(이동·자세·활공)은 이어 쓰고, 1회성(점프·어빌리티)은 버린다 — 1회성을
+        /// 반복하면 두 번 발동한다. 연속 <paramref name="maxTicks"/>를 넘으면 중립으로 떨어뜨린다
+        /// (연결이 끊긴 캐릭터가 영영 달리거나 영영 활공하면 안 된다).</para>
         /// </summary>
         public InputCommand PredictMissing(InputBuffer buffer, int maxTicks)
         {
@@ -74,6 +74,8 @@ namespace LOP
             {
                 Horizontal = buffer.LastReceived.Horizontal,
                 Vertical = buffer.LastReceived.Vertical,
+                Posture = buffer.LastReceived.Posture,
+                Glide = buffer.LastReceived.Glide,
             };
             return buffer.Current;
         }
