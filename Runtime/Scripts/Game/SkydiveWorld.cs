@@ -99,7 +99,14 @@ namespace LOP
             }
             else
             {
-                posture.Gliding = false;
+                // 비상 펼침 창(EmergencyRemaining>0)이 도는 동안은 손을 떼도 접지 않는다 — 이 창은
+                // 착지 직전 구제용으로 "보장된" 시간이다(스펙 §2.2). 여기서 접어 버리면 그 보장이
+                // 손 떼는 순간 날아가 버린다. 창이 끝나는 것은 StaminaSystem.Tick이 스스로 접는다.
+                var stamina = entity.Get<Stamina>();
+                if (stamina == null || stamina.EmergencyRemaining <= 0f)
+                {
+                    posture.Gliding = false;
+                }
             }
         }
 

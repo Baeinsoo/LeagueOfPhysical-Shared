@@ -142,14 +142,52 @@ namespace LOP.Tests
             world.Tick(0, 0.02f);
             world.SaveState(0);
             float axisAt0 = diver.Get<Posture>().Axis;
+            bool glidingAt0 = diver.Get<Posture>().Gliding;
             float staminaAt0 = diver.Get<Stamina>().Current;
+            bool emergencyUsedAt0 = diver.Get<Stamina>().EmergencyUsed;
+            float emergencyRemainingAt0 = diver.Get<Stamina>().EmergencyRemaining;
 
             for (int i = 1; i <= 20; i++) { world.Tick(i, 0.02f); world.SaveState(i); }
             Assert.AreNotEqual(axisAt0, diver.Get<Posture>().Axis, "20틱 뒤엔 달라져 있어야 한다");
 
             Assert.IsTrue(world.LoadState(0));
+            // SkydiveSavedState가 담는 다섯 필드(Axis/Gliding/Stamina/EmergencyUsed/EmergencyRemaining)
+            // 전부를 확인한다 — 두 개만 재면 되감기가 "완전하다"는 주장을 실제로 재는 게 아니다.
             Assert.AreEqual(axisAt0, diver.Get<Posture>().Axis, Tolerance);
+            Assert.AreEqual(glidingAt0, diver.Get<Posture>().Gliding);
             Assert.AreEqual(staminaAt0, diver.Get<Stamina>().Current, Tolerance);
+            Assert.AreEqual(emergencyUsedAt0, diver.Get<Stamina>().EmergencyUsed);
+            Assert.AreEqual(emergencyRemainingAt0, diver.Get<Stamina>().EmergencyRemaining, Tolerance);
+        }
+
+        [Test]
+        public void 비상_펼침_중에는_손을_떼도_접히지_않는다()
+        {
+            // 스펙 §2.2 — 잔고 0에서의 "마지막 한 번" 펼침은 *보장된* 구제 시간이다. 손을 떼는
+            // 순간 접혀 버리면 우리 조작(떼면 대자로 돌아온다)에서 그 보장이 흔한 경로로 사라진다.
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            diver.Get<Stamina>().Current = 0f;   // 잔고 0 — "마지막 한 번" 구간
+            diver.Get<InputBuffer>().Current = new InputCommand { Glide = true };
+            registry.Add(diver);
+            var world = World(registry);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);   // 비상 펼침 시작
+            Assert.IsTrue(diver.Get<Posture>().Gliding, "비상 펼침이 걸렸어야 한다");
+            Assert.Greater(diver.Get<Stamina>().EmergencyRemaining, 0f);
+
+            diver.Get<InputBuffer>().Current = new InputCommand { Glide = false };   // 손을 뗀다
+            world.Tick(1, 0.02f);
+
+            Assert.IsTrue(diver.Get<Posture>().Gliding,
+                "비상 창이 도는 동안은 입력과 무관하게 활공이 유지돼야 한다");
+
+            // 창(emergencyGlideTime=1초)이 다 돌 때까지 손을 뗀 채로 튕긴다.
+            for (int i = 2; i <= 60; i++) { world.Tick(i, 0.02f); }
+
+            Assert.IsFalse(diver.Get<Posture>().Gliding, "창이 끝나면 접혀야 한다");
+            Assert.AreEqual(0f, diver.Get<Stamina>().EmergencyRemaining, Tolerance);
         }
 
         [Test]
