@@ -18,9 +18,11 @@ namespace LOP.Tests
                 bodyRadius: 0.4f, bodyHeight: 1.8f, groundY: 0f,
                 staminaMax: 100f, glideDrain: 20f, groundRecover: 40f, emergencyGlideTime: 1f);
 
-        static SkydiveWorld World(EntityRegistry registry)
+        // 기본 맵은 면이 하나도 없는 하늘이다(HalfSpaceQuery에 면을 안 넣으면 늘 CollisionHit.None).
+        static SkydiveWorld World(EntityRegistry registry, GameFramework.Physics.ICollisionQuery query = null)
             => new SkydiveWorld(registry, new WorldEventBuffer(),
-                                new SkydiveMoveSystem(), new StaminaSystem(), Config());
+                                new SkydiveMoveSystem(), new StaminaSystem(), Config(),
+                                query ?? new HalfSpaceQuery(), layerMask: ~0);
 
         static Entity Diver(string id, bool simulated = true, EntityType kind = EntityType.Character)
         {
@@ -31,6 +33,7 @@ namespace LOP.Tests
             e.Add(new Posture());
             e.Add(new Stamina { Current = 100f });
             e.Add(new InputBuffer());
+            e.Add(new GroundState());   // 이동 커널이 매 틱 접지 여부를 여기 적는다
             if (simulated) { e.Add(new Simulated()); }
             return e;
         }
@@ -49,6 +52,80 @@ namespace LOP.Tests
             world.Tick(10, 0.02f);
 
             Assert.AreEqual(1000f, HeightOf(registry, "a"), Tolerance);
+        }
+
+        [Test]
+        public void 바닥에_닿으면_멈추고_접지로_기록된다()
+        {
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            diver.Get<GameFramework.World.Transform>().Position = new Vector3(0f, 0.3f, 0f).ToNumerics();
+            registry.Add(diver);
+
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);
+            var world = World(registry, map);
+            world.GameplayStartTick = 0;
+
+            for (int t = 0; t < 20; t++) { world.Tick(t, 0.02f); }
+
+            Assert.GreaterOrEqual(HeightOf(registry, "a"), -0.01f, "바닥을 뚫고 내려가면 안 된다");
+            Assert.IsTrue(diver.Get<GroundState>().IsGrounded, "바닥에 서 있으면 접지여야 한다");
+        }
+
+        [Test]
+        public void 발판_위에_서면_스태미나가_찬다()
+        {
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            diver.Get<GameFramework.World.Transform>().Position = new Vector3(0f, 0.3f, 0f).ToNumerics();
+            diver.Get<Stamina>().Current = 0f;
+            registry.Add(diver);
+
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);
+            var world = World(registry, map);
+            world.GameplayStartTick = 0;
+
+            // y=0.3에서 떨어져 바닥에 앉기까지 일곱 틱쯤 걸린다(수렴 가속이라 처음엔 느리다).
+            // 1초를 굴리면 그중 40틱 이상이 접지이고, 회복 40/s이므로 30 넘게 차 있어야 한다.
+            for (int t = 0; t < 50; t++) { world.Tick(t, 0.02f); }
+
+            Assert.Greater(diver.Get<Stamina>().Current, 20f, "발판 위에서는 스태미나가 차야 한다");
+        }
+
+        [Test]
+        public void 허공에서는_스태미나가_차지_않는다()
+        {
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            diver.Get<Stamina>().Current = 0f;
+            registry.Add(diver);
+
+            var world = World(registry);   // 면이 없는 하늘
+            world.GameplayStartTick = 0;
+
+            for (int t = 0; t < 50; t++) { world.Tick(t, 0.02f); }
+
+            Assert.AreEqual(0f, diver.Get<Stamina>().Current, Tolerance, "공중에서는 안 찬다(젤다 규칙)");
+        }
+
+        [Test]
+        public void 허공에서는_접지가_아니다()
+        {
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            registry.Add(diver);
+
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);   // 1000m 아래 — 이번 틱엔 닿지 않는다
+            var world = World(registry, map);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);
+
+            Assert.IsFalse(diver.Get<GroundState>().IsGrounded);
+            Assert.Less(HeightOf(registry, "a"), 1000f, "허공에서는 내려가야 한다");
         }
 
         [Test]
