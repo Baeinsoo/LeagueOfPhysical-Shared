@@ -87,14 +87,17 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 임시_바닥에_닿으면_멈춘다()
+        public void 위치는_건드리지_않는다()
         {
-            var e = Diver(1f, false, new Vector3(0f, -40f, 0f), new Vector3(0f, 0.3f, 0f));
+            //  맵 충돌까지 봐야 최종 위치가 정해지므로, 위치는 SkydiveWorld가 정한다.
+            //  MoveSystem이 여기서 위치를 미리 옮기면 그 값이 sweep의 출발점을 오염시킨다.
+            //  (바닥에 닿으면 멈추는지는 이제 SkydiveWorldTests가 진짜 지오메트리로 잰다.)
+            var e = Diver(0f, false, new Vector3(0f, -25f, 0f), new Vector3(0f, 500f, 0f), h: 1f);
 
-            new SkydiveMoveSystem().Tick(e, 0.1f, Config());
+            new SkydiveMoveSystem().Tick(e, 0.02f, Config());
 
-            Assert.AreEqual(0f, PositionOf(e).y, Tolerance);
-            Assert.AreEqual(0f, VelocityOf(e).y, Tolerance);
+            Assert.AreEqual(500f, PositionOf(e).y, Tolerance, "MoveSystem은 위치를 쓰지 않는다");
+            Assert.AreEqual(0f, PositionOf(e).x, Tolerance);
         }
 
         [Test]

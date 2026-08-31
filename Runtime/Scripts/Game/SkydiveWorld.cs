@@ -1,11 +1,13 @@
 using System.Collections.Generic;
+using GameFramework;
+using GameFramework.Physics;
 
 namespace LOP
 {
     /// <summary>
     /// Skydive의 시뮬 코어. 클·서가 같은 구체 클래스를 돌려 결과가 갈리지 않게 한다.
-    /// 한 틱: ① 입력을 자세로 반영(축은 정해진 속도로만 움직인다) → ② 스태미나 소모·회복
-    /// → ③ 자세가 정한 목표 속도로 이동.
+    /// 한 틱: ① 입력을 자세로 반영(축은 정해진 속도로만 움직인다) → ② 자세가 목표 속도를 정한다
+    /// → ③ 맵에 막히면 벽까지만 옮긴다(미끄러짐·접지 판정) → ④ 방금 나온 접지로 스태미나 소모·회복.
     /// 레이저 판정은 Detection에 들어오지만(슬라이스 4) 지금은 비어 있다.
     /// </summary>
     public class SkydiveWorld : GameFramework.World.WorldBase
@@ -13,6 +15,8 @@ namespace LOP
         private readonly SkydiveMoveSystem _moveSystem;
         private readonly StaminaSystem _staminaSystem;
         private readonly SkydiveConfig _config;
+        private readonly ICollisionQuery _collisionQuery;
+        private readonly int _layerMask;
 
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
         private readonly List<GameFramework.World.Entity> _divers = new List<GameFramework.World.Entity>();
@@ -26,12 +30,16 @@ namespace LOP
             GameFramework.World.WorldEventBuffer eventBuffer,
             SkydiveMoveSystem moveSystem,
             StaminaSystem staminaSystem,
-            SkydiveConfig config)
+            SkydiveConfig config,
+            ICollisionQuery collisionQuery,
+            int layerMask)
             : base(entityRegistry, eventBuffer)
         {
             _moveSystem = moveSystem;
             _staminaSystem = staminaSystem;
             _config = config;
+            _collisionQuery = collisionQuery;
+            _layerMask = layerMask;
         }
 
         protected override void Mutation(long tick, float deltaTime)
@@ -59,16 +67,51 @@ namespace LOP
 
             for (int i = 0; i < _divers.Count; i++)
             {
-                // 임시 바닥에 닿아 있으면 "발 딛고 있다"로 본다 — 슬라이스 3이 이 판정을
-                // 진짜 지면 접촉으로 바꾼다.
-                var transform = _divers[i].Get<GameFramework.World.Transform>();
-                bool grounded = transform != null && transform.Position.Y <= _config.GroundY + 0.01f;
-                _staminaSystem.Tick(_divers[i], deltaTime, _config, grounded);
+                _moveSystem.Tick(_divers[i], deltaTime, _config);
             }
 
+            // 속도가 전원 다 정해진 뒤에 옮긴다 — 슬라이스 6의 몸싸움이 이 사이에 들어온다(스펙 §5).
             for (int i = 0; i < _divers.Count; i++)
             {
-                _moveSystem.Tick(_divers[i], deltaTime, _config);
+                MoveBlockedByMap(_divers[i], deltaTime);
+            }
+
+            // 이동 뒤에 온다 — "발 딛고 있나"를 이동 커널이 방금 계산했기 때문이다.
+            // 앞에 두면 한 틱 전 접지로 회복 여부를 정하게 된다.
+            for (int i = 0; i < _divers.Count; i++)
+            {
+                bool grounded = _divers[i].Get<GameFramework.World.GroundState>()?.IsGrounded ?? false;
+                _staminaSystem.Tick(_divers[i], deltaTime, _config, grounded);
+            }
+        }
+
+        // 맵은 막는다 — KinematicMover가 벽까지만 옮기고 미끄러뜨린다(collide-and-slide).
+        // 캡슐 규격은 CapsuleShape가 아니라 config에서 읽는다: 이 게임은 몸 크기도 튜닝값이라
+        // 진실원본이 마스터데이터 한 곳이고, 크리에이터가 붙이는 CapsuleShape도 같은 값의 사본이다.
+        private void MoveBlockedByMap(GameFramework.World.Entity entity, float deltaTime)
+        {
+            var transform = entity.Get<GameFramework.World.Transform>();
+            var velocity = entity.Get<GameFramework.World.Velocity>();
+            if (transform == null || velocity == null)
+            {
+                return;
+            }
+
+            //  떨어지는 몸은 턱을 오를 일이 없다. 0을 주면 막혔을 때의 추가 sweep 3발도 안 쏜다.
+            var result = KinematicMover.Move(new KinematicMoveInput(
+                transform.Position.ToUnity(), velocity.Linear.ToUnity(),
+                _config.BodyRadius, _config.BodyHeight, deltaTime,
+                _layerMask, stepOffset: 0f), _collisionQuery);
+
+            transform.Position = result.position.ToNumerics();
+            // 막힌 축의 속도도 같이 지운다 — 안 지우면 다음 틱 수렴이 "막힌 적 없다는 듯"
+            // 옛 속도 위에 계속 쌓인다(KinematicMoveSystem과 같은 관례).
+            velocity.Linear = result.velocity.ToNumerics();
+
+            var groundState = entity.Get<GameFramework.World.GroundState>();
+            if (groundState != null)
+            {
+                groundState.IsGrounded = result.grounded;
             }
         }
 
