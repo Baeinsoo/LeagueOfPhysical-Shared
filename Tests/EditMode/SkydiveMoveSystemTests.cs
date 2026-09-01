@@ -231,6 +231,53 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 뛰어오르는_동안은_좌우_입력을_안_받는다()
+        {
+            // 젤다의 점프는 뛰기 전에 방향을 정하는 것이다 — 뛴 뒤에 꺾을 수 없다.
+            // 이륙할 때의 수평 속도가 그대로 궤적이 된다.
+            var e = Diver(0f, false, new Vector3(3f, 5f, 0f), new Vector3(0f, 10f, 0f), h: 1f);
+            e.Add(new GroundState { IsGrounded = false });   // 떠 있고, 세로 +5 = 올라가는 중
+
+            new SkydiveMoveSystem().Tick(e, 0.02f, Config());
+
+            Assert.AreEqual(3f, VelocityOf(e).x, Tolerance, "뛰는 중에는 좌우가 그대로여야 한다");
+        }
+
+        [Test]
+        public void 정점을_지나_내려가면_조종이_돌아온다()
+        {
+            // 올라갈 때만 잠기고, 떨어지기 시작하면 자세 값으로 조종할 수 있다.
+            var e = Diver(0f, false, new Vector3(0f, -1f, 0f), new Vector3(0f, 10f, 0f), h: 1f);
+            e.Add(new GroundState { IsGrounded = false });   // 세로 -1 = 내려가는 중
+
+            new SkydiveMoveSystem().Tick(e, 0.02f, Config());
+
+            Assert.Greater(VelocityOf(e).x, 0f, "내려가기 시작하면 입력이 먹어야 한다");
+        }
+
+        [Test]
+        public void 발판에서_걸어_나가면_바로_조종된다()
+        {
+            // 뛰지 않고 걸어서 벗어나면 세로 속도가 곧장 음수라 "점프"에 안 걸린다 —
+            // 가장자리를 넘는 순간 조종을 잃으면 안 된다.
+            Assert.AreEqual(SkydiveMotionState.Skydiving,
+                SkydiveMotion.Resolve(grounded: false, gliding: false, verticalSpeed: -0.5f));
+        }
+
+        [Test]
+        public void 이동_상태는_접지_상승_활공_낙하_순으로_갈린다()
+        {
+            Assert.AreEqual(SkydiveMotionState.Walking,
+                SkydiveMotion.Resolve(grounded: true, gliding: false, verticalSpeed: 0f));
+            Assert.AreEqual(SkydiveMotionState.Jumping,
+                SkydiveMotion.Resolve(grounded: false, gliding: false, verticalSpeed: 5f));
+            Assert.AreEqual(SkydiveMotionState.Gliding,
+                SkydiveMotion.Resolve(grounded: false, gliding: true, verticalSpeed: -3f));
+            Assert.AreEqual(SkydiveMotionState.Skydiving,
+                SkydiveMotion.Resolve(grounded: false, gliding: false, verticalSpeed: -30f));
+        }
+
+        [Test]
         public void 점프_높이가_설정값에서_나오는_높이와_맞는다()
         {
             // 도달 높이 = JumpPower² / (2 × FallApproach) = 121/60 ≈ 2.02m.
@@ -241,7 +288,7 @@ namespace LOP.Tests
             var config = Config();
 
             sys.Tick(e, 0.02f, config);
-            e.Get<InputBuffer>().Current = new InputCommand();      // 손을 뗀다
+            e.Get<InputBuffer>().Current = new InputCommand();      // 뛰는 중엔 어차피 좌우가 안 먹는다
             e.Get<GroundState>().IsGrounded = false;                // 떴으니 이제 공중이다
 
             // 세로 속도를 적분해 정점을 찾는다(월드가 하는 일을 여기선 손으로).

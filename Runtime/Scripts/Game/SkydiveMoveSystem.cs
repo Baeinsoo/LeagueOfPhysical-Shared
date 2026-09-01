@@ -4,17 +4,21 @@ using UnityEngine;
 namespace LOP
 {
     /// <summary>
-    /// Skydive의 <b>속도</b>를 정한다. 자세가 목표 하강·수평 속도를 정하고, 실제 속도는 그 목표로
-    /// 수렴한다 — 자세를 바꿔도 속도가 한 틱에 튀지 않아 남을 예측하는 쪽의 오차가 완만해진다.
+    /// Skydive의 <b>속도</b>를 정한다. 젤다 <i>왕국의 눈물</i>처럼 <b>걷기 / 점프 / 스카이다이빙 /
+    /// 패러세일</b> 네 상태로 나눠 다룬다(<see cref="SkydiveMotionState"/>) — 매 틱 상태를 먼저
+    /// 정하고 세로·좌우가 그 하나를 따른다.
     ///
-    /// 발판에 서 있는 동안은 자세를 보지 않고 <b>다른 게임과 같은 걷기 커널</b>
-    /// (<see cref="MovementMotor.CalcVelocity"/>)을 그대로 부른다 — 상수를 베끼면 한쪽만
-    /// 바뀌어 조용히 갈라지지만, 같은 함수를 부르면 걷는 느낌이 구조적으로 같아진다.
-    /// 그 커널이 제동과 함께 <b>바라볼 방향</b>도 내주므로 걸을 때 몸이 이동 방향으로 돈다.
-    /// 자세는 떨어지는 몸의 개념이라, 서 있는 몸에 그대로 쓰면 얼음 위를 게걸음하듯 보인다.
+    /// <list type="bullet">
+    /// <item>걷기: 다른 게임과 같은 커널(<see cref="MovementMotor.CalcVelocity"/>)을
+    /// 그대로 부른다. 상수를 베끼면 한쪽만 바뀌어 조용히 갈라지지만, 같은 함수를 부르면 걷는
+    /// 느낌이 구조적으로 같아진다. 그 커널이 <b>바라볼 방향</b>도 내주므로 몸이 이동 방향으로 돈다.</item>
+    /// <item>점프: 좌우 입력을 받지 않는다 — 이륙할 때의 수평 속도가 그대로 궤적이 된다.</item>
+    /// <item>스카이다이빙: 자세 축(대자~다이브)이 종단속도와 좌우 조작을 정한다.</item>
+    /// <item>패러세일: 천천히 내려오며 좌우가 가장 잘 든다.</item>
+    /// </list>
     ///
-    /// 위치는 여기서 정하지 않는다: 맵에 부딪히면 벽까지만 가야 하는데 그 판정은 충돌 쿼리가
-    /// 필요하고, 그 쿼리를 든 쪽이 <see cref="SkydiveWorld"/>다(<see cref="FlappyMoveSystem"/>과 같은 짝).
+    /// 세로는 어느 상태든 <b>일정 가속 + 종단속도 상한</b>이다 — 젤다 낙하 실측과 같은 모양이다.
+    ///
     /// </summary>
     public class SkydiveMoveSystem
     {
@@ -31,19 +35,31 @@ namespace LOP
             // 한 틱 늦지만 20ms라, 착지 다음 틱부터 걷기 값이 붙는 정도로만 드러난다.
             bool grounded = entity.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false;
 
-            float axis = posture.Axis < 0f ? 0f : (posture.Axis > 1f ? 1f : posture.Axis);
-
-            // 패러세일은 자세 축과 무관한 도구라 축을 덮어쓴다.
-            float targetFall = posture.Gliding
-                ? config.GlideFallSpeed
-                : Lerp(config.SpreadFallSpeed, config.DiveFallSpeed, axis);
-
             var linear = velocity.Linear;
             var command = entity.Get<InputBuffer>()?.Current;
             float inputX = command == null ? 0f : command.Horizontal;
             float inputZ = command == null ? 0f : command.Vertical;
 
-            // 세로 — 목표 하강 속도로 수렴한다(중력을 직접 적분하지 않는다).
+            // 이번 틱을 어떤 상태로 굴릴지 먼저 정한다 — 아래 세로·좌우가 모두 이 하나를 따른다.
+            var state = SkydiveMotion.Resolve(grounded, posture.Gliding, linear.Y);
+
+            // 세로 — 상태가 정한 종단속도로 수렴한다(중력을 직접 적분하지 않는다).
+            // 걷기 상태에서는 자세를 보지 않는다: 발 딛고 선 몸에 다이브 종단속도를 물리면,
+            // 슬라이더를 쥔 채 걷다가 발판을 벗어나는 순간 하강이 튄다.
+            float targetFall;
+            if (state == SkydiveMotionState.Walking || state == SkydiveMotionState.Jumping)
+            {
+                targetFall = config.SpreadFallSpeed;
+            }
+            else if (state == SkydiveMotionState.Gliding)
+            {
+                targetFall = config.GlideFallSpeed;
+            }
+            else
+            {
+                float axis = posture.Axis < 0f ? 0f : (posture.Axis > 1f ? 1f : posture.Axis);
+                targetFall = Lerp(config.SpreadFallSpeed, config.DiveFallSpeed, axis);
+            }
             linear.Y = Approach(linear.Y, -targetFall, config.FallApproach * deltaTime);
 
             // 점프는 지금까지의 세로 속도를 지우고 새로 준다 — 그래야 누를 때마다 같은 높이로 뜬다.
@@ -54,20 +70,24 @@ namespace LOP
                 linear.Y = config.JumpPower;
             }
 
-            if (grounded)
+            // 좌우 — 상태마다 규칙이 다르다.
+            //  걷기: 다른 게임과 같은 커널로(회전까지)
+            //  점프: 아무것도 안 한다 — 이륙할 때의 수평 속도가 그대로 남아 궤적이 된다
+            //  낙하·패러세일: 상태별 목표 속도로 수렴
+            if (state == SkydiveMotionState.Walking)
             {
-                WalkOnGround(entity, ref linear, inputX, inputZ, deltaTime, config);
+                Walk(entity, ref linear, inputX, inputZ, deltaTime, config);
             }
-            else
+            else if (state != SkydiveMotionState.Jumping)
             {
-                Glide(ref linear, posture, axis, inputX, inputZ, deltaTime, config);
+                Drift(ref linear, posture, state, inputX, inputZ, deltaTime, config);
             }
 
             velocity.Linear = linear;
         }
 
         // 다른 게임과 같은 걷기 커널을 그대로 부른다 — 제동도 회전도 거기서 나온다.
-        private static void WalkOnGround(GameFramework.World.Entity entity,
+        private static void Walk(GameFramework.World.Entity entity,
             ref System.Numerics.Vector3 linear, float inputX, float inputZ,
             float deltaTime, in SkydiveConfig config)
         {
@@ -89,16 +109,23 @@ namespace LOP
             }
         }
 
-        // 공중 — 자세가 목표 속도와 선회력을 정한다. 몸은 돌리지 않는다(기울기가 그 위에 얹힌다).
-        private static void Glide(ref System.Numerics.Vector3 linear, Posture posture, float axis,
-            float inputX, float inputZ, float deltaTime, in SkydiveConfig config)
+        // 공중 — 상태가 목표 속도와 선회력을 정한다. 몸은 돌리지 않는다(자세 기울기가 그 위에 얹힌다).
+        private static void Drift(ref System.Numerics.Vector3 linear, Posture posture,
+            SkydiveMotionState state, float inputX, float inputZ, float deltaTime, in SkydiveConfig config)
         {
-            float maxSide = posture.Gliding
-                ? config.GlideMoveSpeed
-                : Lerp(config.SpreadMoveSpeed, config.DiveMoveSpeed, axis);
-            float turnAccel = posture.Gliding
-                ? config.GlideTurnAccel
-                : Lerp(config.SpreadTurnAccel, config.DiveTurnAccel, axis);
+            float maxSide;
+            float turnAccel;
+            if (state == SkydiveMotionState.Gliding)
+            {
+                maxSide = config.GlideMoveSpeed;
+                turnAccel = config.GlideTurnAccel;
+            }
+            else
+            {
+                float axis = posture.Axis < 0f ? 0f : (posture.Axis > 1f ? 1f : posture.Axis);
+                maxSide = Lerp(config.SpreadMoveSpeed, config.DiveMoveSpeed, axis);
+                turnAccel = Lerp(config.SpreadTurnAccel, config.DiveTurnAccel, axis);
+            }
 
             float inputLen = (float)System.Math.Sqrt(inputX * inputX + inputZ * inputZ);
             if (inputLen > 1f)
