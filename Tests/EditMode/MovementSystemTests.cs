@@ -11,7 +11,7 @@ namespace LOP.Tests
 
         private static MovementResult Move(Vector3 cur, float h, float v,
             float speed = 5f, float maxAccel = 100f, float dt = 0.1f)
-            => MovementSystem.ProcessMovement(new MovementInput(cur, h, v, speed, maxAccel, dt));
+            => MovementMotor.CalcVelocity(new MovementInput(cur, h, v, speed, maxAccel, dt));
 
         [Test]
         public void Tick_InputlessEntity_ResolvesExternalForceIntoVelocity()

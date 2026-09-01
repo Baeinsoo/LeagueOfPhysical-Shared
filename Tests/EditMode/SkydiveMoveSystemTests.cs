@@ -119,7 +119,7 @@ namespace LOP.Tests
 
             new SkydiveMoveSystem().Tick(e, 0.02f, config);
 
-            var expected = MovementSystem.ProcessMovement(new MovementInput(
+            var expected = MovementMotor.CalcVelocity(new MovementInput(
                 new Vector3(3f, 0f, 1f), 1f, 0f,
                 config.GroundMoveSpeed, config.GroundAccel, 0.02f));
 

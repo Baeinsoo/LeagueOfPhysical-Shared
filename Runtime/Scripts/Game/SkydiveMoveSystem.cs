@@ -8,7 +8,7 @@ namespace LOP
     /// 수렴한다 — 자세를 바꿔도 속도가 한 틱에 튀지 않아 남을 예측하는 쪽의 오차가 완만해진다.
     ///
     /// 발판에 서 있는 동안은 자세를 보지 않고 <b>다른 게임과 같은 걷기 커널</b>
-    /// (<see cref="MovementSystem.ProcessMovement"/>)을 그대로 부른다 — 상수를 베끼면 한쪽만
+    /// (<see cref="MovementMotor.CalcVelocity"/>)을 그대로 부른다 — 상수를 베끼면 한쪽만
     /// 바뀌어 조용히 갈라지지만, 같은 함수를 부르면 걷는 느낌이 구조적으로 같아진다.
     /// 그 커널이 제동과 함께 <b>바라볼 방향</b>도 내주므로 걸을 때 몸이 이동 방향으로 돈다.
     /// 자세는 떨어지는 몸의 개념이라, 서 있는 몸에 그대로 쓰면 얼음 위를 게걸음하듯 보인다.
@@ -71,7 +71,7 @@ namespace LOP
             ref System.Numerics.Vector3 linear, float inputX, float inputZ,
             float deltaTime, in SkydiveConfig config)
         {
-            var result = MovementSystem.ProcessMovement(new MovementInput(
+            var result = MovementMotor.CalcVelocity(new MovementInput(
                 linear.ToUnity(), inputX, inputZ,
                 config.GroundMoveSpeed, config.GroundAccel, deltaTime));
 
