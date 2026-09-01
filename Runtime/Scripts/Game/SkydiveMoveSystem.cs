@@ -40,12 +40,9 @@ namespace LOP
             float inputX = command == null ? 0f : command.Horizontal;
             float inputZ = command == null ? 0f : command.Vertical;
 
-            // 착지하면 점프가 끝난다. 여기서 지워야 다음 점프가 깨끗하게 시작한다.
+            // 점프가 끝났는지(착지했거나 공중으로 나왔거나)는 월드가 정한다 — 발밑 여유를
+            // 재야 알 수 있고, 그 쿼리를 든 쪽이 월드다. 여기선 읽기만 한다.
             var jumpState = entity.Get<JumpState>();
-            if (grounded && jumpState != null)
-            {
-                jumpState.IsJumping = false;
-            }
 
             // 이번 틱을 어떤 상태로 굴릴지 먼저 정한다 — 아래 세로·좌우가 모두 이 하나를 따른다.
             var state = SkydiveMotion.Resolve(grounded, jumpState != null && jumpState.IsJumping, posture.Gliding);
@@ -67,7 +64,12 @@ namespace LOP
                 float axis = posture.Axis < 0f ? 0f : (posture.Axis > 1f ? 1f : posture.Axis);
                 targetFall = Lerp(config.SpreadFallSpeed, config.DiveFallSpeed, axis);
             }
-            linear.Y = Approach(linear.Y, -targetFall, config.FallApproach * deltaTime);
+            // 빨라질 때는 중력(FallApproach), 느려질 때는 훨씬 큰 감속(FallBrake)을 쓴다.
+            // 대칭으로 두면 패러세일을 펴도 속도가 중력과 같은 비율로만 줄어 낙하산이 아니게 된다
+            // — 60에서 6까지 1.9초가 걸린다. 공기 저항은 면적이 커지면 급격히 커지므로
+            // 커지는 쪽과 줄어드는 쪽이 원래 대칭이 아니다.
+            float fallStep = linear.Y < -targetFall ? config.FallBrake : config.FallApproach;
+            linear.Y = Approach(linear.Y, -targetFall, fallStep * deltaTime);
 
             // 점프는 지금까지의 세로 속도를 지우고 새로 준다 — 그래야 누를 때마다 같은 높이로 뜬다.
             // 위 수렴 다음에 와야 한다: 앞에 두면 누른 틱의 하강분만큼 손해를 봐 높이가 흔들린다.

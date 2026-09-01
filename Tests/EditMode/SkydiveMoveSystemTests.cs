@@ -17,7 +17,7 @@ namespace LOP.Tests
                 fallApproach: 29f, postureRate: 4f,
                 bodyRadius: 0.4f, bodyHeight: 1.8f, groundY: 0f,
                 staminaMax: 100f, glideDrain: 20f, groundRecover: 40f, emergencyGlideTime: 1f,
-                groundMoveSpeed: 4f, groundAccel: 100f, jumpPower: 11f, poseClearance: 5f);
+                groundMoveSpeed: 4f, groundAccel: 100f, jumpPower: 11f, poseClearance: 5f, fallBrake: 150f);
 
         static Entity Diver(float axis, bool gliding, Vector3 velocity, Vector3 position,
                             float h = 0f, float v = 0f)
@@ -259,18 +259,6 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 착지하면_점프가_풀린다()
-        {
-            var e = GroundedDiver(Vector3.zero, h: 1f);
-            e.Get<JumpState>().IsJumping = true;
-
-            new SkydiveMoveSystem().Tick(e, 0.02f, Config());
-
-            Assert.IsFalse(e.Get<JumpState>().IsJumping, "닿으면 점프가 끝난다");
-            Assert.Greater(VelocityOf(e).x, 0f, "닿았으면 그 틱부터 걷기 조작이 먹는다");
-        }
-
-        [Test]
         public void 발판에서_걸어_나가면_바로_조종된다()
         {
             // 뛰지 않고 걸어서 벗어나면 JumpState가 안 서 있어 곧바로 낙하 조종이 된다 —
@@ -334,6 +322,33 @@ namespace LOP.Tests
 
             float expected = config.JumpPower * config.JumpPower / (2f * config.FallApproach);
             Assert.AreEqual(expected, height, 0.15f, "도달 높이가 설정값이 말하는 높이와 달라졌다");
+        }
+
+        [Test]
+        public void 패러세일을_펴면_하강이_급격히_꺾인다()
+        {
+            // 낙하산은 펴는 순간 속도가 꺾여야 한다. 중력과 같은 비율(29)로 줄면
+            // 60에서 6까지 1.9초가 걸려 낙하산이 아니게 된다.
+            var e = Diver(0f, true, new Vector3(0f, -60f, 0f), new Vector3(0f, 500f, 0f));
+            e.Add(new GroundState { IsGrounded = false });
+            var sys = new SkydiveMoveSystem();
+
+            for (int i = 0; i < 25; i++) { sys.Tick(e, 0.02f, Config()); }   // 0.5초
+
+            Assert.AreEqual(-6f, VelocityOf(e).y, Tolerance, "0.5초 안에 활공 속도로 내려앉아야 한다");
+        }
+
+        [Test]
+        public void 빨라질_때는_중력_비율_그대로다()
+        {
+            // 위 테스트의 대조군 — 감속만 커야지 가속까지 커지면 낙하가 통째로 달라진다.
+            var e = Diver(0f, false, Vector3.zero, new Vector3(0f, 500f, 0f));
+            e.Add(new GroundState { IsGrounded = false });
+
+            new SkydiveMoveSystem().Tick(e, 0.02f, Config());
+
+            // 29 m/s² × 0.02s = 0.58
+            Assert.AreEqual(-0.58f, VelocityOf(e).y, Tolerance, "빨라질 때는 중력(FallApproach)이다");
         }
 
         [Test]

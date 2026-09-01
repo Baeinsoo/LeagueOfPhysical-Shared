@@ -27,8 +27,14 @@ namespace LOP
         /// <summary>패러세일의 수평 가속.</summary>
         public readonly float GlideTurnAccel;
 
-        /// <summary>실제 하강 속도가 자세의 목표 속도로 다가가는 가속(m/s²). 자세를 바꿔도 속도가 튀지 않게 한다.</summary>
+        /// <summary>실제 하강 속도가 자세의 목표 속도로 <b>빨라질 때</b>의 가속(m/s²) — 곧 중력이다.</summary>
         public readonly float FallApproach;
+        /// <summary>
+        /// 반대로 <b>느려질 때</b>의 감속(m/s²). 훨씬 커야 한다 — 패러세일은 낙하산이라
+        /// 펴는 순간 속도가 꺾여야지, 중력과 같은 비율로 천천히 줄면 낙하산이 아니다.
+        /// (공기 저항은 면적이 커지면 급격히 커진다 — 커지는 쪽과 줄어드는 쪽이 대칭이 아니다.)
+        /// </summary>
+        public readonly float FallBrake;
         /// <summary>자세 축이 1초에 바뀔 수 있는 양. 4면 0↔1 전환에 0.25초가 걸린다.</summary>
         public readonly float PostureRate;
 
@@ -70,7 +76,7 @@ namespace LOP
             float fallApproach, float postureRate,
             float bodyRadius, float bodyHeight, float groundY,
             float staminaMax, float glideDrain, float groundRecover, float emergencyGlideTime,
-            float groundMoveSpeed, float groundAccel, float jumpPower, float poseClearance)
+            float groundMoveSpeed, float groundAccel, float jumpPower, float poseClearance, float fallBrake)
         {
             SpreadFallSpeed = spreadFallSpeed;
             DiveFallSpeed = diveFallSpeed;
@@ -94,6 +100,7 @@ namespace LOP
             GroundAccel = groundAccel;
             JumpPower = jumpPower;
             PoseClearance = poseClearance;
+            FallBrake = fallBrake;
         }
     }
 }
