@@ -16,7 +16,8 @@ namespace LOP.Tests
                 spreadTurnAccel: 22f, diveTurnAccel: 6f, glideTurnAccel: 18f,
                 fallApproach: 30f, postureRate: 4f,
                 bodyRadius: 0.4f, bodyHeight: 1.8f, groundY: 0f,
-                staminaMax: 100f, glideDrain: 20f, groundRecover: 40f, emergencyGlideTime: 1f);
+                staminaMax: 100f, glideDrain: 20f, groundRecover: 40f, emergencyGlideTime: 1f,
+                groundMoveSpeed: 8f, groundAccel: 100f, jumpPower: 11f);
 
         static Entity Diver(float axis, bool gliding, Vector3 velocity, Vector3 position,
                             float h = 0f, float v = 0f)
@@ -98,6 +99,102 @@ namespace LOP.Tests
 
             Assert.AreEqual(500f, PositionOf(e).y, Tolerance, "MoveSystem은 위치를 쓰지 않는다");
             Assert.AreEqual(0f, PositionOf(e).x, Tolerance);
+        }
+
+        // 발 딛고 있는 다이버. 접지 여부는 이동 커널이 적어 주는 값이라 테스트가 직접 세운다.
+        static Entity GroundedDiver(Vector3 velocity, float h = 0f, float v = 0f)
+        {
+            var e = Diver(0f, false, velocity, new Vector3(0f, 0f, 0f), h, v);
+            e.Add(new GroundState { IsGrounded = true });
+            return e;
+        }
+
+        [Test]
+        public void 땅에서는_손을_떼면_거의_바로_선다()
+        {
+            // 공중 가속(22)이면 12m/s에서 멈추는 데 0.55초가 걸려 3m를 미끄러진다.
+            // 걷기 가속(100)이면 0.1초 안에 선다 — 이 차이가 "얼음 위" 느낌의 정체다.
+            var e = GroundedDiver(new Vector3(8f, 0f, 0f), h: 0f);
+            var sys = new SkydiveMoveSystem();
+
+            for (int i = 0; i < 5; i++) { sys.Tick(e, 0.02f, Config()); }   // 0.1초
+
+            Assert.AreEqual(0f, VelocityOf(e).x, Tolerance, "걷다 손을 떼면 0.1초 안에 서야 한다");
+        }
+
+        [Test]
+        public void 공중에서는_같은_시간에_아직_미끄러진다()
+        {
+            // 위 테스트의 대조군 — 같은 0.1초를 공중에서 굴리면 아직 한참 남아 있어야 한다.
+            // 둘을 같이 재야 "땅만 바뀌었다"가 증명된다(공중 값을 건드리면 코스 검산이 무너진다).
+            var e = Diver(0f, false, new Vector3(8f, 0f, 0f), new Vector3(0f, 500f, 0f), h: 0f);
+            var sys = new SkydiveMoveSystem();
+
+            for (int i = 0; i < 5; i++) { sys.Tick(e, 0.02f, Config()); }
+
+            Assert.Greater(VelocityOf(e).x, 5f, "공중 제동은 그대로 완만해야 한다");
+        }
+
+        [Test]
+        public void 땅에서는_걷기_최고속을_넘지_않는다()
+        {
+            var e = GroundedDiver(Vector3.zero, h: 1f);
+            var sys = new SkydiveMoveSystem();
+
+            for (int i = 0; i < 100; i++) { sys.Tick(e, 0.02f, Config()); }
+
+            Assert.AreEqual(8f, VelocityOf(e).x, Tolerance, "자세별 속도(12~18)가 아니라 걷기 속도여야 한다");
+        }
+
+        [Test]
+        public void 땅에서_점프하면_설정한_세로_속도로_뜬다()
+        {
+            var e = GroundedDiver(Vector3.zero);
+            e.Get<InputBuffer>().Current = new InputCommand { Jump = true };
+
+            new SkydiveMoveSystem().Tick(e, 0.02f, Config());
+
+            Assert.AreEqual(11f, VelocityOf(e).y, Tolerance, "점프는 지금까지의 세로 속도를 지우고 새로 준다");
+        }
+
+        [Test]
+        public void 공중에서는_점프가_안_된다()
+        {
+            // 접지가 아니면 눌러도 무시한다 — 안 그러면 떨어지는 내내 세로 속도를 리셋해
+            // 무한 활공이 된다.
+            var e = Diver(0f, false, new Vector3(0f, -25f, 0f), new Vector3(0f, 500f, 0f));
+            e.Add(new GroundState { IsGrounded = false });
+            e.Get<InputBuffer>().Current = new InputCommand { Jump = true };
+
+            new SkydiveMoveSystem().Tick(e, 0.02f, Config());
+
+            Assert.Less(VelocityOf(e).y, 0f, "공중에서 누른 점프는 무시돼야 한다");
+        }
+
+        [Test]
+        public void 점프_높이가_설정값에서_나오는_높이와_맞는다()
+        {
+            // 도달 높이 = JumpPower² / (2 × FallApproach) = 121/60 ≈ 2.02m.
+            // 숫자를 코드에 박지 않고 config에서 끌어내는지를 이 테스트가 붙잡는다.
+            var e = GroundedDiver(Vector3.zero);
+            e.Get<InputBuffer>().Current = new InputCommand { Jump = true };
+            var sys = new SkydiveMoveSystem();
+            var config = Config();
+
+            sys.Tick(e, 0.02f, config);
+            e.Get<InputBuffer>().Current = new InputCommand();      // 손을 뗀다
+            e.Get<GroundState>().IsGrounded = false;                // 떴으니 이제 공중이다
+
+            // 세로 속도를 적분해 정점을 찾는다(월드가 하는 일을 여기선 손으로).
+            float height = 0f;
+            for (int i = 0; i < 200 && VelocityOf(e).y > 0f; i++)
+            {
+                height += VelocityOf(e).y * 0.02f;
+                sys.Tick(e, 0.02f, config);
+            }
+
+            float expected = config.JumpPower * config.JumpPower / (2f * config.FallApproach);
+            Assert.AreEqual(expected, height, 0.15f, "도달 높이가 설정값이 말하는 높이와 달라졌다");
         }
 
         [Test]

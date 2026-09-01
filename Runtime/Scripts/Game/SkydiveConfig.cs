@@ -48,13 +48,24 @@ namespace LOP
         /// <summary>잔고 0에서 허용되는 마지막 펼침의 지속 시간(초).</summary>
         public readonly float EmergencyGlideTime;
 
+        /// <summary>발판 위에서 걸을 때의 최고 속도. 공중의 자세별 속도와 별개다.</summary>
+        public readonly float GroundMoveSpeed;
+        /// <summary>
+        /// 걸을 때 목표 속도로 따라붙는 빠르기(m/s²). 공중값(6~22)보다 훨씬 커야 안 미끄러진다 —
+        /// 표준 걷기 모터(<see cref="MovementSystem"/>)가 쓰는 값과 같은 자리다.
+        /// </summary>
+        public readonly float GroundAccel;
+        /// <summary>발판에서 뛸 때의 처음 세로 속도. 도달 높이는 이 값²/(2×FallApproach)다.</summary>
+        public readonly float JumpPower;
+
         public SkydiveConfig(
             float spreadFallSpeed, float diveFallSpeed, float glideFallSpeed,
             float spreadMoveSpeed, float diveMoveSpeed, float glideMoveSpeed,
             float spreadTurnAccel, float diveTurnAccel, float glideTurnAccel,
             float fallApproach, float postureRate,
             float bodyRadius, float bodyHeight, float groundY,
-            float staminaMax, float glideDrain, float groundRecover, float emergencyGlideTime)
+            float staminaMax, float glideDrain, float groundRecover, float emergencyGlideTime,
+            float groundMoveSpeed, float groundAccel, float jumpPower)
         {
             SpreadFallSpeed = spreadFallSpeed;
             DiveFallSpeed = diveFallSpeed;
@@ -74,6 +85,9 @@ namespace LOP
             GlideDrain = glideDrain;
             GroundRecover = groundRecover;
             EmergencyGlideTime = emergencyGlideTime;
+            GroundMoveSpeed = groundMoveSpeed;
+            GroundAccel = groundAccel;
+            JumpPower = jumpPower;
         }
     }
 }
