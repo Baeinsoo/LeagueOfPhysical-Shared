@@ -17,7 +17,7 @@ namespace LOP.Tests
                 fallApproach: 29f, postureRate: 4f,
                 bodyRadius: 0.4f, bodyHeight: 1.8f, groundY: 0f,
                 staminaMax: 100f, glideDrain: 20f, groundRecover: 40f, emergencyGlideTime: 1f,
-                groundMoveSpeed: 4f, groundAccel: 100f, jumpPower: 11f, poseClearance: 20f);
+                groundMoveSpeed: 4f, groundAccel: 100f, jumpPower: 11f, poseClearance: 5f);
 
         // 기본 맵은 면이 하나도 없는 하늘이다(HalfSpaceQuery에 면을 안 넣으면 늘 CollisionHit.None).
         static SkydiveWorld World(EntityRegistry registry, GameFramework.Physics.ICollisionQuery query = null)
@@ -221,10 +221,10 @@ namespace LOP.Tests
         [Test]
         public void 발밑이_가까우면_자세를_못_잡는다()
         {
-            // 여유(20m)보다 낮게 떠 있으면 "선 채로 낙하"다 — 젤다가 지면 근처에서
+            // 여유(5m)보다 낮게 떠 있으면 "선 채로 낙하"다 — 젤다가 지면 근처에서
             // 패러세일을 못 펴게 하는 것과 같다.
             var registry = new EntityRegistry();
-            var diver = PosingDiver("a", 5f);
+            var diver = PosingDiver("a", 2f);
             registry.Add(diver);
             var map = new HalfSpaceQuery();
             map.AddGround(0f);
