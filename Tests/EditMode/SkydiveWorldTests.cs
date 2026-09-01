@@ -17,7 +17,7 @@ namespace LOP.Tests
                 fallApproach: 30f, postureRate: 4f,
                 bodyRadius: 0.4f, bodyHeight: 1.8f, groundY: 0f,
                 staminaMax: 100f, glideDrain: 20f, groundRecover: 40f, emergencyGlideTime: 1f,
-                groundMoveSpeed: 8f, groundAccel: 100f, jumpPower: 11f);
+                groundMoveSpeed: 4f, groundAccel: 100f, jumpPower: 11f);
 
         // 기본 맵은 면이 하나도 없는 하늘이다(HalfSpaceQuery에 면을 안 넣으면 늘 CollisionHit.None).
         static SkydiveWorld World(EntityRegistry registry, GameFramework.Physics.ICollisionQuery query = null)
