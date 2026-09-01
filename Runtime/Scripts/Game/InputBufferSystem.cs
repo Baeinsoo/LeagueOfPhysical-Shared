@@ -76,6 +76,7 @@ namespace LOP
                 Vertical = buffer.LastReceived.Vertical,
                 Posture = buffer.LastReceived.Posture,
                 Glide = buffer.LastReceived.Glide,
+                Posing = buffer.LastReceived.Posing,
             };
             return buffer.Current;
         }

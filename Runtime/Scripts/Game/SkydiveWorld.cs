@@ -134,7 +134,8 @@ namespace LOP
             var motion = entity.Get<MotionState>();
             if (motion != null)
             {
-                motion.Value = SkydiveMotion.Advance(motion.Value, grounded, HasClearanceBelow(entity));
+                motion.Value = SkydiveMotion.Advance(motion.Value, grounded,
+                    HasClearanceBelow(entity), command != null && command.Posing);
             }
 
             // 자세 슬라이더는 활공 상태에서만 먹는다. 걷기·낙하에서는 아무리 밀어도 대자로 되돌아가고,

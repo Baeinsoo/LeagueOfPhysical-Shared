@@ -22,14 +22,15 @@ public static partial class InputCommandReflection {
   static InputCommandReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChJJbnB1dENvbW1hbmQucHJvdG8ijwEKDElucHV0Q29tbWFuZBIXCg9zZXF1",
+          "ChJJbnB1dENvbW1hbmQucHJvdG8inwEKDElucHV0Q29tbWFuZBIXCg9zZXF1",
           "ZW5jZV9udW1iZXIYASABKAMSEgoKaG9yaXpvbnRhbBgCIAEoAhIQCgh2ZXJ0",
           "aWNhbBgDIAEoAhIMCgRqdW1wGAQgASgIEhIKCmFiaWxpdHlfaWQYBiABKAUS",
-          "DwoHcG9zdHVyZRgHIAEoAhINCgVnbGlkZRgIIAEoCGIGcHJvdG8z"));
+          "DwoHcG9zdHVyZRgHIAEoAhINCgVnbGlkZRgIIAEoCBIOCgZwb3NpbmcYCSAB",
+          "KAhiBnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::InputCommand), global::InputCommand.Parser, new[]{ "SequenceNumber", "Horizontal", "Vertical", "Jump", "AbilityId", "Posture", "Glide" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::InputCommand), global::InputCommand.Parser, new[]{ "SequenceNumber", "Horizontal", "Vertical", "Jump", "AbilityId", "Posture", "Glide", "Posing" }, null, null, null, null)
         }));
   }
   #endregion
@@ -78,6 +79,7 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     abilityId_ = other.abilityId_;
     posture_ = other.posture_;
     glide_ = other.glide_;
+    posing_ = other.posing_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -177,6 +179,22 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     }
   }
 
+  /// <summary>Field number for the "posing" field.</summary>
+  public const int PosingFieldNumber = 9;
+  private bool posing_;
+  /// <summary>
+  /// 자세 슬라이더를 잡고 있나. 자세 값(posture/glide)만으로는 "안 잡음"과
+  /// "잡았는데 대자"를 구분할 수 없어서 따로 싣는다 — 그 구분이 스카이다이빙 진입 조건이다.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public bool Posing {
+    get { return posing_; }
+    set {
+      posing_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -199,6 +217,7 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     if (AbilityId != other.AbilityId) return false;
     if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(Posture, other.Posture)) return false;
     if (Glide != other.Glide) return false;
+    if (Posing != other.Posing) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -213,6 +232,7 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     if (AbilityId != 0) hash ^= AbilityId.GetHashCode();
     if (Posture != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(Posture);
     if (Glide != false) hash ^= Glide.GetHashCode();
+    if (Posing != false) hash ^= Posing.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -259,6 +279,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
       output.WriteRawTag(64);
       output.WriteBool(Glide);
     }
+    if (Posing != false) {
+      output.WriteRawTag(72);
+      output.WriteBool(Posing);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -297,6 +321,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
       output.WriteRawTag(64);
       output.WriteBool(Glide);
     }
+    if (Posing != false) {
+      output.WriteRawTag(72);
+      output.WriteBool(Posing);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -326,6 +354,9 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
       size += 1 + 4;
     }
     if (Glide != false) {
+      size += 1 + 1;
+    }
+    if (Posing != false) {
       size += 1 + 1;
     }
     if (_unknownFields != null) {
@@ -360,6 +391,9 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     }
     if (other.Glide != false) {
       Glide = other.Glide;
+    }
+    if (other.Posing != false) {
+      Posing = other.Posing;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -408,6 +442,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
           Glide = input.ReadBool();
           break;
         }
+        case 72: {
+          Posing = input.ReadBool();
+          break;
+        }
       }
     }
   #endif
@@ -453,6 +491,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
         }
         case 64: {
           Glide = input.ReadBool();
+          break;
+        }
+        case 72: {
+          Posing = input.ReadBool();
           break;
         }
       }

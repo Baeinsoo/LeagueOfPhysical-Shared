@@ -182,7 +182,7 @@ namespace LOP.Tests
         {
             var e = Diver(id);
             e.Get<GameFramework.World.Transform>().Position = new Vector3(0f, height, 0f).ToNumerics();
-            e.Get<InputBuffer>().Current = new InputCommand { Posture = 1f, Glide = false };
+            e.Get<InputBuffer>().Current = new InputCommand { Posture = 1f, Glide = false, Posing = true };
             return e;
         }
 
@@ -228,7 +228,7 @@ namespace LOP.Tests
             diver.Get<GameFramework.World.Transform>().Position = new Vector3(0f, 2f, 0f).ToNumerics();
             diver.Get<MotionState>().Value = SkydiveMotionState.Skydiving;   // 이미 들어와 있다
             diver.Get<Posture>().Gliding = true;
-            diver.Get<InputBuffer>().Current = new InputCommand { Glide = true };
+            diver.Get<InputBuffer>().Current = new InputCommand { Glide = true, Posing = true };
             registry.Add(diver);
             var map = new HalfSpaceQuery();
             map.AddGround(0f);   // 발밑 2m — 여유(5m)보다 가깝다
@@ -282,7 +282,7 @@ namespace LOP.Tests
             diver.Get<GameFramework.World.Transform>().Position = new Vector3(0f, 0.3f, 0f).ToNumerics();
             diver.Get<MotionState>().Value = SkydiveMotionState.Skydiving;
             diver.Get<Posture>().Gliding = true;
-            diver.Get<InputBuffer>().Current = new InputCommand { Glide = true };
+            diver.Get<InputBuffer>().Current = new InputCommand { Glide = true, Posing = true };
             registry.Add(diver);
             var map = new HalfSpaceQuery();
             map.AddGround(0f);
@@ -299,7 +299,7 @@ namespace LOP.Tests
         {
             var registry = new EntityRegistry();
             var diver = Diver("a");
-            diver.Get<InputBuffer>().Current = new InputCommand { Posture = 1f };
+            diver.Get<InputBuffer>().Current = new InputCommand { Posture = 1f, Posing = true };
             registry.Add(diver);
             var world = World(registry);
             world.GameplayStartTick = 0;
@@ -314,7 +314,7 @@ namespace LOP.Tests
         {
             var registry = new EntityRegistry();
             var diver = Diver("a");
-            diver.Get<InputBuffer>().Current = new InputCommand { Posture = 1f };
+            diver.Get<InputBuffer>().Current = new InputCommand { Posture = 1f, Posing = true };
             registry.Add(diver);
             var world = World(registry);
             world.GameplayStartTick = 0;
@@ -330,7 +330,7 @@ namespace LOP.Tests
         {
             var registry = new EntityRegistry();
             var diver = Diver("a");
-            diver.Get<InputBuffer>().Current = new InputCommand { Posture = 1f, Glide = true };
+            diver.Get<InputBuffer>().Current = new InputCommand { Posture = 1f, Glide = true, Posing = true };
             registry.Add(diver);
             var world = World(registry);
             world.GameplayStartTick = 0;
@@ -364,7 +364,7 @@ namespace LOP.Tests
             var registry = new EntityRegistry();
             var diver = Diver("a");
             diver.Get<Stamina>().Current = 0f;   // 잔고 0 — "마지막 한 번" 구간
-            diver.Get<InputBuffer>().Current = new InputCommand { Glide = true };
+            diver.Get<InputBuffer>().Current = new InputCommand { Glide = true, Posing = true };
             registry.Add(diver);
             var world = World(registry);
             world.GameplayStartTick = 0;
@@ -393,7 +393,7 @@ namespace LOP.Tests
             //  서버 스냅과 비교하려면 이 조회가 필요하다.
             var registry = new EntityRegistry();
             var diver = Diver("a");
-            diver.Get<InputBuffer>().Current = new InputCommand { Posture = 1f };
+            diver.Get<InputBuffer>().Current = new InputCommand { Posture = 1f, Posing = true };
             registry.Add(diver);
             var world = World(registry);
             world.GameplayStartTick = 0;

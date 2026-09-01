@@ -10,7 +10,7 @@ namespace LOP
         Walking,
 
         /// <summary>
-        /// 떠 있지만 아직 스카이다이빙에 못 들어갔다 — 뛰어오른 중이거나, 낮은 데서 떨어지는 중.
+        /// 떠 있지만 아직 스카이다이빙에 안 들어갔다 — 뛰어오른 중이거나, 아직 슬라이더를 안 잡았거나.
         /// <b>좌우 입력을 받지 않고</b> 이륙할 때의 수평 속도를 그대로 들고 간다. 젤다에서 점프가
         /// 그렇다: 뛰기 전에 방향을 정해야 한다.
         /// </summary>
@@ -40,8 +40,9 @@ namespace LOP
         /// <param name="current">지난 틱의 상태.</param>
         /// <param name="grounded">발을 딛고 있나.</param>
         /// <param name="hasClearanceBelow">발밑이 스카이다이빙에 들어갈 만큼 비어 있나.</param>
+        /// <param name="posing">자세 슬라이더를 잡고 있나.</param>
         public static SkydiveMotionState Advance(SkydiveMotionState current, bool grounded,
-                                                 bool hasClearanceBelow)
+                                                 bool hasClearanceBelow, bool posing)
         {
             // 닿으면 무조건 걷기로 돌아온다 — 자세도 여기서 풀린다.
             if (grounded)
@@ -56,8 +57,12 @@ namespace LOP
                 return SkydiveMotionState.Skydiving;
             }
 
-            // 떠 있고 발밑이 비면 그때 들어간다. 뛰어오른 중이든 걸어서 벗어났든 같다.
-            return hasClearanceBelow ? SkydiveMotionState.Skydiving : SkydiveMotionState.Falling;
+            // 들어가려면 둘 다 필요하다: 발밑이 비어 있고, 플레이어가 자세를 잡으려 슬라이더를
+            // 잡았을 것. 자동으로 들어가지 않는다 — 떨어지는 동안은 선 채로 있다가 내가 잡는
+            // 순간 자세가 생긴다(젤다도 그렇다). 잡은 첫 순간의 자세는 슬라이더 중립인 대자다.
+            return hasClearanceBelow && posing
+                ? SkydiveMotionState.Skydiving
+                : SkydiveMotionState.Falling;
         }
     }
 }

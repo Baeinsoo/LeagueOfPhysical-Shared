@@ -279,20 +279,33 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 상태_전이는_착지_활공유지_여유_순으로_갈린다()
+        public void 상태_전이는_착지_활공유지_진입조건_순으로_갈린다()
         {
             // 닿으면 무조건 걷기
             Assert.AreEqual(SkydiveMotionState.Walking,
-                SkydiveMotion.Advance(SkydiveMotionState.Skydiving, grounded: true, hasClearanceBelow: true));
-            // 한 번 들어온 활공은 발밑이 막혀도 유지 — 패러세일이 착지 직전에 접히면 안 된다
+                SkydiveMotion.Advance(SkydiveMotionState.Skydiving, grounded: true,
+                    hasClearanceBelow: true, posing: true));
+
+            // 한 번 들어온 활공은 발밑이 막혀도, 손을 떼도 유지 — 착지해야 풀린다.
+            // (패러세일이 착지 직전에 접히면 안 되고, 손 뗐다고 자세가 통째로 풀려도 안 된다.)
             Assert.AreEqual(SkydiveMotionState.Skydiving,
-                SkydiveMotion.Advance(SkydiveMotionState.Skydiving, grounded: false, hasClearanceBelow: false));
-            // 떠 있고 여유가 있으면 들어간다
-            Assert.AreEqual(SkydiveMotionState.Skydiving,
-                SkydiveMotion.Advance(SkydiveMotionState.Falling, grounded: false, hasClearanceBelow: true));
-            // 여유가 없으면 아직 낙하
+                SkydiveMotion.Advance(SkydiveMotionState.Skydiving, grounded: false,
+                    hasClearanceBelow: false, posing: false));
+
+            // 들어가려면 둘 다 필요하다 — 여유만 있고 안 잡으면 선 채로 떨어진다.
             Assert.AreEqual(SkydiveMotionState.Falling,
-                SkydiveMotion.Advance(SkydiveMotionState.Walking, grounded: false, hasClearanceBelow: false));
+                SkydiveMotion.Advance(SkydiveMotionState.Falling, grounded: false,
+                    hasClearanceBelow: true, posing: false));
+
+            // 잡았는데 발밑이 막혀 있으면(발판 위 점프) 역시 안 들어간다.
+            Assert.AreEqual(SkydiveMotionState.Falling,
+                SkydiveMotion.Advance(SkydiveMotionState.Falling, grounded: false,
+                    hasClearanceBelow: false, posing: true));
+
+            // 둘 다 갖추면 들어간다.
+            Assert.AreEqual(SkydiveMotionState.Skydiving,
+                SkydiveMotion.Advance(SkydiveMotionState.Falling, grounded: false,
+                    hasClearanceBelow: true, posing: true));
         }
 
         [Test]
