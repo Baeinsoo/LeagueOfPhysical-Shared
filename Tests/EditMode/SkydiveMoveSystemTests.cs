@@ -26,11 +26,17 @@ namespace LOP.Tests
             entity.Add(new GameFramework.World.Transform { Position = position.ToNumerics() });
             entity.Add(new Velocity { Linear = velocity.ToNumerics() });
             entity.Add(new Posture { Axis = axis, Gliding = gliding });
-            entity.Add(new JumpState());
+            entity.Add(new MotionState { Value = SkydiveMotionState.Skydiving });
             var buffer = new InputBuffer();
             buffer.Current = new InputCommand { Horizontal = h, Vertical = v };
             entity.Add(buffer);
             return entity;
+        }
+
+        static Entity WithState(Entity e, SkydiveMotionState state)
+        {
+            e.Get<MotionState>().Value = state;
+            return e;
         }
 
         static Vector3 VelocityOf(Entity e) => e.Get<Velocity>().Linear.ToUnity();
@@ -107,7 +113,7 @@ namespace LOP.Tests
         {
             var e = Diver(0f, false, velocity, new Vector3(0f, 0f, 0f), h, v);
             e.Add(new GroundState { IsGrounded = true });
-            return e;
+            return WithState(e, SkydiveMotionState.Walking);
         }
 
         // 걷기는 다른 게임과 같은 커널을 부른다. 상수를 베낀 게 아니라 같은 함수라는 것을,
@@ -232,70 +238,75 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 뛰어오르는_동안은_좌우_입력을_안_받는다()
+        public void 낙하_상태에서는_좌우_입력을_안_받는다()
         {
             // 젤다의 점프는 뛰기 전에 방향을 정하는 것이다 — 뛴 뒤에 꺾을 수 없다.
-            // 이륙할 때의 수평 속도가 그대로 궤적이 된다.
+            // 낮은 데서 떨어지는 것도 같다: 아직 스카이다이빙에 못 들어갔으면 조종이 없다.
             var e = Diver(0f, false, new Vector3(3f, 5f, 0f), new Vector3(0f, 10f, 0f), h: 1f);
             e.Add(new GroundState { IsGrounded = false });
-            e.Get<JumpState>().IsJumping = true;
+            WithState(e, SkydiveMotionState.Falling);
 
             new SkydiveMoveSystem().Tick(e, 0.02f, Config());
 
-            Assert.AreEqual(3f, VelocityOf(e).x, Tolerance, "뛰는 중에는 좌우가 그대로여야 한다");
+            Assert.AreEqual(3f, VelocityOf(e).x, Tolerance, "낙하 중에는 좌우가 그대로여야 한다");
         }
 
         [Test]
-        public void 점프_잠금은_착지할_때까지다()
+        public void 낙하_상태에서는_내려가는_중에도_잠긴다()
         {
-            // 정점을 지나 내려가는 동안에도 잠겨 있어야 한다 — 젤다는 착지 전까지 못 꺾는다.
+            // 정점을 지나도 안 풀린다 — 젤다는 착지하거나 스카이다이빙에 들어가야 조종이 돌아온다.
             var e = Diver(0f, false, new Vector3(3f, -8f, 0f), new Vector3(0f, 10f, 0f), h: 1f);
             e.Add(new GroundState { IsGrounded = false });
-            e.Get<JumpState>().IsJumping = true;   // 뛰었고 아직 안 닿았다
+            WithState(e, SkydiveMotionState.Falling);
 
             new SkydiveMoveSystem().Tick(e, 0.02f, Config());
 
-            Assert.AreEqual(3f, VelocityOf(e).x, Tolerance, "내려가는 중에도 점프면 잠겨야 한다");
+            Assert.AreEqual(3f, VelocityOf(e).x, Tolerance, "내려가는 중에도 낙하면 잠겨야 한다");
         }
 
         [Test]
-        public void 발판에서_걸어_나가면_바로_조종된다()
+        public void 낙하_상태에서는_점프를_못_한다()
         {
-            // 뛰지 않고 걸어서 벗어나면 JumpState가 안 서 있어 곧바로 낙하 조종이 된다 —
-            // 가장자리를 넘는 순간 조종을 잃으면 안 된다.
-            var e = Diver(0f, false, new Vector3(0f, -0.5f, 0f), new Vector3(0f, 10f, 0f), h: 1f);
+            // 걷기에서만 뛴다 — 안 그러면 공중에서 계속 눌러 무한히 뜬다.
+            var e = Diver(0f, false, new Vector3(0f, -25f, 0f), new Vector3(0f, 500f, 0f));
             e.Add(new GroundState { IsGrounded = false });
+            WithState(e, SkydiveMotionState.Falling);
+            e.Get<InputBuffer>().Current = new InputCommand { Jump = true };
 
             new SkydiveMoveSystem().Tick(e, 0.02f, Config());
 
-            Assert.Greater(VelocityOf(e).x, 0f, "걸어서 벗어나면 입력이 먹어야 한다");
+            Assert.Less(VelocityOf(e).y, 0f, "공중에서 누른 점프는 무시돼야 한다");
         }
 
         [Test]
-        public void 이동_상태는_접지_패러세일_점프_낙하_순으로_갈린다()
+        public void 상태_전이는_착지_활공유지_여유_순으로_갈린다()
         {
+            // 닿으면 무조건 걷기
             Assert.AreEqual(SkydiveMotionState.Walking,
-                SkydiveMotion.Resolve(grounded: true, jumping: true, gliding: true));
-            Assert.AreEqual(SkydiveMotionState.Gliding,
-                SkydiveMotion.Resolve(grounded: false, jumping: true, gliding: true));
-            Assert.AreEqual(SkydiveMotionState.Jumping,
-                SkydiveMotion.Resolve(grounded: false, jumping: true, gliding: false));
+                SkydiveMotion.Advance(SkydiveMotionState.Skydiving, grounded: true, hasClearanceBelow: true));
+            // 한 번 들어온 활공은 발밑이 막혀도 유지 — 패러세일이 착지 직전에 접히면 안 된다
             Assert.AreEqual(SkydiveMotionState.Skydiving,
-                SkydiveMotion.Resolve(grounded: false, jumping: false, gliding: false));
+                SkydiveMotion.Advance(SkydiveMotionState.Skydiving, grounded: false, hasClearanceBelow: false));
+            // 떠 있고 여유가 있으면 들어간다
+            Assert.AreEqual(SkydiveMotionState.Skydiving,
+                SkydiveMotion.Advance(SkydiveMotionState.Falling, grounded: false, hasClearanceBelow: true));
+            // 여유가 없으면 아직 낙하
+            Assert.AreEqual(SkydiveMotionState.Falling,
+                SkydiveMotion.Advance(SkydiveMotionState.Walking, grounded: false, hasClearanceBelow: false));
         }
 
         [Test]
-        public void 되감으면_점프_중이던_것도_돌아온다()
+        public void 되감으면_이동_상태도_돌아온다()
         {
-            // 안 되돌리면 재생 중 조작 잠금이 라이브와 달라져 같은 입력이 다른 궤적을 만든다.
+            // 안 되돌리면 재생 중 조작 잠금·슬라이더 허용이 라이브와 달라져 궤적이 갈린다.
             var e = GroundedDiver(Vector3.zero);
-            e.Get<JumpState>().IsJumping = true;
+            WithState(e, SkydiveMotionState.Skydiving);
             var snap = SkydiveSavedState.Capture(e);
 
-            e.Get<JumpState>().IsJumping = false;
+            WithState(e, SkydiveMotionState.Walking);
             snap.RestoreTo(e);
 
-            Assert.IsTrue(e.Get<JumpState>().IsJumping);
+            Assert.AreEqual(SkydiveMotionState.Skydiving, e.Get<MotionState>().Value);
         }
 
         [Test]

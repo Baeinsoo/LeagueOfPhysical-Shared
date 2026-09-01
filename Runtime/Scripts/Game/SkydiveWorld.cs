@@ -127,19 +127,19 @@ namespace LOP
             }
 
             bool grounded = entity.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false;
-            bool openAir = HasClearanceBelow(entity);
 
-            // 공중으로 충분히 나오면 점프가 끝난다. 착지만 기다리면, 구멍으로 뛰어든 사람은
-            // 착지할 일이 없어 떨어지는 내내 조작이 잠기고 자세도 못 잡는다(실제로 그랬다).
-            var jumpState = entity.Get<JumpState>();
-            if (jumpState != null && (grounded || openAir))
+            // 이동 상태를 먼저 밀어 놓는다. 발밑 여유는 "낙하 → 활공" 전이에만 쓰이고,
+            // 한 번 활공에 들어가면 착지 전까지 유지된다 — 그래야 지면이 가까워져도
+            // 패러세일이 강제로 접히지 않는다.
+            var motion = entity.Get<MotionState>();
+            if (motion != null)
             {
-                jumpState.IsJumping = false;
+                motion.Value = SkydiveMotion.Advance(motion.Value, grounded, HasClearanceBelow(entity));
             }
 
-            // 자세를 잡을 수 없는 상태면 슬라이더를 아무리 밀어도 안 먹고 대자로 되돌아간다.
+            // 자세 슬라이더는 활공 상태에서만 먹는다. 걷기·낙하에서는 아무리 밀어도 대자로 되돌아가고,
             // 착지하면 패러세일이 저절로 접히는 것도 이 줄이 한다.
-            if (grounded || openAir == false)
+            if (motion == null || motion.Value != SkydiveMotionState.Skydiving)
             {
                 posture.Axis = 0f;
                 posture.Gliding = false;

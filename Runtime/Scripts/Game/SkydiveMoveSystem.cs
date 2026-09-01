@@ -31,31 +31,20 @@ namespace LOP
                 return;
             }
 
-            // 발 딛고 있나는 지난 틱 이동 커널이 적어 둔 값이다(SkydiveWorld가 이동 뒤에 갱신).
-            // 한 틱 늦지만 20ms라, 착지 다음 틱부터 걷기 값이 붙는 정도로만 드러난다.
-            bool grounded = entity.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false;
-
             var linear = velocity.Linear;
             var command = entity.Get<InputBuffer>()?.Current;
             float inputX = command == null ? 0f : command.Horizontal;
             float inputZ = command == null ? 0f : command.Vertical;
 
-            // 점프가 끝났는지(착지했거나 공중으로 나왔거나)는 월드가 정한다 — 발밑 여유를
-            // 재야 알 수 있고, 그 쿼리를 든 쪽이 월드다. 여기선 읽기만 한다.
-            var jumpState = entity.Get<JumpState>();
+            // 상태 전이는 월드가 이미 밀어 놨다(발밑 여유를 재야 해서 쿼리가 필요하다). 여기선 읽기만.
+            var state = entity.Get<MotionState>()?.Value ?? SkydiveMotionState.Falling;
 
-            // 이번 틱을 어떤 상태로 굴릴지 먼저 정한다 — 아래 세로·좌우가 모두 이 하나를 따른다.
-            var state = SkydiveMotion.Resolve(grounded, jumpState != null && jumpState.IsJumping, posture.Gliding);
-
-            // 세로 — 상태가 정한 종단속도로 수렴한다(중력을 직접 적분하지 않는다).
-            // 걷기 상태에서는 자세를 보지 않는다: 발 딛고 선 몸에 다이브 종단속도를 물리면,
-            // 슬라이더를 쥔 채 걷다가 발판을 벗어나는 순간 하강이 튄다.
             float targetFall;
-            if (state == SkydiveMotionState.Walking || state == SkydiveMotionState.Jumping)
+            if (state != SkydiveMotionState.Skydiving)
             {
-                targetFall = config.SpreadFallSpeed;
+                targetFall = config.SpreadFallSpeed;   // 자세가 없으면 그냥 떨어진다
             }
-            else if (state == SkydiveMotionState.Gliding)
+            else if (posture.Gliding)
             {
                 targetFall = config.GlideFallSpeed;
             }
@@ -74,28 +63,23 @@ namespace LOP
             // 점프는 지금까지의 세로 속도를 지우고 새로 준다 — 그래야 누를 때마다 같은 높이로 뜬다.
             // 위 수렴 다음에 와야 한다: 앞에 두면 누른 틱의 하강분만큼 손해를 봐 높이가 흔들린다.
             // 올라가는 동안 그 수렴이 곧 중력 역할이라, 도달 높이는 JumpPower²/(2×FallApproach)다.
-            if (grounded && command != null && command.Jump)
+            if (state == SkydiveMotionState.Walking && command != null && command.Jump)
             {
                 linear.Y = config.JumpPower;
-                if (jumpState != null)
-                {
-                    // 이 틱은 아직 걷기로 굴러 좌우가 먹는다 — 뛰는 순간의 수평 속도가 곧 궤적이다.
-                    // 잠금은 다음 틱부터다.
-                    jumpState.IsJumping = true;
-                }
             }
 
-            // 좌우 — 상태마다 규칙이 다르다.
-            //  걷기: 다른 게임과 같은 커널로(회전까지)
-            //  점프: 아무것도 안 한다 — 이륙할 때의 수평 속도가 그대로 남아 궤적이 된다
-            //  낙하·패러세일: 상태별 목표 속도로 수렴
+            // 좌우는 화이트리스트다 — 여기 적힌 상태에서만 입력이 먹는다. "나머지 전부 허용"으로
+            // 두면 상태를 새로 만들 때 조용히 이동이 붙는다(점프가 정확히 그랬다).
+            //   걷기   : 다른 게임과 같은 커널로(회전까지)
+            //   활공   : 자세별 목표 속도로 수렴
+            //   낙하   : 없음 — 이륙할 때의 수평 속도가 그대로 남아 궤적이 된다
             if (state == SkydiveMotionState.Walking)
             {
                 Walk(entity, ref linear, inputX, inputZ, deltaTime, config);
             }
-            else if (state != SkydiveMotionState.Jumping)
+            else if (state == SkydiveMotionState.Skydiving)
             {
-                Drift(ref linear, posture, state, inputX, inputZ, deltaTime, config);
+                Drift(ref linear, posture, inputX, inputZ, deltaTime, config);
             }
 
             velocity.Linear = linear;
@@ -126,11 +110,11 @@ namespace LOP
 
         // 공중 — 상태가 목표 속도와 선회력을 정한다. 몸은 돌리지 않는다(자세 기울기가 그 위에 얹힌다).
         private static void Drift(ref System.Numerics.Vector3 linear, Posture posture,
-            SkydiveMotionState state, float inputX, float inputZ, float deltaTime, in SkydiveConfig config)
+            float inputX, float inputZ, float deltaTime, in SkydiveConfig config)
         {
             float maxSide;
             float turnAccel;
-            if (state == SkydiveMotionState.Gliding)
+            if (posture.Gliding)
             {
                 maxSide = config.GlideMoveSpeed;
                 turnAccel = config.GlideTurnAccel;

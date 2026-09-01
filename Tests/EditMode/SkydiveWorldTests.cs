@@ -35,7 +35,7 @@ namespace LOP.Tests
             e.Add(new Stamina { Current = 100f });
             e.Add(new InputBuffer());
             e.Add(new GroundState());   // 이동 커널이 매 틱 접지 여부를 여기 적는다
-            e.Add(new JumpState());
+            e.Add(new MotionState());
             if (simulated) { e.Add(new Simulated()); }
             return e;
         }
@@ -187,6 +187,77 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 착지하면_걷기로_돌아온다()
+        {
+            var registry = new EntityRegistry();
+            var diver = PosingDiver("a", 0.3f);
+            diver.Get<MotionState>().Value = SkydiveMotionState.Skydiving;
+            registry.Add(diver);
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);
+            var world = World(registry, map);
+            world.GameplayStartTick = 0;
+
+            // 접지는 이동 커널이 틱 끝에 적으므로 한 틱으로는 아직 false다 — 내려앉을 시간을 준다.
+            for (int t = 0; t < 20; t++) { world.Tick(t, 0.02f); }
+
+            Assert.AreEqual(SkydiveMotionState.Walking, diver.Get<MotionState>().Value);
+        }
+
+        [Test]
+        public void 발밑이_비면_낙하에서_활공으로_들어간다()
+        {
+            var registry = new EntityRegistry();
+            var diver = PosingDiver("a", 500f);   // 발밑이 뻥 뚫려 있다
+            registry.Add(diver);
+            var world = World(registry);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);
+
+            Assert.AreEqual(SkydiveMotionState.Skydiving, diver.Get<MotionState>().Value);
+        }
+
+        [Test]
+        public void 한_번_활공에_들면_지면이_가까워도_패러세일이_유지된다()
+        {
+            // 이게 이 설계의 핵심이다. 발밑 여유를 매 틱 보면 착지 직전에 낙하산이 접혀
+            // 그대로 처박힌다 — 젤다는 땅에 닿기 직전까지 펼 수 있다.
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            diver.Get<GameFramework.World.Transform>().Position = new Vector3(0f, 2f, 0f).ToNumerics();
+            diver.Get<MotionState>().Value = SkydiveMotionState.Skydiving;   // 이미 들어와 있다
+            diver.Get<Posture>().Gliding = true;
+            diver.Get<InputBuffer>().Current = new InputCommand { Glide = true };
+            registry.Add(diver);
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);   // 발밑 2m — 여유(5m)보다 가깝다
+            var world = World(registry, map);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);
+
+            Assert.IsTrue(diver.Get<Posture>().Gliding, "지면이 가깝다고 공중에서 접히면 안 된다");
+        }
+
+        [Test]
+        public void 발판_위에서_뛰면_자세를_못_잡는다()
+        {
+            // 선반 위에서 2m 뛰어봐야 발밑이 막혀 있으니 활공에 못 들어간다.
+            var registry = new EntityRegistry();
+            var diver = PosingDiver("a", 2f);
+            registry.Add(diver);
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);
+            var world = World(registry, map);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);
+
+            Assert.AreEqual(0f, diver.Get<Posture>().Axis, Tolerance, "발밑이 막혀 있으면 자세가 안 잡힌다");
+        }
+
+        [Test]
         public void 발_딛고_있으면_자세를_못_잡는다()
         {
             var registry = new EntityRegistry();
@@ -204,64 +275,12 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 발판_위에서_뛰면_자세를_못_잡는다()
-        {
-            // 선반 위에서 2m 뛰어봐야 발밑이 막혀 있으니 자세는 안 열린다.
-            // (구멍으로 뛰어드는 경우는 발밑이 비므로 열린다 — 위 테스트가 그걸 잡는다.)
-            var registry = new EntityRegistry();
-            var diver = PosingDiver("a", 2f);
-            diver.Get<JumpState>().IsJumping = true;
-            registry.Add(diver);
-            var map = new HalfSpaceQuery();
-            map.AddGround(0f);
-            var world = World(registry, map);
-            world.GameplayStartTick = 0;
-
-            world.Tick(0, 0.02f);
-
-            Assert.AreEqual(0f, diver.Get<Posture>().Axis, Tolerance, "발밑이 막혀 있으면 자세가 안 잡힌다");
-        }
-
-        [Test]
-        public void 발밑이_가까우면_자세를_못_잡는다()
-        {
-            // 여유(5m)보다 낮게 떠 있으면 "선 채로 낙하"다 — 젤다가 지면 근처에서
-            // 패러세일을 못 펴게 하는 것과 같다.
-            var registry = new EntityRegistry();
-            var diver = PosingDiver("a", 2f);
-            registry.Add(diver);
-            var map = new HalfSpaceQuery();
-            map.AddGround(0f);
-            var world = World(registry, map);
-            world.GameplayStartTick = 0;
-
-            world.Tick(0, 0.02f);
-
-            Assert.AreEqual(0f, diver.Get<Posture>().Axis, Tolerance, "지면 코앞에서는 자세가 안 잡힌다");
-        }
-
-        [Test]
-        public void 발밑이_뚫려_있으면_자세를_잡는다()
-        {
-            var registry = new EntityRegistry();
-            var diver = PosingDiver("a", 500f);
-            registry.Add(diver);
-            var map = new HalfSpaceQuery();
-            map.AddGround(0f);   // 500m 아래 — 여유 20m 밖이다
-            var world = World(registry, map);
-            world.GameplayStartTick = 0;
-
-            for (int t = 0; t < 40; t++) { world.Tick(t, 0.02f); }
-
-            Assert.AreEqual(1f, diver.Get<Posture>().Axis, 1e-2f, "충분히 떠 있으면 자세가 잡혀야 한다");
-        }
-
-        [Test]
         public void 착지하면_패러세일이_저절로_접힌다()
         {
             var registry = new EntityRegistry();
             var diver = Diver("a");
             diver.Get<GameFramework.World.Transform>().Position = new Vector3(0f, 0.3f, 0f).ToNumerics();
+            diver.Get<MotionState>().Value = SkydiveMotionState.Skydiving;
             diver.Get<Posture>().Gliding = true;
             diver.Get<InputBuffer>().Current = new InputCommand { Glide = true };
             registry.Add(diver);
@@ -273,41 +292,6 @@ namespace LOP.Tests
             for (int t = 0; t < 40; t++) { world.Tick(t, 0.02f); }
 
             Assert.IsFalse(diver.Get<Posture>().Gliding, "닿으면 접혀야 한다");
-        }
-
-        [Test]
-        public void 착지하면_점프가_풀린다()
-        {
-            var registry = new EntityRegistry();
-            var diver = PosingDiver("a", 0.3f);
-            diver.Get<JumpState>().IsJumping = true;
-            registry.Add(diver);
-            var map = new HalfSpaceQuery();
-            map.AddGround(0f);
-            var world = World(registry, map);
-            world.GameplayStartTick = 0;
-
-            // 접지는 이동 커널이 틱 끝에 적으므로 한 틱으로는 아직 false다 — 내려앉을 시간을 준다.
-            for (int t = 0; t < 20; t++) { world.Tick(t, 0.02f); }
-
-            Assert.IsFalse(diver.Get<JumpState>().IsJumping, "닿으면 점프가 끝난다");
-        }
-
-        [Test]
-        public void 구멍으로_뛰어들면_공중에서_점프가_풀린다()
-        {
-            // 착지만 기다리면, 구멍으로 뛰어든 사람은 착지할 일이 없어 떨어지는 내내
-            // 조작이 잠기고 자세도 못 잡는다. 발밑이 비면 그 자리에서 점프가 끝나야 한다.
-            var registry = new EntityRegistry();
-            var diver = PosingDiver("a", 500f);   // 발밑이 뻥 뚫려 있다
-            diver.Get<JumpState>().IsJumping = true;
-            registry.Add(diver);
-            var world = World(registry);
-            world.GameplayStartTick = 0;
-
-            world.Tick(0, 0.02f);
-
-            Assert.IsFalse(diver.Get<JumpState>().IsJumping, "공중으로 나오면 점프가 끝난다");
         }
 
         [Test]
