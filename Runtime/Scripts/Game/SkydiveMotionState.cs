@@ -15,8 +15,8 @@ namespace LOP
         Walking,
 
         /// <summary>
-        /// 뛰어올라 아직 올라가는 중. <b>좌우 입력을 받지 않고 이륙할 때의 수평 속도를 그대로
-        /// 들고 간다</b> — 젤다에서 점프가 그렇다. 뛰기 전에 방향을 정해야 한다.
+        /// 뛰어올라 <b>착지하기 전까지</b>. 좌우 입력을 받지 않고 이륙할 때의 수평 속도를 그대로
+        /// 들고 간다 — 젤다에서 점프가 그렇다. 뛰기 전에 방향을 정해야 한다.
         /// </summary>
         Jumping,
 
@@ -30,25 +30,24 @@ namespace LOP
     /// <summary>이동 상태를 판단하는 순수 함수. 상태를 들지 않으므로 클·서가 같은 답을 낸다.</summary>
     public static class SkydiveMotion
     {
-        /// <param name="verticalSpeed">이번 틱 시작 시점의 세로 속도(위가 +).</param>
-        public static SkydiveMotionState Resolve(bool grounded, bool gliding, float verticalSpeed)
+        /// <param name="jumping">뛰어올라 아직 착지하지 않았나(<see cref="JumpState"/>).</param>
+        public static SkydiveMotionState Resolve(bool grounded, bool jumping, bool gliding)
         {
             if (grounded)
             {
                 return SkydiveMotionState.Walking;
             }
 
-            // 올라가는 동안만 점프다. 정점을 지나 내려가기 시작하면 조종이 돌아온다 —
-            // 젤다도 뛰는 동안은 못 꺾지만 떨어지기 시작하면 방향을 잡을 수 있다.
-            // 발판에서 그냥 걸어 나가면 세로 속도가 곧장 음수라 이 갈래에 안 걸린다(조종 가능).
-            if (verticalSpeed > 0f)
-            {
-                return SkydiveMotionState.Jumping;
-            }
-
+            // 패러세일이 점프보다 먼저다 — 뛰자마자 펴면 그 순간부터 활공이고, 조작이 잠기면 안 된다.
             if (gliding)
             {
                 return SkydiveMotionState.Gliding;
+            }
+
+            // 착지할 때까지 점프다. 걸어서 가장자리를 넘은 것은 여기 안 걸려 곧바로 조종된다.
+            if (jumping)
+            {
+                return SkydiveMotionState.Jumping;
             }
 
             return SkydiveMotionState.Skydiving;

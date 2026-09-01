@@ -40,8 +40,15 @@ namespace LOP
             float inputX = command == null ? 0f : command.Horizontal;
             float inputZ = command == null ? 0f : command.Vertical;
 
+            // 착지하면 점프가 끝난다. 여기서 지워야 다음 점프가 깨끗하게 시작한다.
+            var jumpState = entity.Get<JumpState>();
+            if (grounded && jumpState != null)
+            {
+                jumpState.IsJumping = false;
+            }
+
             // 이번 틱을 어떤 상태로 굴릴지 먼저 정한다 — 아래 세로·좌우가 모두 이 하나를 따른다.
-            var state = SkydiveMotion.Resolve(grounded, posture.Gliding, linear.Y);
+            var state = SkydiveMotion.Resolve(grounded, jumpState != null && jumpState.IsJumping, posture.Gliding);
 
             // 세로 — 상태가 정한 종단속도로 수렴한다(중력을 직접 적분하지 않는다).
             // 걷기 상태에서는 자세를 보지 않는다: 발 딛고 선 몸에 다이브 종단속도를 물리면,
@@ -68,6 +75,12 @@ namespace LOP
             if (grounded && command != null && command.Jump)
             {
                 linear.Y = config.JumpPower;
+                if (jumpState != null)
+                {
+                    // 이 틱은 아직 걷기로 굴러 좌우가 먹는다 — 뛰는 순간의 수평 속도가 곧 궤적이다.
+                    // 잠금은 다음 틱부터다.
+                    jumpState.IsJumping = true;
+                }
             }
 
             // 좌우 — 상태마다 규칙이 다르다.
