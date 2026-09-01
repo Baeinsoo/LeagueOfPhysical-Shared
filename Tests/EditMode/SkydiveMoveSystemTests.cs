@@ -17,7 +17,7 @@ namespace LOP.Tests
                 fallApproach: 30f, postureRate: 4f,
                 bodyRadius: 0.4f, bodyHeight: 1.8f, groundY: 0f,
                 staminaMax: 100f, glideDrain: 20f, groundRecover: 40f, emergencyGlideTime: 1f,
-                groundMoveSpeed: 8f, groundAccel: 100f, jumpPower: 11f);
+                groundMoveSpeed: 4f, groundAccel: 100f, jumpPower: 11f);
 
         static Entity Diver(float axis, bool gliding, Vector3 velocity, Vector3 position,
                             float h = 0f, float v = 0f)
@@ -109,6 +109,65 @@ namespace LOP.Tests
             return e;
         }
 
+        // 걷기는 다른 게임과 같은 커널을 부른다. 상수를 베낀 게 아니라 같은 함수라는 것을,
+        // 그 커널을 직접 돌린 결과와 대조해 붙잡는다 — 한쪽만 바뀌면 여기서 깨진다.
+        [Test]
+        public void 걷기는_공용_이동_커널과_같은_답을_낸다()
+        {
+            var config = Config();
+            var e = GroundedDiver(new Vector3(3f, 0f, 1f), h: 1f, v: 0f);
+
+            new SkydiveMoveSystem().Tick(e, 0.02f, config);
+
+            var expected = MovementMotor.CalcVelocity(new MovementInput(
+                new Vector3(3f, 0f, 1f), 1f, 0f,
+                config.GroundMoveSpeed, config.GroundAccel, 0.02f));
+
+            Assert.AreEqual(expected.velocity.x, VelocityOf(e).x, Tolerance);
+            Assert.AreEqual(expected.velocity.z, VelocityOf(e).z, Tolerance);
+        }
+
+        [Test]
+        public void 걸으면_이동_방향으로_몸이_돈다()
+        {
+            // +x로 걸으면 y회전 90도. 이게 없으면 달리기 애니메이션이 옆을 본 채로 나와
+            // 게걸음처럼 보인다.
+            var e = GroundedDiver(Vector3.zero, h: 1f, v: 0f);
+
+            new SkydiveMoveSystem().Tick(e, 0.02f, Config());
+
+            Vector3 euler = e.Get<GameFramework.World.Transform>().Rotation.ToUnity().eulerAngles;
+            Assert.AreEqual(90f, euler.y, 0.01f, "+x로 걸으면 그쪽을 봐야 한다");
+        }
+
+        [Test]
+        public void 손을_떼면_보던_방향을_유지한다()
+        {
+            // 입력이 없을 때 0도로 튕겨 돌아가면, 멈출 때마다 몸이 홱 돈다.
+            var e = GroundedDiver(Vector3.zero, h: 1f, v: 0f);
+            var sys = new SkydiveMoveSystem();
+            sys.Tick(e, 0.02f, Config());
+
+            e.Get<InputBuffer>().Current = new InputCommand();   // 손을 뗀다
+            sys.Tick(e, 0.02f, Config());
+
+            Vector3 euler = e.Get<GameFramework.World.Transform>().Rotation.ToUnity().eulerAngles;
+            Assert.AreEqual(90f, euler.y, 0.01f, "손을 떼도 마지막으로 보던 쪽이어야 한다");
+        }
+
+        [Test]
+        public void 공중에서는_몸을_돌리지_않는다()
+        {
+            // 낙하 자세 기울기가 이 회전 위에 얹히므로, 공중에서 돌리면 별개 판단이 필요해진다.
+            var e = Diver(0f, false, Vector3.zero, new Vector3(0f, 500f, 0f), h: 1f);
+            e.Add(new GroundState { IsGrounded = false });
+
+            new SkydiveMoveSystem().Tick(e, 0.02f, Config());
+
+            Vector3 euler = e.Get<GameFramework.World.Transform>().Rotation.ToUnity().eulerAngles;
+            Assert.AreEqual(0f, euler.y, 0.01f, "공중에서는 스폰 방향 그대로여야 한다");
+        }
+
         [Test]
         public void 땅에서는_손을_떼면_거의_바로_선다()
         {
@@ -143,7 +202,7 @@ namespace LOP.Tests
 
             for (int i = 0; i < 100; i++) { sys.Tick(e, 0.02f, Config()); }
 
-            Assert.AreEqual(8f, VelocityOf(e).x, Tolerance, "자세별 속도(12~18)가 아니라 걷기 속도여야 한다");
+            Assert.AreEqual(4f, VelocityOf(e).x, Tolerance, "자세별 속도(12~18)가 아니라 걷기 속도여야 한다");
         }
 
         [Test]

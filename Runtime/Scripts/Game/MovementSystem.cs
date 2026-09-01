@@ -3,48 +3,11 @@ using UnityEngine;
 
 namespace LOP
 {
-    /// <summary>이동 계산에 넣는 입력값 묶음 (클라이언트·서버 공통).</summary>
-    public readonly struct MovementInput
-    {
-        public readonly Vector3 currentVelocity;
-        public readonly float horizontal;
-        public readonly float vertical;
-        public readonly float speed;            // 최대 이동 속도(목표)
-        public readonly float maxAcceleration;  // 목표 속도로 따라붙는 빠르기(클수록 즉각 반응)
-        public readonly float deltaTime;
-
-        public MovementInput(Vector3 currentVelocity, float horizontal, float vertical, float speed,
-                             float maxAcceleration, float deltaTime)
-        {
-            this.currentVelocity = currentVelocity;
-            this.horizontal = horizontal;
-            this.vertical = vertical;
-            this.speed = speed;
-            this.maxAcceleration = maxAcceleration;
-            this.deltaTime = deltaTime;
-        }
-    }
-
-    /// <summary>이동 계산 결과. velocity=새 속도, rotation=바라볼 방향(방향 입력이 있을 때만).</summary>
-    public readonly struct MovementResult
-    {
-        public readonly Vector3 velocity;
-        public readonly bool hasRotation;
-        public readonly Vector3 rotation;
-
-        public MovementResult(Vector3 velocity, bool hasRotation, Vector3 rotation)
-        {
-            this.velocity = velocity;
-            this.hasRotation = hasRotation;
-            this.rotation = rotation;
-        }
-    }
-
     /// <summary>
-    /// 플레이어 입력으로 새 이동 속도를 계산한다 (클라이언트·서버가 똑같이 사용).
-    /// 지금 속도에서 목표 속도로 정해진 양만큼 당긴다. 입력이 있으면 목표=입력 방향×moveSpeed,
-    /// 없으면 목표=0(정지). 그래서 방향전환 시 옆 관성이 안 남고, 입력을 떼면 0으로 제동해 멈춘다.
-    /// 수평(좌우/앞뒤)만 다루고 수직(y)은 중력·점프 몫(drag 미사용).
+    /// LOP 캐릭터의 이동. 스탯(MoveSpeed/JumpPower)·어빌리티(대시·이동배율·점프 봉인)·외력(넉백)을
+    /// 읽어 <see cref="MovementMotor.CalcVelocity"/>에 넣어 주고, 그 결과를 World에 쓴다.
+    /// 걷는 느낌 자체는 그 커널에 있다 — 다른 게임도 같은 커널을 부르므로 여기 상수를 바꾸는 게
+    /// 아니라 커널에 넘기는 값을 바꾼다.
     /// </summary>
     public class MovementSystem
     {
@@ -86,7 +49,7 @@ namespace LOP
                 {
                     var stats = entity.Get<GameFramework.World.Stats>();
                     float speed = statsSystem.GetValue(stats, (int)GameFramework.World.EntityStatType.MoveSpeed);
-                    var result = ProcessMovement(new MovementInput(
+                    var result = MovementMotor.CalcVelocity(new MovementInput(
                         velocity, input.Horizontal, input.Vertical, speed, MaxAcceleration, deltaTime));
                     baseHorizontal = new Vector3(result.velocity.x, 0f, result.velocity.z);
                     if (input.Jump && !AbilitySystem.IsJumpBlocked(entity, currentTick))
@@ -113,29 +76,6 @@ namespace LOP
             velocity.x = finalHorizontal.x;
             velocity.z = finalHorizontal.z;
             worldVelocity.Linear = velocity.ToNumerics();
-        }
-
-        public static MovementResult ProcessMovement(in MovementInput input)
-        {
-            // 좌우/앞뒤(수평) 속도만 다룬다. 위아래(y)는 중력·점프 몫이라 그대로 둔다.
-            Vector3 horiz = new Vector3(input.currentVelocity.x, 0, input.currentVelocity.z);
-
-            Vector3 dir = new Vector3(input.horizontal, 0, input.vertical);
-            bool hasRotation = dir.sqrMagnitude > 0f;
-            Vector3 desired = Vector3.zero;  // 입력이 없으면 목표 0 → 0으로 제동(정지)
-            Vector3 rotation = Vector3.zero;
-            if (hasRotation)
-            {
-                dir.Normalize();
-                desired = dir * input.speed;
-                float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
-                rotation = new Vector3(0, angle, 0);
-            }
-
-            // 지금 속도에서 목표로 정해진 양만큼 당긴다(입력 방향 속도로, 없으면 0으로). 옆 관성이 안 남음.
-            Vector3 newHoriz = Vector3.MoveTowards(horiz, desired, input.maxAcceleration * input.deltaTime);
-
-            return new MovementResult(new Vector3(newHoriz.x, input.currentVelocity.y, newHoriz.z), hasRotation, rotation);
         }
     }
 }
