@@ -126,9 +126,21 @@ namespace LOP
                 return;
             }
 
-            // 자세를 잡을 수 없는 상태면 슬라이더를 아무리 밀어도 안 먹고 대자로 되돌아간다.
+            bool grounded = entity.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false;
+
+            // 이동 상태를 먼저 밀어 놓는다. 발밑 여유는 "낙하 → 활공" 전이에만 쓰이고,
+            // 한 번 활공에 들어가면 착지 전까지 유지된다 — 그래야 지면이 가까워져도
+            // 패러세일이 강제로 접히지 않는다.
+            var motion = entity.Get<MotionState>();
+            if (motion != null)
+            {
+                motion.Value = SkydiveMotion.Advance(motion.Value, grounded,
+                    HasClearanceBelow(entity), command != null && command.Posing);
+            }
+
+            // 자세 슬라이더는 활공 상태에서만 먹는다. 걷기·낙하에서는 아무리 밀어도 대자로 되돌아가고,
             // 착지하면 패러세일이 저절로 접히는 것도 이 줄이 한다.
-            if (CanPose(entity) == false)
+            if (motion == null || motion.Value != SkydiveMotionState.Skydiving)
             {
                 posture.Axis = 0f;
                 posture.Gliding = false;
@@ -168,32 +180,22 @@ namespace LOP
         }
 
         /// <summary>
-        /// 지금 자세(대자·다이브·패러세일)를 잡을 수 있나. 젤다처럼 <b>공중에 충분히 떠 있을
-        /// 때만</b> 잡을 수 있다 — 서서 패러세일을 펴거나, 지면 코앞에서 다이브에 들어갈 수는 없다.
+        /// 발밑이 <see cref="SkydiveConfig.PoseClearance"/>만큼 비어 있나. 젤다처럼 <b>공중에
+        /// 충분히 나와야</b> 자세를 잡을 수 있고, 뛰어오른 것도 그때 끝난다 — 서서 패러세일을
+        /// 펴거나 지면 코앞에서 다이브에 들어갈 수는 없다.
         ///
-        /// <para>발밑 여유는 매 틱 레이를 쏴서 다시 잰다. 상태를 안 들고 위치에서 다시 구하므로
-        /// 되감아 재생해도 같은 답이 나온다.</para>
+        /// <para>매 틱 레이를 쏴서 다시 잰다. 상태를 안 들고 위치에서 다시 구하므로 되감아
+        /// 재생해도 같은 답이 나온다.</para>
         /// </summary>
-        private bool CanPose(GameFramework.World.Entity entity)
+        private bool HasClearanceBelow(GameFramework.World.Entity entity)
         {
-            if (entity.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false)
-            {
-                return false;
-            }
-
-            // 뛴 중에는 이미 조작이 잠겨 있다 — 자세만 따로 열어 줄 이유가 없다.
-            if (entity.Get<JumpState>()?.IsJumping ?? false)
-            {
-                return false;
-            }
-
             var transform = entity.Get<GameFramework.World.Transform>();
             if (transform == null)
             {
                 return false;
             }
 
-            // 발밑에서 아래로 쏴, 여유 안에 뭔가 있으면 자세를 못 잡는다.
+            // 발밑에서 아래로 쏴, 여유 안에 뭔가 있으면 아직 공중이 아니다.
             var hit = _collisionQuery.Raycast(
                 transform.Position.ToUnity(), UnityEngine.Vector3.down, _config.PoseClearance, _layerMask);
             return hit.HasHit == false;
