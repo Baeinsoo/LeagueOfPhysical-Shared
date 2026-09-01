@@ -11,13 +11,13 @@ namespace LOP.Tests
 
         static SkydiveConfig Config()
             => new SkydiveConfig(
-                spreadFallSpeed: 25f, diveFallSpeed: 45f, glideFallSpeed: 6f,
-                spreadMoveSpeed: 12f, diveMoveSpeed: 18f, glideMoveSpeed: 14f,
+                spreadFallSpeed: 60f, diveFallSpeed: 90f, glideFallSpeed: 6f,
+                spreadMoveSpeed: 12f, diveMoveSpeed: 9f, glideMoveSpeed: 14f,
                 spreadTurnAccel: 22f, diveTurnAccel: 6f, glideTurnAccel: 18f,
-                fallApproach: 30f, postureRate: 4f,
+                fallApproach: 29f, postureRate: 4f,
                 bodyRadius: 0.4f, bodyHeight: 1.8f, groundY: 0f,
                 staminaMax: 100f, glideDrain: 20f, groundRecover: 40f, emergencyGlideTime: 1f,
-                groundMoveSpeed: 4f, groundAccel: 100f, jumpPower: 11f);
+                groundMoveSpeed: 4f, groundAccel: 100f, jumpPower: 11f, poseClearance: 5f);
 
         static Entity Diver(float axis, bool gliding, Vector3 velocity, Vector3 position,
                             float h = 0f, float v = 0f)
@@ -26,6 +26,7 @@ namespace LOP.Tests
             entity.Add(new GameFramework.World.Transform { Position = position.ToNumerics() });
             entity.Add(new Velocity { Linear = velocity.ToNumerics() });
             entity.Add(new Posture { Axis = axis, Gliding = gliding });
+            entity.Add(new JumpState());
             var buffer = new InputBuffer();
             buffer.Current = new InputCommand { Horizontal = h, Vertical = v };
             entity.Add(buffer);
@@ -231,6 +232,85 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 뛰어오르는_동안은_좌우_입력을_안_받는다()
+        {
+            // 젤다의 점프는 뛰기 전에 방향을 정하는 것이다 — 뛴 뒤에 꺾을 수 없다.
+            // 이륙할 때의 수평 속도가 그대로 궤적이 된다.
+            var e = Diver(0f, false, new Vector3(3f, 5f, 0f), new Vector3(0f, 10f, 0f), h: 1f);
+            e.Add(new GroundState { IsGrounded = false });
+            e.Get<JumpState>().IsJumping = true;
+
+            new SkydiveMoveSystem().Tick(e, 0.02f, Config());
+
+            Assert.AreEqual(3f, VelocityOf(e).x, Tolerance, "뛰는 중에는 좌우가 그대로여야 한다");
+        }
+
+        [Test]
+        public void 점프_잠금은_착지할_때까지다()
+        {
+            // 정점을 지나 내려가는 동안에도 잠겨 있어야 한다 — 젤다는 착지 전까지 못 꺾는다.
+            var e = Diver(0f, false, new Vector3(3f, -8f, 0f), new Vector3(0f, 10f, 0f), h: 1f);
+            e.Add(new GroundState { IsGrounded = false });
+            e.Get<JumpState>().IsJumping = true;   // 뛰었고 아직 안 닿았다
+
+            new SkydiveMoveSystem().Tick(e, 0.02f, Config());
+
+            Assert.AreEqual(3f, VelocityOf(e).x, Tolerance, "내려가는 중에도 점프면 잠겨야 한다");
+        }
+
+        [Test]
+        public void 착지하면_점프가_풀린다()
+        {
+            var e = GroundedDiver(Vector3.zero, h: 1f);
+            e.Get<JumpState>().IsJumping = true;
+
+            new SkydiveMoveSystem().Tick(e, 0.02f, Config());
+
+            Assert.IsFalse(e.Get<JumpState>().IsJumping, "닿으면 점프가 끝난다");
+            Assert.Greater(VelocityOf(e).x, 0f, "닿았으면 그 틱부터 걷기 조작이 먹는다");
+        }
+
+        [Test]
+        public void 발판에서_걸어_나가면_바로_조종된다()
+        {
+            // 뛰지 않고 걸어서 벗어나면 JumpState가 안 서 있어 곧바로 낙하 조종이 된다 —
+            // 가장자리를 넘는 순간 조종을 잃으면 안 된다.
+            var e = Diver(0f, false, new Vector3(0f, -0.5f, 0f), new Vector3(0f, 10f, 0f), h: 1f);
+            e.Add(new GroundState { IsGrounded = false });
+
+            new SkydiveMoveSystem().Tick(e, 0.02f, Config());
+
+            Assert.Greater(VelocityOf(e).x, 0f, "걸어서 벗어나면 입력이 먹어야 한다");
+        }
+
+        [Test]
+        public void 이동_상태는_접지_패러세일_점프_낙하_순으로_갈린다()
+        {
+            Assert.AreEqual(SkydiveMotionState.Walking,
+                SkydiveMotion.Resolve(grounded: true, jumping: true, gliding: true));
+            Assert.AreEqual(SkydiveMotionState.Gliding,
+                SkydiveMotion.Resolve(grounded: false, jumping: true, gliding: true));
+            Assert.AreEqual(SkydiveMotionState.Jumping,
+                SkydiveMotion.Resolve(grounded: false, jumping: true, gliding: false));
+            Assert.AreEqual(SkydiveMotionState.Skydiving,
+                SkydiveMotion.Resolve(grounded: false, jumping: false, gliding: false));
+        }
+
+        [Test]
+        public void 되감으면_점프_중이던_것도_돌아온다()
+        {
+            // 안 되돌리면 재생 중 조작 잠금이 라이브와 달라져 같은 입력이 다른 궤적을 만든다.
+            var e = GroundedDiver(Vector3.zero);
+            e.Get<JumpState>().IsJumping = true;
+            var snap = SkydiveSavedState.Capture(e);
+
+            e.Get<JumpState>().IsJumping = false;
+            snap.RestoreTo(e);
+
+            Assert.IsTrue(e.Get<JumpState>().IsJumping);
+        }
+
+        [Test]
         public void 점프_높이가_설정값에서_나오는_높이와_맞는다()
         {
             // 도달 높이 = JumpPower² / (2 × FallApproach) = 121/60 ≈ 2.02m.
@@ -241,7 +321,7 @@ namespace LOP.Tests
             var config = Config();
 
             sys.Tick(e, 0.02f, config);
-            e.Get<InputBuffer>().Current = new InputCommand();      // 손을 뗀다
+            e.Get<InputBuffer>().Current = new InputCommand();      // 뛰는 중엔 어차피 좌우가 안 먹는다
             e.Get<GroundState>().IsGrounded = false;                // 떴으니 이제 공중이다
 
             // 세로 속도를 적분해 정점을 찾는다(월드가 하는 일을 여기선 손으로).
