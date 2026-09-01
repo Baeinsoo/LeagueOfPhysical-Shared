@@ -57,6 +57,11 @@ namespace LOP
         public readonly float GroundAccel;
         /// <summary>발판에서 뛸 때의 처음 세로 속도. 도달 높이는 이 값²/(2×FallApproach)다.</summary>
         public readonly float JumpPower;
+        /// <summary>
+        /// 자세(대자·다이브·패러세일)를 잡으려면 발밑에 있어야 하는 여유. 지면 코앞에서는
+        /// 자세를 못 잡는다 — 젤다의 "선 채로 낙하" 상태가 여기에 해당한다.
+        /// </summary>
+        public readonly float PoseClearance;
 
         public SkydiveConfig(
             float spreadFallSpeed, float diveFallSpeed, float glideFallSpeed,
@@ -65,7 +70,7 @@ namespace LOP
             float fallApproach, float postureRate,
             float bodyRadius, float bodyHeight, float groundY,
             float staminaMax, float glideDrain, float groundRecover, float emergencyGlideTime,
-            float groundMoveSpeed, float groundAccel, float jumpPower)
+            float groundMoveSpeed, float groundAccel, float jumpPower, float poseClearance)
         {
             SpreadFallSpeed = spreadFallSpeed;
             DiveFallSpeed = diveFallSpeed;
@@ -88,6 +93,7 @@ namespace LOP
             GroundMoveSpeed = groundMoveSpeed;
             GroundAccel = groundAccel;
             JumpPower = jumpPower;
+            PoseClearance = poseClearance;
         }
     }
 }

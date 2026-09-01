@@ -17,7 +17,7 @@ namespace LOP.Tests
                 fallApproach: 29f, postureRate: 4f,
                 bodyRadius: 0.4f, bodyHeight: 1.8f, groundY: 0f,
                 staminaMax: 100f, glideDrain: 20f, groundRecover: 40f, emergencyGlideTime: 1f,
-                groundMoveSpeed: 4f, groundAccel: 100f, jumpPower: 11f);
+                groundMoveSpeed: 4f, groundAccel: 100f, jumpPower: 11f, poseClearance: 20f);
 
         // 기본 맵은 면이 하나도 없는 하늘이다(HalfSpaceQuery에 면을 안 넣으면 늘 CollisionHit.None).
         static SkydiveWorld World(EntityRegistry registry, GameFramework.Physics.ICollisionQuery query = null)
@@ -35,6 +35,7 @@ namespace LOP.Tests
             e.Add(new Stamina { Current = 100f });
             e.Add(new InputBuffer());
             e.Add(new GroundState());   // 이동 커널이 매 틱 접지 여부를 여기 적는다
+            e.Add(new JumpState());
             if (simulated) { e.Add(new Simulated()); }
             return e;
         }
@@ -174,6 +175,100 @@ namespace LOP.Tests
             }
 
             Assert.AreEqual(RunWith(new[] { "a", "b", "c" }), RunWith(new[] { "c", "b", "a" }), Tolerance);
+        }
+
+        // 자세 문(발밑 여유) 관련 — 슬라이더를 끝까지 민 다이버를 만든다.
+        static Entity PosingDiver(string id, float height)
+        {
+            var e = Diver(id);
+            e.Get<GameFramework.World.Transform>().Position = new Vector3(0f, height, 0f).ToNumerics();
+            e.Get<InputBuffer>().Current = new InputCommand { Posture = 1f, Glide = false };
+            return e;
+        }
+
+        [Test]
+        public void 발_딛고_있으면_자세를_못_잡는다()
+        {
+            var registry = new EntityRegistry();
+            var diver = PosingDiver("a", 0.3f);
+            registry.Add(diver);
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);
+            var world = World(registry, map);
+            world.GameplayStartTick = 0;
+
+            for (int t = 0; t < 40; t++) { world.Tick(t, 0.02f); }
+
+            Assert.AreEqual(0f, diver.Get<Posture>().Axis, Tolerance,
+                "서 있는데 슬라이더로 다이브가 되면 안 된다");
+        }
+
+        [Test]
+        public void 뛴_중에는_자세를_못_잡는다()
+        {
+            var registry = new EntityRegistry();
+            var diver = PosingDiver("a", 500f);   // 발밑은 뻥 뚫려 있다
+            diver.Get<JumpState>().IsJumping = true;
+            registry.Add(diver);
+            var world = World(registry);
+            world.GameplayStartTick = 0;
+
+            for (int t = 0; t < 40; t++) { world.Tick(t, 0.02f); }
+
+            Assert.AreEqual(0f, diver.Get<Posture>().Axis, Tolerance, "뛰는 중에는 자세가 안 잡힌다");
+        }
+
+        [Test]
+        public void 발밑이_가까우면_자세를_못_잡는다()
+        {
+            // 여유(20m)보다 낮게 떠 있으면 "선 채로 낙하"다 — 젤다가 지면 근처에서
+            // 패러세일을 못 펴게 하는 것과 같다.
+            var registry = new EntityRegistry();
+            var diver = PosingDiver("a", 5f);
+            registry.Add(diver);
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);
+            var world = World(registry, map);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);
+
+            Assert.AreEqual(0f, diver.Get<Posture>().Axis, Tolerance, "지면 코앞에서는 자세가 안 잡힌다");
+        }
+
+        [Test]
+        public void 발밑이_뚫려_있으면_자세를_잡는다()
+        {
+            var registry = new EntityRegistry();
+            var diver = PosingDiver("a", 500f);
+            registry.Add(diver);
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);   // 500m 아래 — 여유 20m 밖이다
+            var world = World(registry, map);
+            world.GameplayStartTick = 0;
+
+            for (int t = 0; t < 40; t++) { world.Tick(t, 0.02f); }
+
+            Assert.AreEqual(1f, diver.Get<Posture>().Axis, 1e-2f, "충분히 떠 있으면 자세가 잡혀야 한다");
+        }
+
+        [Test]
+        public void 착지하면_패러세일이_저절로_접힌다()
+        {
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            diver.Get<GameFramework.World.Transform>().Position = new Vector3(0f, 0.3f, 0f).ToNumerics();
+            diver.Get<Posture>().Gliding = true;
+            diver.Get<InputBuffer>().Current = new InputCommand { Glide = true };
+            registry.Add(diver);
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);
+            var world = World(registry, map);
+            world.GameplayStartTick = 0;
+
+            for (int t = 0; t < 40; t++) { world.Tick(t, 0.02f); }
+
+            Assert.IsFalse(diver.Get<Posture>().Gliding, "닿으면 접혀야 한다");
         }
 
         [Test]

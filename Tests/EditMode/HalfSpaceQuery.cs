@@ -55,8 +55,25 @@ namespace LOP.Tests
                 : new CollisionHit(true, best, normal, p1, null);
         }
 
+        //  면까지의 거리를 실제로 재서 돌려준다. 예전엔 늘 "안 맞음"이었는데, 그러면 레이를
+        //  쓰는 로직(자세 문의 발밑 여유 검사)이 검증 없이 통과해 버린다 — 실제로 그랬다.
         public CollisionHit Raycast(Vector3 origin, Vector3 direction, float distance, int layerMask)
-            => CollisionHit.None;
+        {
+            float best = float.MaxValue;
+            Vector3 normal = Vector3.zero;
+            foreach (var face in Faces)
+            {
+                float clear = Vector3.Dot(origin - face.Point, face.Normal);
+                if (clear < 0f) continue;          // 이미 면 안쪽에서 시작 — sweep과 같은 규칙
+                float closing = Vector3.Dot(direction, face.Normal);
+                if (closing >= -1e-6f) continue;   // 멀어지거나 평행
+                float t = clear / -closing;
+                if (t <= distance && t < best) { best = t; normal = face.Normal; }
+            }
+            return best == float.MaxValue
+                ? CollisionHit.None
+                : new CollisionHit(true, best, normal, origin + direction * best, null);
+        }
 
         public CollisionHit[] OverlapSphere(Vector3 center, float radius, int layerMask)
             => System.Array.Empty<CollisionHit>();
