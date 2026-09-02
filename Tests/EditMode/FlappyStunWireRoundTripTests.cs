@@ -44,7 +44,7 @@ namespace LOP.Tests
                 system.Tick(bird, DeltaTime);
                 Assert.That(stun.StunRemaining, Is.GreaterThan(0f), $"틱 {now}에서 아직 스턴 중이어야 한다");
 
-                Assert.That(FlappyStunSystem.EndTick(stun.StunRemaining, now, DeltaTime),
+                Assert.That(FlappyTickDuration.EndTick(stun.StunRemaining, now, DeltaTime),
                     Is.EqualTo((long)release),
                     $"틱 {now}에서 보낸 끝틱이 실제로 풀리는 틱과 다르다. 남은시간={stun.StunRemaining:F9}");
             }
@@ -65,8 +65,8 @@ namespace LOP.Tests
             {
                 system.Tick(bird, DeltaTime);
 
-                long endTick = FlappyStunSystem.EndTick(stun.StunRemaining, now, DeltaTime);
-                float decoded = FlappyStunSystem.RemainingSeconds(endTick, now, DeltaTime);
+                long endTick = FlappyTickDuration.EndTick(stun.StunRemaining, now, DeltaTime);
+                float decoded = FlappyTickDuration.RemainingSeconds(endTick, now, DeltaTime);
 
                 Assert.That(TicksToClearStun(config, decoded), Is.EqualTo(release - (int)now),
                     $"틱 {now}에서 받은 남은시간({decoded:F9})으로 굴리면 푸는 틱이 다르다");
@@ -97,7 +97,7 @@ namespace LOP.Tests
                 system.Tick(bird, DeltaTime);
                 Assert.That(stun.InvulnRemaining, Is.GreaterThan(0f), $"틱 {now}에서 아직 무적이어야 한다");
 
-                Assert.That(FlappyStunSystem.EndTick(stun.InvulnRemaining, now, DeltaTime),
+                Assert.That(FlappyTickDuration.EndTick(stun.InvulnRemaining, now, DeltaTime),
                     Is.EqualTo((long)release),
                     $"틱 {now}에서 보낸 무적 끝틱이 실제와 다르다. 남은시간={stun.InvulnRemaining:F9}");
             }
@@ -106,21 +106,46 @@ namespace LOP.Tests
         [Test]
         public void 남은_시간이_없으면_끝틱은_0이다()
         {
-            Assert.That(FlappyStunSystem.EndTick(0f, tick: 100, deltaTime: DeltaTime), Is.EqualTo(0L));
+            Assert.That(FlappyTickDuration.EndTick(0f, tick: 100, deltaTime: DeltaTime), Is.EqualTo(0L));
         }
 
         [Test]
         public void 이미_지났거나_같은_끝틱은_남은_시간이_0이다()
         {
-            Assert.That(FlappyStunSystem.RemainingSeconds(90, tick: 100, deltaTime: DeltaTime), Is.EqualTo(0f));
-            Assert.That(FlappyStunSystem.RemainingSeconds(100, tick: 100, deltaTime: DeltaTime), Is.EqualTo(0f));
-            Assert.That(FlappyStunSystem.RemainingSeconds(0, tick: 100, deltaTime: DeltaTime), Is.EqualTo(0f));
+            Assert.That(FlappyTickDuration.RemainingSeconds(90, tick: 100, deltaTime: DeltaTime), Is.EqualTo(0f));
+            Assert.That(FlappyTickDuration.RemainingSeconds(100, tick: 100, deltaTime: DeltaTime), Is.EqualTo(0f));
+            Assert.That(FlappyTickDuration.RemainingSeconds(0, tick: 100, deltaTime: DeltaTime), Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void 시뮬이_이미_0으로_본_잔여는_남은_틱이_없다()
+        {
+            //  매 틱 float를 빼면 정확히 0을 못 찍고 아주 조금 남는다. 시뮬은 그 조각을 끝으로
+            //  보므로 변환도 그래야 한다 — 한 틱으로 세면 받는 쪽만 더 얼어 있게 된다.
+            Assert.That(FlappyTickDuration.EndTick(1e-6f, tick: 100, deltaTime: DeltaTime), Is.EqualTo(0L));
+        }
+
+        [Test]
+        public void 틱_경계를_아주_조금_넘은_잔여는_한_틱을_더_세지_않는다()
+        {
+            //  float로 빼 나가면 남은 시간이 틱 경계보다 아주 조금 크게 나올 수 있다(0.8이 아니라
+            //  0.8000001). 그걸 그대로 올림하면 41틱이 되어 받는 쪽만 한 틱 더 얼어 있게 된다 —
+            //  라이브에서 겪은 그 버그다. 세기 전에 Epsilon을 빼는 것이 그것을 막는다.
+            Assert.That(FlappyTickDuration.EndTick(0.8f + 1e-7f, tick: 100, deltaTime: DeltaTime),
+                Is.EqualTo(140L));
+        }
+
+        [Test]
+        public void 틱_사이의_시간은_올려서_센다()
+        {
+            //  0.05초는 2.5틱 — 3틱을 세야 그 시간이 다 지난다. 내림하면 덜 얼어 있게 된다.
+            Assert.That(FlappyTickDuration.EndTick(0.05f, tick: 100, deltaTime: DeltaTime), Is.EqualTo(103L));
         }
 
         [Test]
         public void 남은_틱만큼_초로_바뀐다()
         {
-            Assert.That(FlappyStunSystem.RemainingSeconds(20, tick: 10, deltaTime: DeltaTime),
+            Assert.That(FlappyTickDuration.RemainingSeconds(20, tick: 10, deltaTime: DeltaTime),
                 Is.EqualTo(0.2f).Within(1e-4f));
         }
 
