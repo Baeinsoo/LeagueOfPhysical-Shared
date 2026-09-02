@@ -13,4 +13,6 @@ message InputCommand {
   // 자세 슬라이더를 잡고 있나. 자세 값(posture/glide)만으로는 "안 잡음"과
   // "잡았는데 대자"를 구분할 수 없어서 따로 싣는다 — 그 구분이 스카이다이빙 진입 조건이다.
   bool posing = 9;
+  // Flappy: 대시 버튼. 누른 틱에만 참인 이산 액션이다(jump와 같은 짝).
+  bool dash = 10;
 }

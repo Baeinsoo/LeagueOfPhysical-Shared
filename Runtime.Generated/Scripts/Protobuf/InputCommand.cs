@@ -22,15 +22,15 @@ public static partial class InputCommandReflection {
   static InputCommandReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChJJbnB1dENvbW1hbmQucHJvdG8inwEKDElucHV0Q29tbWFuZBIXCg9zZXF1",
+          "ChJJbnB1dENvbW1hbmQucHJvdG8irQEKDElucHV0Q29tbWFuZBIXCg9zZXF1",
           "ZW5jZV9udW1iZXIYASABKAMSEgoKaG9yaXpvbnRhbBgCIAEoAhIQCgh2ZXJ0",
           "aWNhbBgDIAEoAhIMCgRqdW1wGAQgASgIEhIKCmFiaWxpdHlfaWQYBiABKAUS",
           "DwoHcG9zdHVyZRgHIAEoAhINCgVnbGlkZRgIIAEoCBIOCgZwb3NpbmcYCSAB",
-          "KAhiBnByb3RvMw=="));
+          "KAgSDAoEZGFzaBgKIAEoCGIGcHJvdG8z"));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::InputCommand), global::InputCommand.Parser, new[]{ "SequenceNumber", "Horizontal", "Vertical", "Jump", "AbilityId", "Posture", "Glide", "Posing" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::InputCommand), global::InputCommand.Parser, new[]{ "SequenceNumber", "Horizontal", "Vertical", "Jump", "AbilityId", "Posture", "Glide", "Posing", "Dash" }, null, null, null, null)
         }));
   }
   #endregion
@@ -80,6 +80,7 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     posture_ = other.posture_;
     glide_ = other.glide_;
     posing_ = other.posing_;
+    dash_ = other.dash_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -195,6 +196,21 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     }
   }
 
+  /// <summary>Field number for the "dash" field.</summary>
+  public const int DashFieldNumber = 10;
+  private bool dash_;
+  /// <summary>
+  /// Flappy: 대시 버튼. 누른 틱에만 참인 이산 액션이다(jump와 같은 짝).
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public bool Dash {
+    get { return dash_; }
+    set {
+      dash_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -218,6 +234,7 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(Posture, other.Posture)) return false;
     if (Glide != other.Glide) return false;
     if (Posing != other.Posing) return false;
+    if (Dash != other.Dash) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -233,6 +250,7 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     if (Posture != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(Posture);
     if (Glide != false) hash ^= Glide.GetHashCode();
     if (Posing != false) hash ^= Posing.GetHashCode();
+    if (Dash != false) hash ^= Dash.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -283,6 +301,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
       output.WriteRawTag(72);
       output.WriteBool(Posing);
     }
+    if (Dash != false) {
+      output.WriteRawTag(80);
+      output.WriteBool(Dash);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -325,6 +347,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
       output.WriteRawTag(72);
       output.WriteBool(Posing);
     }
+    if (Dash != false) {
+      output.WriteRawTag(80);
+      output.WriteBool(Dash);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -357,6 +383,9 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
       size += 1 + 1;
     }
     if (Posing != false) {
+      size += 1 + 1;
+    }
+    if (Dash != false) {
       size += 1 + 1;
     }
     if (_unknownFields != null) {
@@ -394,6 +423,9 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     }
     if (other.Posing != false) {
       Posing = other.Posing;
+    }
+    if (other.Dash != false) {
+      Dash = other.Dash;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -446,6 +478,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
           Posing = input.ReadBool();
           break;
         }
+        case 80: {
+          Dash = input.ReadBool();
+          break;
+        }
       }
     }
   #endif
@@ -495,6 +531,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
         }
         case 72: {
           Posing = input.ReadBool();
+          break;
+        }
+        case 80: {
+          Dash = input.ReadBool();
           break;
         }
       }
