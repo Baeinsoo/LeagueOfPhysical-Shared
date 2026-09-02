@@ -68,14 +68,20 @@ namespace LOP
             Vector3 horiz = new Vector3(input.currentVelocity.x, 0, input.currentVelocity.z);
 
             Vector3 dir = new Vector3(input.horizontal, 0, input.vertical);
-            bool hasRotation = dir.sqrMagnitude > 0f;
+            float push = dir.magnitude;
+            bool hasRotation = push > 0f;
             Vector3 desired = Vector3.zero;  // 입력이 없으면 목표 0 → 0으로 제동(정지)
             Vector3 rotation = Vector3.zero;
             if (hasRotation)
             {
-                dir.Normalize();
-                desired = dir * input.speed;
-                float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+                Vector3 heading = dir / push;
+
+                // 얼마나 밀었나가 곧 속도다 — 살짝 밀면 걷고 끝까지 밀면 뛴다.
+                // 1을 넘는 건 잘라 낸다(대각선은 길이가 1.41이라 안 자르면 더 빨라진다).
+                desired = heading * input.speed * Mathf.Min(push, 1f);
+
+                // 방향은 얼마나 밀었든 그대로다 — 살살 밀어도 그 쪽을 본다.
+                float angle = Mathf.Atan2(heading.x, heading.z) * Mathf.Rad2Deg;
                 rotation = new Vector3(0, angle, 0);
             }
 
