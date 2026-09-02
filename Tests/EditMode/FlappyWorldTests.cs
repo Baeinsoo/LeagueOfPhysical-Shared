@@ -119,6 +119,7 @@ namespace LOP.Tests
             var world = new FlappyWorld(registry, new WorldEventBuffer(),
                                new FlappyMoveSystem(Config()),
                                new FlappyStunSystem(Config()),
+                               new FlappyDashSystem(Config()),
                                new EmptySkyQuery(), bridge, layerMask: ~0);
             world.GameplayStartTick = 0;
             return world;
@@ -266,6 +267,7 @@ namespace LOP.Tests
             var world = new FlappyWorld(registry, new WorldEventBuffer(),
                                          new FlappyMoveSystem(Config()),
                                          new FlappyStunSystem(Config()),
+                                         new FlappyDashSystem(Config()),
                                          wallQuery, new NoopMotionBridge(), layerMask);
             world.GameplayStartTick = 0;   // 이 테스트는 출발 게이트가 아니라 맵 충돌을 다룬다
 
@@ -296,6 +298,7 @@ namespace LOP.Tests
             var world = new FlappyWorld(registry, new WorldEventBuffer(),
                                         new FlappyMoveSystem(Config()),
                                         new FlappyStunSystem(Config()),
+                                        new FlappyDashSystem(Config()),
                                         wallQuery, new NoopMotionBridge(), layerMask: ~0);
             world.GameplayStartTick = 0;   // 이 테스트는 출발 게이트가 아니라 맵 충돌을 다룬다
 

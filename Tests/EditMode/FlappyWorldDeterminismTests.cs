@@ -60,6 +60,7 @@ namespace LOP.Tests
             var world = new FlappyWorld(registry, new WorldEventBuffer(),
                                new FlappyMoveSystem(Config()),
                                new FlappyStunSystem(Config()),
+                               new FlappyDashSystem(Config()),
                                new EmptySkyQuery(), new NoopMotionBridge(), layerMask: ~0);
             world.GameplayStartTick = 0;
             return world;

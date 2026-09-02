@@ -37,7 +37,7 @@ namespace LOP.Tests
         {
             var bird = Bird(Vector3.zero, jump: false);
 
-            new FlappyMoveSystem(Config()).Tick(bird, 0.1f);
+            new FlappyMoveSystem(Config()).Tick(bird, 0.1f, dashing: false);
 
             Assert.AreEqual(-7f, VelocityOf(bird).y, Tolerance);   // 70 × 0.1
         }
@@ -47,7 +47,7 @@ namespace LOP.Tests
         {
             var bird = Bird(new Vector3(0f, -30f, 0f), jump: false);
 
-            new FlappyMoveSystem(Config()).Tick(bird, 0.1f);
+            new FlappyMoveSystem(Config()).Tick(bird, 0.1f, dashing: false);
 
             Assert.AreEqual(-30f, VelocityOf(bird).y, Tolerance);
         }
@@ -58,8 +58,8 @@ namespace LOP.Tests
             var falling = Bird(new Vector3(0f, -25f, 0f), jump: true);
             var rising = Bird(new Vector3(0f, 5f, 0f), jump: true);
 
-            new FlappyMoveSystem(Config()).Tick(falling, 0.1f);
-            new FlappyMoveSystem(Config()).Tick(rising, 0.1f);
+            new FlappyMoveSystem(Config()).Tick(falling, 0.1f, dashing: false);
+            new FlappyMoveSystem(Config()).Tick(rising, 0.1f, dashing: false);
 
             // 눌렀을 때의 세로 속도와 무관하게 같은 값 — 그래야 플랩 높이가 예측 가능하다
             Assert.AreEqual(23f, VelocityOf(falling).y, Tolerance);
@@ -73,7 +73,7 @@ namespace LOP.Tests
             bird.Get<InputBuffer>().Current.Horizontal = 1f;   // 좌우 입력을 넣어도
             bird.Get<InputBuffer>().Current.Vertical = 1f;
 
-            new FlappyMoveSystem(Config()).Tick(bird, 0.1f);
+            new FlappyMoveSystem(Config()).Tick(bird, 0.1f, dashing: false);
 
             Assert.AreEqual(11f, VelocityOf(bird).x, Tolerance);   // 전진은 조작 대상이 아니다
             Assert.AreEqual(0f, VelocityOf(bird).z, Tolerance);
@@ -84,7 +84,7 @@ namespace LOP.Tests
         {
             var bird = Bird(Vector3.zero);   // InputBuffer 없음 — 서버가 조종하지 않는 새
 
-            new FlappyMoveSystem(Config()).Tick(bird, 0.1f);
+            new FlappyMoveSystem(Config()).Tick(bird, 0.1f, dashing: false);
 
             Assert.AreEqual(-7f, VelocityOf(bird).y, Tolerance);
             Assert.AreEqual(11f, VelocityOf(bird).x, Tolerance);

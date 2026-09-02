@@ -39,6 +39,20 @@ namespace LOP.Tests
 
         }
 
+        /// <summary>맵이 비어 있을 때 — 아무 데도 안 닿는다. 부딪힘과 무관한 성질을 볼 때 쓴다.</summary>
+        public class NeverHit : ICollisionQuery
+        {
+            public CollisionHit CapsuleCast(UnityEngine.Vector3 p1, UnityEngine.Vector3 p2, float radius,
+                UnityEngine.Vector3 direction, float distance, int layerMask)
+                => CollisionHit.None;
+
+            public CollisionHit Raycast(UnityEngine.Vector3 origin, UnityEngine.Vector3 direction, float distance, int layerMask)
+                => CollisionHit.None;
+
+            public CollisionHit[] OverlapSphere(UnityEngine.Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<CollisionHit>();
+        }
+
         /// <summary>
         /// 새 한 마리를 구성한다. <paramref name="simulated"/>가 false면 원격(남의 새) — 시뮬 대상이
         /// 아니라 스냅샷 보간으로만 움직이는 쪽을 흉내낼 때 쓴다(Task10).
@@ -51,6 +65,7 @@ namespace LOP.Tests
             entity.Add(new CapsuleShape(Config().BodyRadius, Config().BodyHeight));
             entity.Add(new EntityKind(EntityType.Character));   // FlappyWorld.CollectBirds가 이걸로 "새"를 가린다
             entity.Add(new FlappyStun());
+            entity.Add(new FlappyDash());
             if (withInput)
             {
                 entity.Add(new InputBuffer());
@@ -93,6 +108,7 @@ namespace LOP.Tests
         private static FlappyWorld Build(EntityRegistry registry, ICollisionQuery collisionQuery, IMotionBridge motionBridge)
             => new FlappyWorld(registry, new WorldEventBuffer(),
                 new FlappyMoveSystem(Config()),
-                new FlappyStunSystem(Config()), collisionQuery, motionBridge, layerMask: ~0);
+                new FlappyStunSystem(Config()),
+                new FlappyDashSystem(Config()), collisionQuery, motionBridge, layerMask: ~0);
     }
 }

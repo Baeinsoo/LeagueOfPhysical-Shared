@@ -24,6 +24,7 @@ namespace LOP
     {
         private readonly FlappyMoveSystem _moveSystem;
         private readonly FlappyStunSystem _stunSystem;
+        private readonly FlappyDashSystem _dashSystem;
         private readonly ICollisionQuery _collisionQuery;
         private readonly GameFramework.World.IMotionBridge _motionBridge;
         private readonly int _layerMask;
@@ -49,6 +50,7 @@ namespace LOP
             GameFramework.World.WorldEventBuffer eventBuffer,
             FlappyMoveSystem moveSystem,
             FlappyStunSystem stunSystem,
+            FlappyDashSystem dashSystem,
             ICollisionQuery collisionQuery,
             GameFramework.World.IMotionBridge motionBridge,
             int layerMask)
@@ -56,6 +58,7 @@ namespace LOP
         {
             _moveSystem = moveSystem;
             _stunSystem = stunSystem;
+            _dashSystem = dashSystem;
             _collisionQuery = collisionQuery;
             _motionBridge = motionBridge;
             _layerMask = layerMask;
@@ -80,6 +83,7 @@ namespace LOP
             for (int i = 0; i < _birds.Count; i++)
             {
                 _stunSystem.Tick(_birds[i], deltaTime);
+                _dashSystem.Tick(_birds[i], deltaTime);   // 남은시간 감소 + 게이지 충전
             }
 
             for (int i = 0; i < _birds.Count; i++)
@@ -90,7 +94,15 @@ namespace LOP
                     _birds[i].Get<GameFramework.World.Velocity>().Linear = System.Numerics.Vector3.Zero;
                     continue;
                 }
-                _moveSystem.Tick(_birds[i], deltaTime);
+                //  발동은 시간 감소 뒤, 이동 앞이다. 뒤에 두면 누른 틱의 중력을 한 번 먹고
+                //  대시가 시작돼, 완전한 수평 직선이 아니라 살짝 처진 선이 된다.
+                var input = _birds[i].Get<InputBuffer>()?.Current;
+                if (input != null && input.Dash)
+                {
+                    _dashSystem.TryActivate(_birds[i]);
+                }
+
+                _moveSystem.Tick(_birds[i], deltaTime, _dashSystem.IsDashing(_birds[i]));
             }
 
             // 벽 안이면 밖으로 밀어낸다 — 스폰 겹침 등. 겹침이
@@ -140,7 +152,7 @@ namespace LOP
         }
 
         /// <summary>그 틱에 저장해 둔 스턴 상태. 서버 스냅과 비교해 되돌릴지 정할 때 쓴다.</summary>
-        public bool TryGetSavedStun(long tick, string entityId, out FlappySavedState state)
+        public bool TryGetSavedState(long tick, string entityId, out FlappySavedState state)
         {
             if (_gameFrames.TryGet(tick, out var frame) && frame.TryGetValue(entityId, out state))
             {
@@ -234,6 +246,8 @@ namespace LOP
             {
                 // 무적 중이면 Enter가 알아서 무시한다 — 여기선 "닿았다"만 알리면 된다.
                 _stunSystem.Enter(entity);
+                // 대시는 무적 여부와 무관하게 끝난다 — 벽에 막힌 순간 수평 직선은 이미 깨졌다.
+                _dashSystem.Cancel(entity);
             }
 
             // z는 0에 붙잡는다. 미끄러짐이 남은 이동을 충돌면에 투영하는데, 그 면의 법선에 z가
