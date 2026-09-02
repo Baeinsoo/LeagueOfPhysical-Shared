@@ -12,7 +12,8 @@ namespace LOP.Tests
         public static FlappyConfig Config()
             => new FlappyConfig(forwardSpeed: 11f, flapImpulse: 23f, gravity: 70f, maxFallSpeed: 30f,
                                 bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f,
-                                stunTime: 0.8f, invulnTime: 0.6f);
+                                stunTime: 0.8f, invulnTime: 0.6f,
+                                dashMult: 2f, dashDuration: 0.2f, dashChargeBase: 0.13f, dashChargeDive: 1.2f);
 
         /// <summary>물리 바디가 없는 EditMode 테스트라 아무 일도 하지 않는 빈 구현.</summary>
         public class NoopMotionBridge : IMotionBridge

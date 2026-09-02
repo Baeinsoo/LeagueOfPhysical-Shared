@@ -33,9 +33,26 @@ namespace LOP
         /// <summary>스턴이 풀린 뒤 다시 걸리지 않는 시간(초). 같은 벽에 연달아 걸리는 것을 막는다.</summary>
         public readonly float InvulnTime;
 
+        /// <summary>대시 중 전진 배수. 이 게임에서 전진 속도가 바뀌는 유일한 경우다.</summary>
+        public readonly float DashMult;
+
+        /// <summary>대시가 지속되는 시간(초).</summary>
+        public readonly float DashDuration;
+
+        /// <summary>가만히 있어도 차는 초당 충전량.</summary>
+        public readonly float DashChargeBase;
+
+        /// <summary>
+        /// 최고 속도로 떨어질 때 <see cref="DashChargeBase"/>에 더해지는 초당 충전량.
+        /// 낙하 속도에 비례하므로 천천히 떨어지면 그만큼만 붙는다.
+        /// </summary>
+        public readonly float DashChargeDive;
+
         public FlappyConfig(float forwardSpeed, float flapImpulse, float gravity, float maxFallSpeed,
                             float bodyRadius, float bodyHeight, float restitution,
-                            float stunTime, float invulnTime)
+                            float stunTime, float invulnTime,
+                            float dashMult, float dashDuration,
+                            float dashChargeBase, float dashChargeDive)
         {
             ForwardSpeed = forwardSpeed;
             FlapImpulse = flapImpulse;
@@ -46,6 +63,10 @@ namespace LOP
             Restitution = restitution;
             StunTime = stunTime;
             InvulnTime = invulnTime;
+            DashMult = dashMult;
+            DashDuration = dashDuration;
+            DashChargeBase = dashChargeBase;
+            DashChargeDive = dashChargeDive;
         }
     }
 }
