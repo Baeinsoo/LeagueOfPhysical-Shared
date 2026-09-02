@@ -94,6 +94,44 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void HalfPushedStick_TargetsHalfSpeed()
+        {
+            // 스틱을 절반만 밀면 절반 속도로 간다(살짝=걷기, 끝까지=뛰기).
+            // maxAccel을 크게 줘 한 틱에 목표까지 닿게 한 뒤 목표값 자체를 본다.
+            var r = Move(Vector3.zero, 0f, 0.5f, speed: 5f, maxAccel: 1000f);
+
+            Assert.That(r.velocity.z, Is.EqualTo(2.5f).Within(Tolerance));
+        }
+
+        [Test]
+        public void FullyPushedStick_TargetsFullSpeed()
+        {
+            var r = Move(Vector3.zero, 0f, 1f, speed: 5f, maxAccel: 1000f);
+
+            Assert.That(r.velocity.z, Is.EqualTo(5f).Within(Tolerance));
+        }
+
+        [Test]
+        public void OverPushedStick_ClampsToFullSpeed()
+        {
+            // 대각선으로 밀면 길이가 1을 넘는다(1,1 -> 1.41). 잘라 내지 않으면 대각선이 빨라진다.
+            var r = Move(Vector3.zero, 1f, 1f, speed: 5f, maxAccel: 1000f);
+
+            float horizontal = new Vector2(r.velocity.x, r.velocity.z).magnitude;
+            Assert.That(horizontal, Is.EqualTo(5f).Within(Tolerance));
+        }
+
+        [Test]
+        public void PartialStick_StillFacesMoveDirection()
+        {
+            // 속도만 줄지 방향은 그대로다 - 살살 밀어도 그 쪽을 본다.
+            var r = Move(Vector3.zero, 0.2f, 0f, speed: 5f, maxAccel: 1000f);
+
+            Assert.IsTrue(r.hasRotation);
+            Assert.That(r.rotation.y, Is.EqualTo(90f).Within(Tolerance));
+        }
+
+        [Test]
         public void Reverse_AcceleratesOppositeInstant()
         {
             // 왼쪽으로 8 가다가 오른쪽 입력 → 한 번에 오른쪽 5로 바뀜(반응 빠를 때).
