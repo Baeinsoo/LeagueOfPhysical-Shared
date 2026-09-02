@@ -17,7 +17,8 @@ namespace LOP.Tests
         //  실제 마스터데이터 값(stun 0.8 / invuln 0.6). float로 0.02씩 빼면 정확히 0을 못 찍는
         //  쪽이라, 변환이 그 잔여를 한 틱으로 세면 스턴이 도는 내내 매 틱 틀린다.
         private static FlappyConfig Config()
-            => new FlappyConfig(11f, 23f, 70f, 30f, 0.45f, 0.9f, 0.35f, stunTime: 0.8f, invulnTime: 0.6f);
+            => new FlappyConfig(11f, 23f, 70f, 30f, 0.45f, 0.9f, 0.35f, stunTime: 0.8f, invulnTime: 0.6f,
+                                dashMult: 2f, dashDuration: 0.2f, dashChargeBase: 0.13f, dashChargeDive: 1.2f);
 
         private static Entity Bird()
         {

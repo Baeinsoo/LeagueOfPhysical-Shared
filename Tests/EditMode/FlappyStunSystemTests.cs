@@ -6,7 +6,8 @@ namespace LOP.Tests
     public class FlappyStunSystemTests
     {
         private static FlappyConfig Config()
-            => new FlappyConfig(5f, 6f, 20f, 30f, 0.35f, 1.5f, 0.5f, stunTime: 0.8f, invulnTime: 0.6f);
+            => new FlappyConfig(5f, 6f, 20f, 30f, 0.35f, 1.5f, 0.5f, stunTime: 0.8f, invulnTime: 0.6f,
+                                dashMult: 2f, dashDuration: 0.2f, dashChargeBase: 0.13f, dashChargeDive: 1.2f);
 
         private static Entity Bird()
         {
