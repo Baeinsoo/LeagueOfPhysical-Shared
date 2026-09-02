@@ -52,6 +52,42 @@ namespace LOP.Tests
             return (-vel.y, new Vector2(vel.x, vel.z).magnitude);
         }
 
+        // 한 자세로 오래 굴리되 스틱을 민 정도를 바꿔 수평 속도를 잰다.
+        static float SettleSide(float axis, bool gliding, float push)
+        {
+            var e = Diver(axis, gliding, Vector3.zero, new Vector3(0f, 1000f, 0f), h: push);
+            var sys = new SkydiveMoveSystem();
+            for (int i = 0; i < 600; i++) { sys.Tick(e, 0.02f, Config()); }
+            var vel = VelocityOf(e);
+            return new Vector2(vel.x, vel.z).magnitude;
+        }
+
+        [Test]
+        public void 공중_수평속도는_스틱을_민_거리에_비례한다()
+        {
+            // 눈으로는 구분이 안 되는 값이라 여기서 못 박는다.
+            float full = SettleSide(0f, false, 1f);
+            float half = SettleSide(0f, false, 0.5f);
+            float quarter = SettleSide(0f, false, 0.25f);
+
+            Assert.That(full, Is.EqualTo(12f).Within(Tolerance), "대자 최고 수평속도");
+            Assert.That(half, Is.EqualTo(6f).Within(Tolerance), "절반 밀면 절반");
+            Assert.That(quarter, Is.EqualTo(3f).Within(Tolerance), "4분의 1이면 4분의 1");
+        }
+
+        [Test]
+        public void 공중_수평속도_상한은_자세가_정한다()
+        {
+            // 같은 세기로 밀어도 자세가 다르면 도달하는 속도가 다르다.
+            float spread = SettleSide(0f, false, 1f);
+            float dive = SettleSide(1f, false, 1f);
+            float glide = SettleSide(0f, true, 1f);
+
+            Assert.That(spread, Is.EqualTo(12f).Within(Tolerance));
+            Assert.That(dive, Is.EqualTo(9f).Within(Tolerance));
+            Assert.That(glide, Is.EqualTo(14f).Within(Tolerance));
+        }
+
         [Test]
         public void 하강_속도는_다이브가_가장_빠르고_패러세일이_가장_느리다()
         {
