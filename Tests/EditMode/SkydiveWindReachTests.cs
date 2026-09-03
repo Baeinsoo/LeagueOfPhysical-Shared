@@ -59,6 +59,17 @@ namespace LOP.Tests
             Assert.AreEqual(33.2f, reach, 0.5f);
         }
 
+        // 짧은 구간에서는 최고 속도에 닿기도 전에 끝난다 — 특히 다이브는 옆으로 가장 굼떠서
+        // 그 구간 내내 가속만 하다 만다. 나머지 테스트가 전부 400m 구간이라 이 갈래를 안 지난다.
+        [Test]
+        public void 짧은_구간에서는_최고_속도에_닿지도_못한다()
+        {
+            // 통과 1.0초, 최고 속도까지 1.5초 → 내내 가속만 한다: 0.5 × 6 × 1.0² = 3.0
+            float reach = SkydiveWindReach.SelfReach(DiveMove, DiveTurn, dropHeight: 90f, fallSpeed: DiveFall);
+
+            Assert.AreEqual(3.0f, reach, 0.01f);
+        }
+
         // 순풍이 목표 쪽으로 밀면 자력이 모자라도 닿는다 — 이 코스의 요점(스펙 5.4).
         [Test]
         public void 순풍을_타면_다이브도_60미터를_간다()
