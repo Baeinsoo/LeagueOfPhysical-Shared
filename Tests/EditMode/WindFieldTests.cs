@@ -110,5 +110,24 @@ namespace LOP.Tests
             Assert.AreEqual(1, field.Count);
             Assert.AreEqual(14f, field.SampleAt(new Vector3(0f, 1000f, 0f)).Y, Tolerance);
         }
+
+        // 기하가 같고 바람만 다른 두 볼륨. 정렬이 여기서 동률이 나면 삽입 순서가 그대로 남아
+        // 클·서의 더하는 순서가 갈린다.
+        [Test]
+        public void 기하가_같고_바람만_다른_볼륨도_순서를_안_탄다()
+        {
+            var a = new WindCylinder(new Vector3(0f, 1000f, 0f), 50f, 100f, new Vector3(0.1f, 0f, 0f));
+            var b = new WindCylinder(new Vector3(0f, 1000f, 0f), 50f, 100f, new Vector3(0.2f, 0f, 0f));
+            var c = new WindCylinder(new Vector3(0f, 1000f, 0f), 50f, 100f, new Vector3(0.3f, 0f, 0f));
+
+            var forward = new WindField();
+            forward.Add(a); forward.Add(b); forward.Add(c);
+
+            var backward = new WindField();
+            backward.Add(c); backward.Add(b); backward.Add(a);
+
+            var point = new Vector3(0f, 1000f, 0f);
+            Assert.AreEqual(forward.SampleAt(point).X, backward.SampleAt(point).X);
+        }
     }
 }
