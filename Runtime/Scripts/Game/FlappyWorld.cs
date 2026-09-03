@@ -97,12 +97,9 @@ namespace LOP
                 //  발동은 시간 감소 뒤, 이동 앞이다. 뒤에 두면 누른 틱의 중력을 한 번 먹고
                 //  대시가 시작돼, 완전한 수평 직선이 아니라 살짝 처진 선이 된다.
                 var input = _birds[i].Get<InputBuffer>()?.Current;
-                if (input != null && input.Dash && _dashSystem.TryActivate(_birds[i]))
+                if (input != null && input.Dash)
                 {
-                    //  [진단용 임시] 클·서가 같은 코드를 돌리므로, 같은 몸의 같은 틱이 양쪽에
-                    //  찍히면 예측이 권위와 일치한다는 뜻이다. 되감기 재생 중에도 찍히니
-                    //  같은 틱이 여러 번 나오는 것은 정상이다(재생 횟수).
-                    UnityEngine.Debug.Log($"[Dash] 발동 {_birds[i].Id} tick={tick}");
+                    _dashSystem.TryActivate(_birds[i]);
                 }
 
                 _moveSystem.Tick(_birds[i], deltaTime, _dashSystem.IsDashing(_birds[i]));
