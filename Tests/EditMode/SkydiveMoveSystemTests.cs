@@ -66,13 +66,14 @@ namespace LOP.Tests
         public void 상승풍을_조금만_탄_다이브는_거의_그대로_떨어진다()
         {
             // 40m 구간을 다이브로 지나면 상승풍 14 중 약 3만 탄다(스펙 3.5).
+            // 목표 하강 90 − 바람 3 = 87로 조금만 줄어야 한다.
             var entity = DiverInWind(axis: 1f, gliding: false,
                                      velocity: new Vector3(0f, -90f, 0f), wind: new Vector3(0f, 3f, 0f));
 
             Settle(new SkydiveMoveSystem(), entity);
 
             float fall = -entity.Get<Velocity>().Linear.Y;
-            Assert.That(fall, Is.GreaterThan(90f * 0.95f), "다이브는 상승풍을 거의 안 받아야 한다");
+            Assert.AreEqual(87f, fall, Tolerance);
         }
 
         [Test]
