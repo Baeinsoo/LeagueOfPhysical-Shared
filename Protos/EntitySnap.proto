@@ -26,4 +26,6 @@ message EntitySnap
 	// 또 이 값은 항상 스냅을 만든 그 틱에서 곧바로 적용되니(앵커 틱 그대로, 되감기 재생 전),
 	// 절대 틱 방식이 막아 주는 "늦게 도착해서 낡아 보이는" 문제 자체가 없다.
 	float emergency_remaining = 19; // Skydive: 잔고 0에서 쓴 "마지막 한 번" 구제 창의 남은 초
+	int64 dash_end_tick = 20;       // Flappy: 대시가 끝나는 절대 틱. 0 = 대시 중 아님
+	float dash_charge = 21;         // Flappy: 대시 게이지 0~1. 발동 자격의 권위다
 }
