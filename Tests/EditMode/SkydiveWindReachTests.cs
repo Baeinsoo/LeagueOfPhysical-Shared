@@ -9,19 +9,20 @@ namespace LOP.Tests
         const float DiveFall = 90f, DiveMove = 9f, DiveTurn = 6f, DiveLag = 3.10f;
 
         [Test]
-        public void 구간을_다_덮는_강한_순풍은_다이브를_58미터_민다()
+        public void 구간을_다_덮는_강한_순풍은_밴드_안에서만_다이브를_58미터_민다()
         {
+            // tailHeight 0 — 볼륨 바로 아래가 다음 구간이라 꼬리가 펼칠 자리가 없을 때의 값.
             float drift = SkydiveWindReach.DriftDistance(
-                windSpeed: 20f, bandHeight: 400f, fallSpeed: DiveFall, lag: DiveLag);
+                windSpeed: 20f, bandHeight: 400f, fallSpeed: DiveFall, lag: DiveLag, tailHeight: 0f);
 
             Assert.AreEqual(57.8f, drift, 0.5f);
         }
 
         [Test]
-        public void 같은_바람이_대자는_113미터_민다()
+        public void 같은_바람이_밴드_안에서만_대자는_113미터_민다()
         {
             float drift = SkydiveWindReach.DriftDistance(
-                windSpeed: 20f, bandHeight: 400f, fallSpeed: SpreadFall, lag: SpreadLag);
+                windSpeed: 20f, bandHeight: 400f, fallSpeed: SpreadFall, lag: SpreadLag, tailHeight: 0f);
 
             Assert.AreEqual(112.8f, drift, 0.5f);
         }
@@ -31,7 +32,7 @@ namespace LOP.Tests
         public void 짧은_구간은_거의_안_민다()
         {
             float drift = SkydiveWindReach.DriftDistance(
-                windSpeed: 10f, bandHeight: 40f, fallSpeed: SpreadFall, lag: SpreadLag);
+                windSpeed: 10f, bandHeight: 40f, fallSpeed: SpreadFall, lag: SpreadLag, tailHeight: 0f);
 
             Assert.AreEqual(1.08f, drift, 0.1f);
         }
@@ -39,8 +40,37 @@ namespace LOP.Tests
         [Test]
         public void 바람이_없으면_안_민다()
         {
-            Assert.AreEqual(0f, SkydiveWindReach.DriftDistance(0f, 400f, SpreadFall, SpreadLag), 1e-4f);
-            Assert.AreEqual(0f, SkydiveWindReach.DriftDistance(20f, 0f, SpreadFall, SpreadLag), 1e-4f);
+            Assert.AreEqual(0f, SkydiveWindReach.DriftDistance(0f, 400f, SpreadFall, SpreadLag, 0f), 1e-4f);
+            Assert.AreEqual(0f, SkydiveWindReach.DriftDistance(20f, 0f, SpreadFall, SpreadLag, 0f), 1e-4f);
+        }
+
+        // 볼륨을 벗어난 뒤로도 lag초에 걸쳐 실린 바람이 빠지며 계속 민다. 그 꼬리가 다 펼칠
+        // 자리(tailHeight)가 있으면 램프인 손해(w·lag/2)와 램프아웃 꼬리(w·lag/2)가 정확히
+        // 상쇄돼, 총 밀린 거리는 그냥 "풍속 × 통과시간"이 된다.
+        [Test]
+        public void 꼬리가_다_펼칠_자리가_있으면_풍속과_통과시간의_곱과_같다()
+        {
+            float time = 400f / DiveFall;
+            float drift = SkydiveWindReach.DriftDistance(
+                windSpeed: 20f, bandHeight: 400f, fallSpeed: DiveFall, lag: DiveLag, tailHeight: 300f);
+
+            Assert.AreEqual(20f * time, drift, 0.5f);
+        }
+
+        // 꼬리가 다음 구간 경계에 잘리면, 밴드 안에서만 잰 값보다는 크고 꼬리가 다 펼친
+        // 값(풍속×통과시간)보다는 작은 어딘가에 떨어진다.
+        [Test]
+        public void 꼬리가_잘리면_밴드_안_값과_풍속시간_사이에_있다()
+        {
+            float inBandOnly = SkydiveWindReach.DriftDistance(
+                windSpeed: 20f, bandHeight: 400f, fallSpeed: DiveFall, lag: DiveLag, tailHeight: 0f);
+            float fullTail = 20f * (400f / DiveFall);
+
+            float drift = SkydiveWindReach.DriftDistance(
+                windSpeed: 20f, bandHeight: 400f, fallSpeed: DiveFall, lag: DiveLag, tailHeight: 50f);
+
+            Assert.Greater(drift, inBandOnly);
+            Assert.Less(drift, fullTail);
         }
 
         [Test]
@@ -88,7 +118,7 @@ namespace LOP.Tests
         [Test]
         public void 구간을_다_덮는_역풍은_대자도_못_지나가게_만든다()
         {
-            float drift = SkydiveWindReach.DriftDistance(12f, 400f, SpreadFall, SpreadLag);
+            float drift = SkydiveWindReach.DriftDistance(12f, 400f, SpreadFall, SpreadLag, 0f);
 
             Assert.IsFalse(SkydiveWindReach.CanReach(-55f, 0f, drift, 0f, 76.8f));
         }
@@ -96,7 +126,7 @@ namespace LOP.Tests
         [Test]
         public void 짧게_깐_역풍은_대자가_버틴다()
         {
-            float drift = SkydiveWindReach.DriftDistance(10f, 150f, SpreadFall, SpreadLag);
+            float drift = SkydiveWindReach.DriftDistance(10f, 150f, SpreadFall, SpreadLag, 0f);
 
             Assert.IsTrue(SkydiveWindReach.CanReach(-55f, 0f, drift, 0f, 76.8f));
         }

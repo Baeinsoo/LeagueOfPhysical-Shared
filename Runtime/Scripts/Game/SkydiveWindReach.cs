@@ -13,8 +13,13 @@ namespace LOP
         /// <summary>
         /// 바람이 미는 거리. 몸은 <c>lag</c>초에 걸쳐 일정 속도로 바람에 실리므로, 실린 비율은
         /// <c>min(1, 지난시간/lag)</c>이고 밀린 거리는 그것을 머문 시간만큼 쌓은 값이다.
+        ///
+        /// <para>실려 있던 바람은 볼륨을 <b>벗어난 뒤에도</b> <c>lag</c>초에 걸쳐 같은 속도로
+        /// 빠지면서 그동안 계속 민다 — 그 "꼬리"까지 더해야 진짜 밀린 거리다. <paramref name="tailHeight"/>는
+        /// 볼륨 아래로, 같은 구간 안에서 꼬리가 펼쳐질 수 있는 높이(구간 바닥까지)다. 다음
+        /// 구간으로 넘어가는 꼬리는 여기서 자른다 — 그 구간의 몫이다.</para>
         /// </summary>
-        public static float DriftDistance(float windSpeed, float bandHeight, float fallSpeed, float lag)
+        public static float DriftDistance(float windSpeed, float bandHeight, float fallSpeed, float lag, float tailHeight)
         {
             if (fallSpeed <= 0f || bandHeight <= 0f)
             {
@@ -24,12 +29,28 @@ namespace LOP
             float time = bandHeight / fallSpeed;
             if (lag <= 0f)
             {
-                return windSpeed * time;
+                return windSpeed * time;   // 실리는 데 시간이 안 걸리면 빠지는 데도 안 걸린다 — 꼬리가 없다
             }
 
-            return time >= lag
+            float inBand = time >= lag
                 ? windSpeed * (time - lag * 0.5f)               // 다 실린 뒤로는 그대로 흐른다
                 : windSpeed * time * time / (2f * lag);         // 다 실리기 전에 빠져나간다
+
+            if (tailHeight <= 0f)
+            {
+                return inBand;   // 구간 바닥이 곧 볼륨 바닥이면 꼬리가 펼쳐질 자리가 없다
+            }
+
+            float tailTime = tailHeight / fallSpeed;
+            float ratioAtExit = time / lag;
+            float driftAtExit = windSpeed * (ratioAtExit < 1f ? ratioAtExit : 1f);
+            float decayTime = lag < time ? lag : time;   // 덜 실린 채로 나갔으면 빠지는 데도 그만큼만 걸린다
+
+            float tail = tailTime >= decayTime
+                ? driftAtExit * decayTime * 0.5f                                              // 꼬리가 다 펼쳐진다
+                : driftAtExit * tailTime - (windSpeed / lag) * tailTime * tailTime * 0.5f;     // 다음 구간에서 잘린다
+
+            return inBand + tail;
         }
 
         /// <summary>
