@@ -42,11 +42,13 @@ namespace LOP
                 return;
             }
 
-            // 들어갈 때도 나올 때도 lag초가 걸리게 한다. 목표만 보고 속도를 정하면 나올 때는
-            // 목표가 0이라 속도도 0이 되어 영영 안 빠진다. 그렇다고 매 틱 Value 자신의 크기를
-            // 기준으로 삼으면, 그 크기가 줄어드는 만큼 기준도 같이 줄어 버려 기하급수적으로만
-            // 다가가고 정확히 0에는 닿지 못한다 — 그래서 줄지 않는 Anchor를 기준으로 삼는다.
-            float reference = Math.Max(target.Length(), drift.Anchor.Length());
+            // 속도의 기준(reference)은 셋 중 가장 큰 것을 쓴다. target만 보면 나갈 때(0) 속도가
+            // 0이 되어 영영 안 빠지고, Anchor만 보면 바람에서 더 약한 바람으로 바로 넘어갈 때
+            // 기준이 새 목표까지 같이 작아져 전이가 몇 배로 늘어진다(이미 실려 있던 세기를
+            // 잊어버리기 때문). 그래서 지금 목표(target) · 마지막으로 있었던 바람(Anchor) ·
+            // 지금까지 실린 양(Value) 중 가장 큰 것을 쓴다 — 들어갈 때는 target이, 나갈 때는
+            // Anchor가, 센 바람에서 약한 바람으로 넘어갈 때는 아직 안 줄어든 Value가 버텨 준다.
+            float reference = Math.Max(target.Length(), Math.Max(drift.Anchor.Length(), drift.Value.Length()));
             drift.Value = MoveTowards(drift.Value, target, reference / lag * deltaTime);
         }
 

@@ -141,5 +141,38 @@ namespace LOP.Tests
 
             Assert.DoesNotThrow(() => new WindDriftSystem().Tick(entity, 0.05f, Config(), Everywhere()));
         }
+
+        // 나오는 시간도 자세를 탄다. 들어갈 때만 자세별이고 나올 때 다 같으면,
+        // 스치고 지나간 다이브가 대자보다 오래 바람을 달고 다니게 된다.
+        [Test]
+        public void 다이브는_나올_때도_DiveWindLag초가_걸린다()
+        {
+            var system = new WindDriftSystem();
+            var entity = Diver(axis: 1f);
+            Run(system, entity, Everywhere(), seconds: 4.0f);
+            Assert.AreEqual(14f, entity.Get<WindDrift>().Value.Y, Tolerance);
+
+            Run(system, entity, new WindField(), seconds: 2.0f);
+            Assert.AreEqual(7f, entity.Get<WindDrift>().Value.Y, Tolerance);
+
+            Run(system, entity, new WindField(), seconds: 2.0f);
+            Assert.AreEqual(0f, entity.Get<WindDrift>().Value.Y, Tolerance);
+        }
+
+        // 바람에서 바람으로 바로 넘어가는 경우. 기준이 새 목표까지 같이 작아지면 전이가
+        // 몇 배로 늘어진다 — 실제 코스에서 기둥과 구간 바람이 겹치는 자리가 그렇다.
+        [Test]
+        public void 센_바람에서_약한_바람으로_넘어가도_늘어지지_않는다()
+        {
+            var system = new WindDriftSystem();
+            var entity = Diver(axis: 0f);
+            Run(system, entity, Everywhere(up: 20f), seconds: 2.0f);
+            Assert.AreEqual(20f, entity.Get<WindDrift>().Value.Y, Tolerance);
+
+            // 0을 거치지 않고 곧바로 약한 바람으로. 늘어지면 여기서 걸린다.
+            Run(system, entity, Everywhere(up: 5f), seconds: 4.0f);
+
+            Assert.AreEqual(5f, entity.Get<WindDrift>().Value.Y, Tolerance);
+        }
     }
 }
