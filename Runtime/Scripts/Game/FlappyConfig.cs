@@ -48,11 +48,32 @@ namespace LOP
         /// </summary>
         public readonly float DashChargeDive;
 
+        /// <summary>추격자(뒤에서 오는 벽)가 출발 전에 서 있는 x. 출발선 한참 뒤다.</summary>
+        public readonly float ChaserStartX;
+
+        /// <summary>추격자의 시작 속도. 새보다 한참 느려서 초반엔 실수 여유가 넉넉하다.</summary>
+        public readonly float ChaserInitialSpeed;
+
+        /// <summary>추격자가 빨라지는 정도(m/s²). 갈수록 실수 여유가 줄어든다.</summary>
+        public readonly float ChaserAcceleration;
+
+        /// <summary>
+        /// 추격자의 속도 상한. <b><see cref="ForwardSpeed"/>보다 반드시 낮아야 한다</b> —
+        /// 이것이 "한 번도 안 박은 사람은 절대 안 잡힌다"의 보증이다.
+        /// </summary>
+        public readonly float ChaserMaxSpeed;
+
         public FlappyConfig(float forwardSpeed, float flapImpulse, float gravity, float maxFallSpeed,
                             float bodyRadius, float bodyHeight, float restitution,
                             float stunTime, float invulnTime,
                             float dashMult, float dashDuration,
-                            float dashChargeBase, float dashChargeDive)
+                            float dashChargeBase, float dashChargeDive,
+                            //  추격자 값만 기본값을 준다. 추격자와 무관한 테스트가 자리채움 넷을
+                            //  적지 않아도 되게 하려는 것이다. 실제 provider는 항상 명시하므로,
+                            //  빠뜨리면 벽이 x=0에 멈춰 서서 출발하자마자 전원을 잡는다 —
+                            //  조용히 틀리지 않고 즉시 드러난다.
+                            float chaserStartX = 0f, float chaserInitialSpeed = 0f,
+                            float chaserAcceleration = 0f, float chaserMaxSpeed = 0f)
         {
             ForwardSpeed = forwardSpeed;
             FlapImpulse = flapImpulse;
@@ -67,6 +88,10 @@ namespace LOP
             DashDuration = dashDuration;
             DashChargeBase = dashChargeBase;
             DashChargeDive = dashChargeDive;
+            ChaserStartX = chaserStartX;
+            ChaserInitialSpeed = chaserInitialSpeed;
+            ChaserAcceleration = chaserAcceleration;
+            ChaserMaxSpeed = chaserMaxSpeed;
         }
     }
 }
