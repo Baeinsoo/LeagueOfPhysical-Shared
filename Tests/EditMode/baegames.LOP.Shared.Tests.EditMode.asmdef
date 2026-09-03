@@ -5,7 +5,8 @@
         "baegames.LOP.Shared.Runtime",
         "baegames.LOP.Shared.Generated",
         "baegames.GameFramework.Runtime",
-        "baegames.GameFramework.World"
+        "baegames.GameFramework.World",
+        "VContainer"
     ],
     "includePlatforms": ["Editor"],
     "excludePlatforms": [],
