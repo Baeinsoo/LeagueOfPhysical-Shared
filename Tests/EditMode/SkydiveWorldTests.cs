@@ -21,9 +21,12 @@ namespace LOP.Tests
                 glideWindLag: 0.2f, spreadWindLag: 2.06f, diveWindLag: 3.1f);
 
         // 기본 맵은 면이 하나도 없는 하늘이다(HalfSpaceQuery에 면을 안 넣으면 늘 CollisionHit.None).
-        static SkydiveWorld World(EntityRegistry registry, GameFramework.Physics.ICollisionQuery query = null)
+        static SkydiveWorld World(EntityRegistry registry,
+                                  GameFramework.Physics.ICollisionQuery query = null,
+                                  WindField wind = null)
             => new SkydiveWorld(registry, new WorldEventBuffer(),
-                                new SkydiveMoveSystem(), new StaminaSystem(), Config(),
+                                new SkydiveMoveSystem(), new StaminaSystem(),
+                                new WindDriftSystem(), wind ?? new WindField(), Config(),
                                 query ?? new HalfSpaceQuery(), layerMask: ~0);
 
         static Entity Diver(string id, bool simulated = true, EntityType kind = EntityType.Character)
@@ -37,6 +40,7 @@ namespace LOP.Tests
             e.Add(new InputBuffer());
             e.Add(new GroundState());   // 이동 커널이 매 틱 접지 여부를 여기 적는다
             e.Add(new MotionState());
+            e.Add(new WindDrift());
             if (simulated) { e.Add(new Simulated()); }
             return e;
         }
@@ -455,6 +459,88 @@ namespace LOP.Tests
             world.GameplayStartTick = 0;
 
             Assert.DoesNotThrow(() => world.Tick(1, 0.02f));
+        }
+
+        [Test]
+        public void 상승풍_속에서는_천천히_떨어진다()
+        {
+            var registry = new EntityRegistry();
+            registry.Add(Diver("a"));
+
+            var wind = new WindField();
+            wind.Add(new WindCylinder(
+                new System.Numerics.Vector3(0f, 1000f, 0f), 1000f, 2000f,
+                new System.Numerics.Vector3(0f, 14f, 0f)));
+            var world = World(registry, wind: wind);
+            world.GameplayStartTick = 0;   // 안 정하면 기본값(long.MaxValue)이라 아예 안 떨어진다
+
+            var noWindRegistry = new EntityRegistry();
+            noWindRegistry.Add(Diver("a"));
+            var noWindWorld = World(noWindRegistry);
+            noWindWorld.GameplayStartTick = 0;
+
+            for (long tick = 1; tick <= 100; tick++)
+            {
+                world.Tick(tick, 0.02f);
+                noWindWorld.Tick(tick, 0.02f);
+            }
+
+            Assert.That(HeightOf(registry, "a"), Is.GreaterThan(HeightOf(noWindRegistry, "a")),
+                        "상승풍을 받은 쪽이 덜 내려가야 한다");
+        }
+
+        [Test]
+        public void 되감으면_실린_바람도_돌아온다()
+        {
+            var registry = new EntityRegistry();
+            registry.Add(Diver("a"));
+
+            var wind = new WindField();
+            wind.Add(new WindCylinder(
+                new System.Numerics.Vector3(0f, 1000f, 0f), 1000f, 2000f,
+                new System.Numerics.Vector3(9f, 0f, 0f)));
+            var world = World(registry, wind: wind);
+            world.GameplayStartTick = 0;   // 안 정하면 기본값(long.MaxValue)이라 아예 안 떨어진다
+
+            for (long tick = 1; tick <= 40; tick++)
+            {
+                world.Tick(tick, 0.02f);
+                world.SaveState(tick);
+            }
+            float atTwenty = registry.Get("a").Get<WindDrift>().Value.X;
+
+            for (long tick = 41; tick <= 80; tick++)
+            {
+                world.Tick(tick, 0.02f);
+                world.SaveState(tick);
+            }
+            Assert.That(registry.Get("a").Get<WindDrift>().Value.X, Is.Not.EqualTo(atTwenty));
+
+            Assert.IsTrue(world.LoadState(40));
+
+            Assert.AreEqual(atTwenty, registry.Get("a").Get<WindDrift>().Value.X, Tolerance);
+        }
+
+        // 되감기가 Value만 담고 Anchor를 빠뜨리면, 볼륨 밖 틱으로 되감았을 때 살아 있는 Anchor가
+        // 그 틱의 것과 달라 바람이 빠지는 속도가 어긋난다.
+        [Test]
+        public void 저장한_바람은_실린_값과_기준을_모두_되돌린다()
+        {
+            var entity = Diver("a");
+            var drift = entity.Get<WindDrift>();
+            drift.Value = new Vector3(1f, 2f, 3f).ToNumerics();
+            drift.Anchor = new Vector3(0f, 14f, 0f).ToNumerics();
+
+            var snapshot = SkydiveSavedState.Capture(entity);
+
+            drift.Value = new Vector3(9f, 9f, 9f).ToNumerics();
+            drift.Anchor = new Vector3(0f, 5f, 0f).ToNumerics();
+            snapshot.RestoreTo(entity);
+
+            Assert.AreEqual(1f, drift.Value.X, Tolerance);
+            Assert.AreEqual(2f, drift.Value.Y, Tolerance);
+            Assert.AreEqual(3f, drift.Value.Z, Tolerance);
+            Assert.AreEqual(14f, drift.Anchor.Y, Tolerance);
         }
     }
 }
