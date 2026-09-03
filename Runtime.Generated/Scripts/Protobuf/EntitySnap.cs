@@ -24,7 +24,7 @@ public static partial class EntitySnapReflection {
         string.Concat(
           "ChBFbnRpdHlTbmFwLnByb3RvGhJQcm90b1ZlY3RvcjMucHJvdG8aHVByb3Rv",
           "TW90aW9uQ29udHJpYnV0aW9uLnByb3RvGhdQcm90b0FjdGl2ZUVmZmVjdC5w",
-          "cm90byLiAwoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
+          "cm90byKOBAoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
           "aXRpb24YAiABKAsyDS5Qcm90b1ZlY3RvcjMSHwoIcm90YXRpb24YAyABKAsy",
           "DS5Qcm90b1ZlY3RvcjMSHwoIdmVsb2NpdHkYBCABKAsyDS5Qcm90b1ZlY3Rv",
           "cjMSDgoGbWF4X0hQGAUgASgFEhIKCmN1cnJlbnRfSFAYBiABKAUSNgoUbW90",
@@ -34,12 +34,13 @@ public static partial class EntitySnapReflection {
           "Y3RzGAsgAygLMhIuUHJvdG9BY3RpdmVFZmZlY3QSFQoNc3R1bl9lbmRfdGlj",
           "axgOIAEoAxIXCg9pbnZ1bG5fZW5kX3RpY2sYDyABKAMSFAoMcG9zdHVyZV9h",
           "eGlzGBAgASgCEg8KB2dsaWRpbmcYESABKAgSDwoHc3RhbWluYRgSIAEoAhIb",
-          "ChNlbWVyZ2VuY3lfcmVtYWluaW5nGBMgASgCSgQIDBANSgQIDRAOYgZwcm90",
-          "bzM="));
+          "ChNlbWVyZ2VuY3lfcmVtYWluaW5nGBMgASgCEhUKDWRhc2hfZW5kX3RpY2sY",
+          "FCABKAMSEwoLZGFzaF9jaGFyZ2UYFSABKAJKBAgMEA1KBAgNEA5iBnByb3Rv",
+          "Mw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::ProtoVector3Reflection.Descriptor, global::ProtoMotionContributionReflection.Descriptor, global::ProtoActiveEffectReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick", "PostureAxis", "Gliding", "Stamina", "EmergencyRemaining" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick", "PostureAxis", "Gliding", "Stamina", "EmergencyRemaining", "DashEndTick", "DashCharge" }, null, null, null, null)
         }));
   }
   #endregion
@@ -98,6 +99,8 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     gliding_ = other.gliding_;
     stamina_ = other.stamina_;
     emergencyRemaining_ = other.emergencyRemaining_;
+    dashEndTick_ = other.dashEndTick_;
+    dashCharge_ = other.dashCharge_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -336,6 +339,36 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
   }
 
+  /// <summary>Field number for the "dash_end_tick" field.</summary>
+  public const int DashEndTickFieldNumber = 20;
+  private long dashEndTick_;
+  /// <summary>
+  /// Flappy: 대시가 끝나는 절대 틱. 0 = 대시 중 아님
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long DashEndTick {
+    get { return dashEndTick_; }
+    set {
+      dashEndTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "dash_charge" field.</summary>
+  public const int DashChargeFieldNumber = 21;
+  private float dashCharge_;
+  /// <summary>
+  /// Flappy: 대시 게이지 0~1. 발동 자격의 권위다
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public float DashCharge {
+    get { return dashCharge_; }
+    set {
+      dashCharge_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -368,6 +401,8 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (Gliding != other.Gliding) return false;
     if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(Stamina, other.Stamina)) return false;
     if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(EmergencyRemaining, other.EmergencyRemaining)) return false;
+    if (DashEndTick != other.DashEndTick) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(DashCharge, other.DashCharge)) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -392,6 +427,8 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (Gliding != false) hash ^= Gliding.GetHashCode();
     if (Stamina != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(Stamina);
     if (EmergencyRemaining != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(EmergencyRemaining);
+    if (DashEndTick != 0L) hash ^= DashEndTick.GetHashCode();
+    if (DashCharge != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(DashCharge);
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -472,6 +509,14 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(157, 1);
       output.WriteFloat(EmergencyRemaining);
     }
+    if (DashEndTick != 0L) {
+      output.WriteRawTag(160, 1);
+      output.WriteInt64(DashEndTick);
+    }
+    if (DashCharge != 0F) {
+      output.WriteRawTag(173, 1);
+      output.WriteFloat(DashCharge);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -544,6 +589,14 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(157, 1);
       output.WriteFloat(EmergencyRemaining);
     }
+    if (DashEndTick != 0L) {
+      output.WriteRawTag(160, 1);
+      output.WriteInt64(DashEndTick);
+    }
+    if (DashCharge != 0F) {
+      output.WriteRawTag(173, 1);
+      output.WriteFloat(DashCharge);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -599,6 +652,12 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       size += 2 + 4;
     }
     if (EmergencyRemaining != 0F) {
+      size += 2 + 4;
+    }
+    if (DashEndTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(DashEndTick);
+    }
+    if (DashCharge != 0F) {
       size += 2 + 4;
     }
     if (_unknownFields != null) {
@@ -668,6 +727,12 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
     if (other.EmergencyRemaining != 0F) {
       EmergencyRemaining = other.EmergencyRemaining;
+    }
+    if (other.DashEndTick != 0L) {
+      DashEndTick = other.DashEndTick;
+    }
+    if (other.DashCharge != 0F) {
+      DashCharge = other.DashCharge;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -765,6 +830,14 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
           EmergencyRemaining = input.ReadFloat();
           break;
         }
+        case 160: {
+          DashEndTick = input.ReadInt64();
+          break;
+        }
+        case 173: {
+          DashCharge = input.ReadFloat();
+          break;
+        }
       }
     }
   #endif
@@ -859,6 +932,14 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
         }
         case 157: {
           EmergencyRemaining = input.ReadFloat();
+          break;
+        }
+        case 160: {
+          DashEndTick = input.ReadInt64();
+          break;
+        }
+        case 173: {
+          DashCharge = input.ReadFloat();
           break;
         }
       }
