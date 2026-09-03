@@ -69,6 +69,20 @@ namespace LOP
         /// </summary>
         public readonly float PoseClearance;
 
+        /// <summary>
+        /// 패러세일이 바람에 <b>완전히 실리는 데</b> 걸리는 시간(초). 자세가 바람에 다르게
+        /// 반응하는 이유는 이 값 하나다 — 넓게 편 몸은 공기가 세게 붙잡아 금방 같이 흐르고,
+        /// 좁힌 몸은 공기를 뚫고 지나가 늦게 실린다.
+        ///
+        /// <para>물리에서 <c>종단속도 ÷ FallApproach</c>로 유도된 값이다. 낙하 가속을 만지면
+        /// 이 셋도 같이 따라와야 앞뒤가 맞는다.</para>
+        /// </summary>
+        public readonly float GlideWindLag;
+        /// <summary>대자가 바람에 완전히 실리는 데 걸리는 시간(초).</summary>
+        public readonly float SpreadWindLag;
+        /// <summary>다이브가 바람에 완전히 실리는 데 걸리는 시간(초). 가장 길다.</summary>
+        public readonly float DiveWindLag;
+
         public SkydiveConfig(
             float spreadFallSpeed, float diveFallSpeed, float glideFallSpeed,
             float spreadMoveSpeed, float diveMoveSpeed, float glideMoveSpeed,
@@ -76,7 +90,8 @@ namespace LOP
             float fallApproach, float postureRate,
             float bodyRadius, float bodyHeight, float groundY,
             float staminaMax, float glideDrain, float groundRecover, float emergencyGlideTime,
-            float groundMoveSpeed, float groundAccel, float jumpPower, float poseClearance, float fallBrake)
+            float groundMoveSpeed, float groundAccel, float jumpPower, float poseClearance, float fallBrake,
+            float glideWindLag, float spreadWindLag, float diveWindLag)
         {
             SpreadFallSpeed = spreadFallSpeed;
             DiveFallSpeed = diveFallSpeed;
@@ -101,6 +116,9 @@ namespace LOP
             JumpPower = jumpPower;
             PoseClearance = poseClearance;
             FallBrake = fallBrake;
+            GlideWindLag = glideWindLag;
+            SpreadWindLag = spreadWindLag;
+            DiveWindLag = diveWindLag;
         }
     }
 }

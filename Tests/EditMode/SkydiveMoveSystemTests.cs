@@ -17,7 +17,8 @@ namespace LOP.Tests
                 fallApproach: 29f, postureRate: 4f,
                 bodyRadius: 0.4f, bodyHeight: 1.8f, groundY: 0f,
                 staminaMax: 100f, glideDrain: 20f, groundRecover: 40f, emergencyGlideTime: 1f,
-                groundMoveSpeed: 4f, groundAccel: 100f, jumpPower: 11f, poseClearance: 5f, fallBrake: 150f);
+                groundMoveSpeed: 4f, groundAccel: 100f, jumpPower: 11f, poseClearance: 5f, fallBrake: 150f,
+                glideWindLag: 0.2f, spreadWindLag: 2.06f, diveWindLag: 3.1f);
 
         static Entity Diver(float axis, bool gliding, Vector3 velocity, Vector3 position,
                             float h = 0f, float v = 0f)
@@ -31,6 +32,93 @@ namespace LOP.Tests
             buffer.Current = new InputCommand { Horizontal = h, Vertical = v };
             entity.Add(buffer);
             return entity;
+        }
+
+        static Entity DiverInWind(float axis, bool gliding, Vector3 velocity, Vector3 wind,
+                                  float h = 0f, float v = 0f)
+        {
+            var entity = Diver(axis, gliding, velocity, Vector3.zero, h, v);
+            entity.Add(new WindDrift { Value = wind.ToNumerics() });
+            return entity;
+        }
+
+        static void Settle(SkydiveMoveSystem system, Entity entity, int ticks = 200, float dt = 0.02f)
+        {
+            for (int i = 0; i < ticks; i++)
+            {
+                system.Tick(entity, dt, Config());
+            }
+        }
+
+        [Test]
+        public void 상승풍을_다_탄_패러세일은_위로_간다()
+        {
+            // 목표 하강 6 − 상승풍 14 = −8. 즉 초속 8로 올라간다.
+            var entity = DiverInWind(axis: 0f, gliding: true,
+                                     velocity: new Vector3(0f, -6f, 0f), wind: new Vector3(0f, 14f, 0f));
+
+            Settle(new SkydiveMoveSystem(), entity);
+
+            Assert.AreEqual(8f, entity.Get<Velocity>().Linear.Y, Tolerance);
+        }
+
+        [Test]
+        public void 상승풍을_조금만_탄_다이브는_거의_그대로_떨어진다()
+        {
+            // 40m 구간을 다이브로 지나면 상승풍 14 중 약 3만 탄다(스펙 3.5).
+            // 목표 하강 90 − 바람 3 = 87로 조금만 줄어야 한다.
+            var entity = DiverInWind(axis: 1f, gliding: false,
+                                     velocity: new Vector3(0f, -90f, 0f), wind: new Vector3(0f, 3f, 0f));
+
+            Settle(new SkydiveMoveSystem(), entity);
+
+            float fall = -entity.Get<Velocity>().Linear.Y;
+            Assert.AreEqual(87f, fall, Tolerance);
+        }
+
+        [Test]
+        public void 손을_떼면_횡풍_속도로_흘러간다()
+        {
+            var entity = DiverInWind(axis: 0f, gliding: false,
+                                     velocity: Vector3.zero, wind: new Vector3(10f, 0f, 0f));
+
+            Settle(new SkydiveMoveSystem(), entity);
+
+            Assert.AreEqual(10f, entity.Get<Velocity>().Linear.X, Tolerance);
+        }
+
+        [Test]
+        public void 스틱으로_밀면_횡풍을_상류로_이길_수_있다()
+        {
+            // 대자 최고 속도 12 > 횡풍 10 → 상류로 초속 2
+            var entity = DiverInWind(axis: 0f, gliding: false,
+                                     velocity: Vector3.zero, wind: new Vector3(10f, 0f, 0f), h: -1f);
+
+            Settle(new SkydiveMoveSystem(), entity);
+
+            Assert.AreEqual(-2f, entity.Get<Velocity>().Linear.X, Tolerance);
+        }
+
+        [Test]
+        public void 최고_속도보다_센_횡풍은_못_이긴다()
+        {
+            // 대자 최고 속도 12 < 횡풍 15 → 끝까지 밀어도 하류로 초속 3 (항공의 바람 삼각형)
+            var entity = DiverInWind(axis: 0f, gliding: false,
+                                     velocity: Vector3.zero, wind: new Vector3(15f, 0f, 0f), h: -1f);
+
+            Settle(new SkydiveMoveSystem(), entity);
+
+            Assert.AreEqual(3f, entity.Get<Velocity>().Linear.X, Tolerance);
+        }
+
+        [Test]
+        public void WindDrift가_없는_몸은_예전과_똑같이_떨어진다()
+        {
+            var entity = Diver(axis: 0f, gliding: false, velocity: Vector3.zero, position: Vector3.zero);
+
+            Settle(new SkydiveMoveSystem(), entity);
+
+            Assert.AreEqual(-60f, entity.Get<Velocity>().Linear.Y, Tolerance);
         }
 
         static Entity WithState(Entity e, SkydiveMotionState state)

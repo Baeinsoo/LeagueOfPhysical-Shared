@@ -6,14 +6,17 @@ namespace LOP
 {
     /// <summary>
     /// Skydive의 시뮬 코어. 클·서가 같은 구체 클래스를 돌려 결과가 갈리지 않게 한다.
-    /// 한 틱: ① 입력을 자세로 반영(축은 정해진 속도로만 움직인다) → ② 자세가 목표 속도를 정한다
-    /// → ③ 맵에 막히면 벽까지만 옮긴다(미끄러짐·접지 판정) → ④ 방금 나온 접지로 스태미나 소모·회복.
+    /// 한 틱: ① 입력을 자세로 반영(축은 정해진 속도로만 움직인다) → ② 바람에 실린다(자세가
+    /// 빠르기를 정한다) → ③ 자세와 바람이 목표 속도를 정한다 → ④ 맵에 막히면 벽까지만 옮긴다
+    /// (미끄러짐·접지 판정) → ⑤ 방금 나온 접지로 스태미나 소모·회복.
     /// 레이저 판정은 Detection에 들어오지만(슬라이스 4) 지금은 비어 있다.
     /// </summary>
     public class SkydiveWorld : GameFramework.World.WorldBase
     {
         private readonly SkydiveMoveSystem _moveSystem;
         private readonly StaminaSystem _staminaSystem;
+        private readonly WindDriftSystem _windDriftSystem;
+        private readonly WindField _windField;
         private readonly SkydiveConfig _config;
         private readonly ICollisionQuery _collisionQuery;
         private readonly int _layerMask;
@@ -30,6 +33,8 @@ namespace LOP
             GameFramework.World.WorldEventBuffer eventBuffer,
             SkydiveMoveSystem moveSystem,
             StaminaSystem staminaSystem,
+            WindDriftSystem windDriftSystem,
+            WindField windField,
             SkydiveConfig config,
             ICollisionQuery collisionQuery,
             int layerMask)
@@ -37,6 +42,8 @@ namespace LOP
         {
             _moveSystem = moveSystem;
             _staminaSystem = staminaSystem;
+            _windDriftSystem = windDriftSystem;
+            _windField = windField;
             _config = config;
             _collisionQuery = collisionQuery;
             _layerMask = layerMask;
@@ -63,6 +70,13 @@ namespace LOP
             for (int i = 0; i < _divers.Count; i++)
             {
                 ApplyPostureInput(_divers[i], deltaTime);
+            }
+
+            // 자세가 정해진 뒤에 실린다 — 자세가 곧 "얼마나 빨리 실리나"이므로, 앞에 두면
+            // 한 틱 전 자세로 바람을 받게 된다.
+            for (int i = 0; i < _divers.Count; i++)
+            {
+                _windDriftSystem.Tick(_divers[i], deltaTime, _config, _windField);
             }
 
             for (int i = 0; i < _divers.Count; i++)

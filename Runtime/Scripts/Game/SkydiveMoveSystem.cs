@@ -39,6 +39,10 @@ namespace LOP
             // 상태 전이는 월드가 이미 밀어 놨다(발밑 여유를 재야 해서 쿼리가 필요하다). 여기선 읽기만.
             var state = entity.Get<MotionState>()?.Value ?? SkydiveMotionState.Falling;
 
+            // 바람은 목표를 옮긴다. 속도에 직접 더하면 다음 틱 수렴이 도로 지운다 — 이 게임의
+            // 속도는 "목표로 끌려가는" 구조라 목표를 건드려야 남는다.
+            var wind = entity.Get<WindDrift>()?.Value ?? System.Numerics.Vector3.Zero;
+
             float targetFall;
             if (state != SkydiveMotionState.Skydiving)
             {
@@ -53,6 +57,8 @@ namespace LOP
                 float axis = posture.Axis < 0f ? 0f : (posture.Axis > 1f ? 1f : posture.Axis);
                 targetFall = Lerp(config.SpreadFallSpeed, config.DiveFallSpeed, axis);
             }
+            // 상승풍이면 목표 하강 속도가 줄고, 14를 넘으면 부호가 뒤집혀 올라간다.
+            targetFall -= wind.Y;
             // 빨라질 때는 중력(FallApproach), 느려질 때는 훨씬 큰 감속(FallBrake)을 쓴다.
             // 대칭으로 두면 패러세일을 펴도 속도가 중력과 같은 비율로만 줄어 낙하산이 아니게 된다
             // — 60에서 6까지 1.9초가 걸린다. 공기 저항은 면적이 커지면 급격히 커지므로
@@ -79,7 +85,7 @@ namespace LOP
             }
             else if (state == SkydiveMotionState.Skydiving)
             {
-                Drift(ref linear, posture, inputX, inputZ, deltaTime, config);
+                Drift(ref linear, posture, inputX, inputZ, deltaTime, config, wind);
             }
 
             velocity.Linear = linear;
@@ -110,7 +116,8 @@ namespace LOP
 
         // 공중 — 상태가 목표 속도와 선회력을 정한다. 몸은 돌리지 않는다(자세 기울기가 그 위에 얹힌다).
         private static void Drift(ref System.Numerics.Vector3 linear, Posture posture,
-            float inputX, float inputZ, float deltaTime, in SkydiveConfig config)
+            float inputX, float inputZ, float deltaTime, in SkydiveConfig config,
+            System.Numerics.Vector3 wind)
         {
             float maxSide;
             float turnAccel;
@@ -133,9 +140,10 @@ namespace LOP
                 inputZ /= inputLen;
             }
 
-            // 입력 방향 × 최고 속도가 목표. 입력이 없으면 목표가 0이라 저절로 감속한다.
-            linear.X = Approach(linear.X, inputX * maxSide, turnAccel * deltaTime);
-            linear.Z = Approach(linear.Z, inputZ * maxSide, turnAccel * deltaTime);
+            // 최고 속도는 공기에 대한 값이다 — 몸을 기울여 공기를 밀어 방향을 얻으니 물리적으로도
+            // 그렇다. 그래서 바람이 최고 속도보다 세면 끝까지 밀어도 상류로 못 간다.
+            linear.X = Approach(linear.X, inputX * maxSide + wind.X, turnAccel * deltaTime);
+            linear.Z = Approach(linear.Z, inputZ * maxSide + wind.Z, turnAccel * deltaTime);
         }
 
         private static float Lerp(float a, float b, float t) => a + (b - a) * t;
