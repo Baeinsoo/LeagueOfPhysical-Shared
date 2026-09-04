@@ -24,7 +24,7 @@ public static partial class EntitySnapReflection {
         string.Concat(
           "ChBFbnRpdHlTbmFwLnByb3RvGhJQcm90b1ZlY3RvcjMucHJvdG8aHVByb3Rv",
           "TW90aW9uQ29udHJpYnV0aW9uLnByb3RvGhdQcm90b0FjdGl2ZUVmZmVjdC5w",
-          "cm90byKOBAoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
+          "cm90byKmBAoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
           "aXRpb24YAiABKAsyDS5Qcm90b1ZlY3RvcjMSHwoIcm90YXRpb24YAyABKAsy",
           "DS5Qcm90b1ZlY3RvcjMSHwoIdmVsb2NpdHkYBCABKAsyDS5Qcm90b1ZlY3Rv",
           "cjMSDgoGbWF4X0hQGAUgASgFEhIKCmN1cnJlbnRfSFAYBiABKAUSNgoUbW90",
@@ -35,12 +35,12 @@ public static partial class EntitySnapReflection {
           "axgOIAEoAxIXCg9pbnZ1bG5fZW5kX3RpY2sYDyABKAMSFAoMcG9zdHVyZV9h",
           "eGlzGBAgASgCEg8KB2dsaWRpbmcYESABKAgSDwoHc3RhbWluYRgSIAEoAhIb",
           "ChNlbWVyZ2VuY3lfcmVtYWluaW5nGBMgASgCEhUKDWRhc2hfZW5kX3RpY2sY",
-          "FCABKAMSEwoLZGFzaF9jaGFyZ2UYFSABKAJKBAgMEA1KBAgNEA5iBnByb3Rv",
-          "Mw=="));
+          "FCABKAMSEwoLZGFzaF9jaGFyZ2UYFSABKAISFgoOdGVsZXBvcnRfY291bnQY",
+          "FiABKAVKBAgMEA1KBAgNEA5iBnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::ProtoVector3Reflection.Descriptor, global::ProtoMotionContributionReflection.Descriptor, global::ProtoActiveEffectReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick", "PostureAxis", "Gliding", "Stamina", "EmergencyRemaining", "DashEndTick", "DashCharge" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick", "PostureAxis", "Gliding", "Stamina", "EmergencyRemaining", "DashEndTick", "DashCharge", "TeleportCount" }, null, null, null, null)
         }));
   }
   #endregion
@@ -101,6 +101,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     emergencyRemaining_ = other.emergencyRemaining_;
     dashEndTick_ = other.dashEndTick_;
     dashCharge_ = other.dashCharge_;
+    teleportCount_ = other.teleportCount_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -369,6 +370,22 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
   }
 
+  /// <summary>Field number for the "teleport_count" field.</summary>
+  public const int TeleportCountFieldNumber = 22;
+  private int teleportCount_;
+  /// <summary>
+  /// 순간이동한 횟수. 받는 쪽은 직전에 본 값과 다른지만 본다 — 스냅샷이 유실돼도
+  /// 다음 스냅샷에서 알아챈다(일회성 표시라면 그 패킷과 함께 사라진다).
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int TeleportCount {
+    get { return teleportCount_; }
+    set {
+      teleportCount_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -403,6 +420,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(EmergencyRemaining, other.EmergencyRemaining)) return false;
     if (DashEndTick != other.DashEndTick) return false;
     if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(DashCharge, other.DashCharge)) return false;
+    if (TeleportCount != other.TeleportCount) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -429,6 +447,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (EmergencyRemaining != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(EmergencyRemaining);
     if (DashEndTick != 0L) hash ^= DashEndTick.GetHashCode();
     if (DashCharge != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(DashCharge);
+    if (TeleportCount != 0) hash ^= TeleportCount.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -517,6 +536,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(173, 1);
       output.WriteFloat(DashCharge);
     }
+    if (TeleportCount != 0) {
+      output.WriteRawTag(176, 1);
+      output.WriteInt32(TeleportCount);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -597,6 +620,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(173, 1);
       output.WriteFloat(DashCharge);
     }
+    if (TeleportCount != 0) {
+      output.WriteRawTag(176, 1);
+      output.WriteInt32(TeleportCount);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -659,6 +686,9 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
     if (DashCharge != 0F) {
       size += 2 + 4;
+    }
+    if (TeleportCount != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(TeleportCount);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -733,6 +763,9 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
     if (other.DashCharge != 0F) {
       DashCharge = other.DashCharge;
+    }
+    if (other.TeleportCount != 0) {
+      TeleportCount = other.TeleportCount;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -838,6 +871,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
           DashCharge = input.ReadFloat();
           break;
         }
+        case 176: {
+          TeleportCount = input.ReadInt32();
+          break;
+        }
       }
     }
   #endif
@@ -940,6 +977,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
         }
         case 173: {
           DashCharge = input.ReadFloat();
+          break;
+        }
+        case 176: {
+          TeleportCount = input.ReadInt32();
           break;
         }
       }

@@ -28,4 +28,7 @@ message EntitySnap
 	float emergency_remaining = 19; // Skydive: 잔고 0에서 쓴 "마지막 한 번" 구제 창의 남은 초
 	int64 dash_end_tick = 20;       // Flappy: 대시가 끝나는 절대 틱. 0 = 대시 중 아님
 	float dash_charge = 21;         // Flappy: 대시 게이지 0~1. 발동 자격의 권위다
+	// 순간이동한 횟수. 받는 쪽은 직전에 본 값과 다른지만 본다 — 스냅샷이 유실돼도
+	// 다음 스냅샷에서 알아챈다(일회성 표시라면 그 패킷과 함께 사라진다).
+	int32 teleport_count = 22;
 }
