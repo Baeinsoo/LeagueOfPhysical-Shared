@@ -1,4 +1,6 @@
+using GameFramework;
 using UnityEngine;
+using VContainer;
 
 namespace LOP
 {
@@ -10,10 +12,35 @@ namespace LOP
     /// 씬 주입을 끊는다. (Unreal의 ATriggerVolume 계열 골 마커에 대응 — 좌표를 코드가 아니라
     /// 맵이 정한다.)
     ///
-    /// 어느 축을 읽을지는 마커가 아니라 <b>게임 룰이 정한다</b> — 마커는 좌표만 내줄 뿐이다.
-    /// Flappy Race는 x(<see cref="FlappyRaceProgress"/>), Skydive는 y(<see cref="SkydiveProgress"/>)를 읽는다.
+    /// 맵이 올라올 때 <see cref="FinishLineBounds"/>를 주입받아 <b>스스로 등록한다</b>
+    /// (<c>GameLifetimeScope</c>가 <c>sceneLoaded</c>를 듣고 <c>InjectSceneObjects</c>를 부른다).
+    /// 그래야 시뮬이 첫 틱에 씬을 훑지 않는다.
+    ///
+    /// 어느 축을 읽을지는 마커가 아니라 <b>게임이 정한다</b> — 마커는 형상만 내줄 뿐이다.
     /// </summary>
+    [SceneInjectMonoBehaviour]
     public class FinishLine : MonoBehaviour
     {
+        private FinishLineBounds line;
+
+        [Inject]
+        public void Construct(FinishLineBounds line)
+        {
+            this.line = line;
+            line.Register(Shape());
+        }
+
+        //  보이는 판이 곧 결승선이다. 렌더러가 없으면(마커만 찍어 둔 맵) 두께 0인 선으로 쓴다.
+        private Bounds Shape()
+        {
+            var renderer = GetComponentInChildren<Renderer>();
+            return renderer != null ? renderer.bounds : new Bounds(transform.position, Vector3.zero);
+        }
+
+        private void OnDestroy()
+        {
+            // 라운드가 여러 판이면 맵을 다시 로드한다 — 안 거두면 옛 선이 남는다.
+            line?.Unregister();
+        }
     }
 }

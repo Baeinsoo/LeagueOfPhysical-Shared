@@ -16,6 +16,7 @@ namespace LOP
         private readonly SkydiveMoveSystem _moveSystem;
         private readonly StaminaSystem _staminaSystem;
         private readonly WindDriftSystem _windDriftSystem;
+        private readonly FinishSystem _finishSystem;
         private readonly WindField _windField;
         private readonly SkydiveConfig _config;
         private readonly ICollisionQuery _collisionQuery;
@@ -34,6 +35,7 @@ namespace LOP
             SkydiveMoveSystem moveSystem,
             StaminaSystem staminaSystem,
             WindDriftSystem windDriftSystem,
+            FinishSystem finishSystem,
             WindField windField,
             SkydiveConfig config,
             ICollisionQuery collisionQuery,
@@ -43,6 +45,7 @@ namespace LOP
             _moveSystem = moveSystem;
             _staminaSystem = staminaSystem;
             _windDriftSystem = windDriftSystem;
+            _finishSystem = finishSystem;
             _windField = windField;
             _config = config;
             _collisionQuery = collisionQuery;
@@ -233,6 +236,17 @@ namespace LOP
                 _divers.Add(entity);
             }
             _divers.Sort((left, right) => string.CompareOrdinal(left.Id, right.Id));
+        }
+
+        //  이동이 다 끝난 자리에서 본다. Mutation 안에 두면 한 틱 전 자리를 보고 통과를 한 틱
+        //  늦게 잡는다. 아키텍처 문서가 Detection을 "상태를 스캔해 파생 사건을 만드는 자리"로
+        //  정의해 둔 그 페이즈다.
+        protected override void Detection(long tick, float deltaTime)
+        {
+            for (int i = 0; i < _divers.Count; i++)
+            {
+                _finishSystem.Tick(_divers[i], tick);
+            }
         }
 
         protected override void SaveGameState(long tick)
