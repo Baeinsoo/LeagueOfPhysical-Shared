@@ -66,5 +66,38 @@ namespace LOP
                 field.Remove(registered);
             }
         }
+
+        // 배치가 곧 판정이다. 씬 뷰에서 안 보이면 디자이너가 빔이 어디를 훑는지 알 수 없다.
+        // (WindVolume.OnDrawGizmos와 같은 이유·같은 자리에 둔다.)
+        private void OnDrawGizmos()
+        {
+            Vector3 pivot = transform.position;
+            float startAngle = StartAngleDegrees * Mathf.Deg2Rad;
+
+            Gizmos.color = new Color(1f, 0.15f, 0.15f, 0.9f);
+            DrawBeam(pivot, startAngle);
+
+            // 도는 빔이면 실제로 닿는 범위(호)까지 옅게 같이 그린다 — 시작 자세만 보면
+            // 다음 순간 어디까지 쓸고 가는지 알 수 없다.
+            if (AngularSpeedDegreesPerTick != 0f)
+            {
+                Gizmos.color = new Color(1f, 0.15f, 0.15f, 0.25f);
+                // 왕복이면 진폭만큼, 아니면(전회전) 한 바퀴 전체가 닿는 범위다.
+                float half = SweepHalfRangeDegrees > 0f ? SweepHalfRangeDegrees * Mathf.Deg2Rad : Mathf.PI;
+                const int arcSteps = 12;
+                for (int i = 1; i <= arcSteps; i++)
+                {
+                    float t = (float)i / arcSteps;
+                    DrawBeam(pivot, startAngle + Mathf.Lerp(-half, half, t));
+                }
+            }
+        }
+
+        private void DrawBeam(Vector3 pivot, float angle)
+        {
+            Vector3 tip = pivot + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * Length;
+            Gizmos.DrawLine(pivot, tip);
+            Gizmos.DrawWireSphere(tip, Radius);
+        }
     }
 }

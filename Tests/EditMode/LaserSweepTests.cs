@@ -128,4 +128,33 @@ public class LaserSweepTests
 
         Assert.IsFalse(hit);
     }
+
+    // 관대한 통과(exhausted=true) 경로. CA의 안전 전진 폭은 "지금 거리가 얼마나 줄어들 수 있는가"의
+    // 최악값으로 계산되는데, 캡슐이 빔과 나란히(빔의 x축 방향으로) 미끄러지면 실제 거리는 한 틱 내내
+    // 전혀 안 줄어드는데도 그 최악값 기준으로만 조금씩 전진한다 — 이런 "스치듯 나란히" 지나가는 경우가
+    // CA가 알려진 대로 느리게 수렴하는 경우다.
+    //
+    // 캡슐을 y=1000(빔 높이)을 항상 걸치도록 세워 두고 z=0.75(허용거리 0.7+여유 0.05)만 유지한 채
+    // x로만 10만큼 미끄러뜨리면, 모든 t에서 거리가 정확히 0.75로 고정된다(끝점 계산으로 검증 — 아래
+    // 참고). allowed=capsuleRadius(0.4)+laserRadius(0.3)=0.7, HitTolerance=0.01이므로 문턱은 0.71 —
+    // 0.75는 그 문턱 위(안 닿음)를 항상 유지한다. moved=10(x 변위)이라 매 반복의 전진폭은
+    // (0.75-0.7)/10=0.005로 고정 — 16번을 다 돌아도 t≈0.08까지밖에 못 가 t<1인 채로 반복 상한에
+    // 걸린다. 즉 "닿지 않는다"는 사실을 증명하기엔 16번으로 부족해 관대하게 통과시키는 경우다.
+    [Test]
+    public void 나란히_스치면_반복_상한에_닿아_관대하게_통과시킨다()
+    {
+        Laser laser = FixedBeamAlongX();   // y=1000, x∈[-20,20], z=0
+
+        // 캡슐은 y∈[999.1, 1000.9](빔 높이 1000을 정확히 걸침) · z=0.75로 고정, x만 -5→5로 미끄러진다.
+        var bottomFrom = new Vector3(-5f, 999.1f, 0.75f);
+        var topFrom = new Vector3(-5f, 1000.9f, 0.75f);
+        var bottomTo = new Vector3(5f, 999.1f, 0.75f);
+        var topTo = new Vector3(5f, 1000.9f, 0.75f);
+
+        bool hit = LaserSweep.Hit(laser, tick: 0, bottomFrom, topFrom, bottomTo, topTo,
+                                  CapsuleRadius, out _, out bool exhausted);
+
+        Assert.IsFalse(hit, "실제로는 문턱(0.71) 밖(0.75)을 유지하므로 닿아서는 안 된다 — 억울한 죽음");
+        Assert.IsTrue(exhausted, "이 경우는 CA가 16번 안에 결론을 못 내 관대하게 통과시키는 경로다");
+    }
 }
