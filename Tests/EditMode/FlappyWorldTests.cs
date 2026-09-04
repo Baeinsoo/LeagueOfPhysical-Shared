@@ -120,6 +120,7 @@ namespace LOP.Tests
                                new FlappyMoveSystem(Config()),
                                new FlappyStunSystem(Config()),
                                new FlappyDashSystem(Config()),
+                               new FinishSystem(new FinishLineBounds(FinishAxis.X), FinishAxis.X, increasing: true),
                                new EmptySkyQuery(), bridge, layerMask: ~0);
             world.GameplayStartTick = 0;
             return world;
@@ -268,6 +269,7 @@ namespace LOP.Tests
                                          new FlappyMoveSystem(Config()),
                                          new FlappyStunSystem(Config()),
                                          new FlappyDashSystem(Config()),
+                               new FinishSystem(new FinishLineBounds(FinishAxis.X), FinishAxis.X, increasing: true),
                                          wallQuery, new NoopMotionBridge(), layerMask);
             world.GameplayStartTick = 0;   // 이 테스트는 출발 게이트가 아니라 맵 충돌을 다룬다
 
@@ -299,6 +301,7 @@ namespace LOP.Tests
                                         new FlappyMoveSystem(Config()),
                                         new FlappyStunSystem(Config()),
                                         new FlappyDashSystem(Config()),
+                               new FinishSystem(new FinishLineBounds(FinishAxis.X), FinishAxis.X, increasing: true),
                                         wallQuery, new NoopMotionBridge(), layerMask: ~0);
             world.GameplayStartTick = 0;   // 이 테스트는 출발 게이트가 아니라 맵 충돌을 다룬다
 

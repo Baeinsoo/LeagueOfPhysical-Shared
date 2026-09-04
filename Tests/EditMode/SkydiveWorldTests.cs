@@ -26,7 +26,9 @@ namespace LOP.Tests
                                   WindField wind = null)
             => new SkydiveWorld(registry, new WorldEventBuffer(),
                                 new SkydiveMoveSystem(), new StaminaSystem(),
-                                new WindDriftSystem(), wind ?? new WindField(), Config(),
+                                new WindDriftSystem(),
+                                //  결승선을 등록하지 않는다 — 이 테스트들의 관심사가 아니고, 없으면 아무도 통과하지 않는다.
+                                new FinishSystem(new FinishLineBounds(FinishAxis.Y), FinishAxis.Y, increasing: false), wind ?? new WindField(), Config(),
                                 query ?? new HalfSpaceQuery(), layerMask: ~0);
 
         static Entity Diver(string id, bool simulated = true, EntityType kind = EntityType.Character)

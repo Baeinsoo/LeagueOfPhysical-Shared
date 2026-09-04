@@ -18,9 +18,13 @@ namespace LOP
         // 살아 있는 Anchor가 그 틱 것과 달라 바람이 빠지는 속도가 어긋난다.
         public readonly System.Numerics.Vector3 DriftAnchor;
 
+        public readonly long FinishedTick;
+        public readonly float FinishDepth;
+
         private SkydiveSavedState(float axis, bool gliding, float stamina,
                                   bool emergencyUsed, float emergencyRemaining, SkydiveMotionState motion,
-                                  System.Numerics.Vector3 drift, System.Numerics.Vector3 driftAnchor)
+                                  System.Numerics.Vector3 drift, System.Numerics.Vector3 driftAnchor,
+                                  long finishedTick, float finishDepth)
         {
             Axis = axis;
             Gliding = gliding;
@@ -30,6 +34,8 @@ namespace LOP
             Motion = motion;
             Drift = drift;
             DriftAnchor = driftAnchor;
+            FinishedTick = finishedTick;
+            FinishDepth = finishDepth;
         }
 
         public static SkydiveSavedState Capture(GameFramework.World.Entity entity)
@@ -45,7 +51,9 @@ namespace LOP
                 stamina == null ? 0f : stamina.EmergencyRemaining,
                 entity.Get<MotionState>()?.Value ?? SkydiveMotionState.Walking,
                 wind?.Value ?? System.Numerics.Vector3.Zero,
-                wind?.Anchor ?? System.Numerics.Vector3.Zero);
+                wind?.Anchor ?? System.Numerics.Vector3.Zero,
+                entity.Get<FinishState>()?.FinishedTick ?? FinishState.NotFinished,
+                entity.Get<FinishState>()?.Depth ?? 0f);
         }
 
         public void RestoreTo(GameFramework.World.Entity entity)
@@ -80,6 +88,15 @@ namespace LOP
             {
                 wind.Value = Drift;
                 wind.Anchor = DriftAnchor;
+            }
+
+            //  통과 기록도 되돌린다 — 클라가 통과를 예측하므로, 안 되돌리면 재생 뒤에도
+            //  "이미 통과함"이 남는다.
+            var finish = entity.Get<FinishState>();
+            if (finish != null)
+            {
+                finish.FinishedTick = FinishedTick;
+                finish.Depth = FinishDepth;
             }
         }
     }

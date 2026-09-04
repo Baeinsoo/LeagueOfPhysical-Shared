@@ -25,6 +25,7 @@ namespace LOP
         private readonly FlappyMoveSystem _moveSystem;
         private readonly FlappyStunSystem _stunSystem;
         private readonly FlappyDashSystem _dashSystem;
+        private readonly FinishSystem _finishSystem;
         private readonly ICollisionQuery _collisionQuery;
         private readonly GameFramework.World.IMotionBridge _motionBridge;
         private readonly int _layerMask;
@@ -51,6 +52,7 @@ namespace LOP
             FlappyMoveSystem moveSystem,
             FlappyStunSystem stunSystem,
             FlappyDashSystem dashSystem,
+            FinishSystem finishSystem,
             ICollisionQuery collisionQuery,
             GameFramework.World.IMotionBridge motionBridge,
             int layerMask)
@@ -59,6 +61,7 @@ namespace LOP
             _moveSystem = moveSystem;
             _stunSystem = stunSystem;
             _dashSystem = dashSystem;
+            _finishSystem = finishSystem;
             _collisionQuery = collisionQuery;
             _motionBridge = motionBridge;
             _layerMask = layerMask;
@@ -118,6 +121,17 @@ namespace LOP
             for (int i = 0; i < _birds.Count; i++)
             {
                 MoveBlockedByMap(_birds[i], deltaTime);
+            }
+        }
+
+        //  이동이 다 끝난 자리에서 본다. Mutation 안에 두면 한 틱 전 자리를 보고 통과를 한 틱
+        //  늦게 잡는다. 아키텍처 문서가 Detection을 "상태를 스캔해 파생 사건을 만드는 자리"로
+        //  정의해 둔 그 페이즈다.
+        protected override void Detection(long tick, float deltaTime)
+        {
+            for (int i = 0; i < _birds.Count; i++)
+            {
+                _finishSystem.Tick(_birds[i], tick);
             }
         }
 
