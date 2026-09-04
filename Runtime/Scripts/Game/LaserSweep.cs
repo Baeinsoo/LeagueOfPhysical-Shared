@@ -39,31 +39,33 @@ namespace LOP
             => Hit(laser, tick, bottomFrom, topFrom, bottomTo, topTo,
                    capsuleRadius, out timeOfImpact, out _);
 
-        /// <param name="iterations">
-        /// 돈 횟수. <see cref="MaxIterations"/>와 같으면 상한에 걸려 관대하게 통과시킨 것이다 —
-        /// 이게 잦으면 레이저가 조용히 약해지므로 부르는 쪽이 세어 둔다.
+        /// <param name="exhausted">
+        /// 반복 상한까지 돌고도 결론을 못 내 관대하게 통과시켰나. 이게 잦으면 레이저가 조용히
+        /// 약해지므로 부르는 쪽이 센다. <b>정당하게 통과를 증명한 경우는 false</b>다.
         /// </param>
         public static bool Hit(in Laser laser, long tick,
                                Vector3 bottomFrom, Vector3 topFrom,
                                Vector3 bottomTo, Vector3 topTo,
-                               float capsuleRadius, out float timeOfImpact, out int iterations)
+                               float capsuleRadius, out float timeOfImpact, out bool exhausted)
         {
             timeOfImpact = 0f;
-            iterations = 0;
+            exhausted = false;
             if (LaserGeometry.Lit(laser, tick) == false)
             {
                 return false;
             }
 
             float allowed = capsuleRadius + laser.Radius;
-            float moved = Vector3.Distance(bottomFrom, bottomTo);
+            //  두 끝점 중 더 많이 움직인 쪽으로 잡는다. 선분 위의 모든 점은 두 끝점의 볼록결합이라
+            //  변위 크기가 이 값을 넘지 못한다 — 캡슐이 기울어도 상한이 무너지지 않는다.
+            float moved = MathF.Max(Vector3.Distance(bottomFrom, bottomTo),
+                                    Vector3.Distance(topFrom, topTo));
             float tipArc = MathF.Abs(laser.AngularSpeed) * laser.Length;
             float closing = moved + tipArc;
 
             float t = 0f;
             for (int i = 0; i < MaxIterations; i++)
             {
-                iterations = i + 1;
                 Vector3 bottom = Vector3.Lerp(bottomFrom, bottomTo, t);
                 Vector3 top = Vector3.Lerp(topFrom, topTo, t);
                 LaserGeometry.SegmentAt(laser, tick + t, out Vector3 a, out Vector3 b);
@@ -85,6 +87,7 @@ namespace LOP
                     return false;
                 }
             }
+            exhausted = true;   // 상한까지 돌고도 결론 못 냄 — 관대하게 통과시킨 것
             return false;
         }
 

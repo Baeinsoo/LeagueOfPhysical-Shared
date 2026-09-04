@@ -24,8 +24,8 @@ public class LaserSweepTests
     public void 빠른_낙하가_얇은_빔을_통과하지_못한다()
     {
         Laser laser = FixedBeamAlongX();
-        Capsule(1003f, out Vector3 bottomFrom, out Vector3 topFrom);
-        Capsule(998.5f, out Vector3 bottomTo, out Vector3 topTo);
+        Capsule(1001.5f, out Vector3 bottomFrom, out Vector3 topFrom);
+        Capsule(997.0f, out Vector3 bottomTo, out Vector3 topTo);
 
         bool hit = LaserSweep.Hit(laser, tick: 0, bottomFrom, topFrom, bottomTo, topTo,
                                   CapsuleRadius, out float toi);
