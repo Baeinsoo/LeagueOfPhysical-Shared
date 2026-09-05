@@ -4,7 +4,7 @@ namespace LOP
 {
     /// <summary>
     /// 죽은 고도로부터 되돌아갈 선반을 고른다. <b>저장할 상태가 없다</b> — 코스가 아래 한 방향이라
-    /// y 하나로 "어디까지 왔나"가 정해진다(<see cref="SkydiveProgress"/>가 완주를 y로만 재는 것과 같다).
+    /// y 하나로 "어디까지 왔나"가 정해진다 — 지나온 선반을 따로 기록할 필요가 없다.
     /// </summary>
     public static class SkydiveCheckpoints
     {
