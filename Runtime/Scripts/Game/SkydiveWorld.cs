@@ -9,7 +9,6 @@ namespace LOP
     /// 한 틱: ① 입력을 자세로 반영(축은 정해진 속도로만 움직인다) → ② 바람에 실린다(자세가
     /// 빠르기를 정한다) → ③ 자세와 바람이 목표 속도를 정한다 → ④ 맵에 막히면 벽까지만 옮긴다
     /// (미끄러짐·접지 판정) → ⑤ 방금 나온 접지로 스태미나 소모·회복.
-    /// 레이저 판정은 Detection에 들어오지만(슬라이스 4) 지금은 비어 있다.
     /// </summary>
     public class SkydiveWorld : GameFramework.World.WorldBase
     {
