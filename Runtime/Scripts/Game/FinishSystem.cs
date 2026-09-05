@@ -18,6 +18,10 @@ namespace LOP
         private readonly FinishAxis axis;
         private readonly bool increasing;
 
+        //  결승선을 모르면 아무도 통과하지 못한다 — 판이 시간 상한까지 안 끝나는데 로그는 조용하다.
+        //  한 번만 크게 알린다(매 틱 찍으면 다른 로그를 전부 밀어낸다).
+        private bool warnedNoLine;
+
         public FinishSystem(FinishLineBounds line, FinishAxis axis, bool increasing)
         {
             this.line = line;
@@ -35,8 +39,19 @@ namespace LOP
 
             var transform = entity.Get<GameFramework.World.Transform>();
             var shape = entity.Get<GameFramework.World.CapsuleShape>();
-            if (transform == null || shape == null || line.TryGet(out Bounds lineBounds) == false)
+            if (transform == null || shape == null)
             {
+                return;
+            }
+
+            if (line.TryGet(out Bounds lineBounds) == false)
+            {
+                if (warnedNoLine == false)
+                {
+                    warnedNoLine = true;
+                    Debug.LogError("[Finish] 결승선을 모른다 — 맵 마커가 등록되지 않았다. " +
+                        "아무도 통과하지 못하고 판이 시간 상한까지 간다.");
+                }
                 return;
             }
 
@@ -48,6 +63,9 @@ namespace LOP
 
             state.FinishedTick = tick;
             state.Depth = past;
+
+            //  [진단용 임시] 누가 언제 얼마나 깊이 닿았는지. 등수가 이 세 값으로만 정해진다.
+            Debug.Log($"[Finish] {entity.Id} tick={tick} 넘은깊이={past:F3}m");
         }
 
         //  콜라이더와 같은 모양으로 맞춘다 — PhysicsBodyFactory가 center를 (0, height/2, 0)에 둔다.
