@@ -1,6 +1,7 @@
 using GameFramework.World;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace LOP.Tests
 {
@@ -104,6 +105,10 @@ namespace LOP.Tests
         public void 결승선을_모르면_아무도_통과하지_않는다()
         {
             //  맵이 아직 안 올라온 순간이 실제로 있다. 그때 전원 통과로 읽으면 판이 즉시 끝난다.
+            //  대신 크게 알려야 한다 — 조용히 넘어가면 판이 시간 상한까지 가는데 원인을 못 찾는다.
+            //  (실제로 그렇게 오해한 적이 있다.) 그 알림이 실제로 나오는지도 여기서 함께 지킨다.
+            LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("결승선을 모른다"));
+
             var bird = Bird(9999f);
 
             new FinishSystem(new FinishLineBounds(FinishAxis.X), FinishAxis.X, increasing: true).Tick(bird, 10);
