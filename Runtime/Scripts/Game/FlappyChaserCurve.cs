@@ -12,25 +12,38 @@ namespace LOP
     public static class FlappyChaserCurve
     {
         /// <summary>출발 후 <paramref name="elapsedSeconds"/>초 시점의 벽 x. 출발 전이면 시작점.</summary>
-        public static float XAt(in FlappyConfig config, float elapsedSeconds)
+        /// <param name="stopAtX">
+        /// 벽이 더 가지 않는 자리(결승선). 여기서 멈춰도 잡는 능력은 안 줄어든다 — 벽이 결승선에
+        /// 닿은 시점에 아직 못 들어온 사람은 전부 벽 뒤에 있다. 멈추지 않으면 결승선 너머에
+        /// 서 있는 완주자를 벽이 통과하는 그림이 나온다(완주자는 판정에서 빠져 안 죽는데도).
+        /// </param>
+        public static float XAt(in FlappyConfig config, float elapsedSeconds, float stopAtX)
         {
+            float x;
+
             if (elapsedSeconds <= 0f)
             {
-                return config.ChaserStartX;
+                x = config.ChaserStartX;
             }
-
-            float ramp = RampSeconds(config);
-            if (elapsedSeconds <= ramp)
+            else
             {
-                return config.ChaserStartX
-                     + config.ChaserInitialSpeed * elapsedSeconds
-                     + 0.5f * config.ChaserAcceleration * elapsedSeconds * elapsedSeconds;
+                float ramp = RampSeconds(config);
+                if (elapsedSeconds <= ramp)
+                {
+                    x = config.ChaserStartX
+                      + config.ChaserInitialSpeed * elapsedSeconds
+                      + 0.5f * config.ChaserAcceleration * elapsedSeconds * elapsedSeconds;
+                }
+                else
+                {
+                    x = config.ChaserStartX
+                      + config.ChaserInitialSpeed * ramp
+                      + 0.5f * config.ChaserAcceleration * ramp * ramp
+                      + config.ChaserMaxSpeed * (elapsedSeconds - ramp);
+                }
             }
 
-            return config.ChaserStartX
-                 + config.ChaserInitialSpeed * ramp
-                 + 0.5f * config.ChaserAcceleration * ramp * ramp
-                 + config.ChaserMaxSpeed * (elapsedSeconds - ramp);
+            return x > stopAtX ? stopAtX : x;
         }
 
         /// <summary>

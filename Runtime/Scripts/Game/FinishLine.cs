@@ -27,7 +27,10 @@ namespace LOP
         public void Construct(FinishLineBounds line)
         {
             this.line = line;
-            line.Register(Shape());
+            Bounds shape = Shape();
+            line.Register(shape);
+            //  [진단용 임시] 맵 마커가 실제로 주입되는지. 안 찍히면 씬 주입이 안 걸린 것이다.
+            Debug.Log($"[Finish] 결승선 등록 min={shape.min} max={shape.max}");
         }
 
         //  보이는 판이 곧 결승선이다. 렌더러가 없으면(마커만 찍어 둔 맵) 두께 0인 선으로 쓴다.

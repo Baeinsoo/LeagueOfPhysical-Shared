@@ -63,6 +63,9 @@ namespace LOP
         /// </summary>
         public readonly float ChaserMaxSpeed;
 
+        /// <summary>결승선을 넘은 뒤의 감속(m/s²). 이 값이 골인 뒤 몇 미터를 더 가는지를 정한다.</summary>
+        public readonly float FinishBrake;
+
         public FlappyConfig(float forwardSpeed, float flapImpulse, float gravity, float maxFallSpeed,
                             float bodyRadius, float bodyHeight, float restitution,
                             float stunTime, float invulnTime,
@@ -73,7 +76,10 @@ namespace LOP
                             //  빠뜨리면 벽이 x=0에 멈춰 서서 출발하자마자 전원을 잡는다 —
                             //  조용히 틀리지 않고 즉시 드러난다.
                             float chaserStartX = 0f, float chaserInitialSpeed = 0f,
-                            float chaserAcceleration = 0f, float chaserMaxSpeed = 0f)
+                            float chaserAcceleration = 0f, float chaserMaxSpeed = 0f,
+                            //  추격자 값과 같은 이유로 기본값을 준다 — 골인 감속과 무관한 테스트가
+                            //  자리채움을 안 적게. 실제 provider는 항상 명시한다.
+                            float finishBrake = 0f)
         {
             ForwardSpeed = forwardSpeed;
             FlapImpulse = flapImpulse;
@@ -92,6 +98,7 @@ namespace LOP
             ChaserInitialSpeed = chaserInitialSpeed;
             ChaserAcceleration = chaserAcceleration;
             ChaserMaxSpeed = chaserMaxSpeed;
+            FinishBrake = finishBrake;
         }
     }
 }

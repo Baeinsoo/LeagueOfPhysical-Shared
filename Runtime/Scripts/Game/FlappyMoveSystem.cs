@@ -20,7 +20,11 @@ namespace LOP
         /// 이번 틱이 대시인가. 월드가 이미 아는 사실이라 넘겨받는다 — 여기서 대시 시스템을 알게
         /// 하면 시스템끼리 고리가 생긴다(스턴을 월드가 판정해 이동을 건너뛰는 것과 같은 모양).
         /// </param>
-        public void Tick(GameFramework.World.Entity entity, float deltaTime, bool dashing)
+        /// <param name="finished">
+        /// 결승선을 넘었나. 월드가 이미 아는 사실이라 <paramref name="dashing"/>과 같은 방식으로
+        /// 넘겨받는다.
+        /// </param>
+        public void Tick(GameFramework.World.Entity entity, float deltaTime, bool dashing, bool finished)
         {
             var worldVelocity = entity.Get<GameFramework.World.Velocity>();
             if (worldVelocity == null)
@@ -29,6 +33,22 @@ namespace LOP
             }
 
             Vector3 velocity = worldVelocity.Linear.ToUnity();
+
+            if (finished)
+            {
+                //  골인한 새는 조작이 끊기고 스스로 멈춘다. 중력도 날갯짓도 없는 수평 직선이라
+                //  대시와 같은 모양이고, 다른 것은 전진이 지속이 아니라 감속이라는 것뿐이다.
+                //  조작을 끊는 이유는 골인 뒤 행동이 등수에 영향을 주지 않게 하려는 것이다.
+                velocity.y = 0f;
+                velocity.x -= config.FinishBrake * deltaTime;
+                if (velocity.x < 0f)
+                {
+                    velocity.x = 0f;   // 음수로 가면 결승선 쪽으로 되돌아온다
+                }
+                velocity.z = 0f;
+                worldVelocity.Linear = velocity.ToNumerics();
+                return;
+            }
 
             if (dashing)
             {

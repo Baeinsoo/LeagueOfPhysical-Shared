@@ -34,7 +34,7 @@ namespace LOP.Tests
         {
             var bird = Bird(verticalSpeed: -5f);
 
-            new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: true);
+            new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: true, finished: false);
 
             Assert.That(VelocityOf(bird).X, Is.EqualTo(22f).Within(Tolerance));
         }
@@ -44,7 +44,7 @@ namespace LOP.Tests
         {
             var bird = Bird(verticalSpeed: -5f);
 
-            new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: true);
+            new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: true, finished: false);
 
             Assert.That(VelocityOf(bird).Y, Is.EqualTo(0f).Within(Tolerance));
         }
@@ -55,7 +55,7 @@ namespace LOP.Tests
             //  여기서 플랩이 먹으면 수평 직선이 깨진다 — 그러면 대시가 아니라 빠른 점프다.
             var bird = Bird(verticalSpeed: -5f, jump: true);
 
-            new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: true);
+            new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: true, finished: false);
 
             Assert.That(VelocityOf(bird).Y, Is.EqualTo(0f).Within(Tolerance));
         }
@@ -65,7 +65,7 @@ namespace LOP.Tests
         {
             var bird = Bird(verticalSpeed: 0f);
 
-            new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: false);
+            new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: false, finished: false);
 
             Assert.That(VelocityOf(bird).X, Is.EqualTo(11f).Within(Tolerance));
             Assert.That(VelocityOf(bird).Y, Is.EqualTo(-70f * Dt).Within(Tolerance));
@@ -76,7 +76,7 @@ namespace LOP.Tests
         {
             var bird = Bird(verticalSpeed: -5f, jump: true);
 
-            new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: false);
+            new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: false, finished: false);
 
             Assert.That(VelocityOf(bird).Y, Is.EqualTo(23f).Within(Tolerance));
         }
@@ -86,10 +86,10 @@ namespace LOP.Tests
         {
             var bird = Bird(verticalSpeed: 0f);
 
-            new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: true);
+            new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: true, finished: false);
             Assert.That(VelocityOf(bird).X, Is.EqualTo(22f).Within(Tolerance));
 
-            new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: false);
+            new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: false, finished: false);
             Assert.That(VelocityOf(bird).X, Is.EqualTo(11f).Within(Tolerance),
                 "대시가 끝난 틱에는 전진이 즉시 상수로 돌아와야 한다 — 여운이 남으면 안 된다");
         }

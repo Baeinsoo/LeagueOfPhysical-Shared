@@ -105,7 +105,8 @@ namespace LOP
                     _dashSystem.TryActivate(_birds[i]);
                 }
 
-                _moveSystem.Tick(_birds[i], deltaTime, _dashSystem.IsDashing(_birds[i]));
+                bool finished = _birds[i].Get<FinishState>()?.Finished ?? false;
+                _moveSystem.Tick(_birds[i], deltaTime, _dashSystem.IsDashing(_birds[i]), finished);
             }
 
             // 벽 안이면 밖으로 밀어낸다 — 스폰 겹침 등. 겹침이
