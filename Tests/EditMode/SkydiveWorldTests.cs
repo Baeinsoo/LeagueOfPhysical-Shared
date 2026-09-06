@@ -30,7 +30,7 @@ namespace LOP.Tests
                                 //  결승선을 등록하지 않는다 — 이 테스트들의 관심사가 아니고, 없으면 아무도 통과하지 않는다.
                                 new FinishSystem(new FinishLineBounds(FinishAxis.Y), FinishAxis.Y, increasing: false), wind ?? new WindField(), Config(),
                                 query ?? new HalfSpaceQuery(),
-                                new FlappyWorldFixture.NoopMotionBridge(), new BladeField(), layerMask: ~0);
+                                new FlappyWorldFixture.NoopMotionBridge(), layerMask: ~0);
 
         static Entity Diver(string id, bool simulated = true, EntityType kind = EntityType.Character)
         {

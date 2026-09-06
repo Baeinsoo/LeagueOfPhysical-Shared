@@ -20,7 +20,6 @@ namespace LOP
         private readonly SkydiveConfig _config;
         private readonly ICollisionQuery _collisionQuery;
         private readonly GameFramework.World.IMotionBridge _motionBridge;
-        private readonly BladeField _bladeField;
         private readonly int _layerMask;
 
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
@@ -42,7 +41,6 @@ namespace LOP
             SkydiveConfig config,
             ICollisionQuery collisionQuery,
             GameFramework.World.IMotionBridge motionBridge,
-            BladeField bladeField,
             int layerMask)
             : base(entityRegistry, eventBuffer)
         {
@@ -54,7 +52,6 @@ namespace LOP
             _config = config;
             _collisionQuery = collisionQuery;
             _motionBridge = motionBridge;
-            _bladeField = bladeField;
             _layerMask = layerMask;
         }
 
@@ -93,12 +90,9 @@ namespace LOP
                 _moveSystem.Tick(_divers[i], deltaTime, _config);
             }
 
-            //  날개를 이 틱 자세로 돌려놓고 엔진에 반영한다. 재생 중에도 같은 자리에서 도므로
-            //  되감기가 라이브와 같은 답을 낸다 — 뷰가 프레임마다 돌리면 이 성질이 깨진다.
-            PoseBlades(tick);
-
-            //  날개가 사람 안으로 파고들었으면 밀어낸다. sweep은 "시작부터 겹친" 것을 무시하므로
-            //  가만히 선 사람에게 날개가 온 경우는 이 단계가 아니면 아무 일도 안 일어난다.
+            //  지오메트리에 파묻힌 몸을 밖으로 밀고, 민 방향에 파고들던 속도를 지운다.
+            //  sweep은 "시작부터 겹친" 것을 무시하므로 이 단계가 없으면 파묻힌 채로 시작한
+            //  틱에서 아무 일도 안 일어난다.
             for (int i = 0; i < _divers.Count; i++)
             {
                 ClearVelocityIntoSurface(_divers[i], _motionBridge.Depenetrate(_divers[i]));
@@ -123,11 +117,10 @@ namespace LOP
         //  흐르던 속도는 살려 둬야 미끄러져 빠져나온다(FlappyWorld와 같은 함수·같은 이유).
         //
         //  <b>왜 필요한가</b>: 이게 없으면 "막혔다"는 판정을 이동 sweep에만 맡기게 되는데,
-        //  sweep은 <b>이미 겹친 채로 시작하면 히트를 못 낸다</b>. 도는 날개는 사람을 상시 그
-        //  경계에 붙여 놓으므로 그 이진 판정이 매 틱 아슬아슬해지고, 클·서가 미세한 차이로
-        //  다르게 답한다(실측: 1648틱 중 4틱, 2건은 서버만 2건은 클라만 막혔다 — 대칭이라
-        //  한쪽이 틀린 게 아니라 경계에서 뒤집힌 것이다). 밀어낸 벡터는 같은 조건에서 1224건
-        //  전부 일치했으므로, 판정을 그쪽에서 가져오면 어긋날 몫이 사라진다.
+        //  sweep은 <b>이미 겹친 채로 시작하면 히트를 못 낸다</b>. 그러면 파묻힌 몸이 막혔다는
+        //  사실을 아무도 모른 채 중력만 계속 쌓여 밀어내기와 줄다리기를 한다. 그 이진 판정은
+        //  경계에서 아슬아슬해 클·서가 다르게 답할 수도 있다 — 실측으로 접촉 중 최대 어긋남이
+        //  6.3cm에서 1cm로 줄었다(2026-09-06).
         private static void ClearVelocityIntoSurface(GameFramework.World.Entity diver,
                                                      System.Numerics.Vector3 push)
         {
@@ -146,22 +139,6 @@ namespace LOP
             {
                 velocity.Linear -= outward * into;
             }
-        }
-
-        //  ⚠ 실험용(스파이크) — 곱면 날개가 사람을 미는지 보려고 넣은 단계다.
-        private void PoseBlades(long tick)
-        {
-            System.Collections.Generic.IReadOnlyList<SpinningBlade> blades = _bladeField.All;
-            if (blades.Count == 0)
-            {
-                return;
-            }
-            for (int i = 0; i < blades.Count; i++)
-            {
-                blades[i].Pose(tick);
-            }
-            //  트랜스폼을 방금 바꿨다. 겹침 질의가 옛 자리를 보지 않도록 여기서 한 번 맞춘다.
-            _motionBridge.SyncTransforms();
         }
 
         // 맵은 막는다 — KinematicMover가 벽까지만 옮기고 미끄러뜨린다(collide-and-slide).
