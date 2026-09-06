@@ -108,11 +108,54 @@ namespace LOP.Tests
             }
         }
 
-        // ⚠️ "파괴되면 스스로 빠진다"는 여기서 EditMode로 못 짚는다: DoorVolume은 LaserVolume과
-        // 같은 모양이라 [ExecuteAlways]가 없고, Unity는 Play 모드가 아니면 OnDestroy를 아예
-        // 불러 주지 않는다(WindVolume이 [ExecuteAlways]를 붙인 바로 그 이유). 실제 라운드
-        // 재로드는 항상 Play 모드 중에 일어나므로 런타임 동작엔 영향 없다 — 다만 이 사실은
-        // EditMode 테스트로 강제로 통과시키지 않고 여기 기록만 남긴다(억지 통과 금지).
+        // ⚠️ "파괴하면 OnDestroy가 불려서 스스로 빠진다"는 여기서 EditMode로 못 짚는다:
+        // DoorVolume은 LaserVolume과 같은 모양이라 [ExecuteAlways]가 없고, Unity는 Play
+        // 모드가 아니면 OnDestroy 자체를 아예 불러 주지 않는다. 실제 라운드 재로드는 항상
+        // Play 모드 중에 일어나므로 런타임 동작엔 영향 없다 — 다만 "OnDestroy가 불렸을 때"는
+        // 검사 못 한다는 사실을 억지로 통과시키지 않고 여기 기록만 남긴다.
+        //
+        // 대신 해제 *로직*(Unregister)은 OnDestroy 밖으로 뽑아 뒀으므로 아래 두 테스트로
+        // 직접 검사한다 — 검사 못 하는 부분은 이제 "OnDestroy가 Unregister를 부른다" 그
+        // 한 줄뿐이다.
+        [Test]
+        public void Unregister를_부르면_등록이_빠진다()
+        {
+            var field = new DoorField();
+            var volume = Place(new Vector3(0f, 0f, 0f));
+            try
+            {
+                volume.Construct(field);
+                Assert.AreEqual(1, field.All.Count);
+
+                volume.Unregister();
+
+                Assert.AreEqual(0, field.All.Count);
+            }
+            finally
+            {
+                Object.DestroyImmediate(volume.gameObject);
+            }
+        }
+
+        [Test]
+        public void Unregister를_두번_불러도_안전하다()
+        {
+            var field = new DoorField();
+            var volume = Place(new Vector3(0f, 0f, 0f));
+            try
+            {
+                volume.Construct(field);
+
+                volume.Unregister();
+
+                Assert.DoesNotThrow(() => volume.Unregister());
+                Assert.AreEqual(0, field.All.Count);
+            }
+            finally
+            {
+                Object.DestroyImmediate(volume.gameObject);
+            }
+        }
 
         [Test]
         public void ToDoor는_트랜스폼_위치와_인스펙터_값을_그대로_옮긴다()

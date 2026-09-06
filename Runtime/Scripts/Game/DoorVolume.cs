@@ -90,10 +90,17 @@ namespace LOP
             field.Add(this);
         }
 
-        private void OnDestroy()
+        private void OnDestroy() => Unregister();
+
+        // 해제를 OnDestroy 밖으로 뺀 이유: OnDestroy는 Play 모드에서만 불려서(LaserVolume과
+        // 같은 이유로 [ExecuteAlways]를 안 붙였다) EditMode 테스트가 이 로직을 볼 수 없다.
+        // 여기 따로 빼 두면 검사 못 하는 부분이 위 OnDestroy 한 줄로 줄어든다.
+        //
+        // 라운드가 여러 판이면 맵을 다시 로드한다 — 안 빼면 문이 두 배가 된다.
+        // (DoorVolume은 그 자체가 참조라서, Laser처럼 등록값을 따로 들고 있을 필요가 없다.)
+        // 두 번 불러도 안전하다 — DoorField.Remove는 없는 항목에도 no-op이라 별도 가드가 필요 없다.
+        public void Unregister()
         {
-            // 라운드가 여러 판이면 맵을 다시 로드한다 — 안 빼면 문이 두 배가 된다.
-            // (DoorVolume은 그 자체가 참조라서, Laser처럼 등록값을 따로 들고 있을 필요가 없다.)
             if (field != null)
             {
                 field.Remove(this);
