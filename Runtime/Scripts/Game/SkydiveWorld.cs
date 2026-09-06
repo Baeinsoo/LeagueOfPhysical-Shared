@@ -106,7 +106,9 @@ namespace LOP
             _bladePush.Clear();
             for (int i = 0; i < _divers.Count; i++)
             {
-                _bladePush.Add(_motionBridge.Depenetrate(_divers[i]));
+                System.Numerics.Vector3 push = _motionBridge.Depenetrate(_divers[i]);
+                ClearVelocityIntoSurface(_divers[i], push);
+                _bladePush.Add(push);
             }
 
             //  [진단용 임시] 이동 직전 상태를 남긴다 — 이동 뒤 값과 비교해야
@@ -133,6 +135,35 @@ namespace LOP
             {
                 bool grounded = _divers[i].Get<GameFramework.World.GroundState>()?.IsGrounded ?? false;
                 _staminaSystem.Tick(_divers[i], deltaTime, _config, grounded);
+            }
+        }
+
+        //  파묻힌 몸을 밖으로 민 방향으로, 그 방향에 파고들던 속도만 덜어낸다. 표면을 따라
+        //  흐르던 속도는 살려 둬야 미끄러져 빠져나온다(FlappyWorld와 같은 함수·같은 이유).
+        //
+        //  <b>왜 필요한가</b>: 이게 없으면 "막혔다"는 판정을 이동 sweep에만 맡기게 되는데,
+        //  sweep은 <b>이미 겹친 채로 시작하면 히트를 못 낸다</b>. 도는 날개는 사람을 상시 그
+        //  경계에 붙여 놓으므로 그 이진 판정이 매 틱 아슬아슬해지고, 클·서가 미세한 차이로
+        //  다르게 답한다(실측: 1648틱 중 4틱, 2건은 서버만 2건은 클라만 막혔다 — 대칭이라
+        //  한쪽이 틀린 게 아니라 경계에서 뒤집힌 것이다). 밀어낸 벡터는 같은 조건에서 1224건
+        //  전부 일치했으므로, 판정을 그쪽에서 가져오면 어긋날 몫이 사라진다.
+        private static void ClearVelocityIntoSurface(GameFramework.World.Entity diver,
+                                                     System.Numerics.Vector3 push)
+        {
+            if (push.LengthSquared() <= 0f)
+            {
+                return;
+            }
+            var velocity = diver.Get<GameFramework.World.Velocity>();
+            if (velocity == null)
+            {
+                return;
+            }
+            System.Numerics.Vector3 outward = System.Numerics.Vector3.Normalize(push);
+            float into = System.Numerics.Vector3.Dot(velocity.Linear, outward);
+            if (into < 0f)
+            {
+                velocity.Linear -= outward * into;
             }
         }
 
