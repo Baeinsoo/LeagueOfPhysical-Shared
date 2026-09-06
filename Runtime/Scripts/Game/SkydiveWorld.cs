@@ -185,20 +185,28 @@ namespace LOP
                 {
                     continue;
                 }
+                System.Numerics.Vector3 pushed = _bladePush[i];
+                bool touching = pushed.LengthSquared() > 1e-8f;
                 for (int b = 0; b < blades.Count; b++)
                 {
                     UnityEngine.Vector3 hub = blades[b].transform.position;
                     UnityEngine.Vector3 body = transform.Position.ToUnity();
                     float flat = UnityEngine.Vector2.Distance(
                         new UnityEngine.Vector2(hub.x, hub.z), new UnityEngine.Vector2(body.x, body.z));
-                    //  날개 길이 3m + 몸 반지름 + 여유. 원 밖은 관심 없다.
-                    if (flat > 4.5f || System.MathF.Abs(hub.y - body.y) > 3f)
+                    //  날개 길이 3m + 몸 반지름 0.4m = 3.4m가 실제 닿는 한계다. 여유 0.2m만 두고
+                    //  나머지는 안 찍는다 — 넓게 찍으면 초당 50줄이 쏟아져 콘솔이 밀리고, 정작
+                    //  드물게 튀는 틱이 버퍼 밖으로 흘러가 못 본다(실제로 한 번 놓쳤다).
+                    if (touching == false && flat > 3.6f)
+                    {
+                        continue;
+                    }
+                    if (System.MathF.Abs(hub.y - body.y) > 3f)
                     {
                         continue;
                     }
                     float angle = BladeGeometry.AngleDegreesAt(
                         blades[b].StartAngleDegrees, blades[b].AngularSpeedDegreesPerTick, tick);
-                    System.Numerics.Vector3 push = _bladePush[i];
+                    System.Numerics.Vector3 push = pushed;
                     var command = _divers[i].Get<InputBuffer>()?.Current;
                     string input = command == null
                         ? "seq=- h=0.000 v=0.000"
