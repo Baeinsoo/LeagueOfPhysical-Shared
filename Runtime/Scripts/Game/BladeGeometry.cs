@@ -14,7 +14,9 @@ namespace LOP
         /// 그때 `속도 × 틱`을 float로 그냥 두면 자릿수가 커져 정밀도가 뭉개진다. 접는 계산만
         /// double로 하고 결과는 작은 값이라 float로 안전하다.
         /// </summary>
-        public static float AngleDegreesAt(float startDegrees, float speedDegreesPerTick, long tick)
+        /// <param name="tick">판정은 정수 틱, 그림은 소수 틱(프레임 사이)을 넣는다.
+        /// <b>식을 하나로 두는 이유</b>: 둘이 갈라지면 보이는 자세와 맞는 자세가 어긋난다.</param>
+        public static float AngleDegreesAt(float startDegrees, float speedDegreesPerTick, double tick)
         {
             double raw = startDegrees + (double)speedDegreesPerTick * tick;
             double folded = raw - System.Math.Floor(raw / 360.0) * 360.0;

@@ -44,8 +44,13 @@ namespace LOP
             }
         }
 
-        /// <summary>이 틱의 자세로 돌려놓는다. 시뮬이 매 틱(재생 중에도) 부른다.</summary>
-        public void Pose(long tick)
+        /// <summary>
+        /// 그 시각의 자세로 돌려놓는다. <b>시뮬은 정수 틱</b>으로 부른다(재생 중에도) — 콜라이더가
+        /// 그 틱 자리에 있어야 되감기가 라이브와 같아진다. <b>뷰는 소수 틱</b>으로 부른다 —
+        /// 시뮬은 초당 50번인데 화면은 60번 이상이라, 틱 자세만 쓰면 여섯 프레임 중 하나가
+        /// 제자리라 계단처럼 떤다. 뷰가 덮어써도 다음 틱에 시뮬이 다시 정확한 자세로 되돌린다.
+        /// </summary>
+        public void Pose(double tick)
         {
             transform.localRotation = Quaternion.Euler(
                 0f, BladeGeometry.AngleDegreesAt(StartAngleDegrees, AngularSpeedDegreesPerTick, tick), 0f);

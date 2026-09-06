@@ -26,6 +26,9 @@ namespace LOP
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
         private readonly List<GameFramework.World.Entity> _divers = new List<GameFramework.World.Entity>();
 
+        //  [진단용 임시] 이번 틱에 밀어낸 벡터. 이동 뒤 계측이 읽는다.
+        private readonly List<System.Numerics.Vector3> _bladePush = new List<System.Numerics.Vector3>();
+
         // 자세·스태미나의 틱별 사진. 위치·속도는 WorldBase가 담는다.
         private readonly GameFramework.Netcode.SequenceBuffer<Dictionary<string, SkydiveSavedState>> _gameFrames
             = new GameFramework.Netcode.SequenceBuffer<Dictionary<string, SkydiveSavedState>>(SaveCapacity);
@@ -98,9 +101,10 @@ namespace LOP
 
             //  날개가 사람 안으로 파고들었으면 밀어낸다. sweep은 "시작부터 겹친" 것을 무시하므로
             //  가만히 선 사람에게 날개가 온 경우는 이 단계가 아니면 아무 일도 안 일어난다.
+            _bladePush.Clear();
             for (int i = 0; i < _divers.Count; i++)
             {
-                _motionBridge.Depenetrate(_divers[i]);
+                _bladePush.Add(_motionBridge.Depenetrate(_divers[i]));
             }
 
             // 속도가 전원 다 정해진 뒤에 옮긴다 — 슬라이스 6의 몸싸움이 이 사이에 들어온다(스펙 §5).
@@ -109,12 +113,55 @@ namespace LOP
                 MoveBlockedByMap(_divers[i], deltaTime);
             }
 
+            ProbeBlades(tick);
+
             // 이동 뒤에 온다 — "발 딛고 있나"를 이동 커널이 방금 계산했기 때문이다.
             // 앞에 두면 한 틱 전 접지로 회복 여부를 정하게 된다.
             for (int i = 0; i < _divers.Count; i++)
             {
                 bool grounded = _divers[i].Get<GameFramework.World.GroundState>()?.IsGrounded ?? false;
                 _staminaSystem.Tick(_divers[i], deltaTime, _config, grounded);
+            }
+        }
+
+        //  [진단용 임시] 날개 원 안에 있는 동안 매 틱 정황을 남긴다. 클·서 양쪽이 같은 형식으로
+        //  찍으므로 같은 tick 줄끼리 대조하면 어디서 갈리는지가 드러난다 — 날개 각도가 다른지,
+        //  밀어낸 벡터가 다른지, 아니면 이동 sweep이 지운 속도가 다른지.
+        private void ProbeBlades(long tick)
+        {
+            System.Collections.Generic.IReadOnlyList<SpinningBlade> blades = _bladeField.All;
+            if (blades.Count == 0)
+            {
+                return;
+            }
+            for (int i = 0; i < _divers.Count && i < _bladePush.Count; i++)
+            {
+                var transform = _divers[i].Get<GameFramework.World.Transform>();
+                var velocity = _divers[i].Get<GameFramework.World.Velocity>();
+                if (transform == null || velocity == null)
+                {
+                    continue;
+                }
+                for (int b = 0; b < blades.Count; b++)
+                {
+                    UnityEngine.Vector3 hub = blades[b].transform.position;
+                    UnityEngine.Vector3 body = transform.Position.ToUnity();
+                    float flat = UnityEngine.Vector2.Distance(
+                        new UnityEngine.Vector2(hub.x, hub.z), new UnityEngine.Vector2(body.x, body.z));
+                    //  날개 길이 3m + 몸 반지름 + 여유. 원 밖은 관심 없다.
+                    if (flat > 4.5f || System.MathF.Abs(hub.y - body.y) > 3f)
+                    {
+                        continue;
+                    }
+                    float angle = BladeGeometry.AngleDegreesAt(
+                        blades[b].StartAngleDegrees, blades[b].AngularSpeedDegreesPerTick, tick);
+                    System.Numerics.Vector3 push = _bladePush[i];
+                    UnityEngine.Debug.Log(
+                        $"[BladeProbe] tick={tick} blade={blades[b].name} ang={angle:F2} flat={flat:F3}" +
+                        $" push=({push.X:F4},{push.Y:F4},{push.Z:F4})" +
+                        $" pos=({body.x:F3},{body.y:F3},{body.z:F3})" +
+                        $" vel=({velocity.Linear.X:F3},{velocity.Linear.Y:F3},{velocity.Linear.Z:F3})");
+                }
             }
         }
 
