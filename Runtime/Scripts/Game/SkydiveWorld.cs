@@ -19,6 +19,8 @@ namespace LOP
         private readonly WindField _windField;
         private readonly SkydiveConfig _config;
         private readonly ICollisionQuery _collisionQuery;
+        private readonly GameFramework.World.IMotionBridge _motionBridge;
+        private readonly BladeField _bladeField;
         private readonly int _layerMask;
 
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
@@ -38,6 +40,8 @@ namespace LOP
             WindField windField,
             SkydiveConfig config,
             ICollisionQuery collisionQuery,
+            GameFramework.World.IMotionBridge motionBridge,
+            BladeField bladeField,
             int layerMask)
             : base(entityRegistry, eventBuffer)
         {
@@ -48,6 +52,8 @@ namespace LOP
             _windField = windField;
             _config = config;
             _collisionQuery = collisionQuery;
+            _motionBridge = motionBridge;
+            _bladeField = bladeField;
             _layerMask = layerMask;
         }
 
@@ -86,6 +92,17 @@ namespace LOP
                 _moveSystem.Tick(_divers[i], deltaTime, _config);
             }
 
+            //  날개를 이 틱 자세로 돌려놓고 엔진에 반영한다. 재생 중에도 같은 자리에서 도므로
+            //  되감기가 라이브와 같은 답을 낸다 — 뷰가 프레임마다 돌리면 이 성질이 깨진다.
+            PoseBlades(tick);
+
+            //  날개가 사람 안으로 파고들었으면 밀어낸다. sweep은 "시작부터 겹친" 것을 무시하므로
+            //  가만히 선 사람에게 날개가 온 경우는 이 단계가 아니면 아무 일도 안 일어난다.
+            for (int i = 0; i < _divers.Count; i++)
+            {
+                _motionBridge.Depenetrate(_divers[i]);
+            }
+
             // 속도가 전원 다 정해진 뒤에 옮긴다 — 슬라이스 6의 몸싸움이 이 사이에 들어온다(스펙 §5).
             for (int i = 0; i < _divers.Count; i++)
             {
@@ -99,6 +116,22 @@ namespace LOP
                 bool grounded = _divers[i].Get<GameFramework.World.GroundState>()?.IsGrounded ?? false;
                 _staminaSystem.Tick(_divers[i], deltaTime, _config, grounded);
             }
+        }
+
+        //  ⚠ 실험용(스파이크) — 곱면 날개가 사람을 미는지 보려고 넣은 단계다.
+        private void PoseBlades(long tick)
+        {
+            System.Collections.Generic.IReadOnlyList<SpinningBlade> blades = _bladeField.All;
+            if (blades.Count == 0)
+            {
+                return;
+            }
+            for (int i = 0; i < blades.Count; i++)
+            {
+                blades[i].Pose(tick);
+            }
+            //  트랜스폼을 방금 바꿨다. 겹침 질의가 옛 자리를 보지 않도록 여기서 한 번 맞춘다.
+            _motionBridge.SyncTransforms();
         }
 
         // 맵은 막는다 — KinematicMover가 벽까지만 옮기고 미끄러뜨린다(collide-and-slide).
