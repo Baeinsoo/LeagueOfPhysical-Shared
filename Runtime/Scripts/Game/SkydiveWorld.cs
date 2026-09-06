@@ -26,10 +26,6 @@ namespace LOP
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
         private readonly List<GameFramework.World.Entity> _divers = new List<GameFramework.World.Entity>();
 
-        //  [진단용 임시] 이번 틱에 밀어낸 벡터와 이동 직전 상태. 이동 뒤 계측이 읽는다.
-        private readonly List<System.Numerics.Vector3> _bladePush = new List<System.Numerics.Vector3>();
-        private readonly List<System.Numerics.Vector3> _preMovePos = new List<System.Numerics.Vector3>();
-        private readonly List<System.Numerics.Vector3> _preMoveVel = new List<System.Numerics.Vector3>();
 
         // 자세·스태미나의 틱별 사진. 위치·속도는 WorldBase가 담는다.
         private readonly GameFramework.Netcode.SequenceBuffer<Dictionary<string, SkydiveSavedState>> _gameFrames
@@ -103,22 +99,9 @@ namespace LOP
 
             //  날개가 사람 안으로 파고들었으면 밀어낸다. sweep은 "시작부터 겹친" 것을 무시하므로
             //  가만히 선 사람에게 날개가 온 경우는 이 단계가 아니면 아무 일도 안 일어난다.
-            _bladePush.Clear();
             for (int i = 0; i < _divers.Count; i++)
             {
-                System.Numerics.Vector3 push = _motionBridge.Depenetrate(_divers[i]);
-                ClearVelocityIntoSurface(_divers[i], push);
-                _bladePush.Add(push);
-            }
-
-            //  [진단용 임시] 이동 직전 상태를 남긴다 — 이동 뒤 값과 비교해야
-            //  "입력이 달랐나 / 이동 전에 이미 달랐나 / 이동이 갈랐나"가 갈린다.
-            _preMovePos.Clear();
-            _preMoveVel.Clear();
-            for (int i = 0; i < _divers.Count; i++)
-            {
-                _preMovePos.Add(_divers[i].Get<GameFramework.World.Transform>()?.Position ?? default);
-                _preMoveVel.Add(_divers[i].Get<GameFramework.World.Velocity>()?.Linear ?? default);
+                ClearVelocityIntoSurface(_divers[i], _motionBridge.Depenetrate(_divers[i]));
             }
 
             // 속도가 전원 다 정해진 뒤에 옮긴다 — 슬라이스 6의 몸싸움이 이 사이에 들어온다(스펙 §5).
@@ -126,8 +109,6 @@ namespace LOP
             {
                 MoveBlockedByMap(_divers[i], deltaTime);
             }
-
-            ProbeBlades(tick);
 
             // 이동 뒤에 온다 — "발 딛고 있나"를 이동 커널이 방금 계산했기 때문이다.
             // 앞에 두면 한 틱 전 접지로 회복 여부를 정하게 된다.
@@ -164,65 +145,6 @@ namespace LOP
             if (into < 0f)
             {
                 velocity.Linear -= outward * into;
-            }
-        }
-
-        //  [진단용 임시] 날개 원 안에 있는 동안 매 틱 정황을 남긴다. 클·서 양쪽이 같은 형식으로
-        //  찍으므로 같은 tick 줄끼리 대조하면 어디서 갈리는지가 드러난다 — 날개 각도가 다른지,
-        //  밀어낸 벡터가 다른지, 아니면 이동 sweep이 지운 속도가 다른지.
-        private void ProbeBlades(long tick)
-        {
-            System.Collections.Generic.IReadOnlyList<SpinningBlade> blades = _bladeField.All;
-            if (blades.Count == 0)
-            {
-                return;
-            }
-            for (int i = 0; i < _divers.Count && i < _bladePush.Count; i++)
-            {
-                var transform = _divers[i].Get<GameFramework.World.Transform>();
-                var velocity = _divers[i].Get<GameFramework.World.Velocity>();
-                if (transform == null || velocity == null)
-                {
-                    continue;
-                }
-                System.Numerics.Vector3 pushed = _bladePush[i];
-                bool touching = pushed.LengthSquared() > 1e-8f;
-                for (int b = 0; b < blades.Count; b++)
-                {
-                    UnityEngine.Vector3 hub = blades[b].transform.position;
-                    UnityEngine.Vector3 body = transform.Position.ToUnity();
-                    float flat = UnityEngine.Vector2.Distance(
-                        new UnityEngine.Vector2(hub.x, hub.z), new UnityEngine.Vector2(body.x, body.z));
-                    //  날개 길이 3m + 몸 반지름 0.4m = 3.4m가 실제 닿는 한계다. 여유 0.2m만 두고
-                    //  나머지는 안 찍는다 — 넓게 찍으면 초당 50줄이 쏟아져 콘솔이 밀리고, 정작
-                    //  드물게 튀는 틱이 버퍼 밖으로 흘러가 못 본다(실제로 한 번 놓쳤다).
-                    if (touching == false && flat > 3.6f)
-                    {
-                        continue;
-                    }
-                    if (System.MathF.Abs(hub.y - body.y) > 3f)
-                    {
-                        continue;
-                    }
-                    float angle = BladeGeometry.AngleDegreesAt(
-                        blades[b].StartAngleDegrees, blades[b].AngularSpeedDegreesPerTick, tick);
-                    System.Numerics.Vector3 push = pushed;
-                    var command = _divers[i].Get<InputBuffer>()?.Current;
-                    string input = command == null
-                        ? "seq=- h=0.000 v=0.000"
-                        : $"seq={command.SequenceNumber} h={command.Horizontal:F3} v={command.Vertical:F3}" +
-                          $" jump={(command.Jump ? 1 : 0)} glide={(command.Glide ? 1 : 0)}";
-                    System.Numerics.Vector3 prePos = i < _preMovePos.Count ? _preMovePos[i] : default;
-                    System.Numerics.Vector3 preVel = i < _preMoveVel.Count ? _preMoveVel[i] : default;
-                    UnityEngine.Debug.Log(
-                        $"[BladeProbe] tick={tick} blade={blades[b].name} ang={angle:F2} flat={flat:F3}" +
-                        $" push=({push.X:F4},{push.Y:F4},{push.Z:F4})" +
-                        $" prePos=({prePos.X:F4},{prePos.Y:F4},{prePos.Z:F4})" +
-                        $" preVel=({preVel.X:F4},{preVel.Y:F4},{preVel.Z:F4})" +
-                        $" pos=({body.x:F4},{body.y:F4},{body.z:F4})" +
-                        $" vel=({velocity.Linear.X:F4},{velocity.Linear.Y:F4},{velocity.Linear.Z:F4})" +
-                        $" in[{input}]");
-                }
             }
         }
 
