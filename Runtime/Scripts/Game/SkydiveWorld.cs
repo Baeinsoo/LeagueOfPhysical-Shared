@@ -19,10 +19,12 @@ namespace LOP
         private readonly WindField _windField;
         private readonly SkydiveConfig _config;
         private readonly ICollisionQuery _collisionQuery;
+        private readonly GameFramework.World.IMotionBridge _motionBridge;
         private readonly int _layerMask;
 
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
         private readonly List<GameFramework.World.Entity> _divers = new List<GameFramework.World.Entity>();
+
 
         // 자세·스태미나의 틱별 사진. 위치·속도는 WorldBase가 담는다.
         private readonly GameFramework.Netcode.SequenceBuffer<Dictionary<string, SkydiveSavedState>> _gameFrames
@@ -38,6 +40,7 @@ namespace LOP
             WindField windField,
             SkydiveConfig config,
             ICollisionQuery collisionQuery,
+            GameFramework.World.IMotionBridge motionBridge,
             int layerMask)
             : base(entityRegistry, eventBuffer)
         {
@@ -48,6 +51,7 @@ namespace LOP
             _windField = windField;
             _config = config;
             _collisionQuery = collisionQuery;
+            _motionBridge = motionBridge;
             _layerMask = layerMask;
         }
 
@@ -86,6 +90,14 @@ namespace LOP
                 _moveSystem.Tick(_divers[i], deltaTime, _config);
             }
 
+            //  지오메트리에 파묻힌 몸을 밖으로 밀고, 민 방향에 파고들던 속도를 지운다.
+            //  sweep은 "시작부터 겹친" 것을 무시하므로 이 단계가 없으면 파묻힌 채로 시작한
+            //  틱에서 아무 일도 안 일어난다.
+            for (int i = 0; i < _divers.Count; i++)
+            {
+                ClearVelocityIntoSurface(_divers[i], _motionBridge.Depenetrate(_divers[i]));
+            }
+
             // 속도가 전원 다 정해진 뒤에 옮긴다 — 슬라이스 6의 몸싸움이 이 사이에 들어온다(스펙 §5).
             for (int i = 0; i < _divers.Count; i++)
             {
@@ -98,6 +110,34 @@ namespace LOP
             {
                 bool grounded = _divers[i].Get<GameFramework.World.GroundState>()?.IsGrounded ?? false;
                 _staminaSystem.Tick(_divers[i], deltaTime, _config, grounded);
+            }
+        }
+
+        //  파묻힌 몸을 밖으로 민 방향으로, 그 방향에 파고들던 속도만 덜어낸다. 표면을 따라
+        //  흐르던 속도는 살려 둬야 미끄러져 빠져나온다(FlappyWorld와 같은 함수·같은 이유).
+        //
+        //  <b>왜 필요한가</b>: 이게 없으면 "막혔다"는 판정을 이동 sweep에만 맡기게 되는데,
+        //  sweep은 <b>이미 겹친 채로 시작하면 히트를 못 낸다</b>. 그러면 파묻힌 몸이 막혔다는
+        //  사실을 아무도 모른 채 중력만 계속 쌓여 밀어내기와 줄다리기를 한다. 그 이진 판정은
+        //  경계에서 아슬아슬해 클·서가 다르게 답할 수도 있다 — 실측으로 접촉 중 최대 어긋남이
+        //  6.3cm에서 1cm로 줄었다(2026-09-06).
+        private static void ClearVelocityIntoSurface(GameFramework.World.Entity diver,
+                                                     System.Numerics.Vector3 push)
+        {
+            if (push.LengthSquared() <= 0f)
+            {
+                return;
+            }
+            var velocity = diver.Get<GameFramework.World.Velocity>();
+            if (velocity == null)
+            {
+                return;
+            }
+            System.Numerics.Vector3 outward = System.Numerics.Vector3.Normalize(push);
+            float into = System.Numerics.Vector3.Dot(velocity.Linear, outward);
+            if (into < 0f)
+            {
+                velocity.Linear -= outward * into;
             }
         }
 
