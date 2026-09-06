@@ -18,7 +18,10 @@ namespace LOP
     /// 보간</b>으로 그린다 — 클라가 굴리지 않으니 예측 오차가 아예 없다. 부수 효과로 내 새의
     /// 보정도 줄었다(보정의 80%가 옆에 새가 있을 때 났다 — 원인이 몸싸움이었다).
     /// 몸싸움 코드(<c>BodyCollisionSystem</c>·<c>BodyOverlap</c>·<c>VerticalBounce</c>)는
-    /// 지우지 않았다 — 다른 게임이 쓴다.</para>
+    /// 지우지 않았지만 <b>지금 쓰는 곳이 없다</b>(2026-09-06 확인: Skydive·Panchigi 0회).
+    /// 남기는 이유는 되살릴 조건이 실재해서다 — 추격자 설계 §3①이 "새끼리 몸싸움이 돌아오거나
+    /// 판이 늘어지는 것이 관측될 때"로 적어 뒀고, 그때 다시 짜는 것보다 남겨 두는 편이 싸다.
+    /// 마스터데이터 <c>Restitution</c> 열도 이 코드만 읽는다 — 지운다면 함께 지운다.</para>
     /// </summary>
     public class FlappyWorld : GameFramework.World.WorldBase
     {
