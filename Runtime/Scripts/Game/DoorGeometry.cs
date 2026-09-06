@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 
 namespace LOP
 {
@@ -41,14 +42,14 @@ namespace LOP
         /// 패널 <paramref name="index"/>(0 또는 1)의 중심. 닫히면 각각 구멍의 반쪽을 덮고,
         /// 열리면 구멍 밖으로 완전히 물러난다.
         /// </summary>
-        public static System.Numerics.Vector3 PanelCenter(in Door door, int index, float openness)
+        public static Vector3 PanelCenter(in Door door, int index, float openness)
         {
             float sign = index == 0 ? -1f : 1f;
             float half = door.HalfWidth * 0.5f;
             float offset = half + door.HalfWidth * openness;
             float c = MathF.Cos(door.AxisAngle);
             float s = MathF.Sin(door.AxisAngle);
-            return door.Center + new System.Numerics.Vector3(c, 0f, s) * (sign * offset);
+            return door.Center + new Vector3(c, 0f, s) * (sign * offset);
         }
     }
 }

@@ -52,8 +52,10 @@ namespace LOP.Tests
         [Test]
         public void 음수_틱도_주기_안으로_접힌다()
         {
-            //  되감기 재생이 음수 틱을 물을 일은 없지만, 접기 계산의 부호 실수를 여기서 잡는다.
-            Assert.That(DoorGeometry.Openness(Make(), -20), Is.EqualTo(DoorGeometry.Openness(Make(), 0)));
+            //  -20은 주기(20)의 정확한 배수라 순진한 %로도 0으로 맞아떨어져 부호 처리를 검증 못한다.
+            //  배수가 아닌 -7을 써야 순진한 %(부호 보정 없이 그대로 남김)이 틀린 값을 내는 것을 잡는다.
+            //  -7 + 20 = 13 이므로 둘은 같은 자리를 가리켜야 맞다.
+            Assert.That(DoorGeometry.Openness(Make(), -7), Is.EqualTo(DoorGeometry.Openness(Make(), 13)));
         }
 
         [Test]

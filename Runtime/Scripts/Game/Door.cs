@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace LOP
 {
     /// <summary>
@@ -7,7 +9,7 @@ namespace LOP
     public readonly struct Door
     {
         /// <summary>구멍 중심. 닫혔을 때 두 패널이 맞물리는 자리다.</summary>
-        public readonly System.Numerics.Vector3 Center;
+        public readonly Vector3 Center;
 
         /// <summary>덮는 폭의 절반(=구멍 반폭). 패널 하나는 이 값의 절반 길이다.</summary>
         public readonly float HalfWidth;
@@ -29,7 +31,7 @@ namespace LOP
 
         public readonly int Phase;
 
-        public Door(System.Numerics.Vector3 center, float halfWidth, float halfDepth,
+        public Door(Vector3 center, float halfWidth, float halfDepth,
                     float thickness, float axisAngle,
                     int period, int openTicks, int moveTicks, int phase)
         {
