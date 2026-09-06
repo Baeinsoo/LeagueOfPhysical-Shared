@@ -26,8 +26,10 @@ namespace LOP
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
         private readonly List<GameFramework.World.Entity> _divers = new List<GameFramework.World.Entity>();
 
-        //  [진단용 임시] 이번 틱에 밀어낸 벡터. 이동 뒤 계측이 읽는다.
+        //  [진단용 임시] 이번 틱에 밀어낸 벡터와 이동 직전 상태. 이동 뒤 계측이 읽는다.
         private readonly List<System.Numerics.Vector3> _bladePush = new List<System.Numerics.Vector3>();
+        private readonly List<System.Numerics.Vector3> _preMovePos = new List<System.Numerics.Vector3>();
+        private readonly List<System.Numerics.Vector3> _preMoveVel = new List<System.Numerics.Vector3>();
 
         // 자세·스태미나의 틱별 사진. 위치·속도는 WorldBase가 담는다.
         private readonly GameFramework.Netcode.SequenceBuffer<Dictionary<string, SkydiveSavedState>> _gameFrames
@@ -107,6 +109,16 @@ namespace LOP
                 _bladePush.Add(_motionBridge.Depenetrate(_divers[i]));
             }
 
+            //  [진단용 임시] 이동 직전 상태를 남긴다 — 이동 뒤 값과 비교해야
+            //  "입력이 달랐나 / 이동 전에 이미 달랐나 / 이동이 갈랐나"가 갈린다.
+            _preMovePos.Clear();
+            _preMoveVel.Clear();
+            for (int i = 0; i < _divers.Count; i++)
+            {
+                _preMovePos.Add(_divers[i].Get<GameFramework.World.Transform>()?.Position ?? default);
+                _preMoveVel.Add(_divers[i].Get<GameFramework.World.Velocity>()?.Linear ?? default);
+            }
+
             // 속도가 전원 다 정해진 뒤에 옮긴다 — 슬라이스 6의 몸싸움이 이 사이에 들어온다(스펙 §5).
             for (int i = 0; i < _divers.Count; i++)
             {
@@ -156,11 +168,21 @@ namespace LOP
                     float angle = BladeGeometry.AngleDegreesAt(
                         blades[b].StartAngleDegrees, blades[b].AngularSpeedDegreesPerTick, tick);
                     System.Numerics.Vector3 push = _bladePush[i];
+                    var command = _divers[i].Get<InputBuffer>()?.Current;
+                    string input = command == null
+                        ? "seq=- h=0.000 v=0.000"
+                        : $"seq={command.SequenceNumber} h={command.Horizontal:F3} v={command.Vertical:F3}" +
+                          $" jump={(command.Jump ? 1 : 0)} glide={(command.Glide ? 1 : 0)}";
+                    System.Numerics.Vector3 prePos = i < _preMovePos.Count ? _preMovePos[i] : default;
+                    System.Numerics.Vector3 preVel = i < _preMoveVel.Count ? _preMoveVel[i] : default;
                     UnityEngine.Debug.Log(
                         $"[BladeProbe] tick={tick} blade={blades[b].name} ang={angle:F2} flat={flat:F3}" +
                         $" push=({push.X:F4},{push.Y:F4},{push.Z:F4})" +
-                        $" pos=({body.x:F3},{body.y:F3},{body.z:F3})" +
-                        $" vel=({velocity.Linear.X:F3},{velocity.Linear.Y:F3},{velocity.Linear.Z:F3})");
+                        $" prePos=({prePos.X:F4},{prePos.Y:F4},{prePos.Z:F4})" +
+                        $" preVel=({preVel.X:F4},{preVel.Y:F4},{preVel.Z:F4})" +
+                        $" pos=({body.x:F4},{body.y:F4},{body.z:F4})" +
+                        $" vel=({velocity.Linear.X:F4},{velocity.Linear.Y:F4},{velocity.Linear.Z:F4})" +
+                        $" in[{input}]");
                 }
             }
         }
