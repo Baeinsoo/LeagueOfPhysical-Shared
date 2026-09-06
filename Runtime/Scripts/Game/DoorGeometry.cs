@@ -51,5 +51,49 @@ namespace LOP
             float s = MathF.Sin(door.AxisAngle);
             return door.Center + new Vector3(c, 0f, s) * (sign * offset);
         }
+
+        /// <summary>
+        /// 이 틱에 <b>완전히 닫힌</b> 패널과 몸이 겹치나. 닫히는 중에는 벽일 뿐이라 false다 —
+        /// 밀려날 기회를 다 준 뒤에 묻는다.
+        ///
+        /// <para>몸이 선 캡슐(위아래 끝의 x·z가 같다)이라 거리를 닫힌 식으로 낼 수 있다:
+        /// 각 축의 초과분을 재서 합치면 상자까지의 최단거리다.</para>
+        /// </summary>
+        public static bool Crushes(in Door door, long tick,
+                                   Vector3 bottom, Vector3 top, float radius)
+        {
+            if (Openness(door, tick) > 0f)
+            {
+                return false;
+            }
+
+            //  문이 미끄러지는 방향을 x축으로 두고 본다 — 상자가 축에 정렬돼 계산이 단순해진다.
+            float c = MathF.Cos(-door.AxisAngle);
+            float s = MathF.Sin(-door.AxisAngle);
+            Vector3 d = bottom - door.Center;
+            float localX = d.X * c - d.Z * s;
+            float localZ = d.X * s + d.Z * c;
+
+            float halfPanel = door.HalfWidth * 0.5f;
+            float halfThick = door.Thickness * 0.5f;
+            float panelY = door.Center.Y;
+
+            for (int index = 0; index < 2; index++)
+            {
+                float sign = index == 0 ? -1f : 1f;
+                float panelX = sign * halfPanel;
+
+                float dx = MathF.Max(MathF.Abs(localX - panelX) - halfPanel, 0f);
+                float dz = MathF.Max(MathF.Abs(localZ) - door.HalfDepth, 0f);
+                float dy = MathF.Max(MathF.Max(panelY - halfThick - top.Y,
+                                               bottom.Y - (panelY + halfThick)), 0f);
+
+                if (dx * dx + dy * dy + dz * dz <= radius * radius)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }
