@@ -45,6 +45,7 @@ namespace LOP.Tests
             e.Add(new Stamina { Current = 100f });
             e.Add(new InputBuffer());
             e.Add(new GroundState());   // 이동 커널이 매 틱 접지 여부를 여기 적는다
+            e.Add(new LandingImpact());   // 이동이 매 틱 착지 충격을 여기 적는다
             e.Add(new MotionState());
             e.Add(new WindDrift());
             if (simulated) { e.Add(new Simulated()); }
@@ -53,6 +54,9 @@ namespace LOP.Tests
 
         static float HeightOf(EntityRegistry r, string id)
             => r.Get(id).Get<GameFramework.World.Transform>().Position.Y;
+
+        static float ImpactOf(EntityRegistry r, string id)
+            => r.Get(id).Get<LandingImpact>().DownwardSpeed;
 
         [Test]
         public void 출발_전에는_아무도_움직이지_않는다()
@@ -547,6 +551,97 @@ namespace LOP.Tests
             Assert.AreEqual(2f, drift.Value.Y, Tolerance);
             Assert.AreEqual(3f, drift.Value.Z, Tolerance);
             Assert.AreEqual(14f, drift.Anchor.Y, Tolerance);
+        }
+
+        /// <summary>
+        /// 대자로 떨어지다 바닥에 닿는 틱에만 충격이 남는다. 다음 틱에도 남아 있으면 서 있는 동안
+        /// 매 틱 죽으므로, 둘째 단언이 이 테스트의 핵심이다.
+        /// </summary>
+        [Test]
+        public void 접지로_뒤집힌_틱에만_충격_속도가_남는다()
+        {
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            //  한 틱(0.02초)에 대자 속도로 1.2m를 가므로, 2m 위에서 시작하면 두 틱째에 닿는다.
+            diver.Get<GameFramework.World.Transform>().Position = new Vector3(0f, 2f, 0f).ToNumerics();
+            diver.Get<Velocity>().Linear = new Vector3(0f, -Config().SpreadFallSpeed, 0f).ToNumerics();
+            registry.Add(diver);
+
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);
+            var world = World(registry, map);
+            world.GameplayStartTick = 0;
+
+            //  닿을 때까지 돌린다. 닿은 그 틱의 값을 잡아 둔다.
+            float atLanding = 0f;
+            int landedAt = -1;
+            for (int t = 0; t < 10 && landedAt < 0; t++)
+            {
+                world.Tick(t, 0.02f);
+                if (diver.Get<GroundState>().IsGrounded)
+                {
+                    landedAt = t;
+                    atLanding = ImpactOf(registry, "a");
+                }
+            }
+
+            Assert.GreaterOrEqual(landedAt, 0, "열 틱 안에 닿지 않았다 — 이 테스트가 아무것도 못 쟀다");
+            Assert.That(atLanding, Is.EqualTo(Config().SpreadFallSpeed).Within(1f),
+                        "닿은 틱의 충격이 대자 낙하 속도와 달랐다");
+
+            world.Tick(landedAt + 1, 0.02f);
+            Assert.IsTrue(diver.Get<GroundState>().IsGrounded, "여전히 서 있어야 한다");
+            Assert.That(ImpactOf(registry, "a"), Is.EqualTo(0f).Within(Tolerance),
+                        "서 있는 동안에도 값이 남으면 매 틱 죽는다");
+        }
+
+        /// <summary>공중을 떨어지는 동안에는 0이다 — "빠르다"가 아니라 "부딪혔다"를 재기 때문.</summary>
+        [Test]
+        public void 공중에서는_아무리_빨라도_0이다()
+        {
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            diver.Get<Velocity>().Linear = new Vector3(0f, -Config().DiveFallSpeed, 0f).ToNumerics();
+            registry.Add(diver);
+
+            var world = World(registry);   // 면이 없는 하늘
+            world.GameplayStartTick = 0;
+
+            for (int t = 0; t < 5; t++)
+            {
+                world.Tick(t, 0.02f);
+                Assert.IsFalse(diver.Get<GroundState>().IsGrounded);
+                Assert.That(ImpactOf(registry, "a"), Is.EqualTo(0f).Within(Tolerance), $"t={t}");
+            }
+        }
+
+        /// <summary>
+        /// 되감기 재생이 라이브와 같은 값을 낸다 — LandingImpact를 저장 상태에 안 넣기로 한 선택의 근거다.
+        /// (스펙 §7.1) 넣지 않아도 매 틱 이동이 다시 계산하므로 같은 답이 나와야 한다.
+        /// </summary>
+        [Test]
+        public void 되감아_다시_돌려도_같은_충격이_나온다()
+        {
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            diver.Get<GameFramework.World.Transform>().Position = new Vector3(0f, 2f, 0f).ToNumerics();
+            diver.Get<Velocity>().Linear = new Vector3(0f, -Config().SpreadFallSpeed, 0f).ToNumerics();
+            registry.Add(diver);
+
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);
+            var world = World(registry, map);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);
+            world.SaveState(0);
+            world.Tick(1, 0.02f);
+            float live = ImpactOf(registry, "a");
+
+            world.LoadState(0);
+            world.Tick(1, 0.02f);
+            Assert.That(ImpactOf(registry, "a"), Is.EqualTo(live).Within(Tolerance),
+                        "재생이 라이브와 다른 충격을 냈다 — 저장 상태에서 빠뜨린 것이 있다");
         }
 
         //  문 자세는 틱의 순수 함수라(스펙 §2.3), 그 판이 틱의 어느 지점에서 서느냐가 곧

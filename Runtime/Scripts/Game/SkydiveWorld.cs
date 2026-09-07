@@ -177,6 +177,11 @@ namespace LOP
                 return;
             }
 
+            var groundState = entity.Get<GameFramework.World.GroundState>();
+            //  이동이 속도를 지우기 전에 읽어 둔다. 아래로 갈 때 양수가 되게 부호를 뒤집는다.
+            float downwardBeforeMove = -velocity.Linear.Y;
+            bool wasGrounded = groundState != null && groundState.IsGrounded;
+
             //  떨어지는 몸은 턱을 오를 일이 없다. 0을 주면 막혔을 때의 추가 sweep 3발도 안 쏜다.
             var result = KinematicMover.Move(new KinematicMoveInput(
                 transform.Position.ToUnity(), velocity.Linear.ToUnity(),
@@ -188,10 +193,18 @@ namespace LOP
             // 옛 속도 위에 계속 쌓인다(KinematicMoveSystem과 같은 관례).
             velocity.Linear = result.velocity.ToNumerics();
 
-            var groundState = entity.Get<GameFramework.World.GroundState>();
             if (groundState != null)
             {
                 groundState.IsGrounded = result.grounded;
+            }
+
+            var impact = entity.Get<LandingImpact>();
+            if (impact != null)
+            {
+                //  "닿은 순간"만 남긴다. 서 있는 동안 값이 남아 있으면 다음 틱에 또 죽는다.
+                impact.DownwardSpeed = (wasGrounded == false && result.grounded && downwardBeforeMove > 0f)
+                    ? downwardBeforeMove
+                    : 0f;
             }
         }
 
