@@ -38,9 +38,12 @@ namespace LOP.Tests
                                 query ?? new HalfSpaceQuery(),
                                 new FlappyWorldFixture.NoopMotionBridge(), layerMask: ~0);
 
-        //  실제 맵은 마커가 y=1.0, 바닥이 y=0이라 서 있으면 Past ≈ 1.48로 통과가 성립한다.
-        //  테스트도 같은 모양으로 둔다 — 선을 너무 낮게 놓으면 세 테스트가 전부 "완주 아님"으로
-        //  초록이 되어 아무것도 못 잰다.
+        //  결승선은 "서서 접지한 다이버의 몸이 실제로 닿는 높이"에 둬야 한다 — 그래야 아래 세
+        //  테스트가 서로 다른 결론(접지 전 통과 안 됨 / 치명 착지는 통과 안 됨 / 안전 착지는
+        //  통과됨)을 실제로 가른다. 선을 몸이 안 닿는 높이에 두면 뒤의 두 "완주 아님" 단언은
+        //  그냥 몸이 못 닿아서 통과하는 가짜 초록이 되어 아무것도 못 잰다 — 그 방지턱이
+        //  안전_속도로_접지하면_완주다(양성 대조군)다. 여기 쓰는 좌표는 이 파일 안에서만
+        //  의미가 있고, 실제 맵 씬의 결승선 마커 좌표를 따르지 않는다(따로 맞출 필요 없음).
         static FinishLineBounds GroundFinishLine()
         {
             var line = new FinishLineBounds(FinishAxis.Y);

@@ -29,8 +29,11 @@ public class SkydiveLandingTests
     }
 
     /// <summary>
-    /// 하드 제약이다 — 점프해서 착지하는 것이 죽으면 게임이 성립하지 않는다.
-    /// 문턱과 JumpPower 중 어느 쪽을 움직여도 이 테스트가 그 사실을 알려 준다.
+    /// 하드 제약이다 — 점프해서 착지하는 것이 죽으면 게임이 성립하지 않는다. 다만 이 테스트가 쓰는
+    /// JumpPower·Lethal은 이 파일이 직접 선언한 상수이지 실제 <c>TbSkydiveConfig</c> 값이 아니다 —
+    /// "그 조합에서는 안 죽는다"만 잰다. 마스터데이터에서 jump_power를 올리거나
+    /// landing_lethal_speed를 내려도 이 테스트는 그 사실을 모른다 — 그 어긋남은
+    /// 클라 레포의 <c>SkydiveLandingMasterDataConsistencyTests</c>(실제 .bytes를 읽어 비교)가 잡는다.
     /// </summary>
     [Test]
     public void 점프_착지는_절대_안_죽는다()

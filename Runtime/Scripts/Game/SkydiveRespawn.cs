@@ -41,6 +41,17 @@ namespace LOP
             GameFramework.World.EntityMotionExtensions.Teleport(diver, basePoint + spread);
             GameFramework.World.EntityMotionExtensions.SetVelocity(diver, Vector3.zero);
 
+            //  이 틱 안에 레이저·문·착지 중 다른 사고가 먼저 이 다이버를 이미 부활시켰을 수
+            //  있다(한 틱에 두 사고가 겹치는 드문 경우). 그때 착지 충격값을 그대로 두면, 아직
+            //  안 돈 SkydiveLandingSystem이 이미 되돌려진 자리를 "죽은 자리"로 알고 한 사고에
+            //  선반을 두 번 되돌린다. 여기서 지워 두면 어느 시스템이 먼저 부활시키든 이후
+            //  시스템·다음 틱 판정이 낡은 충격값을 보지 않는다.
+            var impact = diver.Get<LandingImpact>();
+            if (impact != null)
+            {
+                impact.DownwardSpeed = 0f;
+            }
+
             var stamina = diver.Get<Stamina>();
             if (stamina != null)
             {
