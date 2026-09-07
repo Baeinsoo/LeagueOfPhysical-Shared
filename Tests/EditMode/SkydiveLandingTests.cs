@@ -78,4 +78,24 @@ public class SkydiveLandingTests
         entity.Get<LOP.LandingImpact>().DownwardSpeed = 6f;
         Assert.IsFalse(LOP.SkydiveLanding.IsLethal(entity, Config()));
     }
+
+    //  문턱과 정확히 같은 속도는 "넘은" 게 아니라 "닿은" 것이다 — 초과(>)만 죽이고
+    //  같은 값은 살려 둬야 문턱을 낙낙하게 잡은 의미가 산다. 그래서 경계는 "산다" 쪽이다.
+    [Test]
+    public void 문턱과_정확히_같은_속도는_안_죽는다()
+    {
+        Assert.IsFalse(LOP.SkydiveLanding.IsLethal(Lethal, Config()));
+    }
+
+    /// <summary>
+    /// 문턱은 마스터데이터 튜닝값이라 코드에 박히면 안 된다 — 같은 속도라도 문턱을
+    /// 바꾸면 판정이 뒤집혀야 한다.
+    /// </summary>
+    [Test]
+    public void 문턱을_바꾸면_같은_속도의_판정도_바뀐다()
+    {
+        const float speed = 50f;
+        Assert.IsTrue(LOP.SkydiveLanding.IsLethal(speed, Config(lethal: 40f)));
+        Assert.IsFalse(LOP.SkydiveLanding.IsLethal(speed, Config(lethal: 60f)));
+    }
 }
