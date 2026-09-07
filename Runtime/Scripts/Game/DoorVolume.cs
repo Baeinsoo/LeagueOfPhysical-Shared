@@ -50,6 +50,18 @@ namespace LOP
         /// <summary>구멍 오른쪽을 덮는 패널.</summary>
         public Transform PanelB;
 
+        /// <summary>
+        /// 패널 상자를 놓을 회전. <b>그리는 상자(기즈모·콜라이더)와 판정이 보는 상자를 같은
+        /// 방향으로 묶는 한 곳</b>이다 — 두 곳에서 각각 각도를 만들면 부호 하나로 갈린다.
+        ///
+        /// <para>부호가 음수인 이유: 유니티의 Y 회전은 로컬 +X를 <c>(cos θ, 0, −sin θ)</c>로 보내는데
+        /// <see cref="DoorGeometry.PanelCenter"/>가 패널을 미는 방향은 <c>(cos θ, 0, +sin θ)</c>라
+        /// 서로 반대다. 90°의 배수에서는 상자가 자기 자신으로 겹쳐 티가 안 나므로, 이 관계는
+        /// 90°가 아닌 각으로 재야 증명된다(<c>DoorPanelRotationTests</c>).</para>
+        /// </summary>
+        public static Quaternion PanelRotation(float axisAngleDegrees)
+            => Quaternion.Euler(0f, -axisAngleDegrees, 0f);
+
         public Door ToDoor() => new Door(
             transform.position.ToNumerics(),
             HalfWidth, HalfDepth, Thickness,
@@ -131,7 +143,7 @@ namespace LOP
             //  각진 문에서 그림과 판정이 갈린다 — "배치가 곧 판정이다"가 거짓이 되는 자리다.
             Matrix4x4 previous = Gizmos.matrix;
             Gizmos.matrix = Matrix4x4.TRS(center.ToUnity(),
-                                          Quaternion.Euler(0f, AxisAngleDegreesOf(door), 0f),
+                                          PanelRotation(AxisAngleDegreesOf(door)),
                                           Vector3.one);
             Gizmos.DrawWireCube(Vector3.zero, size);
             Gizmos.matrix = previous;
