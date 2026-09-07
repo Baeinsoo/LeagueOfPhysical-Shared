@@ -104,14 +104,19 @@ namespace LOP.Tests
         [Test]
         public void 순풍을_타면_다이브도_60미터를_간다()
         {
-            Assert.IsTrue(SkydiveWindReach.CanReach(
-                requiredX: 0f, requiredZ: -60f, driftX: 0f, driftZ: -57.8f, selfReach: 33.2f));
+            float shortfall = SkydiveWindReach.Shortfall(
+                requiredX: 0f, requiredZ: -60f, driftX: 0f, driftZ: -57.8f, selfReach: 33.2f);
+
+            //  밀려 내려간 자리에서 남은 이동은 2.2m뿐이라 33.2m 사거리가 남아돈다.
+            Assert.AreEqual(-31.0f, shortfall, 0.1f);
         }
 
         [Test]
         public void 순풍이_없으면_다이브는_60미터를_못_간다()
         {
-            Assert.IsFalse(SkydiveWindReach.CanReach(0f, -60f, 0f, 0f, 33.2f));
+            float shortfall = SkydiveWindReach.Shortfall(0f, -60f, 0f, 0f, 33.2f);
+
+            Assert.AreEqual(26.8f, shortfall, 0.1f);
         }
 
         // 역풍은 밀린 거리와 필요 이동이 더해진다.
@@ -120,7 +125,7 @@ namespace LOP.Tests
         {
             float drift = SkydiveWindReach.DriftDistance(12f, 400f, SpreadFall, SpreadLag, 0f);
 
-            Assert.IsFalse(SkydiveWindReach.CanReach(-55f, 0f, drift, 0f, 76.8f));
+            Assert.Greater(SkydiveWindReach.Shortfall(-55f, 0f, drift, 0f, 76.8f), 0f);
         }
 
         [Test]
@@ -128,7 +133,7 @@ namespace LOP.Tests
         {
             float drift = SkydiveWindReach.DriftDistance(10f, 150f, SpreadFall, SpreadLag, 0f);
 
-            Assert.IsTrue(SkydiveWindReach.CanReach(-55f, 0f, drift, 0f, 76.8f));
+            Assert.LessOrEqual(SkydiveWindReach.Shortfall(-55f, 0f, drift, 0f, 76.8f), 0f);
         }
     }
 }
