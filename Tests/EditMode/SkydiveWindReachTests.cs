@@ -135,5 +135,50 @@ namespace LOP.Tests
 
             Assert.LessOrEqual(SkydiveWindReach.Shortfall(-55f, 0f, drift, 0f, 76.8f), 0f);
         }
+
+        // ── 옛 SkydiveReach에서 넘어온 넷 ────────────────────────────────────
+        //  SkydiveReach.MaxHorizontal은 SelfReach와 대수적으로 같은 사본이었고 프로덕션
+        //  사용처가 사라져 지웠다. 그 클래스가 재던 성질은 여기로 옮긴다 — 사본이 사라졌다고
+        //  커버리지까지 같이 사라지면 안 된다.
+
+        const float Tolerance = 0.01f;
+
+        [Test]
+        public void 최고속에_닿기_전이면_가속_구간만_적분한다()
+        {
+            // 낙하 1m를 1m/s로 = 1초. 가속 6이면 최고속 18에 3초 걸리므로 아직 가속 중.
+            // 거리 = ½·6·1² = 3
+            Assert.AreEqual(3f, SkydiveWindReach.SelfReach(18f, 6f, dropHeight: 1f, fallSpeed: 1f), Tolerance);
+        }
+
+        [Test]
+        public void 최고속에_닿은_뒤는_등속으로_이어진다()
+        {
+            // 낙하 5m를 1m/s로 = 5초. 최고속 18까지 3초(거리 27), 남은 2초는 등속 36.
+            Assert.AreEqual(63f, SkydiveWindReach.SelfReach(18f, 6f, dropHeight: 5f, fallSpeed: 1f), Tolerance);
+        }
+
+        [Test]
+        public void 대자가_다이브보다_멀리_간다()
+        {
+            //  선반 간격 150m에서 실제 튜닝값으로. 옛 테스트는 "대자가 더 멀다"만 봤는데,
+            //  둘 다 0을 돌려주는 구현도 그 단언을 통과한다 — 값을 못 박는다.
+            //  대자: 150/25=6초, 램프 12/22=0.5455초 → 12·(6−0.2727) = 68.727
+            //  다이브: 150/45=3.333초, 램프 18/6=3초 → 18·(3.3333−1.5) = 33.0
+            float spread = SkydiveWindReach.SelfReach(12f, 22f, dropHeight: 150f, fallSpeed: 25f);
+            float dive = SkydiveWindReach.SelfReach(18f, 6f, dropHeight: 150f, fallSpeed: 45f);
+
+            Assert.AreEqual(68.727f, spread, Tolerance);
+            Assert.AreEqual(33f, dive, Tolerance);
+            Assert.Greater(spread, dive,
+                "천천히 내려가면 옆으로 더 갈 시간이 있다 — 이 관계가 자세 선택의 이유다");
+        }
+
+        [Test]
+        public void 하강_속도가_0이면_0을_돌려준다()
+        {
+            // 0으로 나누지 않는다. 호출자가 잘못 넣어도 코스 검사가 죽으면 안 된다.
+            Assert.AreEqual(0f, SkydiveWindReach.SelfReach(12f, 22f, dropHeight: 150f, fallSpeed: 0f), Tolerance);
+        }
     }
 }
