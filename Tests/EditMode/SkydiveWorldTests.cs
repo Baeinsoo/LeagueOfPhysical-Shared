@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using GameFramework;
 using GameFramework.World;
 using NUnit.Framework;
@@ -23,12 +24,13 @@ namespace LOP.Tests
         // 기본 맵은 면이 하나도 없는 하늘이다(HalfSpaceQuery에 면을 안 넣으면 늘 CollisionHit.None).
         static SkydiveWorld World(EntityRegistry registry,
                                   GameFramework.Physics.ICollisionQuery query = null,
-                                  WindField wind = null)
+                                  WindField wind = null,
+                                  DoorField doors = null)
             => new SkydiveWorld(registry, new WorldEventBuffer(),
                                 new SkydiveMoveSystem(), new StaminaSystem(),
                                 new WindDriftSystem(),
                                 //  결승선을 등록하지 않는다 — 이 테스트들의 관심사가 아니고, 없으면 아무도 통과하지 않는다.
-                                new FinishSystem(new FinishLineBounds(FinishAxis.Y), FinishAxis.Y, increasing: false), wind ?? new WindField(), new DoorField(), Config(),
+                                new FinishSystem(new FinishLineBounds(FinishAxis.Y), FinishAxis.Y, increasing: false), wind ?? new WindField(), doors ?? new DoorField(), Config(),
                                 query ?? new HalfSpaceQuery(),
                                 new FlappyWorldFixture.NoopMotionBridge(), layerMask: ~0);
 
@@ -544,6 +546,119 @@ namespace LOP.Tests
             Assert.AreEqual(2f, drift.Value.Y, Tolerance);
             Assert.AreEqual(3f, drift.Value.Z, Tolerance);
             Assert.AreEqual(14f, drift.Anchor.Y, Tolerance);
+        }
+
+        //  문 자세는 틱의 순수 함수라(스펙 §2.3), 그 판이 틱의 어느 지점에서 서느냐가 곧
+        //  "누가 그 자세를 보느냐"다. 클라 뷰가 프레임 사이에 패널을 소수 틱 자세로 옮겨 두므로,
+        //  틱이 그것을 덮기 전에 도는 질의는 클라에만 있는 자세를 보게 된다.
+        [Test]
+        public void 발밑_여유를_재기_전에_문이_이_틱_자세로_선다()
+        {
+            var door = MakeDoor();
+            door.Pose(999);   // 뷰가 프레임 사이에 남겨 둔 자세
+
+            var doors = new DoorField();
+            doors.Add(door);
+            var probe = new PanelPoseAtRaycast(door);
+
+            var registry = new EntityRegistry();
+            registry.Add(Diver("a"));
+            var world = World(registry, probe, doors: doors);
+            world.GameplayStartTick = 0;
+
+            world.Tick(12, 0.02f);
+
+            Assert.IsTrue(probe.Sampled, "발밑 여유 레이가 안 불렸다 — 이 테스트가 아무것도 못 잰다");
+            door.Pose(12);
+            Assert.AreEqual(door.PanelA.localPosition.x, probe.PanelX, Tolerance);
+        }
+
+        //  출발 전에도 문은 돈다 — 여기서 안 세우면 뷰가 옮겨 둔 자세가 출발 순간까지 남는다.
+        [Test]
+        public void 출발_전에도_문은_이_틱_자세로_선다()
+        {
+            var door = MakeDoor();
+            door.Pose(999);
+
+            var doors = new DoorField();
+            doors.Add(door);
+
+            var registry = new EntityRegistry();
+            registry.Add(Diver("a"));
+            var world = World(registry, doors: doors);
+            world.GameplayStartTick = 100;
+
+            world.Tick(12, 0.02f);
+            float posed = door.PanelA.localPosition.x;
+
+            door.Pose(12);
+            Assert.AreEqual(door.PanelA.localPosition.x, posed, Tolerance);
+        }
+
+        readonly List<GameObject> doorRoots = new List<GameObject>();
+
+        [TearDown]
+        public void DestroyDoors()
+        {
+            foreach (var root in doorRoots)
+            {
+                if (root != null) { UnityEngine.Object.DestroyImmediate(root); }
+            }
+            doorRoots.Clear();
+        }
+
+        //  네 구간이 다 나오는 문: 0~9 열림, 10~14 닫히는 중, 15~34 닫힘, 35~39 열리는 중.
+        DoorVolume MakeDoor()
+        {
+            var root = new GameObject("Door");
+            doorRoots.Add(root);
+
+            var volume = root.AddComponent<DoorVolume>();
+            volume.HalfWidth = 8f;
+            volume.HalfDepth = 4f;
+            volume.Thickness = 0.5f;
+            volume.AxisAngleDegrees = 0f;
+            volume.Period = 40;
+            volume.OpenTicks = 10;
+            volume.MoveTicks = 5;
+            volume.Phase = 0;
+
+            volume.PanelA = new GameObject("PanelA").transform;
+            volume.PanelA.SetParent(root.transform, worldPositionStays: false);
+            volume.PanelB = new GameObject("PanelB").transform;
+            volume.PanelB.SetParent(root.transform, worldPositionStays: false);
+            return volume;
+        }
+
+        //  결과가 아니라 질의 시점의 상태를 적어 둔다 — 재려는 것이 "언제"이기 때문이다.
+        class PanelPoseAtRaycast : GameFramework.Physics.ICollisionQuery
+        {
+            readonly DoorVolume door;
+
+            public bool Sampled { get; private set; }
+            public float PanelX { get; private set; }
+
+            public PanelPoseAtRaycast(DoorVolume door) => this.door = door;
+
+            public GameFramework.Physics.CollisionHit Raycast(
+                Vector3 origin, Vector3 direction, float distance, int layerMask)
+            {
+                if (Sampled == false)
+                {
+                    Sampled = true;
+                    PanelX = door.PanelA.localPosition.x;
+                }
+                return GameFramework.Physics.CollisionHit.None;
+            }
+
+            public GameFramework.Physics.CollisionHit CapsuleCast(
+                Vector3 point1, Vector3 point2, float radius,
+                Vector3 direction, float distance, int layerMask)
+                => GameFramework.Physics.CollisionHit.None;
+
+            public GameFramework.Physics.CollisionHit[] OverlapSphere(
+                Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<GameFramework.Physics.CollisionHit>();
         }
     }
 }

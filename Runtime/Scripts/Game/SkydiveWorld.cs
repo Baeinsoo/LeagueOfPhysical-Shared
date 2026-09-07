@@ -60,6 +60,12 @@ namespace LOP
 
         protected override void Mutation(long tick, float deltaTime)
         {
+            //  문을 이 틱 자세로 돌려놓고 엔진에 반영하는 것이 틱의 첫 줄이다(스펙 §5 ①).
+            //  뒤로 물리면 그 앞의 질의(발밑 여유 레이)가 지난 틱 자세를 보게 되고, 되감기
+            //  재생에서는 아예 아무 틱의 자세를 볼지 정해지지 않는다. 클라 뷰가 프레임마다
+            //  패널을 옮기는 지금은 그 틈이 곧 예측 갈림이다.
+            PoseDoors(tick);
+
             CollectDivers();
 
             if (HasStarted(tick) == false)
@@ -92,10 +98,6 @@ namespace LOP
             {
                 _moveSystem.Tick(_divers[i], deltaTime, _config);
             }
-
-            //  문을 이 틱 자세로 돌려놓고 엔진에 반영한다. 되감기 재생 중에도 같은 자리에서
-            //  닫히므로 재생이 라이브와 같은 답을 낸다 — 뷰가 프레임마다 옮기면 이 성질이 깨진다.
-            PoseDoors(tick);
 
             //  지오메트리에 파묻힌 몸을 밖으로 밀고, 민 방향에 파고들던 속도를 지운다.
             //  sweep은 "시작부터 겹친" 것을 무시하므로 이 단계가 없으면 파묻힌 채로 시작한
