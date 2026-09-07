@@ -1,8 +1,9 @@
 namespace LOP
 {
     /// <summary>
-    /// 배치가 통과 가능한지 재는 산수. <see cref="SkydiveReach"/>가 "구멍 사이가 닿는 거리인가"를
-    /// 보듯, 여기는 <b>바람이 낀 채로도 닿는가</b>를 본다.
+    /// 배치가 통과 가능한지 재는 산수 — 구멍 사이가 <b>바람이 낀 채로도</b> 닿는 거리인가.
+    /// (<see cref="SelfReach"/>가 무풍 자력 사거리를 맡는다. 같은 계산을 하던 옛 SkydiveReach는
+    /// 사본이라 지웠다 — 두 벌이면 한쪽만 바람을 본다.)
     ///
     /// <para>역풍은 밀린 거리와 필요 이동이 더해져서, 구간 전체를 덮는 12 m/s 역풍 하나만으로
     /// 아무도 못 지나가는 구간이 만들어진다. 그러면 에러 없이 판이 안 끝나는 것으로만 보이므로
@@ -76,15 +77,20 @@ namespace LOP
         }
 
         /// <summary>
-        /// 바람에 밀린 자리에서 자기 힘으로 구멍까지 닿나. 순풍이면 밀린 만큼이 이득이고
-        /// 역풍이면 그만큼 더 가야 하는데, 그 둘이 이 뺄셈 하나로 같이 나온다.
+        /// 바람에 밀린 자리에서 구멍까지 자기 힘으로 얼마나 <b>모자라나</b>. 0 이하면 닿는다.
+        /// 순풍이면 밀린 만큼이 이득이고 역풍이면 그만큼 더 가야 하는데, 그 둘이 이 뺄셈 하나로
+        /// 같이 나온다.
+        ///
+        /// <para>"닿나/안 닿나"가 아니라 <b>얼마나 모자라나</b>를 돌려주는 이유는, 굽기 검사가
+        /// 여유·부족을 리포트에 숫자로 적어야 하기 때문이다. 참/거짓만 주면 부르는 쪽이 같은
+        /// 뺄셈을 한 벌 더 갖게 되고, 그렇게 갈라진 사본이 실제로 사고를 냈다.</para>
         /// </summary>
-        public static bool CanReach(float requiredX, float requiredZ,
-                                    float driftX, float driftZ, float selfReach)
+        public static float Shortfall(float requiredX, float requiredZ,
+                                      float driftX, float driftZ, float selfReach)
         {
             float dx = requiredX - driftX;
             float dz = requiredZ - driftZ;
-            return dx * dx + dz * dz <= selfReach * selfReach;
+            return (float)System.Math.Sqrt(dx * dx + dz * dz) - selfReach;
         }
     }
 }

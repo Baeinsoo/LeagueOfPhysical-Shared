@@ -17,6 +17,7 @@ namespace LOP
         private readonly WindDriftSystem _windDriftSystem;
         private readonly FinishSystem _finishSystem;
         private readonly WindField _windField;
+        private readonly DoorField _doorField;
         private readonly SkydiveConfig _config;
         private readonly ICollisionQuery _collisionQuery;
         private readonly GameFramework.World.IMotionBridge _motionBridge;
@@ -38,6 +39,7 @@ namespace LOP
             WindDriftSystem windDriftSystem,
             FinishSystem finishSystem,
             WindField windField,
+            DoorField doorField,
             SkydiveConfig config,
             ICollisionQuery collisionQuery,
             GameFramework.World.IMotionBridge motionBridge,
@@ -49,6 +51,7 @@ namespace LOP
             _windDriftSystem = windDriftSystem;
             _finishSystem = finishSystem;
             _windField = windField;
+            _doorField = doorField;
             _config = config;
             _collisionQuery = collisionQuery;
             _motionBridge = motionBridge;
@@ -57,6 +60,12 @@ namespace LOP
 
         protected override void Mutation(long tick, float deltaTime)
         {
+            //  문을 이 틱 자세로 돌려놓고 엔진에 반영하는 것이 틱의 첫 줄이다(스펙 §5 ①).
+            //  뒤로 물리면 그 앞의 질의(발밑 여유 레이)가 지난 틱 자세를 보게 되고, 되감기
+            //  재생에서는 아예 아무 틱의 자세를 볼지 정해지지 않는다. 클라 뷰가 프레임마다
+            //  패널을 옮기는 지금은 그 틈이 곧 예측 갈림이다.
+            PoseDoors(tick);
+
             CollectDivers();
 
             if (HasStarted(tick) == false)
@@ -111,6 +120,21 @@ namespace LOP
                 bool grounded = _divers[i].Get<GameFramework.World.GroundState>()?.IsGrounded ?? false;
                 _staminaSystem.Tick(_divers[i], deltaTime, _config, grounded);
             }
+        }
+
+        private void PoseDoors(long tick)
+        {
+            System.Collections.Generic.IReadOnlyList<DoorVolume> doors = _doorField.All;
+            if (doors.Count == 0)
+            {
+                return;
+            }
+            for (int i = 0; i < doors.Count; i++)
+            {
+                doors[i].Pose(tick);
+            }
+            //  트랜스폼을 방금 바꿨다. 겹침 질의가 옛 자리를 보지 않도록 여기서 한 번 맞춘다.
+            _motionBridge.SyncTransforms();
         }
 
         //  파묻힌 몸을 밖으로 민 방향으로, 그 방향에 파고들던 속도만 덜어낸다. 표면을 따라
