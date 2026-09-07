@@ -83,6 +83,10 @@ namespace LOP
         /// <summary>다이브가 바람에 완전히 실리는 데 걸리는 시간(초). 가장 길다.</summary>
         public readonly float DiveWindLag;
 
+        /// <summary>이 속도보다 빠르게 아래로 부딪히면 죽는다. <c>JumpPower</c>보다 커야 한다 —
+        /// 작으면 점프 착지가 죽는다.</summary>
+        public readonly float LandingLethalSpeed;
+
         public SkydiveConfig(
             float spreadFallSpeed, float diveFallSpeed, float glideFallSpeed,
             float spreadMoveSpeed, float diveMoveSpeed, float glideMoveSpeed,
@@ -91,7 +95,8 @@ namespace LOP
             float bodyRadius, float bodyHeight, float groundY,
             float staminaMax, float glideDrain, float groundRecover, float emergencyGlideTime,
             float groundMoveSpeed, float groundAccel, float jumpPower, float poseClearance, float fallBrake,
-            float glideWindLag, float spreadWindLag, float diveWindLag)
+            float glideWindLag, float spreadWindLag, float diveWindLag,
+            float landingLethalSpeed)
         {
             SpreadFallSpeed = spreadFallSpeed;
             DiveFallSpeed = diveFallSpeed;
@@ -119,6 +124,7 @@ namespace LOP
             GlideWindLag = glideWindLag;
             SpreadWindLag = spreadWindLag;
             DiveWindLag = diveWindLag;
+            LandingLethalSpeed = landingLethalSpeed;
         }
     }
 }

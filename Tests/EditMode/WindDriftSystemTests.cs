@@ -16,7 +16,8 @@ namespace LOP.Tests
                 bodyRadius: 0.4f, bodyHeight: 1.8f, groundY: 0f,
                 staminaMax: 100f, glideDrain: 20f, groundRecover: 40f, emergencyGlideTime: 1f,
                 groundMoveSpeed: 4f, groundAccel: 100f, jumpPower: 11f, poseClearance: 5f, fallBrake: 150f,
-                glideWindLag: 0.2f, spreadWindLag: 2.0f, diveWindLag: 4.0f);
+                glideWindLag: 0.2f, spreadWindLag: 2.0f, diveWindLag: 4.0f,
+                landingLethalSpeed: 15f);
 
         // 온 코스를 덮는 상승풍 14. 위치를 안 옮겨도 늘 안에 있다.
         static WindField Everywhere(float up = 14f)
