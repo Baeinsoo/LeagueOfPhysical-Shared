@@ -52,7 +52,7 @@ namespace LOP.Tests
         // 수평·수직을 나눠 따로 sweep하므로(각각 최대 한 번 이상) 호출 횟수는 방향 개수만큼 나온다.
         // 받은 인자를 기록해 phase ⑤가 실제로 엔티티가 들고 있는 몸 치수(반지름)·월드가 받은
         // 레이어마스크를 쓰는지 검증한다.
-        // 이 스텁이 흉내내려는 건 앞을 막는 벽이다. 방향을 안 가리면 이동 전 지면 탐침(아래 방향)까지
+        // 이 스텁이 흉내내려는 건 앞을 막는 벽이다. 방향을 안 가리면 수직 sweep(아래 방향)까지
         // 벽으로 답해 법선이 위를 향하고, 커널이 그걸 지면으로 오인한다. 그래서 수직 방향(위/아래)
         // 캐스트는 None으로 흘려보낸다 — 몇 번 불렸는지는 여전히 세어(CastCount) 둔다.
         private class WallAheadQuery : ICollisionQuery
@@ -75,12 +75,49 @@ namespace LOP.Tests
             {
                 LastRadius = radius;
                 LastLayerMask = layerMask;
-                CastCount++;   // 이동 전 지면 탐침 + 수평 + 수직 sweep을 전부 센다
+                CastCount++;   // 수평 + 수직 sweep을 전부 센다
                 if (Mathf.Abs(direction.y) > 0.5f)
                 {
                     return CollisionHit.None;
                 }
                 return new CollisionHit(true, _hitDistance, _normal, point1 + direction * _hitDistance, null);
+            }
+
+            public CollisionHit Raycast(Vector3 origin, Vector3 direction, float distance, int layerMask)
+                => CollisionHit.None;
+
+            public CollisionHit[] OverlapSphere(Vector3 center, float radius, int layerMask)
+                => System.Array.Empty<CollisionHit>();
+        }
+
+
+        // 발밑 어딘가에 수평 바닥이 하나 있는 하늘. 아래로 쏜 캐스트만 그 바닥을 만난다.
+        // 지면 탐침(몸 밖 5cm까지 훑는 조회)과 실제 이동 sweep(몸이 이번 틱에 갈 거리까지)이
+        // 서로 다른 거리를 본다는 것을 드러내려고 있다 — 둘의 차이 구간에 바닥을 놓는다.
+        private class FloorBelowQuery : ICollisionQuery
+        {
+            private readonly float _floorY;
+            public int DownCastCount;
+
+            public FloorBelowQuery(float floorY) => _floorY = floorY;
+
+            public CollisionHit CapsuleCast(Vector3 point1, Vector3 point2, float radius,
+                Vector3 direction, float distance, int layerMask)
+            {
+                if (direction.y >= -0.5f)
+                {
+                    return CollisionHit.None;   // 아래로 쏜 것만 바닥을 만난다
+                }
+                DownCastCount++;
+                //  Cast가 캡슐 아래 구 중심을 발밑 + radius에 두므로, 몸의 바닥면은 여기다.
+                float bottom = Mathf.Min(point1.y, point2.y) - radius;
+                float toFloor = bottom - _floorY;
+                if (toFloor < 0f || toFloor > distance)
+                {
+                    return CollisionHit.None;
+                }
+                return new CollisionHit(true, toFloor, Vector3.up,
+                    new Vector3(point1.x, _floorY, point1.z), null);
             }
 
             public CollisionHit Raycast(Vector3 origin, Vector3 direction, float distance, int layerMask)
@@ -114,6 +151,10 @@ namespace LOP.Tests
         }
 
         static FlappyWorld World(EntityRegistry registry, GameFramework.World.IMotionBridge bridge)
+            => World(registry, bridge, new EmptySkyQuery());
+
+        static FlappyWorld World(EntityRegistry registry, GameFramework.World.IMotionBridge bridge,
+            ICollisionQuery query)
         {
             // 이 파일의 테스트는 출발 게이트가 아니라 이동/충돌을 다룬다 — 이미 출발한 것으로 둔다.
             var world = new FlappyWorld(registry, new WorldEventBuffer(),
@@ -121,7 +162,7 @@ namespace LOP.Tests
                                new FlappyStunSystem(Config()),
                                new FlappyDashSystem(Config()),
                                new FinishSystem(new FinishLineBounds(FinishAxis.X), FinishAxis.X, increasing: true),
-                               new EmptySkyQuery(), bridge, layerMask: ~0);
+                               query, bridge, layerMask: ~0);
             world.GameplayStartTick = 0;
             return world;
         }
@@ -174,6 +215,30 @@ namespace LOP.Tests
             Assert.AreEqual(-7f, VelocityOf(bird).y, Tolerance);    // 70 × 0.1
             Assert.AreEqual(1.1f, PositionOf(bird).x, Tolerance);   // 11 × 0.1
             Assert.AreEqual(-0.7f, PositionOf(bird).y, Tolerance);  // 7 × 0.1
+        }
+
+
+        [Test]
+        public void 날갯짓_꼭짓점에서_바닥을_스쳐도_몸이_안_닿았으면_스턴이_아니다()
+        {
+            var registry = new EntityRegistry();
+            var bird = Bird("bird-1", Vector3.zero, simulated: true);
+            //  이번 틱 중력(70 × 0.02 = 1.4)을 먹고 나면 세로 속도가 -0.1 — 날갯짓 포물선의 꼭짓점,
+            //  즉 거의 안 내려가는 한 틱이다. 지면 탐침이 몸보다 멀리 보는 구간이 여기다.
+            bird.Get<Velocity>().Linear = new Vector3(0f, 1.3f, 0f).ToNumerics();
+            registry.Add(bird);
+
+            //  발밑 3.5cm에 바닥. 몸이 이번 틱에 실제로 가는 거리는 0.2cm(+ 몸 두께 여유 2cm)라
+            //  몸은 바닥에 못 닿는다. 발밑 5cm까지 훑는 지면 탐침만 닿는다.
+            var query = new FloorBelowQuery(-0.035f);
+
+            World(registry, new NoopMotionBridge(), query).Tick(1, 0.02f);
+
+            //  안 닿았으면 벌도 없어야 한다 — 부딪힘 판정은 몸 기준이지 탐침 기준이 아니다.
+            Assert.AreEqual(0f, bird.Get<FlappyStun>().StunRemaining, Tolerance);
+            //  탐침에 걸리면 벌뿐 아니라 몸을 바닥 쪽으로 끌어내리기까지 한다(걷는 몸을 땅에
+            //  붙여 두려는 보정). 나는 새에겐 그것도 틀렸다.
+            Assert.AreEqual(-0.002f, PositionOf(bird).y, Tolerance);
         }
 
         [Test]
@@ -280,10 +345,10 @@ namespace LOP.Tests
             // 대신 스턴에 걸린다 — 페널티는 위치 차단과 별개로 여전히 멈춰 있는 시간이다.
             Assert.That(bird.Get<FlappyStun>().StunRemaining, Is.GreaterThan(0f));
 
-            // 그리고 그 판정은 실제로 일어났고(이동 전 지면 탐침 1 + 수평 sweep 1 + 수직 sweep 1,
-            // 총 세 번 — 지면 탐침은 낙하 중일 때만 도는 별도 아래 방향 캐스트다),
+            // 그리고 그 판정은 실제로 일어났고(수평 sweep 1 + 수직 sweep 1, 총 두 번 — 몸이
+            // 실제로 가는 두 방향뿐이다. 이동 전 지면 훑기는 이 게임이 꺼 뒀다),
             // 엔티티 자신의 몸 치수·월드가 받은 레이어마스크로 이뤄졌다.
-            Assert.AreEqual(3, wallQuery.CastCount);
+            Assert.AreEqual(2, wallQuery.CastCount);
             Assert.AreEqual(Config().BodyRadius, wallQuery.LastRadius, Tolerance);
             Assert.AreEqual(layerMask, wallQuery.LastLayerMask);
         }
