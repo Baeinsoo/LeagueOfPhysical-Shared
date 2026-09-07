@@ -321,7 +321,18 @@ namespace LOP
         {
             for (int i = 0; i < _divers.Count; i++)
             {
-                _finishSystem.Tick(_divers[i], tick);
+                GameFramework.World.Entity diver = _divers[i];
+
+                //  완주는 "선을 넘는 것"이 아니라 "선 아래에서 살아서 접지"다(스펙 §2.0).
+                //  선을 먼저 넘고 한두 틱 뒤에 부딪히는 순간이 있어, 순서만으로는 완주한 뒤에
+                //  죽는 것을 못 막는다.
+                bool grounded = diver.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false;
+                if (grounded == false || SkydiveLanding.IsLethal(diver, _config))
+                {
+                    continue;
+                }
+
+                _finishSystem.Tick(diver, tick);
             }
         }
 
