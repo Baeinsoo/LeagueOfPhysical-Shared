@@ -17,9 +17,16 @@ namespace LOP
         //  예전엔 커널 상수로 모든 수평 sweep을 이만큼 들어올렸는데, 그게 오르막에서 몸을
         //  파묻히게 만들었다. 이제는 "막혔을 때만" 쓰는 값이라 게임이 정한다.
         public readonly float stepOffset;
+        //  이동 전에 발밑을 이만큼 아래까지 훑어 "밟고 있는 땅"을 찾는다. 0이면 아예 안 훑는다.
+        //  걷는 몸에는 필요하다 — 계단·경사를 내려갈 때 발이 공중에 뜨지 않게 붙여 준다.
+        //  나는 몸에는 해롭다: 이 훑기는 *몸이 이번 틱에 실제로 가는 거리보다 멀리* 보므로,
+        //  몸이 닿지도 않은 바닥을 "밟았다"로 답하고 몸을 그쪽으로 끌어내리기까지 한다.
+        //  그래서 값을 게임이 정한다(stepOffset과 같은 이유로 커널 상수에서 뺐다).
+        public readonly float groundProbe;
 
         public KinematicMoveInput(Vector3 position, Vector3 velocity, float radius,
-            float height, float deltaTime, int layerMask, float stepOffset)
+            float height, float deltaTime, int layerMask, float stepOffset,
+            float groundProbe = KinematicMover.WalkGroundProbe)
         {
             this.position = position;
             this.velocity = velocity;
@@ -28,6 +35,7 @@ namespace LOP
             this.deltaTime = deltaTime;
             this.layerMask = layerMask;
             this.stepOffset = stepOffset;
+            this.groundProbe = groundProbe;
         }
     }
 
@@ -55,7 +63,8 @@ namespace LOP
         const int MaxSlides = 4;         // 미끄러짐 반복 상한(과회전·무한루프 방지)
         const float SkinWidth = 0.02f;   // 벽에서 살짝 띄우는 여유(끼임 방지)
         const float GroundNormalY = 0.7f;  // 면 법선의 위쪽 성분이 이보다 크면 바닥(≈45도)
-        const float GroundProbe = 0.05f; // 발밑을 이만큼 아래까지 훑어 지면을 찾는다. 한 틱 낙하분(≈0.028)보다 넉넉하되, 떠 있는 몸을 지면으로 오인하지 않을 만큼 짧게.
+        /// <summary>걷는 몸의 지면 훑기 기본값. 한 틱 낙하분(≈0.028)보다 넉넉하되, 떠 있는 몸을 지면으로 오인하지 않을 만큼 짧게.</summary>
+        public const float WalkGroundProbe = 0.05f;
 
         /// <summary>
         /// 표준 컨트롤러처럼 수평/수직 스텝을 분리한다. 합쳐서 처리하면 "걷는 바닥"이 수평 이동을
@@ -75,9 +84,9 @@ namespace LOP
             //     올라가는 중에는 지면으로 치지 않는다 — 그러면 날갯짓해 뜨는 몸을 도로 붙여 버린다.
             bool onGround = false;
             Vector3 groundNormal = Vector3.up;
-            if (input.velocity.y <= 0f)
+            if (input.velocity.y <= 0f && input.groundProbe > 0f)
             {
-                CollisionHit floor = Cast(pos, SkinWidth, Vector3.down, SkinWidth + GroundProbe, input, query);
+                CollisionHit floor = Cast(pos, SkinWidth, Vector3.down, SkinWidth + input.groundProbe, input, query);
                 if (floor.HasHit && floor.Normal.y >= GroundNormalY)
                 {
                     onGround = true;

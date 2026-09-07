@@ -39,10 +39,11 @@ namespace LOP
 
         // KinematicMover.Move에게 넘길 실제 쿼리를 감싸, sweep 도중 한 번이라도 히트가 있었는지만
         // 기록한다. 매 틱 재사용해 새 인스턴스를 만들지 않는다.
-        // ⚠️ 센다: 이동 전 지면 탐침 + 수평 + 수직(+ stepOffset>0이면 턱 오르기 최대 3개 더).
-        // 지면 탐침도 여기 잡힌다 — 커널이 "지면을 찾으려고" 쏜 캐스트가 실제 sweep이라 Flappy에선
-        // "맵에 부딪혔다"로 읽힌다(아래 MoveBlockedByMap의 SawHit→Enter). 열린 항목 O4, 라이브에서
-        // 먼저 본다(design §9).
+        // ⚠️ 센다: 수평 + 수직 sweep(+ stepOffset>0이면 턱 오르기 최대 3개 더).
+        // 이동 전 지면 훑기는 이 게임이 꺼 뒀다(MoveBlockedByMap에서 groundProbe: 0) — 켜 두면
+        // 커널이 "지면을 찾으려고" 쏜 캐스트가 실제 sweep이라 Flappy에선
+        // "맵에 부딪혔다"로 읽힌다(아래 MoveBlockedByMap의 SawHit→Enter). 그게 08-27 설계 §9의
+        // 열린 항목 O4였고, 훑기를 끄는 것이 그 답이다.
         private readonly HitTrackingQuery _hitTracker = new HitTrackingQuery();
 
         // 스턴 타이머의 틱별 사진. 위치·속도는 WorldBase가 담는다.
@@ -210,9 +211,9 @@ namespace LOP
         // 취지였다. 지금은 반대로 막으므로 이름도 그에 맞춘다.)
         // "부딪혔는가"는 스턴 진입에 따로 필요하다 — KinematicMoveResult엔 그 정보가 없어서
         // (grounded만 있음) _hitTracker로 실제 쿼리를 감싸 sweep 도중 히트가 있었는지 기록한다.
-        // ⚠️ 이 히트에는 이동 전 지면 탐침(맨 위 _hitTracker 선언부 참고)도 섞여 있다 — 그래서
-        // 지면 5cm 이내에서 세로 속도가 (-1.4, 0]이면(플랩 포물선 꼭짓점 부근) 맵에 안 닿았어도
-        // 스턴이 걸릴 수 있다. 열린 항목 O4, 라이브에서 먼저 본다.
+        // 이 히트는 몸 기준 sweep만 센다 — 지면 훑기는 꺼 뒀다(아래 groundProbe: 0).
+        // 켜 두면 몸이 이번 틱에 가는 거리보다 멀리 본 것까지 히트로 세서, 맵에 안 닿은 새가
+        // 날갯짓 꼭짓점(세로 속도 ≈ 0)에서 스턴에 걸렸다.
         //  파묻힌 데서 밀려 나왔다면, 그 벽 쪽으로 파고들던 속도는 지운다.
         //  안 지우면: 캡슐이 콜라이더 *안*에서 시작한 sweep은 히트를 못 내(시작 겹침은 무시된다)
         //  "닿았으니 속도 0" 경로가 안 돌고, 막혀 있는데 중력만 계속 쌓인다. 그 상태로 밀어내기와
@@ -255,10 +256,14 @@ namespace LOP
             }
 
             _hitTracker.Reset(_collisionQuery);
-            //  새는 날아다니므로 턱을 오를 이유가 없다. 0을 준다.
+            //  새는 날아다니므로 턱을 오를 이유도, 발밑 땅을 미리 훑을 이유도 없다. 둘 다 0을 준다.
+            //  지면 훑기를 끄는 이유가 이 게임에는 하나 더 있다: 그 훑기는 몸이 이번 틱에 실제로
+            //  가는 거리보다 멀리(발밑 5cm) 보는데, 아래 SawHit이 그것까지 "부딪혔다"로 세서
+            //  맵에 안 닿은 새가 스턴에 걸렸다. 부딪힘 판정은 몸 기준이어야 한다.
             var result = KinematicMover.Move(new KinematicMoveInput(
                 transform.Position.ToUnity(), velocity.Linear.ToUnity(),
-                body.Radius, body.Height, deltaTime, _layerMask, stepOffset: 0f), _hitTracker);
+                body.Radius, body.Height, deltaTime, _layerMask,
+                stepOffset: 0f, groundProbe: 0f), _hitTracker);
 
             if (_hitTracker.SawHit)
             {
