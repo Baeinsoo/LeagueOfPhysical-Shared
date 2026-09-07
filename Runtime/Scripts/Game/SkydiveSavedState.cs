@@ -1,7 +1,7 @@
 namespace LOP
 {
     /// <summary>
-    /// 되감기용 Skydive 고유 상태의 한 틱 사진 — 자세·스태미나·이동 상태·실린 바람. 위치·속도는
+    /// 되감기용 Skydive 고유 상태의 한 틱 사진 — 자세·스태미나·이동 상태·실린 바람. 위치·회전·속도는
     /// <see cref="GameFramework.World.WorldBase"/>가 이미 담으므로 여기엔 그 밖의 것만 담는다.
     /// </summary>
     public readonly struct SkydiveSavedState
@@ -21,10 +21,15 @@ namespace LOP
         public readonly long FinishedTick;
         public readonly float FinishDepth;
 
+        //  WorldBase는 위치·회전·속도는 담지만 접지 여부는 담지 않는다. 그런데 이동(MoveBlockedByMap)이
+        //  "직전 틱엔 안 서 있었나"를 판정하려면 이 값을 봐야 하므로, 안 담으면 되감은 뒤 첫 틱이
+        //  되감기 전 라이브의 흔적(stale 값)을 보고 착지 판정을 그르친다.
+        public readonly bool IsGrounded;
+
         private SkydiveSavedState(float axis, bool gliding, float stamina,
                                   bool emergencyUsed, float emergencyRemaining, SkydiveMotionState motion,
                                   System.Numerics.Vector3 drift, System.Numerics.Vector3 driftAnchor,
-                                  long finishedTick, float finishDepth)
+                                  long finishedTick, float finishDepth, bool isGrounded)
         {
             Axis = axis;
             Gliding = gliding;
@@ -36,6 +41,7 @@ namespace LOP
             DriftAnchor = driftAnchor;
             FinishedTick = finishedTick;
             FinishDepth = finishDepth;
+            IsGrounded = isGrounded;
         }
 
         public static SkydiveSavedState Capture(GameFramework.World.Entity entity)
@@ -53,7 +59,8 @@ namespace LOP
                 wind?.Value ?? System.Numerics.Vector3.Zero,
                 wind?.Anchor ?? System.Numerics.Vector3.Zero,
                 entity.Get<FinishState>()?.FinishedTick ?? FinishState.NotFinished,
-                entity.Get<FinishState>()?.Depth ?? 0f);
+                entity.Get<FinishState>()?.Depth ?? 0f,
+                entity.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false);
         }
 
         public void RestoreTo(GameFramework.World.Entity entity)
@@ -97,6 +104,14 @@ namespace LOP
             {
                 finish.FinishedTick = FinishedTick;
                 finish.Depth = FinishDepth;
+            }
+
+            //  접지 여부도 되돌린다 — 안 되돌리면 재생 첫 틱의 착지 판정(wasGrounded)이
+            //  되감기 전 라이브가 남긴 값을 보게 된다.
+            var groundState = entity.Get<GameFramework.World.GroundState>();
+            if (groundState != null)
+            {
+                groundState.IsGrounded = IsGrounded;
             }
         }
     }

@@ -19,20 +19,40 @@ namespace LOP.Tests
                 bodyRadius: 0.4f, bodyHeight: 1.8f, groundY: 0f,
                 staminaMax: 100f, glideDrain: 20f, groundRecover: 40f, emergencyGlideTime: 1f,
                 groundMoveSpeed: 4f, groundAccel: 100f, jumpPower: 11f, poseClearance: 5f, fallBrake: 150f,
-                glideWindLag: 0.2f, spreadWindLag: 2.06f, diveWindLag: 3.1f);
+                glideWindLag: 0.2f, spreadWindLag: 2.06f, diveWindLag: 3.1f,
+                landingLethalSpeed: 15f);
 
         // 기본 맵은 면이 하나도 없는 하늘이다(HalfSpaceQuery에 면을 안 넣으면 늘 CollisionHit.None).
         static SkydiveWorld World(EntityRegistry registry,
                                   GameFramework.Physics.ICollisionQuery query = null,
                                   WindField wind = null,
-                                  DoorField doors = null)
+                                  DoorField doors = null,
+                                  FinishLineBounds finish = null)
             => new SkydiveWorld(registry, new WorldEventBuffer(),
                                 new SkydiveMoveSystem(), new StaminaSystem(),
                                 new WindDriftSystem(),
-                                //  결승선을 등록하지 않는다 — 이 테스트들의 관심사가 아니고, 없으면 아무도 통과하지 않는다.
-                                new FinishSystem(new FinishLineBounds(FinishAxis.Y), FinishAxis.Y, increasing: false), wind ?? new WindField(), doors ?? new DoorField(), Config(),
+                                //  결승선을 안 주면 아무도 통과하지 않는다 — 대부분의 테스트가 그걸 원한다.
+                                new FinishSystem(finish ?? new FinishLineBounds(FinishAxis.Y),
+                                                 FinishAxis.Y, increasing: false),
+                                wind ?? new WindField(), doors ?? new DoorField(), Config(),
                                 query ?? new HalfSpaceQuery(),
                                 new FlappyWorldFixture.NoopMotionBridge(), layerMask: ~0);
+
+        //  결승선은 "서서 접지한 다이버의 몸이 실제로 닿는 높이"에 둬야 한다 — 그래야 아래 세
+        //  테스트가 서로 다른 결론(접지 전 통과 안 됨 / 치명 착지는 통과 안 됨 / 안전 착지는
+        //  통과됨)을 실제로 가른다. 선을 몸이 안 닿는 높이에 두면 뒤의 두 "완주 아님" 단언은
+        //  그냥 몸이 못 닿아서 통과하는 가짜 초록이 되어 아무것도 못 잰다 — 그 방지턱이
+        //  안전_속도로_접지하면_완주다(양성 대조군)다. 여기 쓰는 좌표는 이 파일 안에서만
+        //  의미가 있고, 실제 맵 씬의 결승선 마커 좌표를 따르지 않는다(따로 맞출 필요 없음).
+        static FinishLineBounds GroundFinishLine()
+        {
+            var line = new FinishLineBounds(FinishAxis.Y);
+            line.Register(new Bounds(new Vector3(0f, 1f, 0f), new Vector3(200f, 1f, 200f)));
+            return line;
+        }
+
+        static bool Finished(EntityRegistry r, string id)
+            => r.Get(id).Get<FinishState>()?.Finished ?? false;
 
         static Entity Diver(string id, bool simulated = true, EntityType kind = EntityType.Character)
         {
@@ -44,14 +64,30 @@ namespace LOP.Tests
             e.Add(new Stamina { Current = 100f });
             e.Add(new InputBuffer());
             e.Add(new GroundState());   // 이동 커널이 매 틱 접지 여부를 여기 적는다
+            e.Add(new LandingImpact());   // 이동이 매 틱 착지 충격을 여기 적는다
             e.Add(new MotionState());
             e.Add(new WindDrift());
             if (simulated) { e.Add(new Simulated()); }
             return e;
         }
 
+        //  FinishState/CapsuleShape을 기본 Diver()에는 안 넣는다 — 넣으면 결승선을 등록하지 않는
+        //  다른 모든 테스트에서도 FinishSystem.Tick이 "결승선을 모른다" 에러 로그를 쏘게 되어
+        //  (지금은 state==null에서 조용히 빠져나간다) 관계없는 테스트들이 LogAssert로 깨진다.
+        //  결승선을 실제로 재는 이 세 테스트에만 두 컴포넌트를 얹는다.
+        static Entity FinishingDiver(string id)
+        {
+            var e = Diver(id);
+            e.Add(new GameFramework.World.CapsuleShape(Config().BodyRadius, Config().BodyHeight));
+            e.Add(new FinishState());
+            return e;
+        }
+
         static float HeightOf(EntityRegistry r, string id)
             => r.Get(id).Get<GameFramework.World.Transform>().Position.Y;
+
+        static float ImpactOf(EntityRegistry r, string id)
+            => r.Get(id).Get<LandingImpact>().DownwardSpeed;
 
         [Test]
         public void 출발_전에는_아무도_움직이지_않는다()
@@ -546,6 +582,181 @@ namespace LOP.Tests
             Assert.AreEqual(2f, drift.Value.Y, Tolerance);
             Assert.AreEqual(3f, drift.Value.Z, Tolerance);
             Assert.AreEqual(14f, drift.Anchor.Y, Tolerance);
+        }
+
+        /// <summary>
+        /// 대자로 떨어지다 바닥에 닿는 틱에만 충격이 남는다. 다음 틱에도 남아 있으면 서 있는 동안
+        /// 매 틱 죽으므로, 둘째 단언이 이 테스트의 핵심이다.
+        /// </summary>
+        [Test]
+        public void 접지로_뒤집힌_틱에만_충격_속도가_남는다()
+        {
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            //  한 틱(0.02초)에 대자 속도로 1.2m를 가므로, 2m 위에서 시작하면 두 틱째에 닿는다.
+            diver.Get<GameFramework.World.Transform>().Position = new Vector3(0f, 2f, 0f).ToNumerics();
+            diver.Get<Velocity>().Linear = new Vector3(0f, -Config().SpreadFallSpeed, 0f).ToNumerics();
+            registry.Add(diver);
+
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);
+            var world = World(registry, map);
+            world.GameplayStartTick = 0;
+
+            //  닿을 때까지 돌린다. 닿은 그 틱의 값을 잡아 둔다.
+            float atLanding = 0f;
+            int landedAt = -1;
+            for (int t = 0; t < 10 && landedAt < 0; t++)
+            {
+                world.Tick(t, 0.02f);
+                if (diver.Get<GroundState>().IsGrounded)
+                {
+                    landedAt = t;
+                    atLanding = ImpactOf(registry, "a");
+                }
+            }
+
+            Assert.GreaterOrEqual(landedAt, 0, "열 틱 안에 닿지 않았다 — 이 테스트가 아무것도 못 쟀다");
+            Assert.That(atLanding, Is.EqualTo(Config().SpreadFallSpeed).Within(1f),
+                        "닿은 틱의 충격이 대자 낙하 속도와 달랐다");
+
+            world.Tick(landedAt + 1, 0.02f);
+            Assert.IsTrue(diver.Get<GroundState>().IsGrounded, "여전히 서 있어야 한다");
+            Assert.That(ImpactOf(registry, "a"), Is.EqualTo(0f).Within(Tolerance),
+                        "서 있는 동안에도 값이 남으면 매 틱 죽는다");
+        }
+
+        /// <summary>공중을 떨어지는 동안에는 0이다 — "빠르다"가 아니라 "부딪혔다"를 재기 때문.</summary>
+        [Test]
+        public void 공중에서는_아무리_빨라도_0이다()
+        {
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            diver.Get<Velocity>().Linear = new Vector3(0f, -Config().DiveFallSpeed, 0f).ToNumerics();
+            registry.Add(diver);
+
+            var world = World(registry);   // 면이 없는 하늘
+            world.GameplayStartTick = 0;
+
+            for (int t = 0; t < 5; t++)
+            {
+                world.Tick(t, 0.02f);
+                Assert.IsFalse(diver.Get<GroundState>().IsGrounded);
+                Assert.That(ImpactOf(registry, "a"), Is.EqualTo(0f).Within(Tolerance), $"t={t}");
+            }
+        }
+
+        /// <summary>
+        /// 되감기 재생이 라이브와 같은 값을 낸다 — LandingImpact를 저장 상태에 안 넣기로 한 선택의 근거다.
+        /// (스펙 §7.1) 넣지 않아도 매 틱 이동이 다시 계산하므로 같은 답이 나와야 한다.
+        /// </summary>
+        [Test]
+        public void 되감아_다시_돌려도_같은_충격이_나온다()
+        {
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            diver.Get<GameFramework.World.Transform>().Position = new Vector3(0f, 2f, 0f).ToNumerics();
+            diver.Get<Velocity>().Linear = new Vector3(0f, -Config().SpreadFallSpeed, 0f).ToNumerics();
+            registry.Add(diver);
+
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);
+            var world = World(registry, map);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);
+            world.SaveState(0);
+            world.Tick(1, 0.02f);
+            float live = ImpactOf(registry, "a");
+
+            world.LoadState(0);
+            world.Tick(1, 0.02f);
+            Assert.That(ImpactOf(registry, "a"), Is.EqualTo(live).Within(Tolerance),
+                        "재생이 라이브와 다른 충격을 냈다 — 저장 상태에서 빠뜨린 것이 있다");
+        }
+
+        /// <summary>
+        /// 스펙 §2.0. 결승선은 몸 바운드가 선을 지나면 성립하고 착지는 발이 멈춰야 성립하는데,
+        /// 대자 60m/s면 한 틱에 1.2m를 가고 몸은 1.8m라 <b>선을 먼저 넘고 한두 틱 뒤에 부딪히는</b>
+        /// 순간이 실재한다. 순서만으로는 같은 틱의 죽음밖에 못 막으므로 완주 조건에 접지를 넣는다.
+        /// </summary>
+        [Test]
+        public void 선을_넘어도_접지_전에는_완주가_아니다()
+        {
+            var registry = new EntityRegistry();
+            var diver = FinishingDiver("a");
+            //  선(윗면 y=1.5) 아래로 이미 들어와 있지만 아직 바닥(y=0)에 닿지는 않은 자리.
+            diver.Get<GameFramework.World.Transform>().Position = new Vector3(0f, 1.2f, 0f).ToNumerics();
+            diver.Get<Velocity>().Linear = new Vector3(0f, -Config().SpreadFallSpeed, 0f).ToNumerics();
+            registry.Add(diver);
+
+            //  바닥을 훨씬 아래에 둬서 이 틱엔 접지가 안 되게 한다.
+            var map = new HalfSpaceQuery();
+            map.AddGround(-100f);
+            var world = World(registry, map, finish: GroundFinishLine());
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);
+
+            Assert.IsFalse(diver.Get<GroundState>().IsGrounded, "이 테스트는 공중 상태를 재야 한다");
+            Assert.IsFalse(Finished(registry, "a"), "접지 전인데 완주로 잡혔다");
+        }
+
+        [Test]
+        public void 치명_속도로_접지하면_완주가_아니다()
+        {
+            var registry = new EntityRegistry();
+            var diver = FinishingDiver("a");
+            diver.Get<GameFramework.World.Transform>().Position = new Vector3(0f, 2f, 0f).ToNumerics();
+            diver.Get<Velocity>().Linear = new Vector3(0f, -Config().SpreadFallSpeed, 0f).ToNumerics();
+            registry.Add(diver);
+
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);
+            var world = World(registry, map, finish: GroundFinishLine());
+            world.GameplayStartTick = 0;
+
+            //  착지 틱에서 멈춘다(접지로_뒤집힌_틱에만_충격_속도가_남는다와 같은 이유) — 충격은
+            //  접지가 뒤집히는 그 한 틱만 남고 다음 틱엔 0으로 리셋된다(Task 3에서 검증됨). 죽음을
+            //  되돌리는 건 서버 전용(스펙 §7)이라 이 공유 시뮬 테스트엔 그 뒤처리가 없다 — 착지 틱을
+            //  지나 계속 돌리면 다음 틱엔 치명이 아니게 되어 완주가 잡혀 버린다(실측: 착지+1틱에
+            //  Finished=True). 이 테스트가 재려는 것은 "착지 그 순간의 게이트"이므로 거기서 멈춘다.
+            int landedAt = -1;
+            for (int t = 0; t < 10 && landedAt < 0; t++)
+            {
+                world.Tick(t, 0.02f);
+                if (diver.Get<GroundState>().IsGrounded) { landedAt = t; }
+            }
+
+            Assert.GreaterOrEqual(landedAt, 0, "열 틱 안에 닿지 않았다 — 이 테스트가 아무것도 못 쟀다");
+            Assert.IsTrue(diver.Get<GroundState>().IsGrounded, "이 테스트는 접지한 상태를 재야 한다");
+            Assert.IsFalse(Finished(registry, "a"), "치명 착지인데 완주로 잡혔다");
+        }
+
+        /// <summary>
+        /// 방지턱이다 — 결승선을 잘못 놓으면 위 두 테스트가 "완주 아님"으로 둘 다 초록이 되어
+        /// 아무것도 못 잰다.
+        /// </summary>
+        [Test]
+        public void 안전_속도로_접지하면_완주다()
+        {
+            var registry = new EntityRegistry();
+            var diver = FinishingDiver("a");
+            //  바닥 바로 위에서 활공 속도로 내려온다 — 충격이 문턱 아래다.
+            diver.Get<GameFramework.World.Transform>().Position = new Vector3(0f, 0.3f, 0f).ToNumerics();
+            diver.Get<Velocity>().Linear = new Vector3(0f, -Config().GlideFallSpeed, 0f).ToNumerics();
+            diver.Get<Posture>().Gliding = true;
+            registry.Add(diver);
+
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);
+            var world = World(registry, map, finish: GroundFinishLine());
+            world.GameplayStartTick = 0;
+
+            for (int t = 0; t < 10; t++) { world.Tick(t, 0.02f); }
+
+            Assert.IsTrue(diver.Get<GroundState>().IsGrounded);
+            Assert.IsTrue(Finished(registry, "a"), "안전하게 내려섰는데 완주가 안 됐다");
         }
 
         //  문 자세는 틱의 순수 함수라(스펙 §2.3), 그 판이 틱의 어느 지점에서 서느냐가 곧
