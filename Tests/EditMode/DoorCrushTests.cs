@@ -84,5 +84,45 @@ namespace LOP.Tests
             Body(5.39f, 99.8f, 0f, out var acrossAxis, out var acrossAxisTop);
             Assert.That(DoorGeometry.Crushes(MakeRotated(), 12, acrossAxis, acrossAxisTop, Radius), Is.False, "HalfDepth=1이라 한참 밖");
         }
+
+        // ── 물러난 패널 (굽기 검사가 쓴다) ────────────────────────────────────
+
+        [Test]
+        public void 물러난_패널은_구멍_밖의_띠를_차지한다()
+        {
+            //  openness=1이면 패널은 로컬 x [HalfWidth, 2·HalfWidth] = [5,10]으로 물러난다.
+            //  구멍 한복판(0)은 비고, 그 띠 안(7.5)은 막힌다 — 열린 문의 콜라이더가 어디
+            //  남는지가 부활 지점 검사(굽기)의 전부다.
+            Body(0f, 99.8f, 0f, out var center, out var centerTop);
+            Assert.That(DoorGeometry.PanelOverlaps(Make(), 1f, center, centerTop, Radius), Is.False, "구멍 한복판은 비어 있다");
+
+            Body(7.5f, 99.8f, 0f, out var band, out var bandTop);
+            Assert.That(DoorGeometry.PanelOverlaps(Make(), 1f, band, bandTop, Radius), Is.True, "물러난 띠 한복판");
+        }
+
+        [Test]
+        public void 물러난_패널의_문턱도_양쪽을_잰다()
+        {
+            //  띠의 바깥 끝은 x=10, 반지름 0.4라 문턱은 정확히 10.4다.
+            Body(10.41f, 99.8f, 0f, out var outside, out var outsideTop);
+            Assert.That(DoorGeometry.PanelOverlaps(Make(), 1f, outside, outsideTop, Radius), Is.False, "바깥");
+
+            Body(10.39f, 99.8f, 0f, out var inside, out var insideTop);
+            Assert.That(DoorGeometry.PanelOverlaps(Make(), 1f, inside, insideTop, Radius), Is.True, "안쪽");
+        }
+
+        [Test]
+        public void 닫힌_자세의_PanelOverlaps는_Crushes와_같은_답을_낸다()
+        {
+            //  Crushes가 이 함수를 openness 0으로 부르는 것이 전부다 — 갈라지면 굽기 검사가
+            //  런타임 판정과 다른 상자를 재게 된다.
+            Body(5.39f, 99.8f, 0f, out var inside, out var insideTop);
+            Assert.That(DoorGeometry.PanelOverlaps(Make(), 0f, inside, insideTop, Radius),
+                        Is.EqualTo(DoorGeometry.Crushes(Make(), 12, inside, insideTop, Radius)));
+
+            Body(5.41f, 99.8f, 0f, out var outside, out var outsideTop);
+            Assert.That(DoorGeometry.PanelOverlaps(Make(), 0f, outside, outsideTop, Radius),
+                        Is.EqualTo(DoorGeometry.Crushes(Make(), 12, outside, outsideTop, Radius)));
+        }
     }
 }

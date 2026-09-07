@@ -18,7 +18,9 @@ namespace LOP
     public static class SkydiveRespawn
     {
         //  같은 자리에 여러 명이 부활하면 서로 밀어낸다(캐릭터끼리는 단단한 벽이다).
-        private const float RespawnSpreadRadius = 2f;
+        //  public인 이유: 부활 지점이 문 패널과 겹치는지 재는 굽기 검사가 이 흩뿌림 반경까지
+        //  넣어야 한다 — 사본을 두면 한쪽만 바뀐다.
+        public const float SpreadRadius = 2f;
         private const int RespawnSpreadCount = 6;
 
         public static void To(GameFramework.World.Entity diver, float deathY, SkydiveConfig config,
@@ -34,7 +36,7 @@ namespace LOP
 
             float angle = spreadOrder % RespawnSpreadCount * (2f * Mathf.PI / RespawnSpreadCount);
             spreadOrder++;
-            var spread = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * RespawnSpreadRadius;
+            var spread = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * SpreadRadius;
 
             GameFramework.World.EntityMotionExtensions.Teleport(diver, basePoint + spread);
             GameFramework.World.EntityMotionExtensions.SetVelocity(diver, Vector3.zero);

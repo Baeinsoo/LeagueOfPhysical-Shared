@@ -67,6 +67,17 @@ namespace LOP
                 return false;
             }
 
+            return PanelOverlaps(door, 0f, bottom, top, radius);
+        }
+
+        /// <summary>
+        /// 이 열림 정도에서 패널이 차지한 부피와 몸이 겹치나. <see cref="Crushes"/>가 닫힌 자세로
+        /// 부르는 그 계산 그대로다 — 굽기 검사가 <b>물러난</b> 패널까지 재려면 같은 식이어야 한다.
+        /// 두 벌로 두면 보이는 상자와 재는 상자가 갈린다.
+        /// </summary>
+        public static bool PanelOverlaps(in Door door, float openness,
+                                         Vector3 bottom, Vector3 top, float radius)
+        {
             //  문이 미끄러지는 방향을 x축으로 두고 본다 — 상자가 축에 정렬돼 계산이 단순해진다.
             float c = MathF.Cos(-door.AxisAngle);
             float s = MathF.Sin(-door.AxisAngle);
@@ -81,7 +92,8 @@ namespace LOP
             for (int index = 0; index < 2; index++)
             {
                 float sign = index == 0 ? -1f : 1f;
-                float panelX = sign * halfPanel;
+                //  PanelCenter가 쓰는 것과 같은 오프셋이다.
+                float panelX = sign * (halfPanel + door.HalfWidth * openness);
 
                 float dx = MathF.Max(MathF.Abs(localX - panelX) - halfPanel, 0f);
                 float dz = MathF.Max(MathF.Abs(localZ) - door.HalfDepth, 0f);

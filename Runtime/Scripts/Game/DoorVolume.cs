@@ -126,7 +126,17 @@ namespace LOP
         {
             System.Numerics.Vector3 center = DoorGeometry.PanelCenter(door, index, openness);
             Vector3 size = new Vector3(door.HalfWidth, door.Thickness, door.HalfDepth * 2f);
-            Gizmos.DrawWireCube(center.ToUnity(), size);
+
+            //  판정 상자는 미끄러지는 축(AxisAngle)만큼 돌아가 있다. 그 회전을 안 걸고 그리면
+            //  각진 문에서 그림과 판정이 갈린다 — "배치가 곧 판정이다"가 거짓이 되는 자리다.
+            Matrix4x4 previous = Gizmos.matrix;
+            Gizmos.matrix = Matrix4x4.TRS(center.ToUnity(),
+                                          Quaternion.Euler(0f, AxisAngleDegreesOf(door), 0f),
+                                          Vector3.one);
+            Gizmos.DrawWireCube(Vector3.zero, size);
+            Gizmos.matrix = previous;
         }
+
+        private static float AxisAngleDegreesOf(in Door door) => door.AxisAngle * Mathf.Rad2Deg;
     }
 }
