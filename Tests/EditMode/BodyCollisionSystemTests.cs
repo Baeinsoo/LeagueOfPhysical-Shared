@@ -246,5 +246,25 @@ namespace LOP.Tests
             //  가로 속도 20은 세로 답에 영향을 주면 안 된다.
             Assert.AreEqual(-3.25f, VelocityOf(upper).y, Tolerance);
         }
+
+        [Test]
+        public void 대각선_충돌에서도_가로속도가_세로답을_오염시키지_않는다()
+        {
+            //  위 테스트처럼 몸이 정확히 포개어 있으면(같은 x·z) 법선이 늘 순수 세로라, 마스크를
+            //  입력에 씌우든 결과에만 씌우든 답이 똑같다 — 그래서 그 테스트만으로는 마스킹 순서를
+            //  가려낼 수 없다. 법선이 가로 성분도 갖게 하려면 세로 간격을 (1.0, 1.8) 안에 두고
+            //  가로로도 떨어뜨려야 한다. 여기서는 간격 0.7(=1.7−1.0), 가로 오프셋 0.3을 쓴다.
+            var lower = Diver("d1", Vector3.zero, Vector3.zero);
+            var upper = Diver("d2", new Vector3(0.3f, 1.7f, 0f), new Vector3(20f, -10f, 0f));
+
+            new BodyCollisionSystem(0.4f, 1.8f, 0.35f, Vector3.up)
+                .Resolve(new List<Entity> { lower, upper });
+
+            //  거리^2 = 0.3^2 + 0.7^2 = 0.58. 마스크를 입력에 먼저 씌우면 법선의 가로 성분이
+            //  지워져 세로 성분(0.7/√0.58)만 남고, upper의 가로속도 20은 계산에 전혀 관여하지
+            //  않는다: closing = -10 × (0.7/√0.58), e = 0.35이므로
+            //  final.y = -10 + (1+e) × 7/√0.58 × 0.5 × (0.7/√0.58) = -10 + 3.3075/0.58 = -997/232 ≈ -4.297414
+            Assert.AreEqual(-4.297414f, VelocityOf(upper).y, Tolerance);
+        }
     }
 }
