@@ -35,14 +35,18 @@ namespace LOP.Tests
 
             //  천장은 물리에서 유도한다(스펙 §7②의 0.3m는 *라이브 보정량* 합격선이라 여기 쓰면
             //  다른 축의 숫자를 빌려 쓰는 것이 된다). 두 월드가 갈리는 것은 낙하 가속뿐이고,
-            //  대자→다이브는 둘 다 "빨라지는" 쪽이라 차이가 FallApproach(29 m/s²)로 제한된다.
-            //  자세가 바뀐 뒤 남은 시간 t 동안 벌어질 수 있는 최대 거리 = ½ × 29 × t².
-            float divergedSeconds = (LeadTicks - PostureChangeTick) * Dt;
-            float ceiling = 0.5f * 29f * divergedSeconds * divergedSeconds;
+            //  대자→다이브는 둘 다 "빨라지는" 쪽이라 차이가 FallApproach로 제한된다.
+            //  ⚠️ 연속시간 공식(½at²)을 쓰지 않는다 — 시뮬은 매 틱 "속도를 먼저 a×dt만큼
+            //  올리고 그 새 속도로 위치를 미는" 이산 적분이라, n틱 뒤 누적 거리는
+            //  a×dt²×n(n+1)/2 다(연속시간보다 (n+1)/n배 크다). 연속시간 값을 쓰면 옳은
+            //  구현조차 이 천장에 걸려 실패한다.
+            int divergedTicks = LeadTicks - PostureChangeTick;
+            float fallApproach = Config().FallApproach;   // 하드코딩하지 않고 튜닝값을 따라간다
+            float ceiling = fallApproach * Dt * Dt * divergedTicks * (divergedTicks + 1) / 2f;
 
             TestContext.WriteLine(
                 $"자세 변경 창 {LeadTicks}틱 예측 오차: {error:F5} m (물리 천장 {ceiling:F5} m)");
-            Assert.Less(error, ceiling,
+            Assert.LessOrEqual(error, ceiling,
                 "자세 변경만으로 설명되지 않는 크기다 — 두 월드가 낙하 가속 말고 다른 데서도 갈렸다");
         }
 
@@ -137,6 +141,13 @@ namespace LOP.Tests
             //  활공 상태여야 자세 슬라이더가 먹는다(걷기·낙하에서는 대자로 되돌아간다).
             //  Posing = true로 첫 틱에 Skydiving으로 들어가게 해 둔다.
             diver.Get<InputBuffer>().Current = new InputCommand { Posture = 0f, Posing = true };
+            //  정지 상태(속도 0)에서 스폰하면 안 된다 — 세로 속도 수렴(Approach)이 "정해진
+            //  가속도로만 다가가는" 방식이라, 9틱(0.18초)으로는 종단속도 근처에도 못 가서
+            //  목표값이 자세에 따라 달라져도 두 월드가 똑같이 움직인다(오차가 항상 0으로
+            //  나와 이 테스트가 아무것도 못 잰다 — 실측으로 확인됨). 이미 대자 종단속도로
+            //  떨어지고 있던 다이버로 스폰해야 예측 월드는 그 목표에 머물고, 진실 월드는
+            //  자세가 바뀌며 목표가 옮겨가 실제로 갈라진다.
+            diver.Get<Velocity>().Linear = new Vector3(0f, -Config().SpreadFallSpeed, 0f).ToNumerics();
             registry.Add(diver);
 
             var world = World(registry);
