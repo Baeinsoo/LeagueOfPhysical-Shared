@@ -8,7 +8,8 @@ namespace LOP
     /// Skydive의 시뮬 코어. 클·서가 같은 구체 클래스를 돌려 결과가 갈리지 않게 한다.
     /// 한 틱: ① 입력을 자세로 반영(축은 정해진 속도로만 움직인다) → ② 바람에 실린다(자세가
     /// 빠르기를 정한다) → ③ 자세와 바람이 목표 속도를 정한다 → ④ 맵에 막히면 벽까지만 옮긴다
-    /// (미끄러짐·접지 판정) → ⑤ 방금 나온 접지로 스태미나 소모·회복.
+    /// (미끄러짐·접지 판정) → ⑤ 몸끼리 겹치면 밀어내고 속도를 나눈다 → ⑥ 방금 나온 접지로
+    /// 스태미나 소모·회복.
     /// </summary>
     public class SkydiveWorld : GameFramework.World.WorldBase
     {
@@ -18,6 +19,7 @@ namespace LOP
         private readonly FinishSystem _finishSystem;
         private readonly WindField _windField;
         private readonly DoorField _doorField;
+        private readonly BodyCollisionSystem _bodyCollisionSystem;
         private readonly SkydiveConfig _config;
         private readonly ICollisionQuery _collisionQuery;
         private readonly GameFramework.World.IMotionBridge _motionBridge;
@@ -48,6 +50,7 @@ namespace LOP
             FinishSystem finishSystem,
             WindField windField,
             DoorField doorField,
+            BodyCollisionSystem bodyCollisionSystem,
             SkydiveConfig config,
             ICollisionQuery collisionQuery,
             GameFramework.World.IMotionBridge motionBridge,
@@ -60,6 +63,7 @@ namespace LOP
             _finishSystem = finishSystem;
             _windField = windField;
             _doorField = doorField;
+            _bodyCollisionSystem = bodyCollisionSystem;
             _config = config;
             _collisionQuery = collisionQuery;
             _motionBridge = motionBridge;
@@ -134,9 +138,16 @@ namespace LOP
                 MoveBlockedByMap(_divers[i], deltaTime);
             }
 
+            //  이동 뒤에 푼다 — 겹침은 이동이 만든다. 앞에 두면 이동이 새로 만든 겹침이 다음
+            //  틱까지 남아, 초속 90m에서 한 틱(1.8m)만큼 몸을 뚫고 지나간 그림이 보인다.
+            //  (표준 물리엔진은 속도 교환을 이동 앞에 두지만, 그 순서는 접촉이 여러 틱 지속되는
+            //   것을 전제한다 — 우리 속도에서는 밀어내기가 겹침을 지워 충격이 아예 안 생긴다.)
+            System.Collections.Generic.HashSet<string> groundedOnBody =
+                _bodyCollisionSystem.Resolve(_divers);
+
             for (int i = 0; i < _divers.Count; i++)
             {
-                SettleGroundAndImpact(_divers[i], groundedOnBody: false);
+                SettleGroundAndImpact(_divers[i], groundedOnBody.Contains(_divers[i].Id));
             }
 
             // 이동 뒤에 온다 — "발 딛고 있나"를 이동 커널이 방금 계산했기 때문이다.

@@ -28,14 +28,18 @@ namespace LOP.Tests
                                   GameFramework.Physics.ICollisionQuery query = null,
                                   WindField wind = null,
                                   DoorField doors = null,
-                                  FinishLineBounds finish = null)
+                                  FinishLineBounds finish = null,
+                                  BodyCollisionSystem bodyCollisionSystem = null)
             => new SkydiveWorld(registry, new WorldEventBuffer(),
                                 new SkydiveMoveSystem(), new StaminaSystem(),
                                 new WindDriftSystem(),
                                 //  결승선을 안 주면 아무도 통과하지 않는다 — 대부분의 테스트가 그걸 원한다.
                                 new FinishSystem(finish ?? new FinishLineBounds(FinishAxis.Y),
                                                  FinishAxis.Y, increasing: false),
-                                wind ?? new WindField(), doors ?? new DoorField(), Config(),
+                                wind ?? new WindField(), doors ?? new DoorField(),
+                                bodyCollisionSystem ?? new BodyCollisionSystem(
+                                    Config().BodyRadius, Config().BodyHeight, Config().Restitution, Vector3.one),
+                                Config(),
                                 query ?? new HalfSpaceQuery(),
                                 new FlappyWorldFixture.NoopMotionBridge(), layerMask: ~0);
 
@@ -840,6 +844,100 @@ namespace LOP.Tests
             volume.PanelB = new GameObject("PanelB").transform;
             volume.PanelB.SetParent(root.transform, worldPositionStays: false);
             return volume;
+        }
+
+        //  "틱이 끝난 뒤" 세로 간격이 (1.0, 1.8)에 오게 하는 시작 간격. 떨어지는 속도가 다르면
+        //  한 틱에 좁혀지는 양도 달라서 값이 둘이다 — 초속 60이면 1.2m, 6이면 0.12m를 간다.
+        const float HardSpawnGap = 2.6f;   // 1.2m 좁혀져 ≈1.41
+        const float SoftSpawnGap = 1.6f;   // 0.12m 좁혀져 ≈1.49
+
+        static Entity DiverAt(string id, float x, float y)
+        {
+            var e = Diver(id);
+            e.Get<GameFramework.World.Transform>().Position = new Vector3(x, y, 0f).ToNumerics();
+            return e;
+        }
+
+        //  예외 분기(간격 ≤ 1.0에서 거리 0 → 규칙으로 정한 법선)로 통과하지 않았음을 못 박는다.
+        static void AssertVerticalContact(EntityRegistry r, string lowerId, string upperId)
+        {
+            float gap = HeightOf(r, upperId) - HeightOf(r, lowerId);
+            Assert.Greater(gap, 1.0f,
+                $"세로 간격 {gap:F3}은 심 선분이 겹치는 구간이라 접촉 법선이 기하가 아니라 " +
+                "규칙으로 정해진다 — 이 테스트는 판별을 시험하지 못한다");
+        }
+
+        [Test]
+        public void 남의_머리에_세게_떨어지면_죽을_속도가_기록된다()
+        {
+            var registry = new EntityRegistry();
+            registry.Add(DiverAt("a", 0f, 1000f));
+            var upper = DiverAt("b", 0f, 1000f + HardSpawnGap);
+            upper.Get<Velocity>().Linear = new Vector3(0f, -60f, 0f).ToNumerics();
+            registry.Add(upper);
+
+            var world = World(registry);   // 면이 없는 하늘 — 맵 접지가 섞이지 않는다
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);
+
+            AssertVerticalContact(registry, "a", "b");
+            Assert.Greater(ImpactOf(registry, "b"), 15f);
+        }
+
+        [Test]
+        public void 남의_머리에_살살_내려오면_서고_죽지_않는다()
+        {
+            var registry = new EntityRegistry();
+            registry.Add(DiverAt("a", 0f, 1000f));
+            var upper = DiverAt("b", 0f, 1000f + SoftSpawnGap);
+            upper.Get<Velocity>().Linear = new Vector3(0f, -6f, 0f).ToNumerics();
+            registry.Add(upper);
+
+            var world = World(registry);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);
+
+            AssertVerticalContact(registry, "a", "b");
+            Assert.IsTrue(registry.Get("b").Get<GroundState>().IsGrounded);
+            Assert.LessOrEqual(ImpactOf(registry, "b"), 15f);
+        }
+
+        [Test]
+        public void 옆으로_부딪히면_접지도_충격도_없다()
+        {
+            var registry = new EntityRegistry();
+            registry.Add(DiverAt("a", 0f, 1000f));
+            registry.Add(DiverAt("b", 0.5f, 1000f));
+
+            var world = World(registry);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);
+
+            Assert.IsFalse(registry.Get("a").Get<GroundState>().IsGrounded);
+            Assert.IsFalse(registry.Get("b").Get<GroundState>().IsGrounded);
+            Assert.AreEqual(0f, ImpactOf(registry, "a"), 1e-4f);
+            Assert.AreEqual(0f, ImpactOf(registry, "b"), 1e-4f);
+        }
+
+        [Test]
+        public void 몸이_서로_통과하지_않는다()
+        {
+            var registry = new EntityRegistry();
+            registry.Add(DiverAt("a", 0f, 1000f));
+            registry.Add(DiverAt("b", 0.3f, 1000f));
+
+            var world = World(registry);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);
+
+            Vector3 pa = registry.Get("a").Get<GameFramework.World.Transform>().Position.ToUnity();
+            Vector3 pb = registry.Get("b").Get<GameFramework.World.Transform>().Position.ToUnity();
+            float horizontal = new Vector2(pb.x - pa.x, pb.z - pa.z).magnitude;
+            Assert.GreaterOrEqual(horizontal, 0.79f);   // 지름 0.8 − 허용 겹침 0.01
         }
 
         //  결과가 아니라 질의 시점의 상태를 적어 둔다 — 재려는 것이 "언제"이기 때문이다.
