@@ -1,0 +1,147 @@
+using GameFramework;
+using GameFramework.World;
+using NUnit.Framework;
+using UnityEngine;
+
+namespace LOP.Tests
+{
+    /// <summary>
+    /// 남을 "하던 자세를 계속한다"로 두고 굴렸을 때 9틱(≈180ms) 뒤에 얼마나 어긋나나.
+    /// 자세를 바꾼 창이 이 설계의 진짜 위험이라 두 경우를 나눠 잰다.
+    ///
+    /// <para>왜 이 테스트가 있나: 몸싸움 설계 전체가 "남의 자세는 유지된다고 보고 굴려도 된다"는
+    /// 가정 위에 서 있다. 같은 자리에서 Flappy Race는 실패했다(날갯짓은 순간의 사건이라 예측할
+    /// 방법이 없다). 스카이다이브는 자세가 지속되는 값이라 성립한다는 것이 <b>근거이지 결론이
+    /// 아니라서</b> 숫자로 남긴다.</para>
+    /// </summary>
+    public class SkydiveRemotePredictionErrorTests
+    {
+        const int LeadTicks = 9;          // ≈180ms — 클라가 서버보다 앞서는 대략의 폭
+        const int PostureChangeTick = 4;  // 그 창 한가운데서 자세가 바뀐다
+        const float Dt = 0.02f;
+
+        [Test]
+        public void 자세를_안_바꾸면_9틱_예측이_거의_정확하다()
+        {
+            float error = PredictionError(changePostureMidway: false);
+            Assert.Less(error, 1e-3f,
+                $"자세 유지 창에서 {error:F5}m 어긋났다 — 두 월드가 같은 규칙을 안 돌렸다는 뜻");
+        }
+
+        [Test]
+        public void 자세를_바꾼_창의_오차가_물리가_허용하는_한계_안에_있다()
+        {
+            float error = PredictionError(changePostureMidway: true);
+
+            //  천장은 물리에서 유도한다(스펙 §7②의 0.3m는 *라이브 보정량* 합격선이라 여기 쓰면
+            //  다른 축의 숫자를 빌려 쓰는 것이 된다). 두 월드가 갈리는 것은 낙하 가속뿐이고,
+            //  대자→다이브는 둘 다 "빨라지는" 쪽이라 차이가 FallApproach(29 m/s²)로 제한된다.
+            //  자세가 바뀐 뒤 남은 시간 t 동안 벌어질 수 있는 최대 거리 = ½ × 29 × t².
+            float divergedSeconds = (LeadTicks - PostureChangeTick) * Dt;
+            float ceiling = 0.5f * 29f * divergedSeconds * divergedSeconds;
+
+            TestContext.WriteLine(
+                $"자세 변경 창 {LeadTicks}틱 예측 오차: {error:F5} m (물리 천장 {ceiling:F5} m)");
+            Assert.Less(error, ceiling,
+                "자세 변경만으로 설명되지 않는 크기다 — 두 월드가 낙하 가속 말고 다른 데서도 갈렸다");
+        }
+
+        //  진실 = 자세 입력이 바뀐 월드. 예측 = 그 입력을 못 받아 "하던 자세"로 계속 구른 월드.
+        //  둘을 같은 틱 수만큼 굴려 위치 차이를 잰다.
+        static float PredictionError(bool changePostureMidway)
+        {
+            var truth = Spawn(out Entity truthDiver);
+            var predicted = Spawn(out Entity predictedDiver);
+
+            Vector3 start = truthDiver.Get<GameFramework.World.Transform>().Position.ToUnity();
+
+            for (int t = 0; t < LeadTicks; t++)
+            {
+                //  예측 월드는 입력을 못 받는다 — Current를 그대로 두는 것이 곧
+                //  "하던 자세를 계속한다"다(ApplyPostureInput이 마지막 명령을 계속 읽는다).
+                if (changePostureMidway && t == PostureChangeTick)
+                {
+                    truthDiver.Get<InputBuffer>().Current =
+                        new InputCommand { Posture = 1f, Posing = true };   // 대자 → 다이브
+                }
+                truth.Tick(t, Dt);
+                predicted.Tick(t, Dt);
+            }
+
+            Vector3 truthEnd = truthDiver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Vector3 predictedEnd = predictedDiver.Get<GameFramework.World.Transform>().Position.ToUnity();
+
+            //  스텁이 월드를 얼어붙게 만든 적이 있다(HalfSpaceQuery가 늘 None을 돌려주던 사고).
+            //  안 움직였는데 "오차 0"으로 통과하는 것을 막는다.
+            Assert.AreNotEqual(start, truthEnd, "월드가 움직이지 않았다 — 스텁이 막고 있다");
+
+            return Vector3.Distance(truthEnd, predictedEnd);
+        }
+
+        static SkydiveConfig Config()
+            => new SkydiveConfig(
+                spreadFallSpeed: 60f, diveFallSpeed: 90f, glideFallSpeed: 6f,
+                spreadMoveSpeed: 12f, diveMoveSpeed: 9f, glideMoveSpeed: 14f,
+                spreadTurnAccel: 22f, diveTurnAccel: 6f, glideTurnAccel: 18f,
+                fallApproach: 29f, postureRate: 4f,
+                bodyRadius: 0.4f, bodyHeight: 1.8f, groundY: 0f,
+                staminaMax: 100f, glideDrain: 20f, groundRecover: 40f, emergencyGlideTime: 1f,
+                groundMoveSpeed: 4f, groundAccel: 100f, jumpPower: 11f, poseClearance: 5f, fallBrake: 150f,
+                glideWindLag: 0.2f, spreadWindLag: 2.06f, diveWindLag: 3.1f,
+                landingLethalSpeed: 15f,
+                restitution: 0.35f);
+
+        // 기본 맵은 면이 하나도 없는 하늘이다(HalfSpaceQuery에 면을 안 넣으면 늘 CollisionHit.None).
+        static SkydiveWorld World(EntityRegistry registry,
+                                  GameFramework.Physics.ICollisionQuery query = null,
+                                  WindField wind = null,
+                                  DoorField doors = null,
+                                  FinishLineBounds finish = null,
+                                  BodyCollisionSystem bodyCollisionSystem = null)
+            => new SkydiveWorld(registry, new WorldEventBuffer(),
+                                new SkydiveMoveSystem(), new StaminaSystem(),
+                                new WindDriftSystem(),
+                                //  결승선을 안 주면 아무도 통과하지 않는다 — 대부분의 테스트가 그걸 원한다.
+                                new FinishSystem(finish ?? new FinishLineBounds(FinishAxis.Y),
+                                                 FinishAxis.Y, increasing: false),
+                                wind ?? new WindField(), doors ?? new DoorField(),
+                                bodyCollisionSystem ?? new BodyCollisionSystem(
+                                    Config().BodyRadius, Config().BodyHeight, Config().Restitution, Vector3.one),
+                                Config(),
+                                query ?? new HalfSpaceQuery(),
+                                new FlappyWorldFixture.NoopMotionBridge(), layerMask: ~0);
+
+        static Entity Diver(string id, bool simulated = true, EntityType kind = EntityType.Character)
+        {
+            var e = new Entity(id);
+            e.Add(new GameFramework.World.Transform { Position = new Vector3(0f, 1000f, 0f).ToNumerics() });
+            e.Add(new Velocity());
+            e.Add(new EntityKind(kind));
+            e.Add(new Posture());
+            e.Add(new Stamina { Current = 100f });
+            e.Add(new InputBuffer());
+            e.Add(new GroundState());   // 이동 커널이 매 틱 접지 여부를 여기 적는다
+            e.Add(new LandingImpact());   // 이동이 매 틱 착지 충격을 여기 적는다
+            e.Add(new MotionState());
+            e.Add(new WindDrift());
+            if (simulated) { e.Add(new Simulated()); }
+            return e;
+        }
+
+        //  두 월드를 완전히 같은 초기 상태로 세운다. 하늘(면 없는 HalfSpaceQuery)이라
+        //  맵 접지가 끼어들지 않고, 낙하 물리만 남아 오차의 출처가 하나가 된다.
+        static SkydiveWorld Spawn(out Entity diver)
+        {
+            var registry = new EntityRegistry();
+            diver = Diver("a");
+            //  활공 상태여야 자세 슬라이더가 먹는다(걷기·낙하에서는 대자로 되돌아간다).
+            //  Posing = true로 첫 틱에 Skydiving으로 들어가게 해 둔다.
+            diver.Get<InputBuffer>().Current = new InputCommand { Posture = 0f, Posing = true };
+            registry.Add(diver);
+
+            var world = World(registry);
+            world.GameplayStartTick = 0;
+            return world;
+        }
+    }
+}
