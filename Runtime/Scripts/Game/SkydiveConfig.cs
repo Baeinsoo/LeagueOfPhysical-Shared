@@ -87,6 +87,12 @@ namespace LOP
         /// 작으면 점프 착지가 죽는다.</summary>
         public readonly float LandingLethalSpeed;
 
+        /// <summary>
+        /// 몸끼리 부딪혔을 때 얼마나 튕기나(0~1). 사람 몸은 잘 안 튕겨서 0.35다 —
+        /// 맞부딪히면 날아가기보다 밀리며 엉킨다.
+        /// </summary>
+        public readonly float Restitution;
+
         public SkydiveConfig(
             float spreadFallSpeed, float diveFallSpeed, float glideFallSpeed,
             float spreadMoveSpeed, float diveMoveSpeed, float glideMoveSpeed,
@@ -96,7 +102,8 @@ namespace LOP
             float staminaMax, float glideDrain, float groundRecover, float emergencyGlideTime,
             float groundMoveSpeed, float groundAccel, float jumpPower, float poseClearance, float fallBrake,
             float glideWindLag, float spreadWindLag, float diveWindLag,
-            float landingLethalSpeed)
+            float landingLethalSpeed,
+            float restitution)
         {
             SpreadFallSpeed = spreadFallSpeed;
             DiveFallSpeed = diveFallSpeed;
@@ -125,6 +132,7 @@ namespace LOP
             SpreadWindLag = spreadWindLag;
             DiveWindLag = diveWindLag;
             LandingLethalSpeed = landingLethalSpeed;
+            Restitution = restitution;
         }
     }
 }

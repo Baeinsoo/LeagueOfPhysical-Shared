@@ -17,7 +17,8 @@ namespace LOP.Tests
                 staminaMax: 100f, glideDrain: 20f, groundRecover: 40f, emergencyGlideTime: 1f,
                 groundMoveSpeed: 4f, groundAccel: 100f, jumpPower: 11f, poseClearance: 5f, fallBrake: 150f,
                 glideWindLag: 0.2f, spreadWindLag: 2.06f, diveWindLag: 3.1f,
-                landingLethalSpeed: 15f);
+                landingLethalSpeed: 15f,
+                restitution: 0.35f);
 
         static Entity Diver(float stamina, bool gliding)
         {
