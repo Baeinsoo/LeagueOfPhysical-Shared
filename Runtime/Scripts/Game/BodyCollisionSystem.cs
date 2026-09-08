@@ -54,7 +54,10 @@ namespace LOP
         /// 부르는 쪽은 <b>모두의 속도가 정해진 뒤</b> 한 번만 부르고, 목록을 엔티티 id 순으로 세워
         /// 넘긴다 — 푸는 순서가 클·서에서 같아야 두 쪽이 같은 결과에 이른다.
         /// </summary>
-        /// <returns>아래로 남에게 닿은 엔티티 id — 부르는 쪽이 접지로 쓴다.</returns>
+        /// <returns>
+        /// 아래로 남에게 닿은 엔티티 id — 부르는 쪽이 접지로 쓴다.
+        /// 이 컬렉션은 다음 호출에서 비워져 다시 쓰인다 — 오래 들고 있어야 하면 복사할 것.
+        /// </returns>
         public HashSet<string> Resolve(IReadOnlyList<GameFramework.World.Entity> birds)
         {
             groundedOnBody.Clear();
@@ -79,7 +82,10 @@ namespace LOP
         /// <see cref="Resolve(IReadOnlyList{GameFramework.World.Entity})"/>와 완전히 같은 일을 한다
         /// — 그래서 서버 동작은 지금과 같다.
         /// </summary>
-        /// <returns>아래로 남에게 닿은 엔티티 id — 부르는 쪽이 접지로 쓴다.</returns>
+        /// <returns>
+        /// 아래로 남에게 닿은 엔티티 id — 부르는 쪽이 접지로 쓴다.
+        /// 이 컬렉션은 다음 호출에서 비워져 다시 쓰인다 — 오래 들고 있어야 하면 복사할 것.
+        /// </returns>
         public HashSet<string> Resolve(IReadOnlyList<GameFramework.World.Entity> movers, IReadOnlyList<GameFramework.World.Entity> bodies)
         {
             groundedOnBody.Clear();
