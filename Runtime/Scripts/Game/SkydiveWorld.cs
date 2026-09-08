@@ -26,6 +26,14 @@ namespace LOP
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
         private readonly List<GameFramework.World.Entity> _divers = new List<GameFramework.World.Entity>();
 
+        //  이동이 속도와 접지를 덮어쓰기 전에 찍어 두는 값. 착지 판정이 "직전에 안 닿았는데
+        //  지금 닿았나"를 물어야 해서 필요하다.
+        private readonly Dictionary<string, (float downward, bool grounded)> _beforeMove
+            = new Dictionary<string, (float, bool)>();
+
+        //  이번 틱에 맵에 닿았나. 사람에 닿았나와 합쳐 최종 접지를 정한다.
+        private readonly Dictionary<string, bool> _mapGrounded = new Dictionary<string, bool>();
+
 
         // 자세·스태미나의 틱별 사진. 위치·속도는 WorldBase가 담는다.
         private readonly GameFramework.Netcode.SequenceBuffer<Dictionary<string, SkydiveSavedState>> _gameFrames
@@ -107,10 +115,28 @@ namespace LOP
                 ClearVelocityIntoSurface(_divers[i], _motionBridge.Depenetrate(_divers[i]));
             }
 
+            //  이동이 속도와 접지를 덮기 전에 찍어 둔다.
+            _beforeMove.Clear();
+            _mapGrounded.Clear();
+            for (int i = 0; i < _divers.Count; i++)
+            {
+                var diver = _divers[i];
+                var velocity = diver.Get<GameFramework.World.Velocity>();
+                var groundState = diver.Get<GameFramework.World.GroundState>();
+                _beforeMove[diver.Id] = (
+                    velocity != null ? -velocity.Linear.Y : 0f,   // 아래로 갈 때 양수
+                    groundState != null && groundState.IsGrounded);
+            }
+
             // 속도가 전원 다 정해진 뒤에 옮긴다 — 슬라이스 6의 몸싸움이 이 사이에 들어온다(스펙 §5).
             for (int i = 0; i < _divers.Count; i++)
             {
                 MoveBlockedByMap(_divers[i], deltaTime);
+            }
+
+            for (int i = 0; i < _divers.Count; i++)
+            {
+                SettleGroundAndImpact(_divers[i], groundedOnBody: false);
             }
 
             // 이동 뒤에 온다 — "발 딛고 있나"를 이동 커널이 방금 계산했기 때문이다.
@@ -177,11 +203,6 @@ namespace LOP
                 return;
             }
 
-            var groundState = entity.Get<GameFramework.World.GroundState>();
-            //  이동이 속도를 지우기 전에 읽어 둔다. 아래로 갈 때 양수가 되게 부호를 뒤집는다.
-            float downwardBeforeMove = -velocity.Linear.Y;
-            bool wasGrounded = groundState != null && groundState.IsGrounded;
-
             //  떨어지는 몸은 턱을 오를 일이 없다. 0을 주면 막혔을 때의 추가 sweep 3발도 안 쏜다.
             var result = KinematicMover.Move(new KinematicMoveInput(
                 transform.Position.ToUnity(), velocity.Linear.ToUnity(),
@@ -193,19 +214,29 @@ namespace LOP
             // 옛 속도 위에 계속 쌓인다(KinematicMoveSystem과 같은 관례).
             velocity.Linear = result.velocity.ToNumerics();
 
+            _mapGrounded[entity.Id] = result.grounded;
+        }
+
+        //  닿는 대상이 맵과 사람 둘이라 판단을 이동 밖으로 뺐다. 접지의 유일한 writer다.
+        private void SettleGroundAndImpact(GameFramework.World.Entity diver, bool groundedOnBody)
+        {
+            bool grounded = (_mapGrounded.TryGetValue(diver.Id, out bool onMap) && onMap) || groundedOnBody;
+
+            var groundState = diver.Get<GameFramework.World.GroundState>();
             if (groundState != null)
             {
-                groundState.IsGrounded = result.grounded;
+                groundState.IsGrounded = grounded;
             }
 
-            var impact = entity.Get<LandingImpact>();
-            if (impact != null)
+            var impact = diver.Get<LandingImpact>();
+            if (impact == null || _beforeMove.TryGetValue(diver.Id, out var before) == false)
             {
-                //  "닿은 순간"만 남긴다. 서 있는 동안 값이 남아 있으면 다음 틱에 또 죽는다.
-                impact.DownwardSpeed = (wasGrounded == false && result.grounded && downwardBeforeMove > 0f)
-                    ? downwardBeforeMove
-                    : 0f;
+                return;
             }
+            //  "닿은 순간"만 남긴다. 서 있는 동안 값이 남아 있으면 다음 틱에 또 죽는다.
+            impact.DownwardSpeed = (before.grounded == false && grounded && before.downward > 0f)
+                ? before.downward
+                : 0f;
         }
 
         // 입력이 자세를 바로 덮어쓰지 않는다 — 정해진 속도로만 움직인다. 그래야 자세가
