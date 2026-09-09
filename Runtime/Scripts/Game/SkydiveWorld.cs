@@ -28,10 +28,14 @@ namespace LOP
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
         private readonly List<GameFramework.World.Entity> _divers = new List<GameFramework.World.Entity>();
 
-        //  이동이 속도와 접지를 덮어쓰기 전에 찍어 두는 값. 착지 판정이 "직전에 안 닿았는데
-        //  지금 닿았나"를 물어야 해서 필요하다.
-        private readonly Dictionary<string, (float downward, bool grounded)> _beforeMove
-            = new Dictionary<string, (float, bool)>();
+        //  이동이 속도·접지·자리를 덮어쓰기 전에 찍어 두는 값. 착지 판정이 "직전에 안 닿았는데
+        //  지금 닿았나"를 물어야 하고, 몸싸움이 "틱 안에서 언제 처음 닿았나"를 되짚으려면 이동 전
+        //  자리가 있어야 한다. 매 틱 다시 채우는 계산용 메모라 저장/복원에는 넣지 않는다.
+        private readonly Dictionary<string, (float downward, bool grounded, UnityEngine.Vector3 position)> _beforeMove
+            = new Dictionary<string, (float, bool, UnityEngine.Vector3)>();
+
+        //  매 틱 클로저를 새로 만들지 않도록 한 번만 묶어 둔다.
+        private readonly BodyCollisionSystem.BeforePositionLookup _beforePositionLookup;
 
         //  이번 틱에 맵에 닿았나. 사람에 닿았나와 합쳐 최종 접지를 정한다.
         private readonly Dictionary<string, bool> _mapGrounded = new Dictionary<string, bool>();
@@ -68,6 +72,18 @@ namespace LOP
             _collisionQuery = collisionQuery;
             _motionBridge = motionBridge;
             _layerMask = layerMask;
+            _beforePositionLookup = TryGetBeforeMovePosition;
+        }
+
+        private bool TryGetBeforeMovePosition(string entityId, out UnityEngine.Vector3 position)
+        {
+            if (_beforeMove.TryGetValue(entityId, out var before))
+            {
+                position = before.position;
+                return true;
+            }
+            position = default;
+            return false;
         }
 
         protected override void Mutation(long tick, float deltaTime)
@@ -127,12 +143,15 @@ namespace LOP
                 var diver = _divers[i];
                 var velocity = diver.Get<GameFramework.World.Velocity>();
                 var groundState = diver.Get<GameFramework.World.GroundState>();
+                var transform = diver.Get<GameFramework.World.Transform>();
                 _beforeMove[diver.Id] = (
                     velocity != null ? -velocity.Linear.Y : 0f,   // 아래로 갈 때 양수
-                    groundState != null && groundState.IsGrounded);
+                    groundState != null && groundState.IsGrounded,
+                    transform != null ? transform.Position.ToUnity() : UnityEngine.Vector3.zero);
             }
 
-            // 속도가 전원 다 정해진 뒤에 옮긴다 — 슬라이스 6의 몸싸움이 이 사이에 들어온다(스펙 §5).
+            // 속도가 전원 다 정해진 뒤에 옮긴다. 몸싸움은 이 뒤에 온다(바로 아래) — 겹침을 만드는
+            // 것이 이 이동이라 그 앞에 두면 한 틱 늦게 푼다.
             for (int i = 0; i < _divers.Count; i++)
             {
                 MoveBlockedByMap(_divers[i], deltaTime);
@@ -142,8 +161,10 @@ namespace LOP
             //  틱까지 남아, 초속 90m에서 한 틱(1.8m)만큼 몸을 뚫고 지나간 그림이 보인다.
             //  (표준 물리엔진은 속도 교환을 이동 앞에 두지만, 그 순서는 접촉이 여러 틱 지속되는
             //   것을 전제한다 — 우리 속도에서는 밀어내기가 겹침을 지워 충격이 아예 안 생긴다.)
+            //  이동 전 자리를 함께 넘긴다 — 빠른 밟기는 틱이 끝난 모습만 보면 이미 깊이 파고든
+            //  뒤라 접촉 방향이 옆으로 나온다(BodySweep 참고).
             System.Collections.Generic.HashSet<string> groundedOnBody =
-                _bodyCollisionSystem.Resolve(_divers);
+                _bodyCollisionSystem.Resolve(_divers, _beforePositionLookup);
 
             for (int i = 0; i < _divers.Count; i++)
             {

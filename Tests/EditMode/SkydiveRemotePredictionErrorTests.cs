@@ -54,7 +54,17 @@ namespace LOP.Tests
             Assert.Greater(error, ceiling * 0.5f,
                 $"오차 {error:F5}m가 낙하 가속 한계 {ceiling:F5}m의 절반에도 못 미친다 — " +
                 "자세 변경이 낙하 속도에 영향을 주지 못하는 상태다(테스트가 아무것도 재지 못하고 있다)");
-            Assert.LessOrEqual(error, ceiling,
+            //  ⚠️ 이 천장은 <b>느슨한 상한이 아니라 실제로 닿는 값</b>이다. 자세 슬라이더가 창 내내
+            //  올라가는 동안 목표 낙하 속도가 계속 앞서 도망가서, 진실 월드는 다섯 틱 전부를 최대
+            //  가속(FallApproach)으로 떨어진다 — 그래서 오차가 천장과 <b>같아진다</b>. 부등호가 딱
+            //  등호 자리에 서 있으므로 마지막 자리 반올림이 합격/불합격을 가른다. 아래 여유는
+            //  <b>여유를 사려고</b> 천장을 늘린 것이 아니라 float32 잡음 몫이다: 위치가 ≈11 m
+            //  근처라 한 눈금이 ≈1e-6 m이고, 아홉 틱을 누적해도 그 몇 배다. 반대로 "낙하 가속
+            //  말고 다른 것이 끼었다"면 그 크기는 cm 단위라 이 여유로는 절대 못 숨는다.
+            //  (y=1000에서 재던 시절에는 눈금이 ≈6.1e-5 m라 이 등호가 우연히 "0.17395 < 0.17400"으로
+            //   보였다 — 그때의 초록은 실측이 아니라 반올림이었다.)
+            const float FloatNoise = 1e-5f;
+            Assert.LessOrEqual(error, ceiling + FloatNoise,
                 "자세 변경만으로 설명되지 않는 크기다 — 두 월드가 낙하 가속 말고 다른 데서도 갈렸다");
         }
 
@@ -123,10 +133,16 @@ namespace LOP.Tests
                                 query ?? new HalfSpaceQuery(),
                                 new FlappyWorldFixture.NoopMotionBridge(), layerMask: ~0);
 
+        //  고도는 이 테스트와 무관하지만(하늘에 지면이 없다) <b>정밀도</b>에는 상관이 있다.
+        //  float32는 값이 클수록 눈금이 굵어져서, y=1000에서는 한 눈금이 ≈6.1e-5 m다 — 아래
+        //  천장과 실측값 사이 여유(≈5e-5 m)보다 굵다. 즉 높은 데서 재면 합격/불합격이 반올림
+        //  자리에서 갈린다. 원점 근처에서 재면 눈금이 ≈1e-6 m로 줄어 여유가 눈금의 수십 배가 된다.
+        const float SpawnY = 0f;
+
         static Entity Diver(string id, bool simulated = true, EntityType kind = EntityType.Character)
         {
             var e = new Entity(id);
-            e.Add(new GameFramework.World.Transform { Position = new Vector3(0f, 1000f, 0f).ToNumerics() });
+            e.Add(new GameFramework.World.Transform { Position = new Vector3(0f, SpawnY, 0f).ToNumerics() });
             e.Add(new Velocity());
             e.Add(new EntityKind(kind));
             e.Add(new Posture());

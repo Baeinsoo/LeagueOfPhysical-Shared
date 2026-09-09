@@ -12,6 +12,14 @@ namespace LOP
     /// <para>게임 비종속이다 — 몸 규격과 반발계수를 숫자로 받는다. 값을 어디서 얻는지는 각 게임의
     /// LifetimeScope가 정한다.</para>
     ///
+    /// <para><b>접촉 방향은 "처음 닿은 순간"에서 가져온다:</b> 부르는 쪽이 이동 전 자리를 알려주면
+    /// (<see cref="BeforePositionLookup"/>) <see cref="BodySweep"/>이 틱 안에서 둘이 처음 닿은
+    /// 시각을 찾아 그때의 방향을 쓴다. 틱 끝 모습만 보면 빠른 밟기는 이미 깊이 파고든 뒤라 방향이
+    /// <b>옆</b>으로 나와, 머리를 밟았는데 접지도 세로 속도 교환도 없던 일이 된다. 자리와 속도를
+    /// 푸는 것은 그래도 <b>틱 끝 모습</b>에서 한다 — 충돌 시각으로 되돌리면 이미 끝난 맵 이동과
+    /// 싸우게 되고 몸을 벽 속으로 밀어 넣을 수 있다. 알려주지 않으면(null) 예전처럼 틱 끝
+    /// 모습에서 방향을 구한다.</para>
+    ///
     /// <para><b>축 마스크:</b> 어느 축으로 밀릴 수 있는지는 <c>axisMask</c>(성분별 0 또는 1)로 정한다.
     /// 전진 속도가 상수라 세로만 손댈 수 있던 게임(Flappy Race)은 <c>Vector3.up</c>, 전 축으로
     /// 밀리는 게임(Skydive)은 <c>Vector3.one</c>을 준다. 짝 순회·id 순서·절반씩 밀기·"양쪽 속도를
@@ -19,6 +27,14 @@ namespace LOP
     /// </summary>
     public class BodyCollisionSystem
     {
+        /// <summary>
+        /// 엔티티의 <b>이동 전</b> 자리를 물어보는 창구. 없는 id면 false — 그 짝은 틱 끝 모습에서
+        /// 방향을 구한다. 사전(Dictionary)이 아니라 창구로 받는 이유는, 부르는 쪽이 이미 다른
+        /// 용도로 들고 있는 틱별 기록을 <b>그대로</b> 넘길 수 있게 하기 위해서다(같은 값을 담은
+        /// 두 번째 사전을 매 틱 새로 만들지 않는다).
+        /// </summary>
+        public delegate bool BeforePositionLookup(string entityId, out Vector3 position);
+
         /// <summary>허용 겹침. 딱 붙는 지점까지 밀어내면 다음 틱에 또 파고들어 떤다.</summary>
         private const float Slop = 0.01f;
 
@@ -58,14 +74,15 @@ namespace LOP
         /// 아래로 남에게 닿은 엔티티 id — 부르는 쪽이 접지로 쓴다.
         /// 이 컬렉션은 다음 호출에서 비워져 다시 쓰인다 — 오래 들고 있어야 하면 복사할 것.
         /// </returns>
-        public HashSet<string> Resolve(IReadOnlyList<GameFramework.World.Entity> birds)
+        public HashSet<string> Resolve(IReadOnlyList<GameFramework.World.Entity> birds,
+                                       BeforePositionLookup beforePosition = null)
         {
             groundedOnBody.Clear();
             for (int i = 0; i < birds.Count; i++)
             {
                 for (int j = i + 1; j < birds.Count; j++)
                 {
-                    ResolvePair(birds[i], birds[j]);
+                    ResolvePair(birds[i], birds[j], beforePosition);
                 }
             }
             return groundedOnBody;
@@ -86,7 +103,9 @@ namespace LOP
         /// 아래로 남에게 닿은 엔티티 id — 부르는 쪽이 접지로 쓴다.
         /// 이 컬렉션은 다음 호출에서 비워져 다시 쓰인다 — 오래 들고 있어야 하면 복사할 것.
         /// </returns>
-        public HashSet<string> Resolve(IReadOnlyList<GameFramework.World.Entity> movers, IReadOnlyList<GameFramework.World.Entity> bodies)
+        public HashSet<string> Resolve(IReadOnlyList<GameFramework.World.Entity> movers,
+                                       IReadOnlyList<GameFramework.World.Entity> bodies,
+                                       BeforePositionLookup beforePosition = null)
         {
             groundedOnBody.Clear();
 
@@ -95,7 +114,7 @@ namespace LOP
             {
                 for (int j = i + 1; j < movers.Count; j++)
                 {
-                    ResolvePair(movers[i], movers[j]);
+                    ResolvePair(movers[i], movers[j], beforePosition);
                 }
             }
 
@@ -111,7 +130,7 @@ namespace LOP
                     {
                         continue;
                     }
-                    ResolveOneSided(movers[i], body);
+                    ResolveOneSided(movers[i], body, beforePosition);
                 }
             }
 
@@ -130,7 +149,8 @@ namespace LOP
             return false;
         }
 
-        private void ResolvePair(GameFramework.World.Entity a, GameFramework.World.Entity b)
+        private void ResolvePair(GameFramework.World.Entity a, GameFramework.World.Entity b,
+                                 BeforePositionLookup beforePosition)
         {
             var transformA = a.Get<GameFramework.World.Transform>();
             var transformB = b.Get<GameFramework.World.Transform>();
@@ -148,6 +168,7 @@ namespace LOP
             {
                 return;
             }
+            pushDir = ContactNormal(a, b, positionA, positionB, pushDir, beforePosition);
 
             // 절반씩 — 양쪽을 합쳐야 완전히 떨어진다.
             float half = Mathf.Max(depth - Slop, 0f) * 0.5f;
@@ -166,6 +187,29 @@ namespace LOP
             if (pushDir.y < 0f) { groundedOnBody.Add(b.Id); }
         }
 
+        //  이동 전 자리를 알면 "처음 닿은 순간"의 방향을 쓴다. 틱 끝 모습에서 구한 방향은 깊이
+        //  파고든 접촉에서 옆을 가리켜, 위에서 밟았는데도 옆으로 밀려나고 접지가 없던 일이 된다.
+        //  밀어내는 <b>양</b>(depth)은 틱 끝 모습 그대로 둔다 — 그 값은 "가장 짧게 떼어내는 거리"라
+        //  다른 방향으로 쓰면 덜 떼어낼 뿐 더 떼어내지는 않는다(과잉 분리로 튀지 않는다).
+        private Vector3 ContactNormal(GameFramework.World.Entity a, GameFramework.World.Entity b,
+                                      Vector3 endA, Vector3 endB, Vector3 endPushDir,
+                                      BeforePositionLookup beforePosition)
+        {
+            if (beforePosition == null
+                || beforePosition(a.Id, out Vector3 fromA) == false
+                || beforePosition(b.Id, out Vector3 fromB) == false)
+            {
+                return endPushDir;
+            }
+
+            //  결론을 못 낸 접촉(스쳐 지나가는 짝은 수렴이 느리다)은 버리지 않고 틱 끝 방향으로
+            //  물러선다 — 버리면 몸이 그냥 통과해 버려서, 방향이 덜 정확한 것보다 나쁘다.
+            return BodySweep.TryContactNormal(fromA, endA, fromB, endB, bodyRadius, bodyHeight,
+                                              out Vector3 swept, out _)
+                ? swept
+                : endPushDir;
+        }
+
         // 제한된 축은 원래 값을 그대로 남긴다. 마스크를 입력에 씌우는 이유는 클래스 주석 참고.
         private Vector3 Exchange(Vector3 vSelf, Vector3 vOther, Vector3 normal)
         {
@@ -182,7 +226,8 @@ namespace LOP
         // 서버보다 절반만큼 앞서 나가고, 새가 붙어 있는 내내 그 차이가 보정으로 돌아온다(= 렉).
         // "지금 내 화면에서 완전히 안 겹치게"보다 "내 예측이 서버 답과 같게"가 우선이다.
         // 남의 새 몫 절반은 어차피 다음 스냅샷에 실려 온다.
-        private void ResolveOneSided(GameFramework.World.Entity mover, GameFramework.World.Entity body)
+        private void ResolveOneSided(GameFramework.World.Entity mover, GameFramework.World.Entity body,
+                                     BeforePositionLookup beforePosition)
         {
             var transformMover = mover.Get<GameFramework.World.Transform>();
             var transformBody = body.Get<GameFramework.World.Transform>();
@@ -200,6 +245,7 @@ namespace LOP
             {
                 return;
             }
+            pushDir = ContactNormal(mover, body, positionMover, positionBody, pushDir, beforePosition);
 
             float half = Mathf.Max(depth - Slop, 0f) * 0.5f;
             transformMover.Position = (positionMover + pushDir * half).ToNumerics();
