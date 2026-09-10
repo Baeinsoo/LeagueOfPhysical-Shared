@@ -7,31 +7,62 @@ namespace LOP
     /// <summary>
     /// 캐릭터끼리 부딪히면 서로 밀어내고 속도를 주고받는다(맵 장애물과 달리 정지 페널티 없이
     /// 자리싸움만). 몸↔맵 밀어내기는 <c>IMotionBridge.Depenetrate</c>가 맡고, 이쪽은 몸↔몸이다.
-    /// 겹침은 <see cref="BodyOverlap"/>이 산수로 구하고, 속도 교환은 <see cref="VerticalBounce"/>가 맡는다.
+    /// 겹침은 <see cref="BodyOverlap"/>이 산수로 구하고, 속도 교환은 <see cref="ContactImpulse"/>가 맡는다.
     ///
     /// <para>게임 비종속이다 — 몸 규격과 반발계수를 숫자로 받는다. 값을 어디서 얻는지는 각 게임의
     /// LifetimeScope가 정한다.</para>
     ///
-    /// <para><b>다른 게임에 가져다 쓸 때 갈아끼울 곳:</b> 속도 교환이
-    /// <see cref="VerticalBounce"/>라 <b>세로 성분만</b> 오간다. 전진 속도가 상수라 손댈 수 없던
-    /// 게임(Flappy Race)의 전제다. <b>가로로도 밀리는 게임은 이 단계를 접촉 법선 방향의 일반
-    /// 충격량으로 바꿔야 한다.</b> 짝 순회·id 순서·절반씩 밀기·"양쪽 속도를 읽고 나서 쓴다"
-    /// 규칙은 결정론을 위한 것이라 그대로 두는 편이 좋다.</para>
+    /// <para><b>접촉 방향은 "처음 닿은 순간"에서 가져온다:</b> 부르는 쪽이 이동 전 자리를 알려주면
+    /// (<see cref="BeforePositionLookup"/>) <see cref="BodySweep"/>이 틱 안에서 둘이 처음 닿은
+    /// 시각을 찾아 그때의 방향을 쓴다. 틱 끝 모습만 보면 빠른 밟기는 이미 깊이 파고든 뒤라 방향이
+    /// <b>옆</b>으로 나와, 머리를 밟았는데 접지도 세로 속도 교환도 없던 일이 된다. 자리와 속도를
+    /// 푸는 것은 그래도 <b>틱 끝 모습</b>에서 한다 — 충돌 시각으로 되돌리면 이미 끝난 맵 이동과
+    /// 싸우게 되고 몸을 벽 속으로 밀어 넣을 수 있다. 알려주지 않으면(null) 예전처럼 틱 끝
+    /// 모습에서 방향을 구한다.</para>
+    ///
+    /// <para><b>축 마스크:</b> 어느 축으로 밀릴 수 있는지는 <c>axisMask</c>(성분별 0 또는 1)로 정한다.
+    /// 전진 속도가 상수라 세로만 손댈 수 있던 게임(Flappy Race)은 <c>Vector3.up</c>, 전 축으로
+    /// 밀리는 게임(Skydive)은 <c>Vector3.one</c>을 준다. 짝 순회·id 순서·절반씩 밀기·"양쪽 속도를
+    /// 읽고 나서 쓴다" 규칙은 결정론을 위한 것이라 그대로 둔다.</para>
     /// </summary>
     public class BodyCollisionSystem
     {
+        /// <summary>
+        /// 엔티티의 <b>이동 전</b> 자리를 물어보는 창구. 없는 id면 false — 그 짝은 틱 끝 모습에서
+        /// 방향을 구한다. 사전(Dictionary)이 아니라 창구로 받는 이유는, 부르는 쪽이 이미 다른
+        /// 용도로 들고 있는 틱별 기록을 <b>그대로</b> 넘길 수 있게 하기 위해서다(같은 값을 담은
+        /// 두 번째 사전을 매 틱 새로 만들지 않는다).
+        /// </summary>
+        public delegate bool BeforePositionLookup(string entityId, out Vector3 position);
+
         /// <summary>허용 겹침. 딱 붙는 지점까지 밀어내면 다음 틱에 또 파고들어 떤다.</summary>
         private const float Slop = 0.01f;
 
         private readonly float bodyRadius;
         private readonly float bodyHeight;
         private readonly float restitution;
+        private readonly Vector3 axisMask;
 
+        //  아래로 남에게 닿은 몸들. 매 틱 도는 코드라 새로 만들지 않고 비워서 다시 쓴다.
+        private readonly HashSet<string> groundedOnBody = new HashSet<string>();
+
+        /// <summary>세로로만 밀리는 게임용(Flappy Race). 전진 속도가 상수라 가로를 손댈 수 없다.</summary>
         public BodyCollisionSystem(float bodyRadius, float bodyHeight, float restitution)
+            : this(bodyRadius, bodyHeight, restitution, Vector3.up)
+        {
+        }
+
+        /// <summary>
+        /// <paramref name="axisMask"/>는 밀릴 수 있는 축(성분별 0 또는 1). 전 축이면
+        /// <c>Vector3.one</c>. 제한은 결과가 아니라 <b>입력</b>에 걸린다 — 결과에만 걸면
+        /// 다가오는 속도가 전 축으로 계산돼 답이 달라진다.
+        /// </summary>
+        public BodyCollisionSystem(float bodyRadius, float bodyHeight, float restitution, Vector3 axisMask)
         {
             this.bodyRadius = bodyRadius;
             this.bodyHeight = bodyHeight;
             this.restitution = restitution;
+            this.axisMask = axisMask;
         }
 
         /// <summary>
@@ -39,15 +70,22 @@ namespace LOP
         /// 부르는 쪽은 <b>모두의 속도가 정해진 뒤</b> 한 번만 부르고, 목록을 엔티티 id 순으로 세워
         /// 넘긴다 — 푸는 순서가 클·서에서 같아야 두 쪽이 같은 결과에 이른다.
         /// </summary>
-        public void Resolve(IReadOnlyList<GameFramework.World.Entity> birds)
+        /// <returns>
+        /// 아래로 남에게 닿은 엔티티 id — 부르는 쪽이 접지로 쓴다.
+        /// 이 컬렉션은 다음 호출에서 비워져 다시 쓰인다 — 오래 들고 있어야 하면 복사할 것.
+        /// </returns>
+        public HashSet<string> Resolve(IReadOnlyList<GameFramework.World.Entity> birds,
+                                       BeforePositionLookup beforePosition = null)
         {
+            groundedOnBody.Clear();
             for (int i = 0; i < birds.Count; i++)
             {
                 for (int j = i + 1; j < birds.Count; j++)
                 {
-                    ResolvePair(birds[i], birds[j]);
+                    ResolvePair(birds[i], birds[j], beforePosition);
                 }
             }
+            return groundedOnBody;
         }
 
         /// <summary>
@@ -61,14 +99,22 @@ namespace LOP
         /// <see cref="Resolve(IReadOnlyList{GameFramework.World.Entity})"/>와 완전히 같은 일을 한다
         /// — 그래서 서버 동작은 지금과 같다.
         /// </summary>
-        public void Resolve(IReadOnlyList<GameFramework.World.Entity> movers, IReadOnlyList<GameFramework.World.Entity> bodies)
+        /// <returns>
+        /// 아래로 남에게 닿은 엔티티 id — 부르는 쪽이 접지로 쓴다.
+        /// 이 컬렉션은 다음 호출에서 비워져 다시 쓰인다 — 오래 들고 있어야 하면 복사할 것.
+        /// </returns>
+        public HashSet<string> Resolve(IReadOnlyList<GameFramework.World.Entity> movers,
+                                       IReadOnlyList<GameFramework.World.Entity> bodies,
+                                       BeforePositionLookup beforePosition = null)
         {
+            groundedOnBody.Clear();
+
             // 1) movers끼리는 기존과 똑같이 양쪽 다 밀려난다.
             for (int i = 0; i < movers.Count; i++)
             {
                 for (int j = i + 1; j < movers.Count; j++)
                 {
-                    ResolvePair(movers[i], movers[j]);
+                    ResolvePair(movers[i], movers[j], beforePosition);
                 }
             }
 
@@ -84,9 +130,11 @@ namespace LOP
                     {
                         continue;
                     }
-                    ResolveOneSided(movers[i], body);
+                    ResolveOneSided(movers[i], body, beforePosition);
                 }
             }
+
+            return groundedOnBody;
         }
 
         private static bool ContainsReference(IReadOnlyList<GameFramework.World.Entity> list, GameFramework.World.Entity entity)
@@ -101,7 +149,8 @@ namespace LOP
             return false;
         }
 
-        private void ResolvePair(GameFramework.World.Entity a, GameFramework.World.Entity b)
+        private void ResolvePair(GameFramework.World.Entity a, GameFramework.World.Entity b,
+                                 BeforePositionLookup beforePosition)
         {
             var transformA = a.Get<GameFramework.World.Transform>();
             var transformB = b.Get<GameFramework.World.Transform>();
@@ -119,6 +168,7 @@ namespace LOP
             {
                 return;
             }
+            pushDir = ContactNormal(a, b, positionA, positionB, pushDir, beforePosition);
 
             // 절반씩 — 양쪽을 합쳐야 완전히 떨어진다.
             float half = Mathf.Max(depth - Slop, 0f) * 0.5f;
@@ -129,12 +179,46 @@ namespace LOP
             // 짝을 어느 순서로 넘겼는지가 결과를 바꿔 클·서가 갈린다.
             Vector3 linearA = velocityA.Linear.ToUnity();
             Vector3 linearB = velocityB.Linear.ToUnity();
-            float beforeA = linearA.y;
-            float beforeB = linearB.y;
-            linearA.y = VerticalBounce.ResolveVy(beforeA, beforeB, pushDir.y, restitution);
-            linearB.y = VerticalBounce.ResolveVy(beforeB, beforeA, -pushDir.y, restitution);
-            velocityA.Linear = linearA.ToNumerics();
-            velocityB.Linear = linearB.ToNumerics();
+            velocityA.Linear = Exchange(linearA, linearB, pushDir).ToNumerics();
+            velocityB.Linear = Exchange(linearB, linearA, -pushDir).ToNumerics();
+
+            //  나를 위로 밀어내는 접촉 = 내가 상대 위에 얹혔다.
+            if (pushDir.y > 0f) { groundedOnBody.Add(a.Id); }
+            if (pushDir.y < 0f) { groundedOnBody.Add(b.Id); }
+        }
+
+        //  이동 전 자리를 알면 "처음 닿은 순간"의 방향을 쓴다. 틱 끝 모습에서 구한 방향은 깊이
+        //  파고든 접촉에서 옆을 가리켜, 위에서 밟았는데도 옆으로 밀려나고 접지가 없던 일이 된다.
+        //  밀어내는 <b>양</b>(depth)은 틱 끝 모습 그대로 둔다 — 그 값은 "가장 짧게 떼어내는 거리"라
+        //  다른 방향으로 쓰면 덜 떼어낼 뿐 더 떼어내지는 않는다(과잉 분리로 튀지 않는다).
+        private Vector3 ContactNormal(GameFramework.World.Entity a, GameFramework.World.Entity b,
+                                      Vector3 endA, Vector3 endB, Vector3 endPushDir,
+                                      BeforePositionLookup beforePosition)
+        {
+            if (beforePosition == null
+                || beforePosition(a.Id, out Vector3 fromA) == false
+                || beforePosition(b.Id, out Vector3 fromB) == false)
+            {
+                return endPushDir;
+            }
+
+            //  결론을 못 낸 접촉(스쳐 지나가는 짝은 수렴이 느리다)은 버리지 않고 틱 끝 방향으로
+            //  물러선다 — 버리면 몸이 그냥 통과해 버려서, 방향이 덜 정확한 것보다 나쁘다.
+            return BodySweep.TryContactNormal(fromA, endA, fromB, endB, bodyRadius, bodyHeight,
+                                              out Vector3 swept, out _)
+                ? swept
+                : endPushDir;
+        }
+
+        // 제한된 축은 원래 값을 그대로 남긴다. 마스크를 입력에 씌우는 이유는 클래스 주석 참고.
+        private Vector3 Exchange(Vector3 vSelf, Vector3 vOther, Vector3 normal)
+        {
+            Vector3 resolved = ContactImpulse.Resolve(
+                Vector3.Scale(vSelf, axisMask),
+                Vector3.Scale(vOther, axisMask),
+                Vector3.Scale(normal, axisMask),
+                restitution);
+            return vSelf + Vector3.Scale(resolved - Vector3.Scale(vSelf, axisMask), axisMask);
         }
 
         // mover 한쪽만 자리를 옮긴다. 다만 미는 양은 <see cref="ResolvePair"/>와 똑같이 절반이다 —
@@ -142,7 +226,8 @@ namespace LOP
         // 서버보다 절반만큼 앞서 나가고, 새가 붙어 있는 내내 그 차이가 보정으로 돌아온다(= 렉).
         // "지금 내 화면에서 완전히 안 겹치게"보다 "내 예측이 서버 답과 같게"가 우선이다.
         // 남의 새 몫 절반은 어차피 다음 스냅샷에 실려 온다.
-        private void ResolveOneSided(GameFramework.World.Entity mover, GameFramework.World.Entity body)
+        private void ResolveOneSided(GameFramework.World.Entity mover, GameFramework.World.Entity body,
+                                     BeforePositionLookup beforePosition)
         {
             var transformMover = mover.Get<GameFramework.World.Transform>();
             var transformBody = body.Get<GameFramework.World.Transform>();
@@ -160,15 +245,17 @@ namespace LOP
             {
                 return;
             }
+            pushDir = ContactNormal(mover, body, positionMover, positionBody, pushDir, beforePosition);
 
             float half = Mathf.Max(depth - Slop, 0f) * 0.5f;
             transformMover.Position = (positionMover + pushDir * half).ToNumerics();
 
-            // body 쪽 속도는 읽기만 한다 — 안 밀리는 쪽이니 세로 속도도 이 함수 밖에서는 그대로다.
+            // body 쪽 속도는 읽기만 한다 — 안 밀리는 쪽이니 이 함수 밖에서는 그대로다.
             Vector3 linearMover = velocityMover.Linear.ToUnity();
-            float vyBody = velocityBody.Linear.ToUnity().y;
-            linearMover.y = VerticalBounce.ResolveVy(linearMover.y, vyBody, pushDir.y, restitution);
-            velocityMover.Linear = linearMover.ToNumerics();
+            Vector3 linearBody = velocityBody.Linear.ToUnity();
+            velocityMover.Linear = Exchange(linearMover, linearBody, pushDir).ToNumerics();
+
+            if (pushDir.y > 0f) { groundedOnBody.Add(mover.Id); }
         }
     }
 }

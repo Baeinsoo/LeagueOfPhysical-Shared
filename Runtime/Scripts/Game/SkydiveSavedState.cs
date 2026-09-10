@@ -21,7 +21,7 @@ namespace LOP
         public readonly long FinishedTick;
         public readonly float FinishDepth;
 
-        //  WorldBase는 위치·회전·속도는 담지만 접지 여부는 담지 않는다. 그런데 이동(MoveBlockedByMap)이
+        //  WorldBase는 위치·회전·속도는 담지만 접지 여부는 담지 않는다. 그런데 접지를 확정하는 단계(SettleGroundAndImpact)가
         //  "직전 틱엔 안 서 있었나"를 판정하려면 이 값을 봐야 하므로, 안 담으면 되감은 뒤 첫 틱이
         //  되감기 전 라이브의 흔적(stale 값)을 보고 착지 판정을 그르친다.
         public readonly bool IsGrounded;

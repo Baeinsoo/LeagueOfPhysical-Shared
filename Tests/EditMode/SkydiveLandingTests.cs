@@ -19,7 +19,8 @@ public class SkydiveLandingTests
             groundMoveSpeed: 4f, groundAccel: 100f, jumpPower: jump, poseClearance: 5f,
             fallBrake: 150f,
             glideWindLag: 0.2f, spreadWindLag: 2.06f, diveWindLag: 3.1f,
-            landingLethalSpeed: lethal);
+            landingLethalSpeed: lethal,
+            restitution: 0.35f);
     }
 
     [Test]

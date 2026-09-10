@@ -24,22 +24,7 @@ namespace LOP
             pushDir = Vector3.zero;
             depth = 0f;
 
-            // 캡슐의 심 = 아래쪽 구 중심부터 위쪽 구 중심까지의 세로 선분.
-            float aLow = a.y + radius, aHigh = a.y + height - radius;
-            float bLow = b.y + radius, bHigh = b.y + height - radius;
-
-            // 두 심 사이의 세로 간격. 높이가 서로 겹치면 0 — 그때는 옆거리만으로 판정된다.
-            float dy = 0f;
-            if (bLow > aHigh)
-            {
-                dy = bLow - aHigh;
-            }
-            else if (bHigh < aLow)
-            {
-                dy = bHigh - aLow;
-            }
-
-            Vector3 delta = new Vector3(b.x - a.x, dy, b.z - a.z);
+            Vector3 delta = AxisDelta(a, b, radius, height);
             float touchDistance = radius * 2f;
             float distanceSquared = delta.sqrMagnitude;
             if (distanceSquared >= touchDistance * touchDistance)
@@ -60,6 +45,31 @@ namespace LOP
 
             pushDir = -delta / distance;
             return true;
+        }
+
+        /// <summary>
+        /// a의 심(축)에서 b의 심으로 향하는 벡터. 길이가 지름보다 짧으면 겹친 것이다.
+        /// 한 틱을 훑는 <see cref="BodySweep"/>도 같은 식을 써야 해서 밖으로 뺐다 — 두 벌로
+        /// 두면 언젠가 서로 다른 답을 낸다.
+        /// </summary>
+        public static Vector3 AxisDelta(Vector3 a, Vector3 b, float radius, float height)
+        {
+            // 캡슐의 심 = 아래쪽 구 중심부터 위쪽 구 중심까지의 세로 선분.
+            float aLow = a.y + radius, aHigh = a.y + height - radius;
+            float bLow = b.y + radius, bHigh = b.y + height - radius;
+
+            // 두 심 사이의 세로 간격. 높이가 서로 겹치면 0 — 그때는 옆거리만으로 판정된다.
+            float dy = 0f;
+            if (bLow > aHigh)
+            {
+                dy = bLow - aHigh;
+            }
+            else if (bHigh < aLow)
+            {
+                dy = bHigh - aLow;
+            }
+
+            return new Vector3(b.x - a.x, dy, b.z - a.z);
         }
     }
 }
