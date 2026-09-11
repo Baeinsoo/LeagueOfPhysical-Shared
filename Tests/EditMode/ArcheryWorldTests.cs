@@ -1,5 +1,6 @@
 using GameFramework.World;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace LOP.Tests
 {
@@ -41,6 +42,35 @@ namespace LOP.Tests
 
             Assert.AreEqual(1, world.Shots.Count);
             Assert.AreEqual("archer-1", world.Shots[0].ShooterId);
+        }
+
+        [Test]
+        public void 쏘면_발사_사건이_이벤트_버퍼에_쌓인다()
+        {
+            var (world, _, archer) = Make();
+
+            Feed(archer, drawing: true, release: false);
+            world.Tick(1, TickInterval);
+            Feed(archer, drawing: false, release: true);
+            world.Tick(2, TickInterval);
+
+            int fired = 0;
+            foreach (var e in world.EventBuffer.Snapshot)
+            {
+                if (e is ArcheryShotFiredEvent) { fired++; }
+            }
+            Assert.AreEqual(1, fired);
+        }
+
+        [Test]
+        public void 받아들인_남의_발사가_목록에_들어간다()
+        {
+            var (world, _, _) = Make();
+
+            world.IngestRemoteShot(new ArcheryShot("archer-9", 5, Vector3.zero, new Vector3(0f, 0f, 30f)));
+
+            Assert.AreEqual(1, world.Shots.Count);
+            Assert.AreEqual("archer-9", world.Shots[0].ShooterId);
         }
 
         [Test]
