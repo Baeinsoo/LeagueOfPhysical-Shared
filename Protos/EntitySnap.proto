@@ -32,4 +32,7 @@ message EntitySnap
 	// 다음 스냅샷에서 알아챈다(일회성 표시라면 그 패킷과 함께 사라진다).
 	int32 teleport_count = 22;
 	int32 finish_placement = 23;    // 결승선 등수(1부터). 0 = 아직 안 들어옴
+	// Archery: 이 판에서 모은 점수. 이 컴포넌트가 없는 게임에서는 0이 나가고 아무도 안 읽는다
+	// (finish_placement와 같은 방식).
+	int32 score = 24;
 }

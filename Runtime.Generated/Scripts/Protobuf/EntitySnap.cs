@@ -24,7 +24,7 @@ public static partial class EntitySnapReflection {
         string.Concat(
           "ChBFbnRpdHlTbmFwLnByb3RvGhJQcm90b1ZlY3RvcjMucHJvdG8aHVByb3Rv",
           "TW90aW9uQ29udHJpYnV0aW9uLnByb3RvGhdQcm90b0FjdGl2ZUVmZmVjdC5w",
-          "cm90byLABAoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
+          "cm90byLPBAoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
           "aXRpb24YAiABKAsyDS5Qcm90b1ZlY3RvcjMSHwoIcm90YXRpb24YAyABKAsy",
           "DS5Qcm90b1ZlY3RvcjMSHwoIdmVsb2NpdHkYBCABKAsyDS5Qcm90b1ZlY3Rv",
           "cjMSDgoGbWF4X0hQGAUgASgFEhIKCmN1cnJlbnRfSFAYBiABKAUSNgoUbW90",
@@ -36,12 +36,12 @@ public static partial class EntitySnapReflection {
           "eGlzGBAgASgCEg8KB2dsaWRpbmcYESABKAgSDwoHc3RhbWluYRgSIAEoAhIb",
           "ChNlbWVyZ2VuY3lfcmVtYWluaW5nGBMgASgCEhUKDWRhc2hfZW5kX3RpY2sY",
           "FCABKAMSEwoLZGFzaF9jaGFyZ2UYFSABKAISFgoOdGVsZXBvcnRfY291bnQY",
-          "FiABKAUSGAoQZmluaXNoX3BsYWNlbWVudBgXIAEoBUoECAwQDUoECA0QDmIG",
-          "cHJvdG8z"));
+          "FiABKAUSGAoQZmluaXNoX3BsYWNlbWVudBgXIAEoBRINCgVzY29yZRgYIAEo",
+          "BUoECAwQDUoECA0QDmIGcHJvdG8z"));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::ProtoVector3Reflection.Descriptor, global::ProtoMotionContributionReflection.Descriptor, global::ProtoActiveEffectReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick", "PostureAxis", "Gliding", "Stamina", "EmergencyRemaining", "DashEndTick", "DashCharge", "TeleportCount", "FinishPlacement" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick", "PostureAxis", "Gliding", "Stamina", "EmergencyRemaining", "DashEndTick", "DashCharge", "TeleportCount", "FinishPlacement", "Score" }, null, null, null, null)
         }));
   }
   #endregion
@@ -104,6 +104,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     dashCharge_ = other.dashCharge_;
     teleportCount_ = other.teleportCount_;
     finishPlacement_ = other.finishPlacement_;
+    score_ = other.score_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -403,6 +404,22 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
   }
 
+  /// <summary>Field number for the "score" field.</summary>
+  public const int ScoreFieldNumber = 24;
+  private int score_;
+  /// <summary>
+  /// Archery: 이 판에서 모은 점수. 이 컴포넌트가 없는 게임에서는 0이 나가고 아무도 안 읽는다
+  /// (finish_placement와 같은 방식).
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Score {
+    get { return score_; }
+    set {
+      score_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -439,6 +456,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(DashCharge, other.DashCharge)) return false;
     if (TeleportCount != other.TeleportCount) return false;
     if (FinishPlacement != other.FinishPlacement) return false;
+    if (Score != other.Score) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -467,6 +485,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (DashCharge != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(DashCharge);
     if (TeleportCount != 0) hash ^= TeleportCount.GetHashCode();
     if (FinishPlacement != 0) hash ^= FinishPlacement.GetHashCode();
+    if (Score != 0) hash ^= Score.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -563,6 +582,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(184, 1);
       output.WriteInt32(FinishPlacement);
     }
+    if (Score != 0) {
+      output.WriteRawTag(192, 1);
+      output.WriteInt32(Score);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -651,6 +674,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(184, 1);
       output.WriteInt32(FinishPlacement);
     }
+    if (Score != 0) {
+      output.WriteRawTag(192, 1);
+      output.WriteInt32(Score);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -719,6 +746,9 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
     if (FinishPlacement != 0) {
       size += 2 + pb::CodedOutputStream.ComputeInt32Size(FinishPlacement);
+    }
+    if (Score != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(Score);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -799,6 +829,9 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
     if (other.FinishPlacement != 0) {
       FinishPlacement = other.FinishPlacement;
+    }
+    if (other.Score != 0) {
+      Score = other.Score;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -912,6 +945,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
           FinishPlacement = input.ReadInt32();
           break;
         }
+        case 192: {
+          Score = input.ReadInt32();
+          break;
+        }
       }
     }
   #endif
@@ -1022,6 +1059,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
         }
         case 184: {
           FinishPlacement = input.ReadInt32();
+          break;
+        }
+        case 192: {
+          Score = input.ReadInt32();
           break;
         }
       }
