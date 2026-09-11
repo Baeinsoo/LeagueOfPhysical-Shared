@@ -15,4 +15,12 @@ message InputCommand {
   bool posing = 9;
   // Flappy: 대시 버튼. 누른 틱에만 참인 이산 액션이다(jump와 같은 짝).
   bool dash = 10;
+  // Archery: 좌우 조준 각도(도). 카메라가 보는 방향을 그대로 싣는다.
+  float aim_yaw = 11;
+  // Archery: 위아래 조준 각도(도). 양수면 위를 본다.
+  float aim_pitch = 12;
+  // Archery: 활을 당기고 있나. 손가락을 대고 있는 동안 참인 연속 값.
+  bool drawing = 13;
+  // Archery: 손을 뗀 틱에만 참인 이산 액션(jump와 같은 짝).
+  bool release = 14;
 }
