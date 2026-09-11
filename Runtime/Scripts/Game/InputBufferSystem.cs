@@ -70,6 +70,10 @@ namespace LOP
             buffer.PredictedTicks++;
 
             // 예측값은 받은 커맨드가 아니므로 시퀀스를 물려주지 않는다(dedup·seqGap 기준을 흐린다).
+            // Drawing/AimYaw/AimPitch도 손을 계속 대고 있는 동안 이어지는 연속값이라 같이 이어 쓴다
+            // (안 이으면 한 틱만 비어도 서버에서 당김이 취소돼 화살이 안 나가거나 최소속도로 나간다).
+            // Release는 여기 넣지 않는다 — 손을 뗀 틱에만 참인 1회성 액션이라 이어 쓰면 다음 틱에도
+            // 참이 되어 발사가 두 번 일어난다.
             buffer.Current = new InputCommand
             {
                 Horizontal = buffer.LastReceived.Horizontal,
@@ -77,6 +81,9 @@ namespace LOP
                 Posture = buffer.LastReceived.Posture,
                 Glide = buffer.LastReceived.Glide,
                 Posing = buffer.LastReceived.Posing,
+                Drawing = buffer.LastReceived.Drawing,
+                AimYaw = buffer.LastReceived.AimYaw,
+                AimPitch = buffer.LastReceived.AimPitch,
             };
             return buffer.Current;
         }

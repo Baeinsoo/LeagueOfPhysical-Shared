@@ -156,5 +156,58 @@ namespace LOP.Tests
 
             Assert.IsFalse(archer.Get<ArcheryAim>().Drawing);
         }
+
+        // I1 회귀 방지: 입력이 한 틱 유실돼도 InputBufferSystem.PredictMissing이 Drawing/AimYaw/
+        // AimPitch를 이어 써야 서버에서 당김이 끊기지 않는다. 이 셋을 이어 쓰기 목록에서 빼면
+        // (I1 이전 상태로 되돌리면) 예측 틱에서 Drawing이 false로 리셋돼 이 테스트가 빨개진다.
+        [Test]
+        public void 입력이_한_틱_비어도_당김이_끊기지_않는다()
+        {
+            var archer = Archer(Vector3.zero);
+            var aimSystem = new ArcheryAimSystem();
+            var inputSystem = new InputBufferSystem();
+            var buffer = archer.Get<InputBuffer>();
+
+            // tick 100: 진짜 커맨드로 당기기 시작
+            inputSystem.Enqueue(buffer, 100, new InputCommand { SequenceNumber = 1, Drawing = true });
+            inputSystem.Consume(buffer, 100);
+            aimSystem.Tick(archer, 100, TickInterval);
+
+            // tick 101: 입력이 유실 — 서버가 PredictMissing으로 직전 값을 이어 쓴다
+            inputSystem.PredictMissing(buffer, maxTicks: 30);
+            aimSystem.Tick(archer, 101, TickInterval);
+
+            Assert.IsTrue(archer.Get<ArcheryAim>().Drawing, "예측(유실 보정) 틱에서도 당김이 유지돼야 한다");
+
+            // tick 102: 진짜 Release 커맨드가 도착
+            inputSystem.Enqueue(buffer, 102, new InputCommand { SequenceNumber = 2, Release = true });
+            inputSystem.Consume(buffer, 102);
+            var shot = aimSystem.Tick(archer, 102, TickInterval);
+
+            Assert.IsTrue(shot.HasValue, "예측 틱을 거쳐도 발사가 나와야 한다");
+            Assert.Greater(shot.Value.Velocity.magnitude, ArcheryAimSystem.MinSpeed,
+                "당김이 끊기지 않았으므로(DrawStartTick=100 유지) 최소속도보다 빨라야 한다");
+        }
+
+        // I1 옆 회귀 방지: Release=true인 커맨드가 (재전송 등으로) 다음 틱에도 그대로 남아 있어도
+        // 두 번 쏘면 안 된다. 방어선은 발사 시 aim.Drawing=false로 떨어뜨리는 것뿐이라, 그 한 줄이
+        // 빠지면 이 테스트가 빨개진다.
+        [Test]
+        public void 같은_릴리즈_커맨드가_두_틱_연속_남아도_두_번_쏘지_않는다()
+        {
+            var archer = Archer(Vector3.zero);
+            var system = new ArcheryAimSystem();
+
+            Feed(archer, 0f, 0f, drawing: true, release: false);
+            system.Tick(archer, 100, TickInterval);
+
+            Feed(archer, 0f, 0f, drawing: false, release: true);
+            var first = system.Tick(archer, 120, TickInterval);
+            // Current를 갱신하지 않고 그대로 둔 채 다시 Tick — aim.Drawing 가드가 유일한 방어선.
+            var second = system.Tick(archer, 121, TickInterval);
+
+            Assert.IsTrue(first.HasValue);
+            Assert.IsNull(second, "당김 가드가 없으면 같은 Release 커맨드가 남아 두 번 쏜다");
+        }
     }
 }
