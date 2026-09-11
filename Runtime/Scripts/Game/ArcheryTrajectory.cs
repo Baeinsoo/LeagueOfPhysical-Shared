@@ -5,9 +5,9 @@ namespace LOP
     /// <summary>
     /// 화살의 궤적. 상태가 없는 순수 계산이라 클·서·뷰가 같은 식에 같은 시각을 넣으면 같은 답을 얻는다.
     /// </summary>
-    public static class ArrowTrajectory
+    public static class ArcheryTrajectory
     {
-        /// <summary>캐릭터에 걸리는 중력과 같은 값 — 눈에 보이는 무게감이 게임 안에서 일관되게 보인다.</summary>
+        /// <summary>화살에 걸리는 중력. 캐릭터 중력(약 19.6)과 비슷한 크기로 잡아 무게감이 따로 놀지 않게 한 튜닝 값이다.</summary>
         public const float Gravity = 20f;
 
         /// <summary>이 시간이 지난 화살은 목록에서 지운다. 화면 밖으로 나간 뒤에도 들고 있을 이유가 없다.</summary>
