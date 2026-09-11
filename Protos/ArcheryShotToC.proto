@@ -1,0 +1,11 @@
+syntax = "proto3";
+import "ProtoVector3.proto";
+
+// 폴리모픽 래퍼 안에 담기는 payload — top-level 패킷 아님(@auto_generate 없음).
+message ArcheryShotToC
+{
+	string       shooter_id = 1;
+	int64        fire_tick  = 2;
+	ProtoVector3 origin     = 3;
+	ProtoVector3 velocity   = 4;
+}

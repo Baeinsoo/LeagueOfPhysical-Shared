@@ -33,6 +33,15 @@ namespace LOP
 
         public IReadOnlyList<ArcheryShot> Shots => shots;
 
+        /// <summary>
+        /// 서버가 확정한 남의 발사를 받아들인다. 내 발사는 예측으로 이미 목록에 있으므로
+        /// 부르는 쪽이 걸러서 넣는다(같은 발이 두 번 그려지지 않게).
+        /// </summary>
+        public void IngestRemoteShot(in ArcheryShot shot)
+        {
+            shots.Add(shot);
+        }
+
         public ArcheryWorld(GameFramework.World.EntityRegistry entityRegistry,
                             GameFramework.World.WorldEventBuffer eventBuffer,
                             ArcheryAimSystem aimSystem,
@@ -56,6 +65,10 @@ namespace LOP
                 if (shot.HasValue)
                 {
                     shots.Add(shot.Value);
+
+                    // 남은 이 사건으로만 내 발사를 안다 — 입력 메아리는 늦게 와서 안 읽힌다.
+                    EventBuffer.Append(new ArcheryShotFiredEvent(
+                        shot.Value.ShooterId, shot.Value.FireTick, shot.Value.Origin, shot.Value.Velocity));
                 }
             }
 

@@ -1,4 +1,5 @@
 using GameFramework.World;
+using UnityEngine;
 
 // hand-written(생성물 아님). generate_protos.sh는 Protobuf/·MessageInitializer만 지우므로 이 파일은 보존됨.
 namespace LOP
@@ -38,6 +39,17 @@ namespace LOP
                             AbilityId = a.abilityId,
                         }
                     };
+                case ArcheryShotFiredEvent s:
+                    return new WorldEventToC
+                    {
+                        ArcheryShot = new ArcheryShotToC
+                        {
+                            ShooterId = s.shooterId,
+                            FireTick  = s.fireTick,
+                            Origin    = new ProtoVector3 { X = s.origin.x, Y = s.origin.y, Z = s.origin.z },
+                            Velocity  = new ProtoVector3 { X = s.velocity.x, Y = s.velocity.y, Z = s.velocity.z },
+                        }
+                    };
                 default:
                     return null;
             }
@@ -59,6 +71,12 @@ namespace LOP
                     return new AbilityActivatedEvent(
                         rec.AbilityActivated.EntityId,
                         rec.AbilityActivated.AbilityId);
+                case WorldEventToC.EventOneofCase.ArcheryShot:
+                    return new ArcheryShotFiredEvent(
+                        shooterId: rec.ArcheryShot.ShooterId,
+                        fireTick:  rec.ArcheryShot.FireTick,
+                        origin:    new Vector3(rec.ArcheryShot.Origin.X, rec.ArcheryShot.Origin.Y, rec.ArcheryShot.Origin.Z),
+                        velocity:  new Vector3(rec.ArcheryShot.Velocity.X, rec.ArcheryShot.Velocity.Y, rec.ArcheryShot.Velocity.Z));
                 default:
                     return null;
             }
