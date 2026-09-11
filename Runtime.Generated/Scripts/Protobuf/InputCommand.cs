@@ -22,15 +22,17 @@ public static partial class InputCommandReflection {
   static InputCommandReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChJJbnB1dENvbW1hbmQucHJvdG8irQEKDElucHV0Q29tbWFuZBIXCg9zZXF1",
+          "ChJJbnB1dENvbW1hbmQucHJvdG8i8wEKDElucHV0Q29tbWFuZBIXCg9zZXF1",
           "ZW5jZV9udW1iZXIYASABKAMSEgoKaG9yaXpvbnRhbBgCIAEoAhIQCgh2ZXJ0",
           "aWNhbBgDIAEoAhIMCgRqdW1wGAQgASgIEhIKCmFiaWxpdHlfaWQYBiABKAUS",
           "DwoHcG9zdHVyZRgHIAEoAhINCgVnbGlkZRgIIAEoCBIOCgZwb3NpbmcYCSAB",
-          "KAgSDAoEZGFzaBgKIAEoCGIGcHJvdG8z"));
+          "KAgSDAoEZGFzaBgKIAEoCBIPCgdhaW1feWF3GAsgASgCEhEKCWFpbV9waXRj",
+          "aBgMIAEoAhIPCgdkcmF3aW5nGA0gASgIEg8KB3JlbGVhc2UYDiABKAhiBnBy",
+          "b3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::InputCommand), global::InputCommand.Parser, new[]{ "SequenceNumber", "Horizontal", "Vertical", "Jump", "AbilityId", "Posture", "Glide", "Posing", "Dash" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::InputCommand), global::InputCommand.Parser, new[]{ "SequenceNumber", "Horizontal", "Vertical", "Jump", "AbilityId", "Posture", "Glide", "Posing", "Dash", "AimYaw", "AimPitch", "Drawing", "Release" }, null, null, null, null)
         }));
   }
   #endregion
@@ -81,6 +83,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     glide_ = other.glide_;
     posing_ = other.posing_;
     dash_ = other.dash_;
+    aimYaw_ = other.aimYaw_;
+    aimPitch_ = other.aimPitch_;
+    drawing_ = other.drawing_;
+    release_ = other.release_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -211,6 +217,66 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     }
   }
 
+  /// <summary>Field number for the "aim_yaw" field.</summary>
+  public const int AimYawFieldNumber = 11;
+  private float aimYaw_;
+  /// <summary>
+  /// Archery: 좌우 조준 각도(도). 카메라가 보는 방향을 그대로 싣는다.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public float AimYaw {
+    get { return aimYaw_; }
+    set {
+      aimYaw_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "aim_pitch" field.</summary>
+  public const int AimPitchFieldNumber = 12;
+  private float aimPitch_;
+  /// <summary>
+  /// Archery: 위아래 조준 각도(도). 양수면 위를 본다.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public float AimPitch {
+    get { return aimPitch_; }
+    set {
+      aimPitch_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "drawing" field.</summary>
+  public const int DrawingFieldNumber = 13;
+  private bool drawing_;
+  /// <summary>
+  /// Archery: 활을 당기고 있나. 손가락을 대고 있는 동안 참인 연속 값.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public bool Drawing {
+    get { return drawing_; }
+    set {
+      drawing_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "release" field.</summary>
+  public const int ReleaseFieldNumber = 14;
+  private bool release_;
+  /// <summary>
+  /// Archery: 손을 뗀 틱에만 참인 이산 액션(jump와 같은 짝).
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public bool Release {
+    get { return release_; }
+    set {
+      release_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -235,6 +301,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     if (Glide != other.Glide) return false;
     if (Posing != other.Posing) return false;
     if (Dash != other.Dash) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(AimYaw, other.AimYaw)) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(AimPitch, other.AimPitch)) return false;
+    if (Drawing != other.Drawing) return false;
+    if (Release != other.Release) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -251,6 +321,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     if (Glide != false) hash ^= Glide.GetHashCode();
     if (Posing != false) hash ^= Posing.GetHashCode();
     if (Dash != false) hash ^= Dash.GetHashCode();
+    if (AimYaw != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(AimYaw);
+    if (AimPitch != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(AimPitch);
+    if (Drawing != false) hash ^= Drawing.GetHashCode();
+    if (Release != false) hash ^= Release.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -305,6 +379,22 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
       output.WriteRawTag(80);
       output.WriteBool(Dash);
     }
+    if (AimYaw != 0F) {
+      output.WriteRawTag(93);
+      output.WriteFloat(AimYaw);
+    }
+    if (AimPitch != 0F) {
+      output.WriteRawTag(101);
+      output.WriteFloat(AimPitch);
+    }
+    if (Drawing != false) {
+      output.WriteRawTag(104);
+      output.WriteBool(Drawing);
+    }
+    if (Release != false) {
+      output.WriteRawTag(112);
+      output.WriteBool(Release);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -351,6 +441,22 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
       output.WriteRawTag(80);
       output.WriteBool(Dash);
     }
+    if (AimYaw != 0F) {
+      output.WriteRawTag(93);
+      output.WriteFloat(AimYaw);
+    }
+    if (AimPitch != 0F) {
+      output.WriteRawTag(101);
+      output.WriteFloat(AimPitch);
+    }
+    if (Drawing != false) {
+      output.WriteRawTag(104);
+      output.WriteBool(Drawing);
+    }
+    if (Release != false) {
+      output.WriteRawTag(112);
+      output.WriteBool(Release);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -386,6 +492,18 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
       size += 1 + 1;
     }
     if (Dash != false) {
+      size += 1 + 1;
+    }
+    if (AimYaw != 0F) {
+      size += 1 + 4;
+    }
+    if (AimPitch != 0F) {
+      size += 1 + 4;
+    }
+    if (Drawing != false) {
+      size += 1 + 1;
+    }
+    if (Release != false) {
       size += 1 + 1;
     }
     if (_unknownFields != null) {
@@ -426,6 +544,18 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     }
     if (other.Dash != false) {
       Dash = other.Dash;
+    }
+    if (other.AimYaw != 0F) {
+      AimYaw = other.AimYaw;
+    }
+    if (other.AimPitch != 0F) {
+      AimPitch = other.AimPitch;
+    }
+    if (other.Drawing != false) {
+      Drawing = other.Drawing;
+    }
+    if (other.Release != false) {
+      Release = other.Release;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -482,6 +612,22 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
           Dash = input.ReadBool();
           break;
         }
+        case 93: {
+          AimYaw = input.ReadFloat();
+          break;
+        }
+        case 101: {
+          AimPitch = input.ReadFloat();
+          break;
+        }
+        case 104: {
+          Drawing = input.ReadBool();
+          break;
+        }
+        case 112: {
+          Release = input.ReadBool();
+          break;
+        }
       }
     }
   #endif
@@ -535,6 +681,22 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
         }
         case 80: {
           Dash = input.ReadBool();
+          break;
+        }
+        case 93: {
+          AimYaw = input.ReadFloat();
+          break;
+        }
+        case 101: {
+          AimPitch = input.ReadFloat();
+          break;
+        }
+        case 104: {
+          Drawing = input.ReadBool();
+          break;
+        }
+        case 112: {
+          Release = input.ReadBool();
           break;
         }
       }

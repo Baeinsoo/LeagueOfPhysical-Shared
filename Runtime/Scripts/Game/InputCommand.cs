@@ -28,9 +28,21 @@ namespace LOP
         /// <summary>대시 버튼. 누른 틱에만 참인 이산 액션이다(<see cref="Jump"/>와 같은 짝).</summary>
         public bool Dash { get; set; }
 
+        /// <summary>좌우 조준 각도(도). 카메라가 보는 방향을 그대로 싣는다.</summary>
+        public float AimYaw { get; set; }
+
+        /// <summary>위아래 조준 각도(도). 양수면 위를 본다.</summary>
+        public float AimPitch { get; set; }
+
+        /// <summary>활을 당기고 있나. 손가락을 대고 있는 동안 계속 참인 연속 값이다.</summary>
+        public bool Drawing { get; set; }
+
+        /// <summary>손을 뗀 틱에만 참인 이산 액션이다(<see cref="Jump"/>와 같은 짝).</summary>
+        public bool Release { get; set; }
+
         // 진단 로그가 커맨드를 한 줄로 찍을 때 쓴다. 무엇이 실렸는지는 커맨드 자신이 안다 —
         // 읽는 쪽(넷코드 로그)이 필드를 하나씩 나열하면 그쪽이 게임 내용을 알게 된다.
         public override string ToString()
-            => $"h={Horizontal:F2} v={Vertical:F2} jump={Jump} ability={AbilityId} posture={Posture:F2} glide={Glide} posing={Posing} dash={Dash}";
+            => $"h={Horizontal:F2} v={Vertical:F2} jump={Jump} ability={AbilityId} posture={Posture:F2} glide={Glide} posing={Posing} dash={Dash} aim=({AimYaw:F1},{AimPitch:F1}) draw={Drawing} release={Release}";
     }
 }
