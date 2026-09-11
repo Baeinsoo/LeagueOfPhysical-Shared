@@ -1,6 +1,5 @@
 using GameFramework.World;
 using NUnit.Framework;
-using UnityEngine;
 
 namespace LOP.Tests
 {
@@ -98,6 +97,28 @@ namespace LOP.Tests
             world.LoadState(10);
 
             Assert.AreEqual(0, world.Shots.Count);
+        }
+
+        [Test]
+        public void 되감아도_원격_엔티티_조준은_안_건드린다()
+        {
+            var (world, registry, archer) = Make();
+
+            // 남의 몸 — 예측 대상이 아니라 스냅샷으로 따라온다(Simulated 없음).
+            var remote = new Entity("archer-2");
+            remote.Add(new GameFramework.World.Transform());
+            remote.Add(new Velocity());
+            remote.Add(new ArcheryAim { Yaw = 10f });
+            remote.Add(new InputBuffer());
+            registry.Add(remote);
+
+            world.SaveState(10);
+
+            // 되감는 사이 네트워크로 남의 새 조준이 도착한 상황.
+            remote.Get<ArcheryAim>().Yaw = 77f;
+            world.LoadState(10);
+
+            Assert.AreEqual(77f, remote.Get<ArcheryAim>().Yaw, 1e-3f);   // 옛 값으로 덮이면 안 된다
         }
     }
 }
