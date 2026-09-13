@@ -21,11 +21,16 @@ namespace LOP
         /// <summary>화살이 떠나는 높이 — 발밑이 아니라 눈높이에서 나가야 겨눈 대로 간다.</summary>
         public const float EyeHeight = 1.4f;
 
+        /// <summary>이만큼 당기고 있었다(초). 화면은 정수 틱 사이도 물어보므로 소수 틱을 받는다.</summary>
+        public static float HeldSeconds(long drawStartTick, double currentTick, float tickInterval)
+        {
+            return (float)((currentTick - drawStartTick) * tickInterval);
+        }
+
         /// <summary>당긴 정도 0~1. 오래 당겨도 1을 넘지 않는다.</summary>
         public static float DrawRatio(long drawStartTick, long currentTick, float tickInterval)
         {
-            float seconds = (currentTick - drawStartTick) * tickInterval;
-            return Mathf.Clamp01(seconds / FullDrawSeconds);
+            return Mathf.Clamp01(HeldSeconds(drawStartTick, currentTick, tickInterval) / FullDrawSeconds);
         }
 
         public static float SpeedFor(float drawRatio)

@@ -72,6 +72,53 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void HeldSeconds_정수_틱_간격을_초로_바꾼다()
+        {
+            Assert.AreEqual(0.1f, ArcheryAimSystem.HeldSeconds(100, 105, TickInterval), 1e-5f);
+        }
+
+        [Test]
+        public void HeldSeconds_소수_틱도_받는다()
+        {
+            // 화면은 렌더 시각(소수 틱)으로 묻는다 — 정수 틱만 받던 예전 식으로는 표현 못 하던 값.
+            Assert.AreEqual(0.11f, ArcheryAimSystem.HeldSeconds(100, 105.5, TickInterval), 1e-5f);
+        }
+
+        [Test]
+        public void HeldSeconds_시작_틱과_같으면_0이다()
+        {
+            Assert.AreEqual(0f, ArcheryAimSystem.HeldSeconds(100, 100, TickInterval), 1e-5f);
+        }
+
+        [Test]
+        public void DrawRatio_시작_틱에서는_0이다()
+        {
+            Assert.AreEqual(0f, ArcheryAimSystem.DrawRatio(100, 100, TickInterval), 1e-5f);
+        }
+
+        [Test]
+        public void DrawRatio_중간에는_0과_1_사이다()
+        {
+            float half = ArcheryAimSystem.FullDrawSeconds / 2f / TickInterval;
+            float ratio = ArcheryAimSystem.DrawRatio(0, (long)half, TickInterval);
+            Assert.Greater(ratio, 0f);
+            Assert.Less(ratio, 1f);
+        }
+
+        [Test]
+        public void DrawRatio_끝까지_당기면_1이다()
+        {
+            long fullTicks = (long)(ArcheryAimSystem.FullDrawSeconds / TickInterval);
+            Assert.AreEqual(1f, ArcheryAimSystem.DrawRatio(0, fullTicks, TickInterval), 1e-5f);
+        }
+
+        [Test]
+        public void DrawRatio_더_당겨도_1을_넘지_않는다()
+        {
+            Assert.AreEqual(1f, ArcheryAimSystem.DrawRatio(0, 10000, TickInterval), 1e-5f);
+        }
+
+        [Test]
         public void 오래_당길수록_화살이_빠르다()
         {
             float shortDraw = ArcheryAimSystem.SpeedFor(
