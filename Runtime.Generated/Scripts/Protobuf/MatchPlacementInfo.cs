@@ -22,13 +22,15 @@ public static partial class MatchPlacementInfoReflection {
   static MatchPlacementInfoReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChhNYXRjaFBsYWNlbWVudEluZm8ucHJvdG8iOAoSTWF0Y2hQbGFjZW1lbnRJ",
-          "bmZvEg8KB3VzZXJfaWQYASABKAkSEQoJcGxhY2VtZW50GAIgASgFYgZwcm90",
-          "bzM="));
+          "ChhNYXRjaFBsYWNlbWVudEluZm8ucHJvdG8ilQEKEk1hdGNoUGxhY2VtZW50",
+          "SW5mbxIPCgd1c2VyX2lkGAEgASgJEhEKCXBsYWNlbWVudBgCIAEoBRItCgVz",
+          "dGF0cxgDIAMoCzIeLk1hdGNoUGxhY2VtZW50SW5mby5TdGF0c0VudHJ5GiwK",
+          "ClN0YXRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4AWIG",
+          "cHJvdG8z"));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::MatchPlacementInfo), global::MatchPlacementInfo.Parser, new[]{ "UserId", "Placement" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::MatchPlacementInfo), global::MatchPlacementInfo.Parser, new[]{ "UserId", "Placement", "Stats" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, })
         }));
   }
   #endregion
@@ -72,6 +74,7 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
   public MatchPlacementInfo(MatchPlacementInfo other) : this() {
     userId_ = other.userId_;
     placement_ = other.placement_;
+    stats_ = other.stats_.Clone();
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -105,6 +108,22 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
     }
   }
 
+  /// <summary>Field number for the "stats" field.</summary>
+  public const int StatsFieldNumber = 3;
+  private static readonly pbc::MapField<string, int>.Codec _map_stats_codec
+      = new pbc::MapField<string, int>.Codec(pb::FieldCodec.ForString(10, ""), pb::FieldCodec.ForInt32(16, 0), 26);
+  private readonly pbc::MapField<string, int> stats_ = new pbc::MapField<string, int>();
+  /// <summary>
+  ///  모드별 결과 지표. 키는 모드가 정한다(활쏘기: score/gained/lost).
+  ///  공통부(등수·mmr)와 달리 여기 무엇이 들어가는지는 읽는 쪽이 모드를 보고 안다 —
+  ///  Bungie PGCR의 values 사전과 같은 자리다. 모드가 늘어도 스키마가 안 바뀐다.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public pbc::MapField<string, int> Stats {
+    get { return stats_; }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -122,6 +141,7 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
     }
     if (UserId != other.UserId) return false;
     if (Placement != other.Placement) return false;
+    if (!Stats.Equals(other.Stats)) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -131,6 +151,7 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
     int hash = 1;
     if (UserId.Length != 0) hash ^= UserId.GetHashCode();
     if (Placement != 0) hash ^= Placement.GetHashCode();
+    hash ^= Stats.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -157,6 +178,7 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
       output.WriteRawTag(16);
       output.WriteInt32(Placement);
     }
+    stats_.WriteTo(output, _map_stats_codec);
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -175,6 +197,7 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
       output.WriteRawTag(16);
       output.WriteInt32(Placement);
     }
+    stats_.WriteTo(ref output, _map_stats_codec);
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -191,6 +214,7 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
     if (Placement != 0) {
       size += 1 + pb::CodedOutputStream.ComputeInt32Size(Placement);
     }
+    size += stats_.CalculateSize(_map_stats_codec);
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
     }
@@ -209,6 +233,7 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
     if (other.Placement != 0) {
       Placement = other.Placement;
     }
+    stats_.MergeFrom(other.stats_);
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
 
@@ -236,6 +261,10 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
           Placement = input.ReadInt32();
           break;
         }
+        case 26: {
+          stats_.AddEntriesFrom(input, _map_stats_codec);
+          break;
+        }
       }
     }
   #endif
@@ -261,6 +290,10 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
         }
         case 16: {
           Placement = input.ReadInt32();
+          break;
+        }
+        case 26: {
+          stats_.AddEntriesFrom(ref input, _map_stats_codec);
           break;
         }
       }
