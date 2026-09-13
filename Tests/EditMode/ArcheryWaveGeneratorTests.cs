@@ -6,17 +6,37 @@ namespace LOP.Tests
 {
     public class ArcheryWaveGeneratorTests
     {
+        private static ArcheryTargetKind[] Kinds()
+        {
+            return new[]
+            {
+                new ArcheryTargetKind(0.60f, 1, 50),
+                new ArcheryTargetKind(0.40f, 2, 35),
+                new ArcheryTargetKind(0.25f, 4, 15),
+            };
+        }
+
+        //  간격을 숫자로 적어 넣지 않고 종류에서 뽑는다. 중심 사이 거리 하나로 모든 조합을 막아야
+        //  하므로, 기준은 "가장 큰 과녁 둘이 딱 맞닿는 거리" = 최대 반경 × 2다. 종류의 반경을
+        //  키우면 이 값도 따라 커져, 픽스처가 배포 데이터와 다른 조건을 시험하는 일이 없다.
         private static ArcheryConfig Config()
+        {
+            return ConfigWith(Kinds(), TouchingDistance(Kinds()));
+        }
+
+        private static ArcheryConfig ConfigWith(ArcheryTargetKind[] kinds, float minSeparation)
         {
             return new ArcheryConfig(
                 wavePeriodTicks: 88, minTargets: 2, maxTargets: 3,
-                spawnRadius: 2f, spawnMinY: 2f, spawnMaxY: 6f, minSeparation: 1.2f,
-                kinds: new[]
-                {
-                    new ArcheryTargetKind(0.60f, 1, 50),
-                    new ArcheryTargetKind(0.40f, 2, 35),
-                    new ArcheryTargetKind(0.25f, 4, 15),
-                });
+                spawnRadius: 2f, spawnMinY: 2f, spawnMaxY: 6f, minSeparation: minSeparation,
+                kinds: kinds);
+        }
+
+        //  최대 반경은 설정이 스스로 계산한다. 여기서 또 훑으면 계산이 두 군데가 되므로,
+        //  간격을 0으로 둔 설정을 한 번 만들어 그 값을 빌린다.
+        private static float TouchingDistance(ArcheryTargetKind[] kinds)
+        {
+            return ConfigWith(kinds, 0f).MaxTargetRadius * 2f;
         }
 
         [Test]
@@ -136,10 +156,53 @@ namespace LOP.Tests
                     {
                         float gap = Vector3.Distance(targets[i].Center, targets[j].Center);
                         float touching = targets[i].Radius + targets[j].Radius;
-                        Assert.Greater(gap, touching, $"wave {wave}: {i}과 {j}가 겹친다");
+                        //  딱 맞닿는 건 겹친 게 아니다 — 간격 기준이 정확히 그 거리라 경계가 허용된다.
+                        Assert.GreaterOrEqual(gap, touching, $"wave {wave}: {i}과 {j}가 겹친다");
                     }
                 }
             }
+        }
+
+        //  위 테스트가 통과하는 건 간격 기준이 "가장 큰 둘이 맞닿는 거리"라서다. 그보다 짧게 주면
+        //  정말로 겹친 과녁이 나온다 — 배포 데이터 검사(min_separation >= 최대반경 x 2)가 막는 게
+        //  이것이고, 이 테스트가 그 검사의 존재 이유다.
+        [Test]
+        public void 간격_기준이_맞닿는_거리보다_짧으면_겹친_과녁이_나온다()
+        {
+            var kinds = Kinds();
+            var config = ConfigWith(kinds, TouchingDistance(kinds) * 0.5f);
+            var targets = new List<ArcheryTarget>();
+
+            for (int wave = 0; wave < 200; wave++)
+            {
+                ArcheryWaveGenerator.Fill(targets, 99UL, wave, config);
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    for (int j = i + 1; j < targets.Count; j++)
+                    {
+                        float gap = Vector3.Distance(targets[i].Center, targets[j].Center);
+                        if (gap < targets[i].Radius + targets[j].Radius)
+                        {
+                            Assert.Pass($"wave {wave}: {i}과 {j}가 겹쳤다 — 기준이 짧으면 이렇게 된다");
+                        }
+                    }
+                }
+            }
+            Assert.Fail("간격 기준을 절반으로 줄였는데도 200 웨이브에서 겹친 과녁이 하나도 없다 — "
+                        + "간격 기준이 겹침을 막는 장치가 맞는지 다시 봐야 한다");
+        }
+
+        [Test]
+        public void 종류가_비면_최대_반경은_0이다()
+        {
+            var config = ConfigWith(new ArcheryTargetKind[0], 1f);
+            Assert.AreEqual(0f, config.MaxTargetRadius);
+        }
+
+        [Test]
+        public void 최대_반경은_가장_큰_종류를_따른다()
+        {
+            Assert.AreEqual(0.60f, Config().MaxTargetRadius);
         }
 
         [Test]

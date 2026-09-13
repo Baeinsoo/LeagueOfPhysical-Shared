@@ -35,6 +35,15 @@ namespace LOP
         /// <summary>뽑을 수 있는 과녁 종류. 비어 있으면 과녁이 안 뜬다.</summary>
         public IReadOnlyList<ArcheryTargetKind> Kinds { get; }
 
+        /// <summary>
+        /// 종류 중 가장 큰 과녁의 반경(m). 종류가 없으면 0이다.
+        ///
+        /// <para>겹침을 따질 때 기준이 된다 — <see cref="MinSeparation"/>은 중심 사이 거리 <b>하나로</b>
+        /// 모든 조합을 막으므로, 가장 큰 둘이 맞닿는 거리(이 값의 두 배)보다 짧으면 간격을 지켜도
+        /// 겹칠 수 있다. 배포 데이터가 그 관계를 지키는지는 MasterData 쪽 테스트가 본다.</para>
+        /// </summary>
+        public float MaxTargetRadius { get; }
+
         public ArcheryConfig(int wavePeriodTicks, int minTargets, int maxTargets,
                              float spawnRadius, float spawnMinY, float spawnMaxY, float minSeparation,
                              IReadOnlyList<ArcheryTargetKind> kinds)
@@ -47,6 +56,19 @@ namespace LOP
             SpawnMaxY = spawnMaxY;
             MinSeparation = minSeparation;
             Kinds = kinds;
+
+            float largest = 0f;
+            if (kinds != null)
+            {
+                for (int i = 0; i < kinds.Count; i++)
+                {
+                    if (kinds[i].Radius > largest)
+                    {
+                        largest = kinds[i].Radius;
+                    }
+                }
+            }
+            MaxTargetRadius = largest;
         }
     }
 }
