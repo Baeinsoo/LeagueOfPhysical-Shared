@@ -50,6 +50,16 @@ namespace LOP
                             Velocity  = new ProtoVector3 { X = s.velocity.x, Y = s.velocity.y, Z = s.velocity.z },
                         }
                     };
+                case ArcheryTargetHitEvent h:
+                    return new WorldEventToC
+                    {
+                        ArcheryHit = new ArcheryHitToC
+                        {
+                            ShooterId = h.shooterId,
+                            FireTick  = h.fireTick,
+                            Points    = h.points,
+                        }
+                    };
                 default:
                     return null;
             }
@@ -77,6 +87,11 @@ namespace LOP
                         fireTick:  rec.ArcheryShot.FireTick,
                         origin:    new Vector3(rec.ArcheryShot.Origin.X, rec.ArcheryShot.Origin.Y, rec.ArcheryShot.Origin.Z),
                         velocity:  new Vector3(rec.ArcheryShot.Velocity.X, rec.ArcheryShot.Velocity.Y, rec.ArcheryShot.Velocity.Z));
+                case WorldEventToC.EventOneofCase.ArcheryHit:
+                    return new ArcheryTargetHitEvent(
+                        shooterId: rec.ArcheryHit.ShooterId,
+                        fireTick:  rec.ArcheryHit.FireTick,
+                        points:    rec.ArcheryHit.Points);
                 default:
                     return null;
             }

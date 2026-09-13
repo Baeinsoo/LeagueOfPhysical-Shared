@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+// 폴리모픽 래퍼 안에 담기는 payload — top-level 패킷 아님(@auto_generate 없음).
+message ArcheryHitToC
+{
+	string shooter_id = 1;
+	int64  fire_tick  = 2;   // shooter_id와 짝이 되어 "어느 화살"인지를 가리킨다
+	int32  points     = 3;   // 연출용. 점수의 진실원본은 EntitySnap.score다
+	//  "어느 과녁"은 싣지 않는다 — 그건 ArcheryStateToC(상태)가 말한다. 나중에 "+N"을 과녁
+	//  자리에 띄우고 싶어지면 그때 필드를 더한다(proto 필드 추가는 뒤에 붙이면 되므로 싸다).
+}

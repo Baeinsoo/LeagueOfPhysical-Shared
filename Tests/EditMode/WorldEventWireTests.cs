@@ -61,5 +61,16 @@ namespace LOP.Tests
         {
             Assert.That(WorldEventWire.FromWire(new WorldEventToC()), Is.Null);
         }
+
+        [Test]
+        public void 적중_사건은_와이어를_왕복해도_그대로다()
+        {
+            var original = new ArcheryTargetHitEvent("e7", 1234L, 4);
+            var restored = (ArcheryTargetHitEvent)WorldEventWire.FromWire(WorldEventWire.ToWire(original));
+
+            Assert.AreEqual(original.shooterId, restored.shooterId);
+            Assert.AreEqual(original.fireTick,  restored.fireTick);
+            Assert.AreEqual(original.points,    restored.points);
+        }
     }
 }

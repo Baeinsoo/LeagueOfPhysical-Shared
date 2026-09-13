@@ -28,8 +28,9 @@ for proto_file in $(find "$PROTO_DIR" -name "*.proto"); do
     # 파일을 라인 단위로 읽기
     auto_generate=false
     while IFS= read -r line || [[ -n "$line" ]]; do
-        # @auto_generate 주석 찾기
-        if [[ "$line" =~ .*@auto_generate.* ]]; then
+        # @auto_generate 주석 찾기 (그 줄이 마커 자체일 때만 — 문자열만 포함해도 걸리면
+        # "top-level 패킷 아님(@auto_generate 없음)" 같은 부정 설명 주석까지 마커로 오인한다)
+        if [[ "$line" =~ ^[[:space:]]*//[[:space:]]*@auto_generate[[:space:]]*$ ]]; then
             auto_generate=true
             continue
         fi
