@@ -57,9 +57,10 @@ namespace LOP
                 float ratio = rng.Range(config.TrapRatioMin, config.TrapRatioMax);
                 trapCount = Mathf.Clamp(Mathf.RoundToInt(ratio * count), 0, count);
 
-                //  성한 종류가 아예 없으면 "성한 자리"를 만들 수가 없다 — 비율과 상관없이 전부
-                //  함정이다. 이 줄이 없으면 성한 자리가 아래 대비책을 타고 함정 종류를 뽑아 와,
-                //  실제 함정 수가 비율보다 많아지는데 에러는 안 난다.
+                //  성한 종류가 아예 없으면 어느 자리를 뽑아도 함정이 나온다 — 아래 대비책이
+                //  돌려주는 목록도 전부 함정이기 때문이다. 결과는 어느 쪽이든 같지만, 비율은
+                //  "절반"이라 해 놓고 전부 함정이 뜨는 셈이라 읽는 사람이 헷갈린다.
+                //  여기서 전부 함정임을 못박아 비율이 말하는 것과 실제가 같아지게 한다.
                 if (config.CleanKinds.Count == 0)
                 {
                     trapCount = count;
@@ -82,9 +83,9 @@ namespace LOP
                 var pool = isTrap ? config.TrapKinds : config.CleanKinds;
                 if (pool.Count == 0)
                 {
-                    //  위에서 함정/성한 자리 수를 각 목록이 실제로 있는 만큼만 만들어 두므로,
-                    //  이제는 이 분기를 안 타야 정상이다. 그래도 지워 두지 않는다 —
-                    //  PickKind가 빈 목록을 받으면 예외를 던져 판이 죽는다.
+                    //  함정 자리는 TrapKinds.Count > 0일 때만, 성한 자리는 위 가드로 CleanKinds가
+                    //  빈 경우를 걸러 두므로, 이 분기는 이제 도달할 수 없어야 정상이다. 그래도
+                    //  지워 두지 않는다 — PickKind가 빈 목록을 받으면 예외를 던져 판이 죽는다.
                     pool = config.Kinds;
                 }
 
