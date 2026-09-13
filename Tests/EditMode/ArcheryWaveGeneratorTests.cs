@@ -343,6 +343,26 @@ namespace LOP.Tests
             }
         }
 
+        //  성한 종류가 없는 설정에서 비율을 반만 열어 두면, 예전에는 "성한 자리"가 대비책을 타고
+        //  함정 종류를 뽑아 와 비율이 조용히 어긋났다. 지금은 전부 함정으로 확정된다.
+        [Test]
+        public void 성한_종류가_없으면_비율과_무관하게_전부_함정이다()
+        {
+            var kinds = new[] { new ArcheryTargetKind(0.50f, -5, 100, true) };
+            var config = ConfigWith(kinds, TouchingDistance(kinds), trapRatioMin: 0f, trapRatioMax: 0.5f);
+            var targets = new List<ArcheryTarget>();
+
+            for (int wave = 0; wave < 200; wave++)
+            {
+                ArcheryWaveGenerator.Fill(targets, 13UL, wave, config);
+                Assert.That(targets.Count, Is.InRange(config.MinTargets, config.MaxTargets), $"wave {wave}");
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    Assert.IsTrue(targets[i].IsTrap, $"wave {wave} slot {i}");
+                }
+            }
+        }
+
         private static ArcheryTargetKind[] TrapMixedKinds()
         {
             return new[]

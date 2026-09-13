@@ -32,8 +32,8 @@ namespace LOP
 
         /// <summary>
         /// 그 웨이브의 과녁을 <paramref name="into"/>에 채운다(먼저 비운다).
-        /// <b>난수를 꺼내는 순서가 곧 계약이다</b> — 개수 → 함정 비율 → 슬롯마다
-        /// (함정인가 → 종류 → 각도 → 반지름 → 높이).
+        /// <b>난수를 꺼내는 순서가 곧 계약이다</b> — 개수 → (함정 종류가 있으면) 함정 비율 →
+        /// 슬롯마다 (함정인가 → 종류 → 각도 → 반지름 → 높이).
         /// 이 순서를 바꾸면 같은 씨앗이 다른 과녁을 내놓아 클·서가 갈린다.
         /// </summary>
         public static void Fill(List<ArcheryTarget> into, ulong matchSeed, int waveIndex, ArcheryConfig config)
@@ -56,6 +56,14 @@ namespace LOP
             {
                 float ratio = rng.Range(config.TrapRatioMin, config.TrapRatioMax);
                 trapCount = Mathf.Clamp(Mathf.RoundToInt(ratio * count), 0, count);
+
+                //  성한 종류가 아예 없으면 "성한 자리"를 만들 수가 없다 — 비율과 상관없이 전부
+                //  함정이다. 이 줄이 없으면 성한 자리가 아래 대비책을 타고 함정 종류를 뽑아 와,
+                //  실제 함정 수가 비율보다 많아지는데 에러는 안 난다.
+                if (config.CleanKinds.Count == 0)
+                {
+                    trapCount = count;
+                }
             }
 
             int remainingTraps = trapCount;
@@ -74,7 +82,10 @@ namespace LOP
                 var pool = isTrap ? config.TrapKinds : config.CleanKinds;
                 if (pool.Count == 0)
                 {
-                    pool = config.Kinds;   // 한쪽 데이터가 비었다 — 판이 멈추는 것보다 낫다
+                    //  위에서 함정/성한 자리 수를 각 목록이 실제로 있는 만큼만 만들어 두므로,
+                    //  이제는 이 분기를 안 타야 정상이다. 그래도 지워 두지 않는다 —
+                    //  PickKind가 빈 목록을 받으면 예외를 던져 판이 죽는다.
+                    pool = config.Kinds;
                 }
 
                 ArcheryTargetKind kind = PickKind(pool, ref rng);
