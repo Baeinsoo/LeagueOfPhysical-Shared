@@ -8,7 +8,9 @@ namespace LOP
         public readonly int Gained;
         public readonly int Lost;
 
-        /// <summary>점수가 실제로 움직이는 양. 연출("+2"/"−3")에 쓴다.</summary>
+        /// <summary>점수가 실제로 움직이는 양(부호 있음). 연출용으로 클라에 전달되지만, 지금은
+        /// 이 값을 실제로 그리는 화면이 없다 — 함정을 맞히면 과녁이 사라지고 HUD 합계가
+        /// 줄어드는 것으로만 드러난다.</summary>
         public int Delta => Gained - Lost;
 
         public ArcheryHitOutcome(int gained, int lost)

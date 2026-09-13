@@ -9,7 +9,7 @@ namespace LOP
         /// <summary>과녁을 맞혀 얻은 합.</summary>
         public int Gained;
 
-        /// <summary>함정 등으로 잃은 합. 슬라이스 2에는 벌점이 없어 늘 0이다.</summary>
+        /// <summary>함정을 맞혀 깎인 합.</summary>
         public int Lost;
 
         /// <summary>최종 점수. 파생값이라 둘과 어긋날 수 없다.</summary>

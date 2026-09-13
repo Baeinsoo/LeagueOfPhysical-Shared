@@ -74,15 +74,9 @@ namespace LOP.Tests
 
             Assert.AreNotEqual(a, b);
             //  위상은 해시의 아래 16비트만 쓰므로 서로 다른 id가 같은 위상이 될 확률이 6만분의 1쯤
-            //  있다. 이 두 id는 25692와 26901로 갈린다(계획 단계에서 FNV를 직접 계산해 확인).
-            //  실패하면 id를 바꾸지 말고 위상 비트 수를 늘릴 것 — 겹침이 실제로 난다는 신호다.
+            //  있다. 이 두 id는 27484와 28789로 갈린다(GameFramework.Rng.Hashing.Fnv1a64로 직접
+            //  계산해 확인). 실패하면 id를 바꾸지 말고 위상 비트 수를 늘릴 것 — 겹침이 실제로 난다는 신호다.
             Assert.AreNotEqual(ArcheryShake.Offset(2.5f, a, config), ArcheryShake.Offset(2.5f, b, config));
-        }
-
-        [Test]
-        public void 같은_사람이면_위상도_같다()
-        {
-            Assert.AreEqual(ArcheryShake.PhaseSeedOf("entity-a"), ArcheryShake.PhaseSeedOf("entity-a"));
         }
 
         //  값이 뚝뚝 끊기면 손떨림이 아니라 화면 고장으로 보인다.

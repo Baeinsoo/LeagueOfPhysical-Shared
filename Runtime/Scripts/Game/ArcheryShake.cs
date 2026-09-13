@@ -53,23 +53,12 @@ namespace LOP
         /// <summary>사람마다 다른 위상을 준다. 같은 사람이면 언제 물어도 같다.</summary>
         public static int PhaseSeedOf(string entityId)
         {
-            if (string.IsNullOrEmpty(entityId))
-            {
-                return 0;
-            }
-
-            //  FNV-1a. 문자열 해시를 직접 쓰지 않는 이유는 런타임마다 값이 달라질 수 있어서다 —
-            //  클라와 서버가 다른 위상을 보면 보이는 것과 화살 가는 곳이 갈린다.
-            unchecked
-            {
-                uint hash = 2166136261u;
-                for (int i = 0; i < entityId.Length; i++)
-                {
-                    hash ^= entityId[i];
-                    hash *= 16777619u;
-                }
-                return (int)(hash & 0x7FFFFFFF);
-            }
+            //  프레임워크 공용 해시(GameFramework.Rng.Hashing.Fnv1a64)를 쓴다. 문자열 해시를 직접
+            //  쓰지 않는 이유는 이 흔들림이 클·서 합의가 필요해서가 아니다(서버는 흔들림을 계산조차
+            //  안 한다 — 흔들림은 클라가 만든 값이 조준 각도에 이미 녹아 서버로 전송될 뿐이다).
+            //  진짜 이유는 string.GetHashCode()가 런타임/실행마다 값이 달라질 수 있어서다 —
+            //  그러면 같은 사람의 흔들림 패턴이 세션마다 바뀌어 보인다.
+            return (int)(GameFramework.Rng.Hashing.Fnv1a64(entityId) & 0x7FFFFFFF);
         }
 
         //  느린 파 + 빠른 파. 합이 -1~1을 넘지 않도록 몫을 나눠 둔다.
