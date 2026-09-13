@@ -221,7 +221,7 @@ namespace LOP.Tests
                 new ArcheryTargetKind(0.60f, 1, 50, false),
                 new ArcheryTargetKind(0.40f, -3, 50, true),
             };
-            var config = ConfigWith(kinds, TouchingDistance(kinds));
+            var config = ConfigWith(kinds, TouchingDistance(kinds), trapRatioMin: 0f, trapRatioMax: 1f);
             var targets = new List<ArcheryTarget>();
 
             for (int wave = 0; wave < 100; wave++)
@@ -260,6 +260,97 @@ namespace LOP.Tests
 
             Assert.AreEqual(1, config.CleanKinds.Count);
             Assert.AreEqual(0, config.TrapKinds.Count);
+        }
+
+        //  이 비율 손잡이가 실제로 듣는지 본다 — 안 들으면 "참을까 말까"를 조절할 방법이 없다.
+        [Test]
+        public void 비율을_0으로_두면_함정이_하나도_안_뜬다()
+        {
+            var kinds = TrapMixedKinds();
+            var config = ConfigWith(kinds, TouchingDistance(kinds), trapRatioMin: 0f, trapRatioMax: 0f);
+            var targets = new List<ArcheryTarget>();
+
+            for (int wave = 0; wave < 300; wave++)
+            {
+                ArcheryWaveGenerator.Fill(targets, 3UL, wave, config);
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    Assert.IsFalse(targets[i].IsTrap, $"wave {wave} slot {i}");
+                }
+            }
+        }
+
+        [Test]
+        public void 비율을_1로_두면_전부_함정이다()
+        {
+            var kinds = TrapMixedKinds();
+            var config = ConfigWith(kinds, TouchingDistance(kinds), trapRatioMin: 1f, trapRatioMax: 1f);
+            var targets = new List<ArcheryTarget>();
+
+            for (int wave = 0; wave < 300; wave++)
+            {
+                ArcheryWaveGenerator.Fill(targets, 3UL, wave, config);
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    Assert.IsTrue(targets[i].IsTrap, $"wave {wave} slot {i}");
+                }
+            }
+        }
+
+        //  spec 3절: "0개도, 전부도 가능". 범위를 열어 두면 양 끝이 실제로 나와야 한다.
+        [Test]
+        public void 범위를_열어_두면_전부_성한_웨이브와_전부_함정인_웨이브가_둘_다_나온다()
+        {
+            var kinds = TrapMixedKinds();
+            var config = ConfigWith(kinds, TouchingDistance(kinds), trapRatioMin: 0f, trapRatioMax: 1f);
+            var targets = new List<ArcheryTarget>();
+
+            bool sawAllClean = false;
+            bool sawAllTrap = false;
+            for (int wave = 0; wave < 300; wave++)
+            {
+                ArcheryWaveGenerator.Fill(targets, 7UL, wave, config);
+                int traps = 0;
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    traps += targets[i].IsTrap ? 1 : 0;
+                }
+                sawAllClean |= traps == 0;
+                sawAllTrap |= traps == targets.Count && targets.Count > 0;
+            }
+
+            Assert.IsTrue(sawAllClean, "전부 성한 웨이브가 한 번도 안 나왔다");
+            Assert.IsTrue(sawAllTrap, "전부 함정인 웨이브가 한 번도 안 나왔다");
+        }
+
+        //  데이터에 함정 종류가 없는데 비율만 올려 둔 경우. 조용히 성한 과녁을 함정으로 만들면 안 된다.
+        [Test]
+        public void 함정_종류가_없으면_비율이_1이어도_함정이_안_뜬다()
+        {
+            var kinds = Kinds();
+            var config = ConfigWith(kinds, TouchingDistance(kinds), trapRatioMin: 1f, trapRatioMax: 1f);
+            var targets = new List<ArcheryTarget>();
+
+            for (int wave = 0; wave < 100; wave++)
+            {
+                ArcheryWaveGenerator.Fill(targets, 9UL, wave, config);
+                Assert.That(targets.Count, Is.InRange(config.MinTargets, config.MaxTargets),
+                            $"wave {wave}: 과녁이 아예 안 떴다");
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    Assert.IsFalse(targets[i].IsTrap, $"wave {wave} slot {i}");
+                }
+            }
+        }
+
+        private static ArcheryTargetKind[] TrapMixedKinds()
+        {
+            return new[]
+            {
+                new ArcheryTargetKind(0.60f, 1, 50, false),
+                new ArcheryTargetKind(0.40f, 2, 35, false),
+                new ArcheryTargetKind(0.50f, -3, 40, true),
+            };
         }
 
         [Test]
