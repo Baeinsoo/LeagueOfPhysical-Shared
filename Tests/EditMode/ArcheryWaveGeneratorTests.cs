@@ -26,9 +26,17 @@ namespace LOP.Tests
 
         private static ArcheryConfig ConfigWith(ArcheryTargetKind[] kinds, float minSeparation)
         {
+            return ConfigWith(kinds, minSeparation, trapRatioMin: 0f, trapRatioMax: 0f);
+        }
+
+        private static ArcheryConfig ConfigWith(ArcheryTargetKind[] kinds, float minSeparation,
+                                                float trapRatioMin, float trapRatioMax)
+        {
             return new ArcheryConfig(
                 wavePeriodTicks: 88, minTargets: 2, maxTargets: 3,
                 spawnRadius: 2f, spawnMinY: 2f, spawnMaxY: 6f, minSeparation: minSeparation,
+                trapRatioMin: trapRatioMin, trapRatioMax: trapRatioMax,
+                shakeFreeSeconds: 1f, shakeRampSeconds: 2f, shakeMaxDegrees: 3f,
                 kinds: kinds);
         }
 
@@ -226,6 +234,32 @@ namespace LOP.Tests
                     Assert.AreEqual(fromRadius, targets[i].IsTrap, $"wave {wave} slot {i}");
                 }
             }
+        }
+
+        [Test]
+        public void 종류를_성한_것과_함정으로_갈라_들고_있는다()
+        {
+            var kinds = new[]
+            {
+                new ArcheryTargetKind(0.60f, 1, 50, false),
+                new ArcheryTargetKind(0.40f, -3, 30, true),
+                new ArcheryTargetKind(0.25f, 4, 20, false),
+            };
+            var config = ConfigWith(kinds, TouchingDistance(kinds));
+
+            Assert.AreEqual(2, config.CleanKinds.Count);
+            Assert.AreEqual(1, config.TrapKinds.Count);
+            Assert.IsTrue(config.TrapKinds[0].IsTrap);
+        }
+
+        [Test]
+        public void 종류가_한쪽뿐이면_다른_쪽은_빈_목록이다()
+        {
+            var kinds = new[] { new ArcheryTargetKind(0.60f, 1, 50, false) };
+            var config = ConfigWith(kinds, TouchingDistance(kinds));
+
+            Assert.AreEqual(1, config.CleanKinds.Count);
+            Assert.AreEqual(0, config.TrapKinds.Count);
         }
 
         [Test]
