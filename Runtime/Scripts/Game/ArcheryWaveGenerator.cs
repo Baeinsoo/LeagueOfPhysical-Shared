@@ -51,7 +51,7 @@ namespace LOP
             {
                 ArcheryTargetKind kind = PickKind(config.Kinds, ref rng);
                 Vector3 center = PickCenter(into, config, ref rng);
-                into.Add(new ArcheryTarget(waveIndex, slot, center, kind.Radius, kind.Points));
+                into.Add(new ArcheryTarget(waveIndex, slot, center, kind.Radius, kind.Points, kind.IsTrap));
             }
         }
 

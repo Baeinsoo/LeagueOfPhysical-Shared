@@ -10,9 +10,9 @@ namespace LOP.Tests
         {
             return new[]
             {
-                new ArcheryTargetKind(0.60f, 1, 50),
-                new ArcheryTargetKind(0.40f, 2, 35),
-                new ArcheryTargetKind(0.25f, 4, 15),
+                new ArcheryTargetKind(0.60f, 1, 50, false),
+                new ArcheryTargetKind(0.40f, 2, 35, false),
+                new ArcheryTargetKind(0.25f, 4, 15, false),
             };
         }
 
@@ -203,6 +203,29 @@ namespace LOP.Tests
         public void 최대_반경은_가장_큰_종류를_따른다()
         {
             Assert.AreEqual(0.60f, Config().MaxTargetRadius);
+        }
+
+        [Test]
+        public void 과녁은_자기_종류의_함정_표시를_이어받는다()
+        {
+            var kinds = new[]
+            {
+                new ArcheryTargetKind(0.60f, 1, 50, false),
+                new ArcheryTargetKind(0.40f, -3, 50, true),
+            };
+            var config = ConfigWith(kinds, TouchingDistance(kinds));
+            var targets = new List<ArcheryTarget>();
+
+            for (int wave = 0; wave < 100; wave++)
+            {
+                ArcheryWaveGenerator.Fill(targets, 11UL, wave, config);
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    //  함정 종류는 반경 0.40 하나뿐이라, 표시가 제대로 따라왔으면 둘이 항상 같이 움직인다.
+                    bool fromRadius = Mathf.Approximately(targets[i].Radius, 0.40f);
+                    Assert.AreEqual(fromRadius, targets[i].IsTrap, $"wave {wave} slot {i}");
+                }
+            }
         }
 
         [Test]
