@@ -19,7 +19,10 @@ namespace LOP.Tests
             return entity;
         }
 
-        static void Feed(Entity entity, float yaw, float pitch, bool drawing, bool release)
+        //  당김은 손가락이 끈 거리가 정한다 — 완전히 당긴 상태(1.0)를 기본으로 먹인다.
+        //  임계치(DrawThreshold) 미만이면 떼도 안 쏘므로, 취소를 재는 테스트만 따로 낮춰 부른다.
+        static void Feed(Entity entity, float yaw, float pitch, bool drawing, bool release,
+                         float drawRatio = 1f)
         {
             entity.Get<InputBuffer>().Current = new InputCommand
             {
@@ -27,6 +30,9 @@ namespace LOP.Tests
                 AimPitch = pitch,
                 Drawing = drawing,
                 Release = release,
+                //  떼는 틱은 Drawing=false로 온다(실제 클라와 같다) — 그때도 값을 싣되,
+                //  시뮬은 당기던 동안 쌓아 둔 값을 쓰므로 여기 값은 무시된다.
+                DrawRatio = drawRatio,
             };
         }
 
@@ -216,7 +222,7 @@ namespace LOP.Tests
             var buffer = archer.Get<InputBuffer>();
 
             // tick 100: 진짜 커맨드로 당기기 시작
-            inputSystem.Enqueue(buffer, 100, new InputCommand { SequenceNumber = 1, Drawing = true });
+            inputSystem.Enqueue(buffer, 100, new InputCommand { SequenceNumber = 1, Drawing = true, DrawRatio = 1f });
             inputSystem.Consume(buffer, 100);
             aimSystem.Tick(archer, 100, TickInterval);
 
@@ -227,7 +233,7 @@ namespace LOP.Tests
             Assert.IsTrue(archer.Get<ArcheryAim>().Drawing, "예측(유실 보정) 틱에서도 당김이 유지돼야 한다");
 
             // tick 102: 진짜 Release 커맨드가 도착
-            inputSystem.Enqueue(buffer, 102, new InputCommand { SequenceNumber = 2, Release = true });
+            inputSystem.Enqueue(buffer, 102, new InputCommand { SequenceNumber = 2, Release = true, DrawRatio = 1f });
             inputSystem.Consume(buffer, 102);
             var shot = aimSystem.Tick(archer, 102, TickInterval);
 
@@ -256,5 +262,56 @@ namespace LOP.Tests
             Assert.IsTrue(first.HasValue);
             Assert.IsNull(second, "당김 가드가 없으면 같은 Release 커맨드가 남아 두 번 쏜다");
         }
+
+        //  손가락이 스치기만 해도 화살이 나가면 조준하다 실수로 쏘게 된다. 임계치가 그 선이다.
+        [Test]
+        public void 임계치를_못_넘고_떼면_쏘지_않는다()
+        {
+            var archer = Archer(Vector3.zero);
+            var system = new ArcheryAimSystem();
+
+            Feed(archer, 0f, 0f, drawing: true, release: false,
+                 drawRatio: ArcheryAimSystem.DrawThreshold - 0.01f);
+            system.Tick(archer, 100, TickInterval);
+
+            Feed(archer, 0f, 0f, drawing: true, release: true,
+                 drawRatio: ArcheryAimSystem.DrawThreshold - 0.01f);
+            Assert.IsNull(system.Tick(archer, 101, TickInterval), "임계치 미만이면 취소여야 한다");
+        }
+
+        [Test]
+        public void 임계치를_넘기면_쏜다()
+        {
+            var archer = Archer(Vector3.zero);
+            var system = new ArcheryAimSystem();
+
+            Feed(archer, 0f, 0f, drawing: true, release: false,
+                 drawRatio: ArcheryAimSystem.DrawThreshold);
+            system.Tick(archer, 100, TickInterval);
+
+            Feed(archer, 0f, 0f, drawing: true, release: true,
+                 drawRatio: ArcheryAimSystem.DrawThreshold);
+            Assert.IsNotNull(system.Tick(archer, 101, TickInterval));
+        }
+
+        //  당긴 만큼 빨라진다 — 드래그 거리가 파워를 정한다는 계약 그 자체다.
+        [Test]
+        public void 많이_당길수록_화살이_빠르다()
+        {
+            float Speed(float ratio)
+            {
+                var archer = Archer(Vector3.zero);
+                var system = new ArcheryAimSystem();
+                Feed(archer, 0f, 0f, drawing: true, release: false, drawRatio: ratio);
+                system.Tick(archer, 100, TickInterval);
+                Feed(archer, 0f, 0f, drawing: true, release: true, drawRatio: ratio);
+                return system.Tick(archer, 101, TickInterval).Value.Velocity.magnitude;
+            }
+
+            Assert.Less(Speed(0.3f), Speed(1f));
+            //  상한이 있다 — 1을 넘겨 실어도 더 세지지 않는다.
+            Assert.AreEqual(Speed(1f), Speed(2f), 1e-3f);
+        }
+
     }
 }

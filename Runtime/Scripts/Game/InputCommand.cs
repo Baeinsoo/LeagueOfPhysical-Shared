@@ -40,9 +40,15 @@ namespace LOP
         /// <summary>손을 뗀 틱에만 참인 이산 액션이다(<see cref="Jump"/>와 같은 짝).</summary>
         public bool Release { get; set; }
 
+        /// <summary>
+        /// 얼마나 당겼나(0~1). 엄지로 끈 거리를 화면 크기로 나눈 값이라 기기가 달라도 같은 손동작이면
+        /// 같다. 화살 속도를 이 값이 정하고, 임계치를 못 넘고 떼면 쏘지 않고 취소된다.
+        /// </summary>
+        public float DrawRatio { get; set; }
+
         // 진단 로그가 커맨드를 한 줄로 찍을 때 쓴다. 무엇이 실렸는지는 커맨드 자신이 안다 —
         // 읽는 쪽(넷코드 로그)이 필드를 하나씩 나열하면 그쪽이 게임 내용을 알게 된다.
         public override string ToString()
-            => $"h={Horizontal:F2} v={Vertical:F2} jump={Jump} ability={AbilityId} posture={Posture:F2} glide={Glide} posing={Posing} dash={Dash} aim=({AimYaw:F1},{AimPitch:F1}) draw={Drawing} release={Release}";
+            => $"h={Horizontal:F2} v={Vertical:F2} jump={Jump} ability={AbilityId} posture={Posture:F2} glide={Glide} posing={Posing} dash={Dash} aim=({AimYaw:F1},{AimPitch:F1}) draw={Drawing}({DrawRatio:F2}) release={Release}";
     }
 }

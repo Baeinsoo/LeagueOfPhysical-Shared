@@ -22,17 +22,17 @@ public static partial class InputCommandReflection {
   static InputCommandReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChJJbnB1dENvbW1hbmQucHJvdG8i8wEKDElucHV0Q29tbWFuZBIXCg9zZXF1",
+          "ChJJbnB1dENvbW1hbmQucHJvdG8ihwIKDElucHV0Q29tbWFuZBIXCg9zZXF1",
           "ZW5jZV9udW1iZXIYASABKAMSEgoKaG9yaXpvbnRhbBgCIAEoAhIQCgh2ZXJ0",
           "aWNhbBgDIAEoAhIMCgRqdW1wGAQgASgIEhIKCmFiaWxpdHlfaWQYBiABKAUS",
           "DwoHcG9zdHVyZRgHIAEoAhINCgVnbGlkZRgIIAEoCBIOCgZwb3NpbmcYCSAB",
           "KAgSDAoEZGFzaBgKIAEoCBIPCgdhaW1feWF3GAsgASgCEhEKCWFpbV9waXRj",
-          "aBgMIAEoAhIPCgdkcmF3aW5nGA0gASgIEg8KB3JlbGVhc2UYDiABKAhiBnBy",
-          "b3RvMw=="));
+          "aBgMIAEoAhIPCgdkcmF3aW5nGA0gASgIEg8KB3JlbGVhc2UYDiABKAgSEgoK",
+          "ZHJhd19yYXRpbxgPIAEoAmIGcHJvdG8z"));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::InputCommand), global::InputCommand.Parser, new[]{ "SequenceNumber", "Horizontal", "Vertical", "Jump", "AbilityId", "Posture", "Glide", "Posing", "Dash", "AimYaw", "AimPitch", "Drawing", "Release" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::InputCommand), global::InputCommand.Parser, new[]{ "SequenceNumber", "Horizontal", "Vertical", "Jump", "AbilityId", "Posture", "Glide", "Posing", "Dash", "AimYaw", "AimPitch", "Drawing", "Release", "DrawRatio" }, null, null, null, null)
         }));
   }
   #endregion
@@ -87,6 +87,7 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     aimPitch_ = other.aimPitch_;
     drawing_ = other.drawing_;
     release_ = other.release_;
+    drawRatio_ = other.drawRatio_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -277,6 +278,22 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     }
   }
 
+  /// <summary>Field number for the "draw_ratio" field.</summary>
+  public const int DrawRatioFieldNumber = 15;
+  private float drawRatio_;
+  /// <summary>
+  /// Archery: 얼마나 당겼나(0~1). 엄지로 끈 거리를 화면 크기에 맞춰 정규화한 값이라
+  /// 기기 해상도가 달라도 같은 손동작이면 같은 값이 된다. 화살 속도를 이 값이 정한다.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public float DrawRatio {
+    get { return drawRatio_; }
+    set {
+      drawRatio_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -305,6 +322,7 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(AimPitch, other.AimPitch)) return false;
     if (Drawing != other.Drawing) return false;
     if (Release != other.Release) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(DrawRatio, other.DrawRatio)) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -325,6 +343,7 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     if (AimPitch != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(AimPitch);
     if (Drawing != false) hash ^= Drawing.GetHashCode();
     if (Release != false) hash ^= Release.GetHashCode();
+    if (DrawRatio != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(DrawRatio);
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -395,6 +414,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
       output.WriteRawTag(112);
       output.WriteBool(Release);
     }
+    if (DrawRatio != 0F) {
+      output.WriteRawTag(125);
+      output.WriteFloat(DrawRatio);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -457,6 +480,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
       output.WriteRawTag(112);
       output.WriteBool(Release);
     }
+    if (DrawRatio != 0F) {
+      output.WriteRawTag(125);
+      output.WriteFloat(DrawRatio);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -505,6 +532,9 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     }
     if (Release != false) {
       size += 1 + 1;
+    }
+    if (DrawRatio != 0F) {
+      size += 1 + 4;
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -556,6 +586,9 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     }
     if (other.Release != false) {
       Release = other.Release;
+    }
+    if (other.DrawRatio != 0F) {
+      DrawRatio = other.DrawRatio;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -628,6 +661,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
           Release = input.ReadBool();
           break;
         }
+        case 125: {
+          DrawRatio = input.ReadFloat();
+          break;
+        }
       }
     }
   #endif
@@ -697,6 +734,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
         }
         case 112: {
           Release = input.ReadBool();
+          break;
+        }
+        case 125: {
+          DrawRatio = input.ReadFloat();
           break;
         }
       }
