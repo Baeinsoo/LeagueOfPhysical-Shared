@@ -7,7 +7,7 @@ namespace LOP.Tests
     {
         private static ArcheryTarget Target(int points, bool isTrap)
         {
-            return new ArcheryTarget(0, 0, Vector3.zero, 0.5f, points, isTrap);
+            return new ArcheryTarget(0, 0, Vector3.zero, 0f, 0L, 0.5f, points, isTrap);
         }
 
         [Test]

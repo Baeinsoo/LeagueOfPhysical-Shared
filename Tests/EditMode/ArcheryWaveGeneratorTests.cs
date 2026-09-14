@@ -24,19 +24,37 @@ namespace LOP.Tests
             return ConfigWith(Kinds(), TouchingDistance(Kinds()));
         }
 
+        //  실측 기본값과 같은 모양으로 둔다 — 테스트가 배포 데이터와 다른 조건을 시험하면
+        //  통과해도 아무것도 보장하지 못한다.
+        private const float TestRiseHeightMin = 1.2f;
+        private const float TestRiseHeightMax = 2.4f;
+        private const int TestStaggerTicks = 12;
+        private const int TestRestTicks = 20;
+
+        //  모든 테스트가 같은 출발 틱을 쓴다 — 절대 틱이 필요한 것은 SpawnTick 계산뿐이라
+        //  값 자체에는 의미가 없다.
+        private const long TestStartTick = 1000;
+
+        private static void Fill(List<ArcheryTarget> into, ulong seed, int wave, ArcheryConfig config)
+        {
+            ArcheryWaveGenerator.Fill(into, seed, wave, config, TestStartTick);
+        }
+
         private static ArcheryConfig ConfigWith(ArcheryTargetKind[] kinds, float minSeparation)
         {
             return ConfigWith(kinds, minSeparation, trapRatioMin: 0f, trapRatioMax: 0f);
         }
 
         private static ArcheryConfig ConfigWith(ArcheryTargetKind[] kinds, float minSeparation,
-                                                float trapRatioMin, float trapRatioMax)
+                                                float trapRatioMin = 0f, float trapRatioMax = 0f)
         {
             return new ArcheryConfig(
-                wavePeriodTicks: 88, minTargets: 2, maxTargets: 3,
-                spawnRadius: 2f, spawnMinY: 2f, spawnMaxY: 6f, minSeparation: minSeparation,
+                wavePeriodTicks: 120, minTargets: 3, maxTargets: 5,
+                spawnRadius: 3.5f, spawnMinY: 0.3f, spawnMaxY: 0.6f, minSeparation: minSeparation,
                 trapRatioMin: trapRatioMin, trapRatioMax: trapRatioMax,
-                shakeFreeSeconds: 1f, shakeRampSeconds: 2f, shakeMaxDegrees: 3f,
+                shakeFreeSeconds: 1.2f, shakeRampSeconds: 2.5f, shakeMaxDegrees: 0f,
+                riseHeightMin: TestRiseHeightMin, riseHeightMax: TestRiseHeightMax,
+                staggerTicks: TestStaggerTicks, restTicks: TestRestTicks,
                 kinds: kinds);
         }
 
@@ -63,10 +81,13 @@ namespace LOP.Tests
         public void 웨이브는_주기마다_한_칸씩_오른다()
         {
             var config = Config();
+            //  경계를 주기 값에서 뽑는다 — 숫자로 박아 두면 Config()의 wavePeriodTicks가
+            //  바뀔 때마다 이 테스트가 그 값과 몰래 어긋난다.
+            int period = config.WavePeriodTicks;
             Assert.AreEqual(0, ArcheryWaveGenerator.WaveIndexAt(1000, 1000, config));
-            Assert.AreEqual(0, ArcheryWaveGenerator.WaveIndexAt(1087, 1000, config));
-            Assert.AreEqual(1, ArcheryWaveGenerator.WaveIndexAt(1088, 1000, config));
-            Assert.AreEqual(2, ArcheryWaveGenerator.WaveIndexAt(1176, 1000, config));
+            Assert.AreEqual(0, ArcheryWaveGenerator.WaveIndexAt(1000 + period - 1, 1000, config));
+            Assert.AreEqual(1, ArcheryWaveGenerator.WaveIndexAt(1000 + period, 1000, config));
+            Assert.AreEqual(2, ArcheryWaveGenerator.WaveIndexAt(1000 + period * 2, 1000, config));
         }
 
         [Test]
@@ -90,8 +111,8 @@ namespace LOP.Tests
 
             for (int wave = 0; wave < 40; wave++)
             {
-                ArcheryWaveGenerator.Fill(a, 0xC0FFEEUL, wave, config);
-                ArcheryWaveGenerator.Fill(b, 0xC0FFEEUL, wave, config);
+                Fill(a, 0xC0FFEEUL, wave, config);
+                Fill(b, 0xC0FFEEUL, wave, config);
 
                 Assert.AreEqual(a.Count, b.Count, $"wave {wave}");
                 for (int i = 0; i < a.Count; i++)
@@ -100,9 +121,13 @@ namespace LOP.Tests
                     Assert.AreEqual(a[i].Radius, b[i].Radius);
                     Assert.AreEqual(a[i].Points, b[i].Points);
                     //  부동소수도 *완전히* 같아야 한다 — 근사 비교로 두면 갈라지는 순간을 못 잡는다.
-                    Assert.AreEqual(a[i].Center.x, b[i].Center.x);
-                    Assert.AreEqual(a[i].Center.y, b[i].Center.y);
-                    Assert.AreEqual(a[i].Center.z, b[i].Center.z);
+                    Assert.AreEqual(a[i].Origin.x, b[i].Origin.x);
+                    Assert.AreEqual(a[i].Origin.y, b[i].Origin.y);
+                    Assert.AreEqual(a[i].Origin.z, b[i].Origin.z);
+                    //  솟는 속도와 솟는 시각도 과녁을 이루는 값이다. 여기서 안 재면 난수가 갈라져도
+                    //  이 테스트가 초록으로 통과해, 정작 클·서가 다른 과녁을 봐도 아무도 모른다.
+                    Assert.AreEqual(a[i].RiseSpeed, b[i].RiseSpeed);
+                    Assert.AreEqual(a[i].SpawnTick, b[i].SpawnTick);
                 }
             }
         }
@@ -113,9 +138,9 @@ namespace LOP.Tests
             var config = Config();
             var a = new List<ArcheryTarget>();
             var b = new List<ArcheryTarget>();
-            ArcheryWaveGenerator.Fill(a, 1UL, 0, config);
-            ArcheryWaveGenerator.Fill(b, 2UL, 0, config);
-            Assert.AreNotEqual(a[0].Center, b[0].Center);
+            Fill(a, 1UL, 0, config);
+            Fill(b, 2UL, 0, config);
+            Assert.AreNotEqual(a[0].Origin, b[0].Origin);
         }
 
         [Test]
@@ -124,9 +149,9 @@ namespace LOP.Tests
             var config = Config();
             var a = new List<ArcheryTarget>();
             var b = new List<ArcheryTarget>();
-            ArcheryWaveGenerator.Fill(a, 7UL, 0, config);
-            ArcheryWaveGenerator.Fill(b, 7UL, 1, config);
-            Assert.AreNotEqual(a[0].Center, b[0].Center);
+            Fill(a, 7UL, 0, config);
+            Fill(b, 7UL, 1, config);
+            Assert.AreNotEqual(a[0].Origin, b[0].Origin);
         }
 
         [Test]
@@ -136,11 +161,11 @@ namespace LOP.Tests
             var targets = new List<ArcheryTarget>();
             for (int wave = 0; wave < 200; wave++)
             {
-                ArcheryWaveGenerator.Fill(targets, 42UL, wave, config);
+                Fill(targets, 42UL, wave, config);
                 Assert.That(targets.Count, Is.InRange(config.MinTargets, config.MaxTargets));
                 for (int i = 0; i < targets.Count; i++)
                 {
-                    var c = targets[i].Center;
+                    var c = targets[i].Origin;
                     float horizontal = new Vector2(c.x, c.z).magnitude;
                     Assert.LessOrEqual(horizontal, config.SpawnRadius + 1e-4f);
                     Assert.That(c.y, Is.InRange(config.SpawnMinY, config.SpawnMaxY));
@@ -157,12 +182,12 @@ namespace LOP.Tests
             var targets = new List<ArcheryTarget>();
             for (int wave = 0; wave < 200; wave++)
             {
-                ArcheryWaveGenerator.Fill(targets, 99UL, wave, config);
+                Fill(targets, 99UL, wave, config);
                 for (int i = 0; i < targets.Count; i++)
                 {
                     for (int j = i + 1; j < targets.Count; j++)
                     {
-                        float gap = Vector3.Distance(targets[i].Center, targets[j].Center);
+                        float gap = Vector3.Distance(targets[i].Origin, targets[j].Origin);
                         float touching = targets[i].Radius + targets[j].Radius;
                         //  딱 맞닿는 건 겹친 게 아니다 — 간격 기준이 정확히 그 거리라 경계가 허용된다.
                         Assert.GreaterOrEqual(gap, touching, $"wave {wave}: {i}과 {j}가 겹친다");
@@ -183,12 +208,12 @@ namespace LOP.Tests
 
             for (int wave = 0; wave < 200; wave++)
             {
-                ArcheryWaveGenerator.Fill(targets, 99UL, wave, config);
+                Fill(targets, 99UL, wave, config);
                 for (int i = 0; i < targets.Count; i++)
                 {
                     for (int j = i + 1; j < targets.Count; j++)
                     {
-                        float gap = Vector3.Distance(targets[i].Center, targets[j].Center);
+                        float gap = Vector3.Distance(targets[i].Origin, targets[j].Origin);
                         if (gap < targets[i].Radius + targets[j].Radius)
                         {
                             Assert.Pass($"wave {wave}: {i}과 {j}가 겹쳤다 — 기준이 짧으면 이렇게 된다");
@@ -226,7 +251,7 @@ namespace LOP.Tests
 
             for (int wave = 0; wave < 100; wave++)
             {
-                ArcheryWaveGenerator.Fill(targets, 11UL, wave, config);
+                Fill(targets, 11UL, wave, config);
                 for (int i = 0; i < targets.Count; i++)
                 {
                     //  함정 종류는 반경 0.40 하나뿐이라, 표시가 제대로 따라왔으면 둘이 항상 같이 움직인다.
@@ -272,7 +297,7 @@ namespace LOP.Tests
 
             for (int wave = 0; wave < 300; wave++)
             {
-                ArcheryWaveGenerator.Fill(targets, 3UL, wave, config);
+                Fill(targets, 3UL, wave, config);
                 for (int i = 0; i < targets.Count; i++)
                 {
                     Assert.IsFalse(targets[i].IsTrap, $"wave {wave} slot {i}");
@@ -289,7 +314,7 @@ namespace LOP.Tests
 
             for (int wave = 0; wave < 300; wave++)
             {
-                ArcheryWaveGenerator.Fill(targets, 3UL, wave, config);
+                Fill(targets, 3UL, wave, config);
                 for (int i = 0; i < targets.Count; i++)
                 {
                     Assert.IsTrue(targets[i].IsTrap, $"wave {wave} slot {i}");
@@ -309,7 +334,7 @@ namespace LOP.Tests
             bool sawAllTrap = false;
             for (int wave = 0; wave < 300; wave++)
             {
-                ArcheryWaveGenerator.Fill(targets, 7UL, wave, config);
+                Fill(targets, 7UL, wave, config);
                 int traps = 0;
                 for (int i = 0; i < targets.Count; i++)
                 {
@@ -333,7 +358,7 @@ namespace LOP.Tests
 
             for (int wave = 0; wave < 100; wave++)
             {
-                ArcheryWaveGenerator.Fill(targets, 9UL, wave, config);
+                Fill(targets, 9UL, wave, config);
                 Assert.That(targets.Count, Is.InRange(config.MinTargets, config.MaxTargets),
                             $"wave {wave}: 과녁이 아예 안 떴다");
                 for (int i = 0; i < targets.Count; i++)
@@ -356,7 +381,7 @@ namespace LOP.Tests
 
             for (int wave = 0; wave < 200; wave++)
             {
-                ArcheryWaveGenerator.Fill(targets, 13UL, wave, config);
+                Fill(targets, 13UL, wave, config);
                 Assert.That(targets.Count, Is.InRange(config.MinTargets, config.MaxTargets), $"wave {wave}");
                 for (int i = 0; i < targets.Count; i++)
                 {
@@ -380,8 +405,136 @@ namespace LOP.Tests
         {
             var config = Config();
             var targets = new List<ArcheryTarget> { default, default, default, default, default };
-            ArcheryWaveGenerator.Fill(targets, 5UL, 0, config);
+            Fill(targets, 5UL, 0, config);
             Assert.That(targets.Count, Is.InRange(config.MinTargets, config.MaxTargets));
+        }
+
+        //  마지막 과녁이 떨어질 때까지 걸리는 시간이다 — 웨이브 주기가 이보다 짧으면
+        //  마지막 과녁이 공중에서 잘려 사라진다(에러는 안 난다).
+        //  높이가 과녁마다 다르므로 **가장 높이 솟는 경우**로 잡아야 안전하다.
+        //
+        //  기대값은 손으로 센 숫자다. 구현과 같은 식을 여기 다시 적으면 식이 틀렸을 때
+        //  양쪽이 똑같이 틀려서 아무것도 못 잡는다:
+        //    2.4m까지 솟으려면 출발 속도 sqrt(2 x 20 x 2.4) = 9.798 m/s
+        //    수명 2 x 9.798 / 20 = 0.9798초 -> 0.02초 틱으로 올려 세면 49틱
+        //    (5-1) x 12 + 49 = 97
+        [Test]
+        public void 묶음_길이는_가장_높이_솟는_과녁이_떨어질_때까지다()
+        {
+            var config = Config();
+
+            //  아래 세 값에서 97이 나온다. 하나라도 바뀌면 97도 바뀌어야 하므로 여기서 먼저 막는다 —
+            //  안 그러면 "97이 아니다"만 보이고 왜 틀렸는지는 안 보인다.
+            Assert.AreEqual(2.4f, TestRiseHeightMax, 1e-6f);
+            Assert.AreEqual(5, config.MaxTargets);
+            Assert.AreEqual(12, TestStaggerTicks);
+
+            Assert.AreEqual(97, config.BurstTicks);
+        }
+
+        //  spec 3.2: 동시에 뜨지 않고 하나씩 연달아 솟는다. 이 간격이 리듬을 만들고,
+        //  리듬이 있어야 손이 맞춰졌다가 함정에 걸린다.
+        [Test]
+        public void 묶음_안에서_슬롯마다_솟는_시각이_다르다()
+        {
+            var config = Config();
+            var targets = new List<ArcheryTarget>();
+            Fill(targets, 5UL, 0, config);
+
+            Assert.Greater(targets.Count, 1, "간격을 재려면 둘 이상이어야 한다");
+            for (int i = 1; i < targets.Count; i++)
+            {
+                Assert.AreEqual(config.StaggerTicks, targets[i].SpawnTick - targets[i - 1].SpawnTick,
+                                $"슬롯 {i - 1}과 {i} 사이 간격");
+            }
+        }
+
+        //  난수로 흩뜨리지 않는다 — 간격이 들쭉날쭉하면 리듬이 아니라 그냥 산만한 것이 된다.
+        [Test]
+        public void 솟는_간격은_웨이브가_달라도_일정하다()
+        {
+            var config = Config();
+            var targets = new List<ArcheryTarget>();
+
+            for (int wave = 0; wave < 50; wave++)
+            {
+                Fill(targets, 77UL, wave, config);
+                for (int i = 1; i < targets.Count; i++)
+                {
+                    Assert.AreEqual(config.StaggerTicks, targets[i].SpawnTick - targets[i - 1].SpawnTick,
+                                    $"wave {wave} slot {i}");
+                }
+            }
+        }
+
+        [Test]
+        public void 첫_과녁은_웨이브_시작에_솟는다()
+        {
+            var config = Config();
+            var targets = new List<ArcheryTarget>();
+
+            for (int wave = 0; wave < 10; wave++)
+            {
+                Fill(targets, 3UL, wave, config);
+                long waveStart = ArcheryWaveGenerator.WaveStartTick(wave, TestStartTick, config);
+                Assert.AreEqual(waveStart, targets[0].SpawnTick, $"wave {wave}");
+            }
+        }
+
+        //  높이가 설정 범위 안에 들어가야 한다 — 벗어나면 과녁이 공간 밖으로 나가거나
+        //  한 틱에 자기 반지름보다 많이 움직여 판정이 뚫린다.
+        [Test]
+        public void 솟는_높이가_설정_범위_안이다()
+        {
+            var config = Config();
+            var targets = new List<ArcheryTarget>();
+
+            float minSpeed = ArcheryTargetMotion.RiseSpeedFor(config.RiseHeightMin);
+            float maxSpeed = ArcheryTargetMotion.RiseSpeedFor(config.RiseHeightMax);
+
+            for (int wave = 0; wave < 100; wave++)
+            {
+                Fill(targets, 9UL, wave, config);
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    Assert.That(targets[i].RiseSpeed, Is.InRange(minSpeed - 1e-3f, maxSpeed + 1e-3f),
+                                $"wave {wave} slot {i}");
+                }
+            }
+        }
+
+        //  고정이면 "언제쯤 정점"이 몸에 배어 리듬만으로 쏘게 된다.
+        //
+        //  그래서 재야 하는 것은 "서로 다른 값이 몇 개냐"가 아니라 **정점에 닿는 시각이 실제로
+        //  얼마나 벌어지느냐**다. 서로 다른 값이 200개라도 전부 붙어 있으면 손에 배는 건 똑같다.
+        [Test]
+        public void 정점에_닿는_시각이_과녁마다_벌어진다()
+        {
+            var config = Config();
+            var targets = new List<ArcheryTarget>();
+
+            float earliest = float.MaxValue;
+            float latest = float.MinValue;
+            for (int wave = 0; wave < 50; wave++)
+            {
+                Fill(targets, 21UL, wave, config);
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    //  올라간 만큼 내려오므로 정점은 수명의 절반 지점이다.
+                    float apex = targets[i].LifetimeSeconds / 2f;
+                    earliest = Mathf.Min(earliest, apex);
+                    latest = Mathf.Max(latest, apex);
+                }
+            }
+
+            //  설정 범위가 낼 수 있는 최대 폭. 뽑은 값들이 그 폭의 대부분을 덮어야
+            //  "매번 봐야 한다"가 성립한다 — 한곳에 몰리면 리듬만으로 쏘게 된다.
+            float widest = (ArcheryTargetMotion.RiseSpeedFor(config.RiseHeightMax)
+                          - ArcheryTargetMotion.RiseSpeedFor(config.RiseHeightMin))
+                          / ArcheryTargetMotion.Gravity;
+
+            Assert.Greater(latest - earliest, widest * 0.9f,
+                           $"정점 시각이 {earliest:F3}~{latest:F3}초에 몰렸다 (낼 수 있는 폭 {widest:F3}초)");
         }
     }
 }
