@@ -15,13 +15,17 @@ namespace LOP
         public readonly float Radius;
         public readonly int Points;
 
-        public ArcheryTarget(int waveIndex, int slotIndex, Vector3 center, float radius, int points)
+        /// <summary>맞히면 안 되는 과녁인가.</summary>
+        public readonly bool IsTrap;
+
+        public ArcheryTarget(int waveIndex, int slotIndex, Vector3 center, float radius, int points, bool isTrap)
         {
             WaveIndex = waveIndex;
             SlotIndex = slotIndex;
             Center = center;
             Radius = radius;
             Points = points;
+            IsTrap = isTrap;
         }
     }
 }

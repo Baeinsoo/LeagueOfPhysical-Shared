@@ -32,8 +32,14 @@ namespace LOP
 
         /// <summary>
         /// 그 웨이브의 과녁을 <paramref name="into"/>에 채운다(먼저 비운다).
-        /// <b>난수를 꺼내는 순서가 곧 계약이다</b> — 개수 → 슬롯마다 (종류 → 각도 → 반지름 → 높이).
+        /// <b>난수를 꺼내는 순서가 곧 계약이다</b> — 개수 → (함정 종류가 있으면) 함정 비율 →
+        /// 슬롯마다 (함정인가 → 종류 → 각도 → 반지름 → 높이).
         /// 이 순서를 바꾸면 같은 씨앗이 다른 과녁을 내놓아 클·서가 갈린다.
+        /// <b>뽑는 횟수도 계약의 일부다</b> — 함정 비율 뽑기는 <c>config.TrapKinds</c>가 있을 때만
+        /// 일어난다(위 "함정 종류가 있으면"). 그래서 클·서가 서로 다른 마스터데이터를 갖고 있어서
+        /// 한쪽만 함정 종류가 있으면, 그 뒤로 이어지는 모든 뽑기가 한 칸씩 밀려 어느 슬롯이든
+        /// 완전히 다른 과녁을 내놓는다 — 어떤 종류가 뜨는지만 갈리는 게 아니라 과녁의 위치 자체가
+        /// 클·서에서 통째로 어긋난다.
         /// </summary>
         public static void Fill(List<ArcheryTarget> into, ulong matchSeed, int waveIndex, ArcheryConfig config)
         {
@@ -47,11 +53,50 @@ namespace LOP
                 GameFramework.Rng.Hashing.Combine(matchSeed, (ulong)(long)waveIndex));
 
             int count = rng.Range(config.MinTargets, config.MaxTargets + 1);
+
+            //  이 웨이브에 함정을 몇 개 둘지 먼저 정한다. 슬롯마다 따로 뽑으면 "전부 함정"이
+            //  확률의 곱으로만 나와서, 그 순간의 빈도를 따로 조절할 수 없다.
+            int trapCount = 0;
+            if (config.TrapKinds.Count > 0)
+            {
+                float ratio = rng.Range(config.TrapRatioMin, config.TrapRatioMax);
+                trapCount = Mathf.Clamp(Mathf.RoundToInt(ratio * count), 0, count);
+
+                //  성한 종류가 아예 없으면 어느 자리를 뽑아도 함정이 나온다 — 아래 대비책이
+                //  돌려주는 목록도 전부 함정이기 때문이다. 결과는 어느 쪽이든 같지만, 비율은
+                //  "절반"이라 해 놓고 전부 함정이 뜨는 셈이라 읽는 사람이 헷갈린다.
+                //  여기서 전부 함정임을 못박아 비율이 말하는 것과 실제가 같아지게 한다.
+                if (config.CleanKinds.Count == 0)
+                {
+                    trapCount = count;
+                }
+            }
+
+            int remainingTraps = trapCount;
             for (int slot = 0; slot < count; slot++)
             {
-                ArcheryTargetKind kind = PickKind(config.Kinds, ref rng);
+                //  남은 슬롯 중 남은 함정 수만큼의 확률로 이 자리를 함정으로 만든다. 슬롯 번호와
+                //  함정 여부가 상관되지 않게 하려는 것이다 — 슬롯 번호는 와이어(먹힌 마스크)에
+                //  그대로 드러나므로, 상관이 있으면 마스크만 보고 함정 자리를 알 수 있다.
+                int remainingSlots = count - slot;
+                bool isTrap = rng.Range(0, remainingSlots) < remainingTraps;
+                if (isTrap)
+                {
+                    remainingTraps--;
+                }
+
+                var pool = isTrap ? config.TrapKinds : config.CleanKinds;
+                if (pool.Count == 0)
+                {
+                    //  함정 자리는 TrapKinds.Count > 0일 때만, 성한 자리는 위 가드로 CleanKinds가
+                    //  빈 경우를 걸러 두므로, 이 분기는 이제 도달할 수 없어야 정상이다. 그래도
+                    //  지워 두지 않는다 — PickKind가 빈 목록을 받으면 예외를 던져 판이 죽는다.
+                    pool = config.Kinds;
+                }
+
+                ArcheryTargetKind kind = PickKind(pool, ref rng);
                 Vector3 center = PickCenter(into, config, ref rng);
-                into.Add(new ArcheryTarget(waveIndex, slot, center, kind.Radius, kind.Points));
+                into.Add(new ArcheryTarget(waveIndex, slot, center, kind.Radius, kind.Points, kind.IsTrap));
             }
         }
 

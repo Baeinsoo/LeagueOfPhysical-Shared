@@ -44,8 +44,34 @@ namespace LOP
         /// </summary>
         public float MaxTargetRadius { get; }
 
+        /// <summary>한 웨이브에서 함정이 차지하는 비율의 하한(0~1).</summary>
+        public float TrapRatioMin { get; }
+
+        /// <summary>
+        /// 한 웨이브에서 함정이 차지하는 비율의 상한(0~1). 웨이브마다 이 사이에서 하나를 뽑는다 —
+        /// 그래야 "전부 함정인 웨이브"의 빈도를 전체 함정 빈도와 <b>따로</b> 조절할 수 있다.
+        /// </summary>
+        public float TrapRatioMax { get; }
+
+        /// <summary>이 시간(초)까지는 당기고 있어도 손이 안 떨린다.</summary>
+        public float ShakeFreeSeconds { get; }
+
+        /// <summary>흔들림이 0에서 최대까지 자라는 데 걸리는 시간(초).</summary>
+        public float ShakeRampSeconds { get; }
+
+        /// <summary>가장 심할 때의 흔들림 폭(도).</summary>
+        public float ShakeMaxDegrees { get; }
+
+        /// <summary>함정이 아닌 종류만. 비어 있으면 성한 과녁이 안 뜬다.</summary>
+        public IReadOnlyList<ArcheryTargetKind> CleanKinds { get; }
+
+        /// <summary>함정 종류만. 비어 있으면 함정이 안 뜬다(비율을 아무리 올려도).</summary>
+        public IReadOnlyList<ArcheryTargetKind> TrapKinds { get; }
+
         public ArcheryConfig(int wavePeriodTicks, int minTargets, int maxTargets,
                              float spawnRadius, float spawnMinY, float spawnMaxY, float minSeparation,
+                             float trapRatioMin, float trapRatioMax,
+                             float shakeFreeSeconds, float shakeRampSeconds, float shakeMaxDegrees,
                              IReadOnlyList<ArcheryTargetKind> kinds)
         {
             WavePeriodTicks = wavePeriodTicks;
@@ -55,9 +81,16 @@ namespace LOP
             SpawnMinY = spawnMinY;
             SpawnMaxY = spawnMaxY;
             MinSeparation = minSeparation;
+            TrapRatioMin = trapRatioMin;
+            TrapRatioMax = trapRatioMax;
+            ShakeFreeSeconds = shakeFreeSeconds;
+            ShakeRampSeconds = shakeRampSeconds;
+            ShakeMaxDegrees = shakeMaxDegrees;
             Kinds = kinds;
 
             float largest = 0f;
+            var clean = new List<ArcheryTargetKind>();
+            var traps = new List<ArcheryTargetKind>();
             if (kinds != null)
             {
                 for (int i = 0; i < kinds.Count; i++)
@@ -66,9 +99,19 @@ namespace LOP
                     {
                         largest = kinds[i].Radius;
                     }
+                    if (kinds[i].IsTrap)
+                    {
+                        traps.Add(kinds[i]);
+                    }
+                    else
+                    {
+                        clean.Add(kinds[i]);
+                    }
                 }
             }
             MaxTargetRadius = largest;
+            CleanKinds = clean;
+            TrapKinds = traps;
         }
     }
 }

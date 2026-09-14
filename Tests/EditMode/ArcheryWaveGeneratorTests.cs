@@ -10,9 +10,9 @@ namespace LOP.Tests
         {
             return new[]
             {
-                new ArcheryTargetKind(0.60f, 1, 50),
-                new ArcheryTargetKind(0.40f, 2, 35),
-                new ArcheryTargetKind(0.25f, 4, 15),
+                new ArcheryTargetKind(0.60f, 1, 50, false),
+                new ArcheryTargetKind(0.40f, 2, 35, false),
+                new ArcheryTargetKind(0.25f, 4, 15, false),
             };
         }
 
@@ -26,9 +26,17 @@ namespace LOP.Tests
 
         private static ArcheryConfig ConfigWith(ArcheryTargetKind[] kinds, float minSeparation)
         {
+            return ConfigWith(kinds, minSeparation, trapRatioMin: 0f, trapRatioMax: 0f);
+        }
+
+        private static ArcheryConfig ConfigWith(ArcheryTargetKind[] kinds, float minSeparation,
+                                                float trapRatioMin, float trapRatioMax)
+        {
             return new ArcheryConfig(
                 wavePeriodTicks: 88, minTargets: 2, maxTargets: 3,
                 spawnRadius: 2f, spawnMinY: 2f, spawnMaxY: 6f, minSeparation: minSeparation,
+                trapRatioMin: trapRatioMin, trapRatioMax: trapRatioMax,
+                shakeFreeSeconds: 1f, shakeRampSeconds: 2f, shakeMaxDegrees: 3f,
                 kinds: kinds);
         }
 
@@ -203,6 +211,168 @@ namespace LOP.Tests
         public void 최대_반경은_가장_큰_종류를_따른다()
         {
             Assert.AreEqual(0.60f, Config().MaxTargetRadius);
+        }
+
+        [Test]
+        public void 과녁은_자기_종류의_함정_표시를_이어받는다()
+        {
+            var kinds = new[]
+            {
+                new ArcheryTargetKind(0.60f, 1, 50, false),
+                new ArcheryTargetKind(0.40f, -3, 50, true),
+            };
+            var config = ConfigWith(kinds, TouchingDistance(kinds), trapRatioMin: 0f, trapRatioMax: 1f);
+            var targets = new List<ArcheryTarget>();
+
+            for (int wave = 0; wave < 100; wave++)
+            {
+                ArcheryWaveGenerator.Fill(targets, 11UL, wave, config);
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    //  함정 종류는 반경 0.40 하나뿐이라, 표시가 제대로 따라왔으면 둘이 항상 같이 움직인다.
+                    bool fromRadius = Mathf.Approximately(targets[i].Radius, 0.40f);
+                    Assert.AreEqual(fromRadius, targets[i].IsTrap, $"wave {wave} slot {i}");
+                }
+            }
+        }
+
+        [Test]
+        public void 종류를_성한_것과_함정으로_갈라_들고_있는다()
+        {
+            var kinds = new[]
+            {
+                new ArcheryTargetKind(0.60f, 1, 50, false),
+                new ArcheryTargetKind(0.40f, -3, 30, true),
+                new ArcheryTargetKind(0.25f, 4, 20, false),
+            };
+            var config = ConfigWith(kinds, TouchingDistance(kinds));
+
+            Assert.AreEqual(2, config.CleanKinds.Count);
+            Assert.AreEqual(1, config.TrapKinds.Count);
+            Assert.IsTrue(config.TrapKinds[0].IsTrap);
+        }
+
+        [Test]
+        public void 종류가_한쪽뿐이면_다른_쪽은_빈_목록이다()
+        {
+            var kinds = new[] { new ArcheryTargetKind(0.60f, 1, 50, false) };
+            var config = ConfigWith(kinds, TouchingDistance(kinds));
+
+            Assert.AreEqual(1, config.CleanKinds.Count);
+            Assert.AreEqual(0, config.TrapKinds.Count);
+        }
+
+        //  이 비율 손잡이가 실제로 듣는지 본다 — 안 들으면 "참을까 말까"를 조절할 방법이 없다.
+        [Test]
+        public void 비율을_0으로_두면_함정이_하나도_안_뜬다()
+        {
+            var kinds = TrapMixedKinds();
+            var config = ConfigWith(kinds, TouchingDistance(kinds), trapRatioMin: 0f, trapRatioMax: 0f);
+            var targets = new List<ArcheryTarget>();
+
+            for (int wave = 0; wave < 300; wave++)
+            {
+                ArcheryWaveGenerator.Fill(targets, 3UL, wave, config);
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    Assert.IsFalse(targets[i].IsTrap, $"wave {wave} slot {i}");
+                }
+            }
+        }
+
+        [Test]
+        public void 비율을_1로_두면_전부_함정이다()
+        {
+            var kinds = TrapMixedKinds();
+            var config = ConfigWith(kinds, TouchingDistance(kinds), trapRatioMin: 1f, trapRatioMax: 1f);
+            var targets = new List<ArcheryTarget>();
+
+            for (int wave = 0; wave < 300; wave++)
+            {
+                ArcheryWaveGenerator.Fill(targets, 3UL, wave, config);
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    Assert.IsTrue(targets[i].IsTrap, $"wave {wave} slot {i}");
+                }
+            }
+        }
+
+        //  spec 3절: "0개도, 전부도 가능". 범위를 열어 두면 양 끝이 실제로 나와야 한다.
+        [Test]
+        public void 범위를_열어_두면_전부_성한_웨이브와_전부_함정인_웨이브가_둘_다_나온다()
+        {
+            var kinds = TrapMixedKinds();
+            var config = ConfigWith(kinds, TouchingDistance(kinds), trapRatioMin: 0f, trapRatioMax: 1f);
+            var targets = new List<ArcheryTarget>();
+
+            bool sawAllClean = false;
+            bool sawAllTrap = false;
+            for (int wave = 0; wave < 300; wave++)
+            {
+                ArcheryWaveGenerator.Fill(targets, 7UL, wave, config);
+                int traps = 0;
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    traps += targets[i].IsTrap ? 1 : 0;
+                }
+                sawAllClean |= traps == 0;
+                sawAllTrap |= traps == targets.Count && targets.Count > 0;
+            }
+
+            Assert.IsTrue(sawAllClean, "전부 성한 웨이브가 한 번도 안 나왔다");
+            Assert.IsTrue(sawAllTrap, "전부 함정인 웨이브가 한 번도 안 나왔다");
+        }
+
+        //  데이터에 함정 종류가 없는데 비율만 올려 둔 경우. 조용히 성한 과녁을 함정으로 만들면 안 된다.
+        [Test]
+        public void 함정_종류가_없으면_비율이_1이어도_함정이_안_뜬다()
+        {
+            var kinds = Kinds();
+            var config = ConfigWith(kinds, TouchingDistance(kinds), trapRatioMin: 1f, trapRatioMax: 1f);
+            var targets = new List<ArcheryTarget>();
+
+            for (int wave = 0; wave < 100; wave++)
+            {
+                ArcheryWaveGenerator.Fill(targets, 9UL, wave, config);
+                Assert.That(targets.Count, Is.InRange(config.MinTargets, config.MaxTargets),
+                            $"wave {wave}: 과녁이 아예 안 떴다");
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    Assert.IsFalse(targets[i].IsTrap, $"wave {wave} slot {i}");
+                }
+            }
+        }
+
+        //  성한 종류가 없는 설정에서는 비율을 반만 열어 둬도 전부 함정이 뜬다. 종류가 전부
+        //  함정이라 어느 목록에서 뽑아도 함정이 나오기 때문이다 — 그래서 이 테스트는 위의
+        //  가드를 지우면 실패하지 '않는다'. 못박는 것은 "이 설정에서 성한 과녁은 못 나온다"는
+        //  사실 자체이고, 나중에 종류 분배 방식이 바뀌면 여기서 걸린다.
+        [Test]
+        public void 성한_종류가_없으면_비율과_무관하게_전부_함정이다()
+        {
+            var kinds = new[] { new ArcheryTargetKind(0.50f, -5, 100, true) };
+            var config = ConfigWith(kinds, TouchingDistance(kinds), trapRatioMin: 0f, trapRatioMax: 0.5f);
+            var targets = new List<ArcheryTarget>();
+
+            for (int wave = 0; wave < 200; wave++)
+            {
+                ArcheryWaveGenerator.Fill(targets, 13UL, wave, config);
+                Assert.That(targets.Count, Is.InRange(config.MinTargets, config.MaxTargets), $"wave {wave}");
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    Assert.IsTrue(targets[i].IsTrap, $"wave {wave} slot {i}");
+                }
+            }
+        }
+
+        private static ArcheryTargetKind[] TrapMixedKinds()
+        {
+            return new[]
+            {
+                new ArcheryTargetKind(0.60f, 1, 50, false),
+                new ArcheryTargetKind(0.40f, 2, 35, false),
+                new ArcheryTargetKind(0.50f, -3, 40, true),
+            };
         }
 
         [Test]
