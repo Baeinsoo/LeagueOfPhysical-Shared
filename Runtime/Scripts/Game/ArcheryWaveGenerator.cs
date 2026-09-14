@@ -96,7 +96,8 @@ namespace LOP
 
                 ArcheryTargetKind kind = PickKind(pool, ref rng);
                 Vector3 center = PickCenter(into, config, ref rng);
-                into.Add(new ArcheryTarget(waveIndex, slot, center, kind.Radius, kind.Points, kind.IsTrap));
+                into.Add(new ArcheryTarget(waveIndex, slot, center, 0f, 0L,
+                                           kind.Radius, kind.Points, kind.IsTrap));
             }
         }
 
@@ -151,7 +152,7 @@ namespace LOP
         {
             for (int i = 0; i < placed.Count; i++)
             {
-                if (Vector3.Distance(candidate, placed[i].Center) < minSeparation)
+                if (Vector3.Distance(candidate, placed[i].Origin) < minSeparation)
                 {
                     return false;
                 }

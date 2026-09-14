@@ -3,7 +3,7 @@ using UnityEngine;
 namespace LOP
 {
     /// <summary>
-    /// 지금 떠 있는 과녁 하나. <b>엔티티가 아니다</b> — 화살과 같은 취급으로, 씨앗과 웨이브 번호만
+    /// 지금 솟아오르는 과녁 하나. <b>엔티티가 아니다</b> — 화살과 같은 취급으로, 씨앗과 웨이브 번호만
     /// 있으면 양쪽이 각자 계산해 낸다. <see cref="WaveIndex"/>+<see cref="SlotIndex"/>가 이름 노릇을
     /// 해서 "어느 과녁이 먹혔다"를 그 두 숫자로 가리킬 수 있다.
     /// </summary>
@@ -11,18 +11,36 @@ namespace LOP
     {
         public readonly int WaveIndex;
         public readonly int SlotIndex;
-        public readonly Vector3 Center;
+
+        /// <summary>솟기 시작하는 자리(무대 아래). 좌우로는 안 움직이므로 x·z는 내내 이 값이다.</summary>
+        public readonly Vector3 Origin;
+
+        /// <summary>솟기 시작하는 속도(m/s). 높이와 수명에서 역산한다 — <see cref="ArcheryTargetMotion.RiseSpeedFor"/>.</summary>
+        public readonly float RiseSpeed;
+
+        /// <summary>솟기 시작하는 절대 틱. 묶음 안에서 슬롯마다 다르다(연달아 솟는다).</summary>
+        public readonly long SpawnTick;
+
         public readonly float Radius;
         public readonly int Points;
 
         /// <summary>맞히면 안 되는 과녁인가.</summary>
         public readonly bool IsTrap;
 
-        public ArcheryTarget(int waveIndex, int slotIndex, Vector3 center, float radius, int points, bool isTrap)
+        /// <summary>
+        /// 솟았다 떨어지기까지 걸리는 시간(초). 과녁마다 솟는 높이가 달라 <b>수명도 제각각</b>이라,
+        /// 전역 설정이 아니라 과녁 자신이 안다. 중력이 고정이므로 초기속도 하나로 정해진다.
+        /// </summary>
+        public float LifetimeSeconds => 2f * RiseSpeed / ArcheryTargetMotion.Gravity;
+
+        public ArcheryTarget(int waveIndex, int slotIndex, Vector3 origin, float riseSpeed, long spawnTick,
+                             float radius, int points, bool isTrap)
         {
             WaveIndex = waveIndex;
             SlotIndex = slotIndex;
-            Center = center;
+            Origin = origin;
+            RiseSpeed = riseSpeed;
+            SpawnTick = spawnTick;
             Radius = radius;
             Points = points;
             IsTrap = isTrap;

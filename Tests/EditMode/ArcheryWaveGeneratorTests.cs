@@ -100,9 +100,9 @@ namespace LOP.Tests
                     Assert.AreEqual(a[i].Radius, b[i].Radius);
                     Assert.AreEqual(a[i].Points, b[i].Points);
                     //  부동소수도 *완전히* 같아야 한다 — 근사 비교로 두면 갈라지는 순간을 못 잡는다.
-                    Assert.AreEqual(a[i].Center.x, b[i].Center.x);
-                    Assert.AreEqual(a[i].Center.y, b[i].Center.y);
-                    Assert.AreEqual(a[i].Center.z, b[i].Center.z);
+                    Assert.AreEqual(a[i].Origin.x, b[i].Origin.x);
+                    Assert.AreEqual(a[i].Origin.y, b[i].Origin.y);
+                    Assert.AreEqual(a[i].Origin.z, b[i].Origin.z);
                 }
             }
         }
@@ -115,7 +115,7 @@ namespace LOP.Tests
             var b = new List<ArcheryTarget>();
             ArcheryWaveGenerator.Fill(a, 1UL, 0, config);
             ArcheryWaveGenerator.Fill(b, 2UL, 0, config);
-            Assert.AreNotEqual(a[0].Center, b[0].Center);
+            Assert.AreNotEqual(a[0].Origin, b[0].Origin);
         }
 
         [Test]
@@ -126,7 +126,7 @@ namespace LOP.Tests
             var b = new List<ArcheryTarget>();
             ArcheryWaveGenerator.Fill(a, 7UL, 0, config);
             ArcheryWaveGenerator.Fill(b, 7UL, 1, config);
-            Assert.AreNotEqual(a[0].Center, b[0].Center);
+            Assert.AreNotEqual(a[0].Origin, b[0].Origin);
         }
 
         [Test]
@@ -140,7 +140,7 @@ namespace LOP.Tests
                 Assert.That(targets.Count, Is.InRange(config.MinTargets, config.MaxTargets));
                 for (int i = 0; i < targets.Count; i++)
                 {
-                    var c = targets[i].Center;
+                    var c = targets[i].Origin;
                     float horizontal = new Vector2(c.x, c.z).magnitude;
                     Assert.LessOrEqual(horizontal, config.SpawnRadius + 1e-4f);
                     Assert.That(c.y, Is.InRange(config.SpawnMinY, config.SpawnMaxY));
@@ -162,7 +162,7 @@ namespace LOP.Tests
                 {
                     for (int j = i + 1; j < targets.Count; j++)
                     {
-                        float gap = Vector3.Distance(targets[i].Center, targets[j].Center);
+                        float gap = Vector3.Distance(targets[i].Origin, targets[j].Origin);
                         float touching = targets[i].Radius + targets[j].Radius;
                         //  딱 맞닿는 건 겹친 게 아니다 — 간격 기준이 정확히 그 거리라 경계가 허용된다.
                         Assert.GreaterOrEqual(gap, touching, $"wave {wave}: {i}과 {j}가 겹친다");
@@ -188,7 +188,7 @@ namespace LOP.Tests
                 {
                     for (int j = i + 1; j < targets.Count; j++)
                     {
-                        float gap = Vector3.Distance(targets[i].Center, targets[j].Center);
+                        float gap = Vector3.Distance(targets[i].Origin, targets[j].Origin);
                         if (gap < targets[i].Radius + targets[j].Radius)
                         {
                             Assert.Pass($"wave {wave}: {i}과 {j}가 겹쳤다 — 기준이 짧으면 이렇게 된다");
