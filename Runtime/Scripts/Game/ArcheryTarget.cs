@@ -12,7 +12,7 @@ namespace LOP
         public readonly int WaveIndex;
         public readonly int SlotIndex;
 
-        /// <summary>솟기 시작하는 자리(무대 아래). 좌우로는 안 움직이므로 x·z는 내내 이 값이다.</summary>
+        /// <summary>솟기 시작하는 자리(가운데 무대 언저리). 좌우로는 안 움직이므로 x·z는 내내 이 값이다.</summary>
         public readonly Vector3 Origin;
 
         /// <summary>솟기 시작하는 속도(m/s). 높이와 수명에서 역산한다 — <see cref="ArcheryTargetMotion.RiseSpeedFor"/>.</summary>
