@@ -60,7 +60,11 @@ namespace LOP
         /// <summary>묶음 안에서 다음 과녁이 솟기까지의 간격(틱). 일정해야 리듬이 생긴다.</summary>
         public int StaggerTicks { get; }
 
-        /// <summary>묶음이 끝나고 다음 묶음까지의 쉼(틱). 끊겼다 시작해야 매 묶음이 새로 긴장된다.</summary>
+        /// <summary>
+        /// 실제 쉼을 정하는 값이 아니다 — 아무 런타임 코드도 이 값을 읽지 않는다.
+        /// 실제 쉼은 <see cref="WavePeriodTicks"/> − <see cref="BurstTicks"/>이고, 이 값은 배포
+        /// 데이터 검사가 "그 쉼이 최소 이만큼은 남아야 한다"고 요구하는 하한일 뿐이다.
+        /// </summary>
         public int RestTicks { get; }
 
         /// <summary>
