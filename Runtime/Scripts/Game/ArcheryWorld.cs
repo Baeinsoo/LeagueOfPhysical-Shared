@@ -107,6 +107,7 @@ namespace LOP
                     {
                         Yaw = aim.Yaw, Pitch = aim.Pitch,
                         Drawing = aim.Drawing, DrawStartTick = aim.DrawStartTick,
+                        DrawRatio = aim.DrawRatio,
                     };
                 }
             }
@@ -135,6 +136,7 @@ namespace LOP
                 aim.Pitch = pair.Value.Pitch;
                 aim.Drawing = pair.Value.Drawing;
                 aim.DrawStartTick = pair.Value.DrawStartTick;
+                aim.DrawRatio = pair.Value.DrawRatio;
             }
 
             return true;

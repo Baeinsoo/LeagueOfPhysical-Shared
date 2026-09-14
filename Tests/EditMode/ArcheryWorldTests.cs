@@ -27,7 +27,11 @@ namespace LOP.Tests
 
         static void Feed(Entity entity, bool drawing, bool release)
         {
-            entity.Get<InputBuffer>().Current = new InputCommand { Drawing = drawing, Release = release };
+            //  당김은 손가락이 끈 거리가 정한다 — 완전히 당긴 상태를 먹인다(임계치 미만이면 안 쏜다).
+            entity.Get<InputBuffer>().Current = new InputCommand
+            {
+                Drawing = drawing, Release = release, DrawRatio = 1f,
+            };
         }
 
         [Test]
