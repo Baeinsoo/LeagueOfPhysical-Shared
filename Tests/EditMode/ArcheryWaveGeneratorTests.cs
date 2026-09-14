@@ -24,19 +24,28 @@ namespace LOP.Tests
             return ConfigWith(Kinds(), TouchingDistance(Kinds()));
         }
 
+        //  실측 기본값과 같은 모양으로 둔다 — 테스트가 배포 데이터와 다른 조건을 시험하면
+        //  통과해도 아무것도 보장하지 못한다.
+        private const float TestRiseHeightMin = 1.2f;
+        private const float TestRiseHeightMax = 2.4f;
+        private const int TestStaggerTicks = 12;
+        private const int TestRestTicks = 20;
+
         private static ArcheryConfig ConfigWith(ArcheryTargetKind[] kinds, float minSeparation)
         {
             return ConfigWith(kinds, minSeparation, trapRatioMin: 0f, trapRatioMax: 0f);
         }
 
         private static ArcheryConfig ConfigWith(ArcheryTargetKind[] kinds, float minSeparation,
-                                                float trapRatioMin, float trapRatioMax)
+                                                float trapRatioMin = 0f, float trapRatioMax = 0f)
         {
             return new ArcheryConfig(
-                wavePeriodTicks: 88, minTargets: 2, maxTargets: 3,
-                spawnRadius: 2f, spawnMinY: 2f, spawnMaxY: 6f, minSeparation: minSeparation,
+                wavePeriodTicks: 120, minTargets: 3, maxTargets: 5,
+                spawnRadius: 3.5f, spawnMinY: 1.5f, spawnMaxY: 8f, minSeparation: minSeparation,
                 trapRatioMin: trapRatioMin, trapRatioMax: trapRatioMax,
-                shakeFreeSeconds: 1f, shakeRampSeconds: 2f, shakeMaxDegrees: 3f,
+                shakeFreeSeconds: 1.2f, shakeRampSeconds: 2.5f, shakeMaxDegrees: 0f,
+                riseHeightMin: TestRiseHeightMin, riseHeightMax: TestRiseHeightMax,
+                staggerTicks: TestStaggerTicks, restTicks: TestRestTicks,
                 kinds: kinds);
         }
 
@@ -63,10 +72,13 @@ namespace LOP.Tests
         public void 웨이브는_주기마다_한_칸씩_오른다()
         {
             var config = Config();
+            //  경계를 주기 값에서 뽑는다 — 숫자로 박아 두면 Config()의 wavePeriodTicks가
+            //  바뀔 때마다 이 테스트가 그 값과 몰래 어긋난다.
+            int period = config.WavePeriodTicks;
             Assert.AreEqual(0, ArcheryWaveGenerator.WaveIndexAt(1000, 1000, config));
-            Assert.AreEqual(0, ArcheryWaveGenerator.WaveIndexAt(1087, 1000, config));
-            Assert.AreEqual(1, ArcheryWaveGenerator.WaveIndexAt(1088, 1000, config));
-            Assert.AreEqual(2, ArcheryWaveGenerator.WaveIndexAt(1176, 1000, config));
+            Assert.AreEqual(0, ArcheryWaveGenerator.WaveIndexAt(1000 + period - 1, 1000, config));
+            Assert.AreEqual(1, ArcheryWaveGenerator.WaveIndexAt(1000 + period, 1000, config));
+            Assert.AreEqual(2, ArcheryWaveGenerator.WaveIndexAt(1000 + period * 2, 1000, config));
         }
 
         [Test]
@@ -382,6 +394,22 @@ namespace LOP.Tests
             var targets = new List<ArcheryTarget> { default, default, default, default, default };
             ArcheryWaveGenerator.Fill(targets, 5UL, 0, config);
             Assert.That(targets.Count, Is.InRange(config.MinTargets, config.MaxTargets));
+        }
+
+        //  마지막 과녁이 떨어질 때까지 걸리는 시간이다 — 웨이브 주기가 이보다 짧으면
+        //  마지막 과녁이 공중에서 잘려 사라진다(에러는 안 난다).
+        //  높이가 과녁마다 다르므로 **가장 높이 솟는 경우**로 잡아야 안전하다.
+        [Test]
+        public void 묶음_길이는_가장_높이_솟는_과녁이_떨어질_때까지다()
+        {
+            var config = Config();
+
+            float longest = 2f * ArcheryTargetMotion.RiseSpeedFor(TestRiseHeightMax)
+                          / ArcheryTargetMotion.Gravity;
+            int lifetimeTicks = Mathf.CeilToInt(longest / 0.02f);
+            int expected = (config.MaxTargets - 1) * TestStaggerTicks + lifetimeTicks;
+
+            Assert.AreEqual(expected, config.BurstTicks);
         }
     }
 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace LOP
 {
@@ -44,6 +45,31 @@ namespace LOP
         /// </summary>
         public float MaxTargetRadius { get; }
 
+        /// <summary>과녁이 솟아오르는 높이의 하한(m).</summary>
+        public float RiseHeightMin { get; }
+
+        /// <summary>
+        /// 과녁이 솟아오르는 높이의 상한(m). <b>과녁마다 이 사이에서 뽑는다</b> — 고정이면 몇 번
+        /// 보고 나서 "언제쯤 정점"이 몸에 배어 리듬만으로 쏘게 된다.
+        ///
+        /// <para>⚠️ 너무 높이 잡으면 과녁이 한 틱에 자기 반지름보다 많이 움직여 판정이 뚫린다.
+        /// 중력 20·가장 작은 과녁 반지름 0.2m에서 상한은 약 2.5m다 — 배포 데이터 검사가 지킨다.</para>
+        /// </summary>
+        public float RiseHeightMax { get; }
+
+        /// <summary>묶음 안에서 다음 과녁이 솟기까지의 간격(틱). 일정해야 리듬이 생긴다.</summary>
+        public int StaggerTicks { get; }
+
+        /// <summary>묶음이 끝나고 다음 묶음까지의 쉼(틱). 끊겼다 시작해야 매 묶음이 새로 긴장된다.</summary>
+        public int RestTicks { get; }
+
+        /// <summary>
+        /// 묶음이 다 끝나기까지 걸리는 틱 수 — <b>가장 높이 솟는 과녁</b> 기준이다.
+        /// <see cref="WavePeriodTicks"/>가 이보다 짧으면 마지막 과녁이 공중에서 잘려 사라진다 —
+        /// 에러는 안 나므로 배포 데이터 검사가 지킨다.
+        /// </summary>
+        public int BurstTicks { get; }
+
         /// <summary>한 웨이브에서 함정이 차지하는 비율의 하한(0~1).</summary>
         public float TrapRatioMin { get; }
 
@@ -72,6 +98,7 @@ namespace LOP
                              float spawnRadius, float spawnMinY, float spawnMaxY, float minSeparation,
                              float trapRatioMin, float trapRatioMax,
                              float shakeFreeSeconds, float shakeRampSeconds, float shakeMaxDegrees,
+                             float riseHeightMin, float riseHeightMax, int staggerTicks, int restTicks,
                              IReadOnlyList<ArcheryTargetKind> kinds)
         {
             WavePeriodTicks = wavePeriodTicks;
@@ -86,6 +113,17 @@ namespace LOP
             ShakeFreeSeconds = shakeFreeSeconds;
             ShakeRampSeconds = shakeRampSeconds;
             ShakeMaxDegrees = shakeMaxDegrees;
+            RiseHeightMin = riseHeightMin;
+            RiseHeightMax = riseHeightMax;
+            StaggerTicks = staggerTicks;
+            RestTicks = restTicks;
+
+            //  가장 높이 솟는 과녁이 제일 오래 떠 있다 — 묶음 길이는 그 기준으로 잡아야 안전하다.
+            float longestLifetime = 2f * ArcheryTargetMotion.RiseSpeedFor(riseHeightMax)
+                                  / ArcheryTargetMotion.Gravity;
+            //  틱은 정수라 올림한다 — 내림하면 마지막 한 틱이 모자라 과녁이 땅에 닿기 전에 잘린다.
+            int lifetimeTicks = Mathf.CeilToInt(longestLifetime / 0.02f);
+            BurstTicks = (maxTargets - 1) * staggerTicks + lifetimeTicks;
             Kinds = kinds;
 
             float largest = 0f;

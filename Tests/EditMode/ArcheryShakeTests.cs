@@ -12,6 +12,7 @@ namespace LOP.Tests
                 spawnRadius: 2f, spawnMinY: 2f, spawnMaxY: 6f, minSeparation: 1.2f,
                 trapRatioMin: 0f, trapRatioMax: 0f,
                 shakeFreeSeconds: free, shakeRampSeconds: ramp, shakeMaxDegrees: max,
+                riseHeightMin: 1.2f, riseHeightMax: 2.4f, staggerTicks: 12, restTicks: 20,
                 kinds: new[] { new ArcheryTargetKind(0.6f, 1, 50, false) });
         }
 
