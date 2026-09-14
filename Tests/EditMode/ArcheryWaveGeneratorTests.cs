@@ -50,7 +50,7 @@ namespace LOP.Tests
         {
             return new ArcheryConfig(
                 wavePeriodTicks: 120, minTargets: 3, maxTargets: 5,
-                spawnRadius: 3.5f, spawnMinY: 1.5f, spawnMaxY: 8f, minSeparation: minSeparation,
+                spawnRadius: 3.5f, spawnMinY: 0.3f, spawnMaxY: 0.6f, minSeparation: minSeparation,
                 trapRatioMin: trapRatioMin, trapRatioMax: trapRatioMax,
                 shakeFreeSeconds: 1.2f, shakeRampSeconds: 2.5f, shakeMaxDegrees: 0f,
                 riseHeightMin: TestRiseHeightMin, riseHeightMax: TestRiseHeightMax,
