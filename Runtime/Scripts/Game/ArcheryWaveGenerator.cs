@@ -40,8 +40,10 @@ namespace LOP
         /// 한쪽만 함정 종류가 있으면, 그 뒤로 이어지는 모든 뽑기가 한 칸씩 밀려 어느 슬롯이든
         /// 완전히 다른 과녁을 내놓는다 — 어떤 종류가 뜨는지만 갈리는 게 아니라 과녁의 위치 자체가
         /// 클·서에서 통째로 어긋난다.
+        /// <para>솟는 시각은 난수가 아니다 — 슬롯 번호에 간격을 곱한 값이라 리듬이 일정하다.</para>
         /// </summary>
-        public static void Fill(List<ArcheryTarget> into, ulong matchSeed, int waveIndex, ArcheryConfig config)
+        public static void Fill(List<ArcheryTarget> into, ulong matchSeed, int waveIndex,
+                                ArcheryConfig config, long gameplayStartTick)
         {
             into.Clear();
             if (waveIndex < 0 || config.Kinds == null || config.Kinds.Count == 0)
@@ -96,7 +98,19 @@ namespace LOP
 
                 ArcheryTargetKind kind = PickKind(pool, ref rng);
                 Vector3 center = PickCenter(into, config, ref rng);
-                into.Add(new ArcheryTarget(waveIndex, slot, center, 0f, 0L,
+
+                //  묶음 안에서 하나씩 연달아 솟는다 — 간격이 일정해야 리듬이 생기고, 리듬이
+                //  있어야 손이 맞춰졌다가 그 속의 함정에 걸린다(spec 3.2).
+                long spawnTick = ArcheryWaveGenerator.WaveStartTick(waveIndex, gameplayStartTick, config)
+                               + (long)slot * config.StaggerTicks;
+
+                //  솟는 높이는 과녁마다 다르다 — 고정이면 "언제쯤 정점"이 몸에 배어 리듬만으로
+                //  쏘게 된다. 높이가 다르면 정점 시각도 달라져 매번 봐야 한다.
+                //  (난수를 여기서 한 번 더 쓴다 — 순서가 계약이므로 반드시 슬롯 루프 맨 끝이다.)
+                float riseHeight = rng.Range(config.RiseHeightMin, config.RiseHeightMax);
+                float riseSpeed = ArcheryTargetMotion.RiseSpeedFor(riseHeight);
+
+                into.Add(new ArcheryTarget(waveIndex, slot, center, riseSpeed, spawnTick,
                                            kind.Radius, kind.Points, kind.IsTrap));
             }
         }
