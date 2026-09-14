@@ -124,6 +124,10 @@ namespace LOP.Tests
                     Assert.AreEqual(a[i].Origin.x, b[i].Origin.x);
                     Assert.AreEqual(a[i].Origin.y, b[i].Origin.y);
                     Assert.AreEqual(a[i].Origin.z, b[i].Origin.z);
+                    //  솟는 속도와 솟는 시각도 과녁을 이루는 값이다. 여기서 안 재면 난수가 갈라져도
+                    //  이 테스트가 초록으로 통과해, 정작 클·서가 다른 과녁을 봐도 아무도 모른다.
+                    Assert.AreEqual(a[i].RiseSpeed, b[i].RiseSpeed);
+                    Assert.AreEqual(a[i].SpawnTick, b[i].SpawnTick);
                 }
             }
         }
@@ -499,24 +503,38 @@ namespace LOP.Tests
             }
         }
 
-        //  고정이면 "언제쯤 정점"이 몸에 배어 리듬만으로 쏘게 된다 — 실제로 갈리는지 본다.
+        //  고정이면 "언제쯤 정점"이 몸에 배어 리듬만으로 쏘게 된다.
+        //
+        //  그래서 재야 하는 것은 "서로 다른 값이 몇 개냐"가 아니라 **정점에 닿는 시각이 실제로
+        //  얼마나 벌어지느냐**다. 서로 다른 값이 200개라도 전부 붙어 있으면 손에 배는 건 똑같다.
         [Test]
-        public void 과녁마다_솟는_높이가_다르다()
+        public void 정점에_닿는_시각이_과녁마다_벌어진다()
         {
             var config = Config();
             var targets = new List<ArcheryTarget>();
 
-            var seen = new HashSet<float>();
+            float earliest = float.MaxValue;
+            float latest = float.MinValue;
             for (int wave = 0; wave < 50; wave++)
             {
                 Fill(targets, 21UL, wave, config);
                 for (int i = 0; i < targets.Count; i++)
                 {
-                    seen.Add(targets[i].RiseSpeed);
+                    //  올라간 만큼 내려오므로 정점은 수명의 절반 지점이다.
+                    float apex = targets[i].LifetimeSeconds / 2f;
+                    earliest = Mathf.Min(earliest, apex);
+                    latest = Mathf.Max(latest, apex);
                 }
             }
 
-            Assert.Greater(seen.Count, 10, "높이가 사실상 고정이면 정점 시각도 매번 같아진다");
+            //  설정 범위가 낼 수 있는 최대 폭. 뽑은 값들이 그 폭의 대부분을 덮어야
+            //  "매번 봐야 한다"가 성립한다 — 한곳에 몰리면 리듬만으로 쏘게 된다.
+            float widest = (ArcheryTargetMotion.RiseSpeedFor(config.RiseHeightMax)
+                          - ArcheryTargetMotion.RiseSpeedFor(config.RiseHeightMin))
+                          / ArcheryTargetMotion.Gravity;
+
+            Assert.Greater(latest - earliest, widest * 0.9f,
+                           $"정점 시각이 {earliest:F3}~{latest:F3}초에 몰렸다 (낼 수 있는 폭 {widest:F3}초)");
         }
     }
 }
