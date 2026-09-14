@@ -399,17 +399,24 @@ namespace LOP.Tests
         //  마지막 과녁이 떨어질 때까지 걸리는 시간이다 — 웨이브 주기가 이보다 짧으면
         //  마지막 과녁이 공중에서 잘려 사라진다(에러는 안 난다).
         //  높이가 과녁마다 다르므로 **가장 높이 솟는 경우**로 잡아야 안전하다.
+        //
+        //  기대값은 손으로 센 숫자다. 구현과 같은 식을 여기 다시 적으면 식이 틀렸을 때
+        //  양쪽이 똑같이 틀려서 아무것도 못 잡는다:
+        //    2.4m까지 솟으려면 출발 속도 sqrt(2 x 20 x 2.4) = 9.798 m/s
+        //    수명 2 x 9.798 / 20 = 0.9798초 -> 0.02초 틱으로 올려 세면 49틱
+        //    (5-1) x 12 + 49 = 97
         [Test]
         public void 묶음_길이는_가장_높이_솟는_과녁이_떨어질_때까지다()
         {
             var config = Config();
 
-            float longest = 2f * ArcheryTargetMotion.RiseSpeedFor(TestRiseHeightMax)
-                          / ArcheryTargetMotion.Gravity;
-            int lifetimeTicks = Mathf.CeilToInt(longest / 0.02f);
-            int expected = (config.MaxTargets - 1) * TestStaggerTicks + lifetimeTicks;
+            //  아래 세 값에서 97이 나온다. 하나라도 바뀌면 97도 바뀌어야 하므로 여기서 먼저 막는다 —
+            //  안 그러면 "97이 아니다"만 보이고 왜 틀렸는지는 안 보인다.
+            Assert.AreEqual(2.4f, TestRiseHeightMax, 1e-6f);
+            Assert.AreEqual(5, config.MaxTargets);
+            Assert.AreEqual(12, TestStaggerTicks);
 
-            Assert.AreEqual(expected, config.BurstTicks);
+            Assert.AreEqual(97, config.BurstTicks);
         }
     }
 }
