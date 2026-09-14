@@ -24,6 +24,23 @@ namespace LOP
         /// </summary>
         public const float DrawThreshold = 0.15f;
 
+        /// <summary>
+        /// 시위가 당겨지는 최대 속도(초당 당김 비율). 완전히 당기는 데 최소 0.1초가 걸린다.
+        ///
+        /// <para>사람이 엄지로 끄는 속도(보통 0.15~0.25초)보다 빠르게 잡았다 — 여기서 손을 막으면
+        /// 끝까지 끌었는데 안 나가는 일이 생긴다. 아주 빠르게 튕기는 입력만 깎아 낸다.</para>
+        /// </summary>
+        public const float DrawRisePerSecond = 10f;
+
+        /// <summary>
+        /// 손을 뗀 뒤 시위가 풀리는 속도(초당 당김 비율). 0까지 1/3초쯤 걸린다.
+        ///
+        /// <para>당길 때보다 <b>느린 것이 핵심</b>이다. 쏘는 순간 당김을 0으로 떨어뜨리면 화각이
+        /// 한 프레임에 벌어져 화면이 튄다. 천천히 풀리게 두면 화면(줌·조준선·게이지)이 각자
+        /// 완충을 대지 않고 이 값을 그냥 읽어도 부드럽다 — <b>규칙이 시뮬에 있다</b>.</para>
+        /// </summary>
+        public const float DrawFallPerSecond = 3f;
+
         /// <summary>화살이 떠나는 높이 — 발밑이 아니라 눈높이에서 나가야 겨눈 대로 간다.</summary>
         public const float EyeHeight = 1.4f;
 
@@ -56,12 +73,16 @@ namespace LOP
 
             aim.Yaw = command.AimYaw;
             aim.Pitch = command.AimPitch;
-            //  당기는 동안에만 갱신한다. 떼는 틱은 Drawing=false로 오므로 여기서 0으로 덮으면
-            //  아래에서 "얼마나 당겼는지"를 잃는다 — 마지막으로 당긴 값이 곧 쏘는 힘이다.
-            if (command.Drawing)
-            {
-                aim.DrawRatio = command.DrawRatio;
-            }
+            //  쏘는 힘은 시위가 풀리기 **전** 값이다 — 떼는 틱에도 아래에서 한 틱분이 깎이므로
+            //  여기서 먼저 붙들어 둔다. 안 그러면 놓을 때마다 힘이 조금씩 모자란다.
+            float drawAtRelease = aim.DrawRatio;
+
+            //  시위는 정해진 속도로만 움직인다 — 손가락이 순간이동해도 활은 못 그런다.
+            //  당길 때는 손가락 위치를 향해 빠르게, 뗀 뒤에는 0을 향해 느리게 간다.
+            float drawTarget = command.Drawing ? command.DrawRatio : 0f;
+            float drawSpeed = drawTarget > aim.DrawRatio ? DrawRisePerSecond : DrawFallPerSecond;
+            aim.DrawRatio = Mathf.MoveTowards(
+                aim.DrawRatio, drawTarget, drawSpeed * tickInterval);
 
             // 당기기 시작한 틱은 "안 당기다가 당기기 시작한" 그 틱에만 새로 찍는다.
             if (command.Drawing && aim.Drawing == false)
@@ -82,20 +103,20 @@ namespace LOP
             }
 
             //  임계치를 못 넘고 뗐으면 취소다. 시위가 걸린 적이 없으니 화살도 없다.
-            if (aim.DrawRatio < DrawThreshold)
+            if (drawAtRelease < DrawThreshold)
             {
                 aim.Drawing = false;
-                aim.DrawRatio = 0f;
-                return null;
+                return null;   // 시위는 위에서 같은 속도로 0까지 풀린다
             }
 
-            float speed = SpeedFor(aim.DrawRatio);
+            float speed = SpeedFor(drawAtRelease);
             Vector3 origin = entity.Get<GameFramework.World.Transform>().Position.ToUnity()
                            + new Vector3(0f, EyeHeight, 0f);
             Vector3 velocity = ArcheryTrajectory.DirectionFrom(aim.Yaw, aim.Pitch) * speed;
 
+            //  화살은 지금 나가지만 시위는 제자리로 돌아오는 데 시간이 걸린다 — 0으로 떨어뜨리지
+            //  않는다. 그래야 줌이 한 프레임에 튀지 않는다.
             aim.Drawing = false;
-            aim.DrawRatio = 0f;
             return new ArcheryShot(entity.Id, tick, origin, velocity);
         }
     }

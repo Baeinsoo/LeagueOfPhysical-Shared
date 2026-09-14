@@ -298,19 +298,111 @@ namespace LOP.Tests
         [Test]
         public void 많이_당길수록_화살이_빠르다()
         {
+            //  시위가 목표까지 차오를 시간을 준다 — 한 틱만 당기면 속도 상한에 걸려
+            //  0.3이든 1.0이든 똑같이 한 틱분만 차서 둘이 구분되지 않는다.
             float Speed(float ratio)
             {
                 var archer = Archer(Vector3.zero);
                 var system = new ArcheryAimSystem();
-                Feed(archer, 0f, 0f, drawing: true, release: false, drawRatio: ratio);
-                system.Tick(archer, 100, TickInterval);
-                Feed(archer, 0f, 0f, drawing: true, release: true, drawRatio: ratio);
-                return system.Tick(archer, 101, TickInterval).Value.Velocity.magnitude;
+                for (long t = 100; t < 130; t++)
+                {
+                    Feed(archer, 0f, 0f, drawing: true, release: false, drawRatio: ratio);
+                    system.Tick(archer, t, TickInterval);
+                }
+                Feed(archer, 0f, 0f, drawing: false, release: true, drawRatio: 0f);
+                return system.Tick(archer, 130, TickInterval).Value.Velocity.magnitude;
             }
 
             Assert.Less(Speed(0.3f), Speed(1f));
             //  상한이 있다 — 1을 넘겨 실어도 더 세지지 않는다.
             Assert.AreEqual(Speed(1f), Speed(2f), 1e-3f);
+        }
+
+
+        //  손가락이 순간이동해도 활은 못 그런다 — 시위가 차오르는 데 최소 시간이 걸린다.
+        [Test]
+        public void 시위는_정해진_속도보다_빨리_당겨지지_않는다()
+        {
+            var archer = Archer(Vector3.zero);
+            var system = new ArcheryAimSystem();
+            var aim = archer.Get<ArcheryAim>();
+
+            //  한 틱에 최대치를 요구해도 한 틱분만 차오른다.
+            Feed(archer, 0f, 0f, drawing: true, release: false, drawRatio: 1f);
+            system.Tick(archer, 100, TickInterval);
+
+            float perTick = ArcheryAimSystem.DrawRisePerSecond * TickInterval;
+            Assert.AreEqual(perTick, aim.DrawRatio, 1e-4f);
+        }
+
+        //  풀리는 속도는 당길 때보다 느리다 — 쏘는 순간 0으로 떨어뜨리면 화각이 한 프레임에
+        //  벌어져 화면이 튄다. 이게 없으면 화면이 각자 완충을 대야 한다.
+        [Test]
+        public void 손을_떼면_시위가_정해진_속도로_풀린다()
+        {
+            var archer = Archer(Vector3.zero);
+            var system = new ArcheryAimSystem();
+            var aim = archer.Get<ArcheryAim>();
+
+            //  완전히 당길 때까지 충분히 먹인다.
+            for (long t = 100; t < 140; t++)
+            {
+                Feed(archer, 0f, 0f, drawing: true, release: false, drawRatio: 1f);
+                system.Tick(archer, t, TickInterval);
+            }
+            Assert.AreEqual(1f, aim.DrawRatio, 1e-4f, "충분히 당겼으면 최대여야 한다");
+
+            //  떼는 틱: 화살은 나가되 시위는 한 번에 0이 되지 않는다.
+            Feed(archer, 0f, 0f, drawing: false, release: true, drawRatio: 0f);
+            Assert.IsNotNull(system.Tick(archer, 140, TickInterval), "떼면 화살은 나가야 한다");
+
+            float perTick = ArcheryAimSystem.DrawFallPerSecond * TickInterval;
+            Assert.AreEqual(1f - perTick, aim.DrawRatio, 1e-4f, "시위는 한 틱분만 풀려야 한다");
+
+            //  손가락이 없어도 계속 풀린다.
+            Feed(archer, 0f, 0f, drawing: false, release: false, drawRatio: 0f);
+            system.Tick(archer, 141, TickInterval);
+            Assert.AreEqual(1f - perTick * 2f, aim.DrawRatio, 1e-4f);
+        }
+
+        //  떼는 틱에도 시위가 한 틱분 풀린다 — 그 깎인 값으로 쏘면 놓을 때마다 힘이 모자란다.
+        [Test]
+        public void 쏘는_힘은_시위가_풀리기_전_값이다()
+        {
+            var archer = Archer(Vector3.zero);
+            var system = new ArcheryAimSystem();
+
+            for (long t = 100; t < 140; t++)
+            {
+                Feed(archer, 0f, 0f, drawing: true, release: false, drawRatio: 1f);
+                system.Tick(archer, t, TickInterval);
+            }
+
+            Feed(archer, 0f, 0f, drawing: false, release: true, drawRatio: 0f);
+            var shot = system.Tick(archer, 140, TickInterval);
+
+            Assert.AreEqual(ArcheryAimSystem.MaxSpeed, shot.Value.Velocity.magnitude, 1e-3f);
+        }
+
+
+        //  사람이 엄지로 끝까지 끄는 데 0.15초쯤 걸린다 — 그 손동작이 임계치를 넘겨야 한다.
+        //  당김 상한이 너무 작으면 끝까지 끌었는데도 안 나가서 "왜 안 쏴지지"가 된다.
+        [Test]
+        public void 빠르게_끌었다_놓아도_발사된다()
+        {
+            var archer = Archer(Vector3.zero);
+            var system = new ArcheryAimSystem();
+
+            //  0.15초(8틱) 동안 끝까지 끈 손가락.
+            for (long t = 100; t < 108; t++)
+            {
+                Feed(archer, 0f, 0f, drawing: true, release: false, drawRatio: 1f);
+                system.Tick(archer, t, TickInterval);
+            }
+
+            Feed(archer, 0f, 0f, drawing: false, release: true, drawRatio: 0f);
+            Assert.IsNotNull(system.Tick(archer, 108, TickInterval),
+                             "0.15초면 사람이 끝까지 끄는 시간이다 — 이걸로 안 나가면 상한이 너무 작다");
         }
 
     }
