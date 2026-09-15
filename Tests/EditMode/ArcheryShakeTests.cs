@@ -13,7 +13,7 @@ namespace LOP.Tests
                 trapRatioMin: 0f, trapRatioMax: 0f,
                 shakeFreeSeconds: free, shakeRampSeconds: ramp, shakeMaxDegrees: max,
                 riseHeightMin: 1.2f, riseHeightMax: 2.4f, staggerTicks: 12, restTicks: 20,
-                kinds: new[] { new ArcheryTargetKind(0.6f, 1, 50, false) });
+                kinds: new[] { new ArcheryTargetKind(0.6f, 1, 50, false, ArcheryTargetShape.Sphere, null) });
         }
 
         //  짧게 당겼다 놓는 평소 사격이 흔들리면 안 된다 — 그러면 벌이 아니라 잡음이다.
