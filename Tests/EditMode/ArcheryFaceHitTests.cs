@@ -109,5 +109,28 @@ namespace LOP.Tests
 
             Assert.IsTrue(hit);
         }
+
+        //  판 위에서 출발한 화살은 이미 앞 틱에 닿은 것이다 — 다음 틱에 또 맞으면 한 발이
+        //  두 번 맞는 셈이 된다. 이 경우만 걸러내는 가드가 따로 있고, 그게 실제로 도는지 잰다.
+        //  (판 뒤에서 출발한 경우는 다른 검사가 막는다 — 아래 테스트가 그쪽이다.)
+        [Test]
+        public void 판_위에서_출발한_화살은_다시_안_맞는다()
+        {
+            bool hit = ArcheryHitTest.SegmentHitsFace(
+                Center, new Vector3(0f, 0f, 1f), Center, Facing, Radius, out _);
+
+            Assert.IsFalse(hit);
+        }
+
+        //  판 뒤에서 출발해 더 뒤로 가는 화살. 위 가드가 아니라 '평면까지 가는 지점이 이번
+        //  선분 밖'이라는 검사가 막는다 — 둘이 서로 다른 것을 막는다는 것을 여기서 못박는다.
+        [Test]
+        public void 판_뒤에서_출발하면_안_맞는다()
+        {
+            bool hit = ArcheryHitTest.SegmentHitsFace(
+                new Vector3(0f, 0f, 0.5f), new Vector3(0f, 0f, 2f), Center, Facing, Radius, out _);
+
+            Assert.IsFalse(hit);
+        }
     }
 }
