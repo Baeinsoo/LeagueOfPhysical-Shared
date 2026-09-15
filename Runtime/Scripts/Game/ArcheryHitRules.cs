@@ -48,6 +48,14 @@ namespace LOP
             return new ArcheryHitOutcome(Mathf.Max(points, 0), 0);
         }
 
+        /// <summary>
+        /// 맞은 자리가 속한 띠의 점수. 중심 쪽 띠부터 훑어 처음 걸리는 것을 쓴다.
+        ///
+        /// <para>⚠️ <b>띠 목록이 중심→바깥 순서라는 데 기대고 있다.</b> 순서가 뒤집히면 바깥 띠가
+        /// 먼저 걸려서 한가운데를 맞혀도 낮은 점수가 나온다 — 예외도 경고도 없이 점수만 틀린다.
+        /// 여기서 정렬하지 않는 이유는 이 함수가 <b>맞힐 때마다</b> 불리기 때문이다. 순서를 맞추는
+        /// 것은 목록을 만드는 쪽(사이드 provider)의 몫이고, 그쪽이 그렇게 해야 한다.</para>
+        /// </summary>
         private static int PointsAt(in ArcheryTarget target, float normalizedOffset)
         {
             var bands = target.Bands;

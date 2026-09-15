@@ -34,7 +34,7 @@ namespace LOP.Tests
                 origin: UnityEngine.Vector3.zero, riseSpeed: 0f, spawnTick: 0L,
                 radius: 0.4f, points: points, isTrap: isTrap,
                 shape: ArcheryTargetShape.Face,
-                bands: bands.Length == 0 ? null : new List<ArcheryRingBand>(bands),
+                bands: new List<ArcheryRingBand>(bands),
                 facing: new UnityEngine.Vector3(0f, 0f, -1f));
         }
 
@@ -106,6 +106,37 @@ namespace LOP.Tests
 
             Assert.AreEqual(0, ArcheryHitRules.Resolve(target, 0.5f).Gained);
             Assert.AreEqual(0, ArcheryHitRules.Resolve(target, 0.5f).Lost);
+        }
+
+        //  띠 목록이 아예 null인 경우도 빈 목록과 같게 다뤄야 한다 — 마스터데이터에 그 과녁의
+        //  띠가 한 줄도 없으면 provider가 빈 목록을 주지만, 코드 어딘가가 null을 주더라도
+        //  조용히 0점이 되면 안 된다.
+        [Test]
+        public void 띠_목록이_null이어도_과녁_점수를_준다()
+        {
+            var target = new ArcheryTarget(
+                waveIndex: 0, slotIndex: 0,
+                origin: UnityEngine.Vector3.zero, riseSpeed: 0f, spawnTick: 0L,
+                radius: 0.4f, points: 2, isTrap: false,
+                shape: ArcheryTargetShape.Sphere, bands: null, facing: UnityEngine.Vector3.zero);
+
+            Assert.AreEqual(2, ArcheryHitRules.Resolve(target, 0f).Gained);
+            Assert.AreEqual(2, ArcheryHitRules.Resolve(target, 0.99f).Gained);
+        }
+
+        //  채점은 띠 목록이 중심→바깥 순서라는 데 기대고 있다. 그 전제가 깨지면 예외도 경고도
+        //  없이 점수만 틀리므로, 어떻게 틀리는지를 여기 박아 둔다 — 목록을 만드는 쪽이 정렬을
+        //  빠뜨리면 정확히 이 모양이 된다.
+        [Test]
+        public void 띠_순서가_뒤집히면_한가운데를_맞혀도_바깥_점수가_나온다()
+        {
+            var reversed = TargetWith(isTrap: false, points: 0,
+                new ArcheryRingBand(1.0f, 5),
+                new ArcheryRingBand(0.2f, 10));
+
+            //  정중앙인데도 바깥 띠(5점)가 먼저 걸린다.
+            Assert.AreEqual(5, ArcheryHitRules.Resolve(reversed, 0f).Gained,
+                            "순서가 뒤집히면 이렇게 된다 — 정렬은 목록을 만드는 쪽의 몫이다");
         }
     }
 }
