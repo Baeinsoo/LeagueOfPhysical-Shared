@@ -29,17 +29,44 @@ namespace LOP
     /// </summary>
     public static class ArcheryHitRules
     {
-        public static ArcheryHitOutcome Resolve(in ArcheryTarget target)
+        /// <summary>
+        /// 맞은 결과를 정한다. <paramref name="normalizedOffset"/>은 맞은 자리가 중심에서 얼마나
+        /// 벗어났는지를 과녁 반지름으로 나눈 값이다(0이 정중앙, 1이 가장자리).
+        /// </summary>
+        public static ArcheryHitOutcome Resolve(in ArcheryTarget target, float normalizedOffset)
         {
+            int points = PointsAt(target, normalizedOffset);
+
             if (target.IsTrap)
             {
                 //  데이터에 -3으로 적든 3으로 적든 같은 벌점이 되게 한다. 적는 사람이 부호를
                 //  어느 쪽으로 쓸지 헷갈려도 값이 두 배로 틀리지 않는다.
-                return new ArcheryHitOutcome(0, Mathf.Abs(target.Points));
+                return new ArcheryHitOutcome(0, Mathf.Abs(points));
             }
 
             //  성한 과녁에 음수가 적혀 있으면 점수를 몰래 깎는 대신 아무것도 주지 않는다.
-            return new ArcheryHitOutcome(Mathf.Max(target.Points, 0), 0);
+            return new ArcheryHitOutcome(Mathf.Max(points, 0), 0);
+        }
+
+        private static int PointsAt(in ArcheryTarget target, float normalizedOffset)
+        {
+            var bands = target.Bands;
+            if (bands == null || bands.Count == 0)
+            {
+                //  띠 데이터가 없는 과녁 — 어디를 맞히든 같은 점수다.
+                return target.Points;
+            }
+
+            for (int i = 0; i < bands.Count; i++)
+            {
+                if (normalizedOffset <= bands[i].OuterRatio)
+                {
+                    return bands[i].Points;
+                }
+            }
+
+            //  가장자리를 아주 조금 넘은 값(부동소수 오차)이 들어와도 점수가 0이 되면 안 된다.
+            return bands[bands.Count - 1].Points;
         }
     }
 }

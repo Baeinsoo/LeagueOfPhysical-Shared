@@ -113,7 +113,8 @@ namespace LOP
                 float riseSpeed = ArcheryTargetMotion.RiseSpeedFor(riseHeight);
 
                 into.Add(new ArcheryTarget(waveIndex, slot, center, riseSpeed, spawnTick,
-                                           kind.Radius, kind.Points, kind.IsTrap));
+                                           kind.Radius, kind.Points, kind.IsTrap,
+                                           kind.Shape, kind.Bands, Vector3.zero));
             }
         }
 

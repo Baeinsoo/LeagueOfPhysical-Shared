@@ -7,13 +7,14 @@ namespace LOP.Tests
     {
         private static ArcheryTarget Target(int points, bool isTrap)
         {
-            return new ArcheryTarget(0, 0, Vector3.zero, 0f, 0L, 0.5f, points, isTrap);
+            return new ArcheryTarget(0, 0, Vector3.zero, 0f, 0L, 0.5f, points, isTrap,
+                ArcheryTargetShape.Sphere, null, Vector3.zero);
         }
 
         [Test]
         public void 성한_과녁은_점수를_준다()
         {
-            var outcome = ArcheryHitRules.Resolve(Target(points: 3, isTrap: false));
+            var outcome = ArcheryHitRules.Resolve(Target(points: 3, isTrap: false), 0f);
 
             Assert.AreEqual(3, outcome.Gained);
             Assert.AreEqual(0, outcome.Lost);
@@ -25,8 +26,8 @@ namespace LOP.Tests
         [Test]
         public void 함정은_음수로_적어도_양수로_적어도_같은_벌점이다()
         {
-            var written = ArcheryHitRules.Resolve(Target(points: -3, isTrap: true));
-            var writtenPositive = ArcheryHitRules.Resolve(Target(points: 3, isTrap: true));
+            var written = ArcheryHitRules.Resolve(Target(points: -3, isTrap: true), 0f);
+            var writtenPositive = ArcheryHitRules.Resolve(Target(points: 3, isTrap: true), 0f);
 
             Assert.AreEqual(0, written.Gained);
             Assert.AreEqual(3, written.Lost);
@@ -39,7 +40,7 @@ namespace LOP.Tests
         [Test]
         public void 함정_점수가_0이면_아무_일도_안_일어난다()
         {
-            var outcome = ArcheryHitRules.Resolve(Target(points: 0, isTrap: true));
+            var outcome = ArcheryHitRules.Resolve(Target(points: 0, isTrap: true), 0f);
 
             Assert.AreEqual(0, outcome.Gained);
             Assert.AreEqual(0, outcome.Lost);
@@ -50,7 +51,7 @@ namespace LOP.Tests
         [Test]
         public void 성한_과녁에_음수가_적혀_있으면_점수를_주지_않는다()
         {
-            var outcome = ArcheryHitRules.Resolve(Target(points: -5, isTrap: false));
+            var outcome = ArcheryHitRules.Resolve(Target(points: -5, isTrap: false), 0f);
 
             Assert.AreEqual(0, outcome.Gained);
             Assert.AreEqual(0, outcome.Lost);

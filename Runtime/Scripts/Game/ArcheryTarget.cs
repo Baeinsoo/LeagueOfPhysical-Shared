@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace LOP
@@ -28,6 +29,20 @@ namespace LOP
         /// <summary>맞히면 안 되는 과녁인가.</summary>
         public readonly bool IsTrap;
 
+        /// <summary>공인가 판인가. 판정하는 법이 여기서 갈린다.</summary>
+        public readonly ArcheryTargetShape Shape;
+
+        /// <summary>
+        /// 중심에서 바깥으로 가는 띠 목록. 비어 있으면 <see cref="Points"/>짜리 띠 하나로 친다.
+        /// </summary>
+        public readonly IReadOnlyList<ArcheryRingBand> Bands;
+
+        /// <summary>
+        /// 판이 바라보는 쪽(단위 벡터). 공은 이 값을 안 쓴다.
+        /// 이쪽에서 오는 화살만 맞는다 — 뒤에서 온 것은 통과한다.
+        /// </summary>
+        public readonly Vector3 Facing;
+
         /// <summary>
         /// 솟았다 떨어지기까지 걸리는 시간(초). 과녁마다 솟는 높이가 달라 <b>수명도 제각각</b>이라,
         /// 전역 설정이 아니라 과녁 자신이 안다. 중력이 고정이므로 초기속도 하나로 정해진다.
@@ -35,7 +50,8 @@ namespace LOP
         public float LifetimeSeconds => 2f * RiseSpeed / ArcheryTargetMotion.Gravity;
 
         public ArcheryTarget(int waveIndex, int slotIndex, Vector3 origin, float riseSpeed, long spawnTick,
-                             float radius, int points, bool isTrap)
+                             float radius, int points, bool isTrap,
+                             ArcheryTargetShape shape, IReadOnlyList<ArcheryRingBand> bands, Vector3 facing)
         {
             WaveIndex = waveIndex;
             SlotIndex = slotIndex;
@@ -45,6 +61,9 @@ namespace LOP
             Radius = radius;
             Points = points;
             IsTrap = isTrap;
+            Shape = shape;
+            Bands = bands;
+            Facing = facing;
         }
     }
 }
