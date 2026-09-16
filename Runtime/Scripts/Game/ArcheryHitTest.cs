@@ -3,7 +3,7 @@ using UnityEngine;
 namespace LOP
 {
     /// <summary>
-    /// 화살이 이번 틱에 지나온 <b>선분</b>이 과녁 구를 스쳤는지 본다. 매 틱의 점만 검사하면 빠른
+    /// 화살이 이번 틱에 지나온 <b>선분</b>이 과녁에 닿았는지 본다(구와 판 둘 다). 매 틱의 점만 검사하면 빠른
     /// 화살이 작은 과녁을 통째로 뚫고 지나간다(65m/s면 한 틱에 1.3m — 지름 0.5m 과녁보다 길다).
     /// 상태 없는 순수 계산이다.
     /// </summary>
@@ -48,6 +48,82 @@ namespace LOP
             }
 
             t = entry;
+            return true;
+        }
+
+        /// <summary>
+        /// 화살 선분이 <b>사수를 향해 선 원판</b>을 맞혔는지 본다.
+        /// <paramref name="facing"/> 쪽에서 오는 화살만 맞는다 — 뒤에서 온 것은 통과한다.
+        /// 맞았으면 <paramref name="t"/>에 선분 위 어디서 평면을 지났는지(0~1)를 담는다.
+        /// </summary>
+        public static bool SegmentHitsFace(Vector3 from, Vector3 to, Vector3 center, Vector3 facing,
+                                           float radius, out float t)
+        {
+            t = 0f;
+
+            Vector3 segment = to - from;
+            float approach = Vector3.Dot(segment, facing);
+            //  화살이 판이 보는 쪽으로 다가가고 있어야 한다. 0이면 판과 나란히 가는 것이고,
+            //  양수면 뒤에서 오는 것이다.
+            if (approach >= -1e-9f)
+            {
+                return false;
+            }
+
+            //  시작점이 판의 앞쪽에 있어야 한다. 이 한 줄이 두 가지를 막는다 —
+            //  판 뒤에서 출발한 화살(음수)과, 앞 틱에 평면에 딱 닿아 이미 맞은 화살이
+            //  다음 틱에 또 맞는 것(정확히 0).
+            float startSide = Vector3.Dot(from - center, facing);
+            if (startSide <= 0f)
+            {
+                return false;
+            }
+
+            //  선분이 판의 평면을 지나는 지점을 푼다.
+            //  여기 오면 startSide > 0이고 approach < 0이라 cross는 항상 양수다 —
+            //  그래서 볼 것은 "이번 선분 안에 들어오나"뿐이다.
+            float cross = startSide / -approach;
+            if (cross > 1f)
+            {
+                return false;   // 이번 틱에는 평면까지 못 간다
+            }
+
+            Vector3 impact = from + segment * cross;
+            if ((impact - center).sqrMagnitude > radius * radius)
+            {
+                return false;   // 평면은 지났지만 판 밖이다
+            }
+
+            t = cross;
+            return true;
+        }
+
+        /// <summary>
+        /// 과녁 모양에 맞는 판정을 고른다. <b>소비처는 이 함수만 부른다</b> — 모양이 늘어도
+        /// 부르는 쪽은 안 바뀐다.
+        /// <paramref name="normalizedOffset"/>은 맞은 자리가 중심에서 얼마나 벗어났는지를
+        /// 반지름으로 나눈 값이다(0이 정중앙, 1이 가장자리). 채점이 이 값으로 띠를 찾는다.
+        /// </summary>
+        public static bool SegmentHitsTarget(Vector3 from, Vector3 to, Vector3 center,
+                                             in ArcheryTarget target,
+                                             out float t, out float normalizedOffset)
+        {
+            normalizedOffset = 0f;
+
+            bool hit = target.Shape == ArcheryTargetShape.Face
+                ? SegmentHitsFace(from, to, center, target.Facing, target.Radius, out t)
+                : SegmentHitsSphere(from, to, center, target.Radius, out t);
+
+            if (hit == false)
+            {
+                return false;
+            }
+
+            if (target.Radius > 1e-6f)
+            {
+                Vector3 impact = from + (to - from) * t;
+                normalizedOffset = Mathf.Clamp01((impact - center).magnitude / target.Radius);
+            }
             return true;
         }
     }

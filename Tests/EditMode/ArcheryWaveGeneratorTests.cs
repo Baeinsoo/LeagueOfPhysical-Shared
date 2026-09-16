@@ -10,9 +10,9 @@ namespace LOP.Tests
         {
             return new[]
             {
-                new ArcheryTargetKind(0.60f, 1, 50, false),
-                new ArcheryTargetKind(0.40f, 2, 35, false),
-                new ArcheryTargetKind(0.25f, 4, 15, false),
+                new ArcheryTargetKind(0.60f, 1, 50, false, ArcheryTargetShape.Sphere, null),
+                new ArcheryTargetKind(0.40f, 2, 35, false, ArcheryTargetShape.Sphere, null),
+                new ArcheryTargetKind(0.25f, 4, 15, false, ArcheryTargetShape.Sphere, null),
             };
         }
 
@@ -243,8 +243,8 @@ namespace LOP.Tests
         {
             var kinds = new[]
             {
-                new ArcheryTargetKind(0.60f, 1, 50, false),
-                new ArcheryTargetKind(0.40f, -3, 50, true),
+                new ArcheryTargetKind(0.60f, 1, 50, false, ArcheryTargetShape.Sphere, null),
+                new ArcheryTargetKind(0.40f, -3, 50, true, ArcheryTargetShape.Sphere, null),
             };
             var config = ConfigWith(kinds, TouchingDistance(kinds), trapRatioMin: 0f, trapRatioMax: 1f);
             var targets = new List<ArcheryTarget>();
@@ -266,9 +266,9 @@ namespace LOP.Tests
         {
             var kinds = new[]
             {
-                new ArcheryTargetKind(0.60f, 1, 50, false),
-                new ArcheryTargetKind(0.40f, -3, 30, true),
-                new ArcheryTargetKind(0.25f, 4, 20, false),
+                new ArcheryTargetKind(0.60f, 1, 50, false, ArcheryTargetShape.Sphere, null),
+                new ArcheryTargetKind(0.40f, -3, 30, true, ArcheryTargetShape.Sphere, null),
+                new ArcheryTargetKind(0.25f, 4, 20, false, ArcheryTargetShape.Sphere, null),
             };
             var config = ConfigWith(kinds, TouchingDistance(kinds));
 
@@ -280,7 +280,7 @@ namespace LOP.Tests
         [Test]
         public void 종류가_한쪽뿐이면_다른_쪽은_빈_목록이다()
         {
-            var kinds = new[] { new ArcheryTargetKind(0.60f, 1, 50, false) };
+            var kinds = new[] { new ArcheryTargetKind(0.60f, 1, 50, false, ArcheryTargetShape.Sphere, null) };
             var config = ConfigWith(kinds, TouchingDistance(kinds));
 
             Assert.AreEqual(1, config.CleanKinds.Count);
@@ -375,7 +375,7 @@ namespace LOP.Tests
         [Test]
         public void 성한_종류가_없으면_비율과_무관하게_전부_함정이다()
         {
-            var kinds = new[] { new ArcheryTargetKind(0.50f, -5, 100, true) };
+            var kinds = new[] { new ArcheryTargetKind(0.50f, -5, 100, true, ArcheryTargetShape.Sphere, null) };
             var config = ConfigWith(kinds, TouchingDistance(kinds), trapRatioMin: 0f, trapRatioMax: 0.5f);
             var targets = new List<ArcheryTarget>();
 
@@ -394,9 +394,9 @@ namespace LOP.Tests
         {
             return new[]
             {
-                new ArcheryTargetKind(0.60f, 1, 50, false),
-                new ArcheryTargetKind(0.40f, 2, 35, false),
-                new ArcheryTargetKind(0.50f, -3, 40, true),
+                new ArcheryTargetKind(0.60f, 1, 50, false, ArcheryTargetShape.Sphere, null),
+                new ArcheryTargetKind(0.40f, 2, 35, false, ArcheryTargetShape.Sphere, null),
+                new ArcheryTargetKind(0.50f, -3, 40, true, ArcheryTargetShape.Sphere, null),
             };
         }
 
