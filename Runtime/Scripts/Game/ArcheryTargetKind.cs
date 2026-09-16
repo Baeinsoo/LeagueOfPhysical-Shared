@@ -8,7 +8,7 @@ namespace LOP
         /// <summary>맞았다고 칠 반경(m).</summary>
         public readonly float Radius;
 
-        /// <summary>맞히면 점수가 이만큼 움직인다. 함정은 음수다.</summary>
+        /// <summary>띠가 없을 때 쓰는 대비값. 띠가 있으면 그쪽이 이긴다. 함정은 음수다.</summary>
         public readonly int Points;
 
         /// <summary>뽑힐 상대 비율. 합이 100일 필요는 없다 — 서로의 크기만 의미가 있다.</summary>
