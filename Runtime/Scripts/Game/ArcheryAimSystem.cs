@@ -109,10 +109,23 @@ namespace LOP
                 return null;   // 시위는 위에서 같은 속도로 0까지 풀린다
             }
 
+            //  화살이 없으면 시위를 걸었어도 안 나간다. 그릇이 없으면 무제한이다(원형 맵).
+            var quiver = entity.Get<ArcheryQuiver>();
+            if (quiver != null && quiver.Remaining <= 0)
+            {
+                aim.Drawing = false;
+                return null;
+            }
+
             float speed = SpeedFor(drawAtRelease);
             Vector3 origin = entity.Get<GameFramework.World.Transform>().Position.ToUnity()
                            + new Vector3(0f, EyeHeight, 0f);
             Vector3 velocity = ArcheryTrajectory.DirectionFrom(aim.Yaw, aim.Pitch) * speed;
+
+            if (quiver != null)
+            {
+                quiver.Remaining--;
+            }
 
             //  화살은 지금 나가지만 시위는 제자리로 돌아오는 데 시간이 걸린다 — 0으로 떨어뜨리지
             //  않는다. 그래야 줌이 한 프레임에 튀지 않는다.

@@ -98,12 +98,24 @@ namespace LOP
         /// <summary>함정 종류만. 비어 있으면 함정이 안 뜬다(비율을 아무리 올려도).</summary>
         public IReadOnlyList<ArcheryTargetKind> TrapKinds { get; }
 
+        /// <summary>이 맵의 과녁이 뜨는 방식. 안 적으면 웨이브다 — 원형 맵이 기본값 자리다.</summary>
+        public ArcheryCourseKind CourseKind { get; }
+
+        /// <summary>시간으로 판을 끝내는 길이(틱). <b>0 이하면 시간으로는 안 끝낸다</b>(사거리는 코스가 끝낸다).</summary>
+        public int MatchDurationTicks { get; }
+
+        /// <summary>사거리 코스에만 쓰이는 값들. 웨이브 맵에서는 <see cref="ArcheryRangeSettings.None"/>이다.</summary>
+        public ArcheryRangeSettings Range { get; }
+
         public ArcheryConfig(int wavePeriodTicks, int minTargets, int maxTargets,
                              float spawnRadius, float spawnMinY, float spawnMaxY, float minSeparation,
                              float trapRatioMin, float trapRatioMax,
                              float shakeFreeSeconds, float shakeRampSeconds, float shakeMaxDegrees,
                              float riseHeightMin, float riseHeightMax, int staggerTicks, int restTicks,
-                             IReadOnlyList<ArcheryTargetKind> kinds)
+                             IReadOnlyList<ArcheryTargetKind> kinds,
+                             ArcheryCourseKind courseKind = ArcheryCourseKind.Wave,
+                             int matchDurationTicks = 0,
+                             ArcheryRangeSettings range = null)
         {
             WavePeriodTicks = wavePeriodTicks;
             MinTargets = minTargets;
@@ -154,6 +166,10 @@ namespace LOP
             MaxTargetRadius = largest;
             CleanKinds = clean;
             TrapKinds = traps;
+
+            CourseKind = courseKind;
+            MatchDurationTicks = matchDurationTicks;
+            Range = range ?? ArcheryRangeSettings.None;
         }
     }
 }

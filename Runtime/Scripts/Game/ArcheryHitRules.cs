@@ -30,6 +30,16 @@ namespace LOP
     public static class ArcheryHitRules
     {
         /// <summary>
+        /// 이 화살이 이 과녁을 가져갈 수 있나. <b>주인이 없으면 누구든</b>(원형 맵), 주인이 있으면
+        /// 주인만(사거리 맵). 점수뿐 아니라 <b>사라지는 것까지</b> 이 한 번으로 막는다 — 점수만
+        /// 막고 사라지게 두면 남의 과녁을 태워 버리는 방해가 열린다.
+        /// </summary>
+        public static bool CanTake(in ArcheryTarget target, string shooterUserId)
+        {
+            return string.IsNullOrEmpty(target.OwnerUserId) || target.OwnerUserId == shooterUserId;
+        }
+
+        /// <summary>
         /// 맞은 결과를 정한다. <paramref name="normalizedOffset"/>은 맞은 자리가 중심에서 얼마나
         /// 벗어났는지를 과녁 반지름으로 나눈 값이다(0이 정중앙, 1이 가장자리).
         /// </summary>

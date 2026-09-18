@@ -13,7 +13,8 @@ namespace LOP.Tests
                 waveIndex: 0, slotIndex: 0,
                 origin: new Vector3(1f, 0f, 2f), riseSpeed: riseSpeed, spawnTick: spawnTick,
                 radius: 0.3f, points: 2, isTrap: false,
-                shape: ArcheryTargetShape.Sphere, bands: null, facing: Vector3.zero);
+                shape: ArcheryTargetShape.Sphere, bands: null, facing: Vector3.zero,
+                lifetimeSeconds: ArcheryTargetMotion.LifetimeFor(riseSpeed), ownerUserId: string.Empty);
         }
 
         [Test]

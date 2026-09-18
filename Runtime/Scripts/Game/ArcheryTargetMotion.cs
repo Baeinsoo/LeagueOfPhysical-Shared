@@ -32,9 +32,27 @@ namespace LOP
             return Mathf.Sqrt(2f * Gravity * riseHeight);
         }
 
-        /// <summary>그 시각의 과녁 자리. 솟기 전에는 출발점에 가만히 있다.</summary>
+        /// <summary>
+        /// 그 속도로 솟은 과녁이 떠 있는 시간(초). 올라갔다 내려오므로 정점까지의 두 배다.
+        /// <b>웨이브 과녁의 수명은 여기서만 나온다</b> — 식을 두 군데 적으면 한쪽만 고쳐진다.
+        /// </summary>
+        public static float LifetimeFor(float riseSpeed)
+        {
+            return 2f * riseSpeed / Gravity;
+        }
+
+        /// <summary>
+        /// 그 시각의 과녁 자리. 솟기 전에는 출발점에 가만히 있다.
+        /// <b>안 솟는 과녁(솟는 속도 0 — 사거리 맵의 서 있는 과녁)은 내내 제자리다</b> — 포물선
+        /// 식은 "떠올랐다 떨어진다"는 전제라, 속도 0을 그대로 넣으면 중력만 작용해 서 있던 과녁이
+        /// 바닥으로 꺼진다.
+        /// </summary>
         public static Vector3 PositionAt(in ArcheryTarget target, double tick, float tickInterval)
         {
+            if (target.RiseSpeed <= 0f)
+            {
+                return target.Origin;
+            }
             float t = (float)((tick - target.SpawnTick) * tickInterval);
             if (t <= 0f)
             {

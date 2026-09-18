@@ -44,14 +44,23 @@ namespace LOP
         public readonly Vector3 Facing;
 
         /// <summary>
-        /// 솟았다 떨어지기까지 걸리는 시간(초). 과녁마다 솟는 높이가 달라 <b>수명도 제각각</b>이라,
-        /// 전역 설정이 아니라 과녁 자신이 안다. 중력이 고정이므로 초기속도 하나로 정해진다.
+        /// 솟았다 떨어지기까지의 시간, 또는 서 있다 사라지기까지의 시간(초).
+        /// <b>파생값이 아니라 값이다</b> — 사거리 과녁은 솟지 않으므로(속도 0) 속도에서 수명을
+        /// 유도하면 서자마자 사라진다. 웨이브 과녁은 <see cref="ArcheryTargetMotion.LifetimeFor"/>가
+        /// 예전과 같은 값을 채운다.
         /// </summary>
-        public float LifetimeSeconds => 2f * RiseSpeed / ArcheryTargetMotion.Gravity;
+        public readonly float LifetimeSeconds;
+
+        /// <summary>
+        /// 이 과녁의 주인(userId). <b>빈 문자열이면 주인이 없다</b> — 먼저 맞힌 사람이 먹는다(원형 맵).
+        /// 주인이 있으면 주인이 맞혔을 때만 점수가 나고 그때만 사라진다.
+        /// </summary>
+        public readonly string OwnerUserId;
 
         public ArcheryTarget(int waveIndex, int slotIndex, Vector3 origin, float riseSpeed, long spawnTick,
                              float radius, int points, bool isTrap,
-                             ArcheryTargetShape shape, IReadOnlyList<ArcheryRingBand> bands, Vector3 facing)
+                             ArcheryTargetShape shape, IReadOnlyList<ArcheryRingBand> bands, Vector3 facing,
+                             float lifetimeSeconds, string ownerUserId)
         {
             WaveIndex = waveIndex;
             SlotIndex = slotIndex;
@@ -64,6 +73,8 @@ namespace LOP
             Shape = shape;
             Bands = bands;
             Facing = facing;
+            LifetimeSeconds = lifetimeSeconds;
+            OwnerUserId = ownerUserId ?? string.Empty;
         }
     }
 }
