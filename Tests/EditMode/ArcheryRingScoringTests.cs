@@ -35,7 +35,8 @@ namespace LOP.Tests
                 radius: 0.4f, points: points, isTrap: isTrap,
                 shape: ArcheryTargetShape.Face,
                 bands: new List<ArcheryRingBand>(bands),
-                facing: new UnityEngine.Vector3(0f, 0f, -1f));
+                facing: new UnityEngine.Vector3(0f, 0f, -1f),
+                lifetimeSeconds: 10f, ownerUserId: string.Empty);
         }
 
         //  띠가 없으면 예전처럼 "어디를 맞히든 같은 점수"다. 띠 데이터가 아직 없는 과녁이
@@ -118,7 +119,8 @@ namespace LOP.Tests
                 waveIndex: 0, slotIndex: 0,
                 origin: UnityEngine.Vector3.zero, riseSpeed: 0f, spawnTick: 0L,
                 radius: 0.4f, points: 2, isTrap: false,
-                shape: ArcheryTargetShape.Sphere, bands: null, facing: UnityEngine.Vector3.zero);
+                shape: ArcheryTargetShape.Sphere, bands: null, facing: UnityEngine.Vector3.zero,
+                lifetimeSeconds: 10f, ownerUserId: string.Empty);
 
             Assert.AreEqual(2, ArcheryHitRules.Resolve(target, 0f).Gained);
             Assert.AreEqual(2, ArcheryHitRules.Resolve(target, 0.99f).Gained);

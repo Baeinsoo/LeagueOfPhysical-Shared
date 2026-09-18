@@ -16,7 +16,8 @@ namespace LOP.Tests
                 waveIndex: 0, slotIndex: 0,
                 origin: Center, riseSpeed: 0f, spawnTick: 0L,
                 radius: radius, points: 1, isTrap: false,
-                shape: ArcheryTargetShape.Face, bands: null, facing: Facing);
+                shape: ArcheryTargetShape.Face, bands: null, facing: Facing,
+                lifetimeSeconds: 10f, ownerUserId: string.Empty);
         }
 
         [Test]
@@ -102,7 +103,8 @@ namespace LOP.Tests
                 waveIndex: 0, slotIndex: 0,
                 origin: Center, riseSpeed: 0f, spawnTick: 0L,
                 radius: Radius, points: 1, isTrap: false,
-                shape: ArcheryTargetShape.Sphere, bands: null, facing: Vector3.zero);
+                shape: ArcheryTargetShape.Sphere, bands: null, facing: Vector3.zero,
+                lifetimeSeconds: 10f, ownerUserId: string.Empty);
 
             bool hit = ArcheryHitTest.SegmentHitsTarget(
                 new Vector3(-1f, 0f, 0f), new Vector3(1f, 0f, 0f), Center, sphere, out _, out _);

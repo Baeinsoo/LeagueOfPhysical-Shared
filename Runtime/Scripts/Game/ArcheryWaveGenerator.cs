@@ -114,7 +114,8 @@ namespace LOP
 
                 into.Add(new ArcheryTarget(waveIndex, slot, center, riseSpeed, spawnTick,
                                            kind.Radius, kind.Points, kind.IsTrap,
-                                           kind.Shape, kind.Bands, Vector3.zero));
+                                           kind.Shape, kind.Bands, Vector3.zero,
+                                           ArcheryTargetMotion.LifetimeFor(riseSpeed), string.Empty));
             }
         }
 
