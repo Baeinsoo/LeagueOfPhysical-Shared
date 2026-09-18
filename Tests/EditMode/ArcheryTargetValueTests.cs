@@ -58,7 +58,10 @@ namespace LOP.Tests
 
             //  이 문자열은 고치기 **전** 코드를 돌려서 얻은 것이다. 값 그릇을 바꾼 뒤에도 같아야 한다.
             //  다르면 원형 맵의 과녁이 실제로 달라진 것이다 — 문자열을 고쳐 통과시키지 말고 코드를 되돌릴 것.
-            Assert.AreEqual(Golden, sb.ToString());
+            //  금값은 여러 줄짜리 문자열 리터럴이라 파일의 줄바꿈이 그대로 값이 된다 —
+            //  이 저장소를 CRLF로 체크아웃하는 기계에서는 리터럴에 캐리지리턴이 섞여 들어가
+            //  줄바꿈만 쓰는 위 Canonical과 영원히 안 맞는다. 비교 전에 한쪽으로 맞춘다.
+            Assert.AreEqual(Golden.Replace("\r\n", "\n"), sb.ToString());
         }
 
         //  중력 상수(ArcheryTrajectory.Gravity)가 20 -> 9.81로 바뀌면서 여기 실린 RiseSpeed
