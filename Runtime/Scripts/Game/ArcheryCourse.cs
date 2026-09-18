@@ -76,6 +76,8 @@ namespace LOP
         /// <summary>
         /// 이 틱에 서 있는 단계(웨이브 맵에서는 웨이브 번호). 출발 전이면 −1,
         /// 사거리에서 순서가 끝난 뒤면 <see cref="StepCount"/> 이상이다.
+        /// <para>맵 씬이 아직 안 떠 레인을 못 찾은 틱도 −1이다 — 실제로 서 있는 단계가 없으니
+        /// 같은 답이고, 씬이 뜨면 그 다음 틱부터 정상 번호가 나온다.</para>
         /// </summary>
         public int IndexAt(long tick, long gameplayStartTick)
         {
@@ -89,11 +91,17 @@ namespace LOP
                 return -1;
             }
 
-            EnsureBuilt();
             long elapsed = tick - gameplayStartTick;
             if (elapsed >= MatchDurationTicks)
             {
+                //  끝난 판을 묻는 것뿐인데 씬을 뒤질 이유가 없다 — 길이는 노출·간격의 합이라
+                //  순서를 안 뽑아도 답할 수 있다. 그래서 아래 TryEnsureBuilt보다 먼저 답한다.
                 return StepCount;   // 순서가 끝났다 — 부르는 쪽은 이 값을 "더 없다"로 읽는다
+            }
+
+            if (!TryEnsureBuilt())
+            {
+                return -1;   // 맵 씬이 아직 안 떴다 — 아직 아무 단계도 서 있지 않다
             }
 
             for (int i = stepStartTicks.Length - 1; i >= 0; i--)
@@ -121,7 +129,11 @@ namespace LOP
                 return;   // 출발 전이거나 순서가 끝났다
             }
 
-            EnsureBuilt();
+            if (!TryEnsureBuilt())
+            {
+                return;   // 맵 씬이 아직 안 떴다 — 이번 틱은 과녁이 없다(다음 틱에 다시 본다)
+            }
+
             var stand = config.Range.Stands[order[index]];
             var kind = config.Range.Kind;
             long spawnTick = gameplayStartTick + stepStartTicks[index];
@@ -143,18 +155,32 @@ namespace LOP
             }
         }
 
-        //  씨앗은 서버가 보내 주므로 만들 때는 아직 없을 수 있다 — 처음 쓸 때 만든다.
-        private void EnsureBuilt()
+        /// <summary>
+        /// 쓸 준비가 됐나. 안 됐으면 <c>false</c>를 주고, 부르는 쪽은 이번 틱을 조용히 건너뛴다.
+        ///
+        /// <para><b>빈 레이아웃은 절대 캐시하지 않는다.</b> 판이 시작한 뒤라고 해서 맵 씬이 떠
+        /// 있다는 보장이 없다 — 중간에 들어온 클라, 또는 <c>gameplayStartTick</c> 직후에야 끝나는
+        /// additive 로드가 바로 그 자리다. 한 번이라도 빈 것을 굳혀 두면 그 인스턴스는 영영
+        /// 과녁을 못 만드는데 예외도 로그도 없다 — 서버엔 과녁이 서고 그 클라에만 안 선다.
+        /// 그래서 비었으면 굳히지 않고 다음 틱에 다시 본다.</para>
+        /// </summary>
+        private bool TryEnsureBuilt()
         {
-            if (order != null)
+            if (layout == null || layout.IsEmpty)
             {
-                return;
+                layout = layoutSource();
+                if (layout == null || layout.IsEmpty)
+                {
+                    return false;
+                }
             }
 
-            //  여기 오는 것은 이미 판이 시작한 뒤다(위 호출부가 출발 전이면 먼저 돌아간다) —
-            //  그래서 맵 씬은 확실히 떠 있다.
-            layout = layoutSource();
+            if (order != null)
+            {
+                return true;
+            }
 
+            //  순서는 씨앗만으로 정해진다(씬과 무관) — 그래서 레이아웃과 따로 딱 한 번 만든다.
             int count = config.Range.Stands.Count;
             var draw = new int[count];
             for (int i = 0; i < count; i++)
@@ -181,6 +207,7 @@ namespace LOP
 
             stepStartTicks = starts;
             order = draw;   // 마지막에 넣는다 — 중간에 끊겨도 반쯤 만들어진 상태가 안 보이게
+            return true;
         }
     }
 }

@@ -201,6 +201,35 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 씬이_아직_안_떴으면_빈_레이아웃을_굳히지_않는다()
+        {
+            //  판이 시작한 뒤에도 맵 씬이 아직 없을 수 있다 — 중간에 들어온 클라, 또는
+            //  gameplayStartTick 직후에야 끝나는 additive 로드. 그때 읽은 빈 레이아웃을 캐시하면
+            //  이 인스턴스는 영영 과녁을 못 만드는데 예외도 로그도 없다.
+            var ready = Layout(laneCount: 2, standCount: 3);
+            var current = ArcheryRangeLayout.From(new ArcheryLane[0]);
+            var course = new ArcheryCourse(RangeConfig(), new FixedSeed(3UL),
+                                           new[] { "user-a", "user-b" }, 0.02f, () => current);
+
+            //  씬이 없는 동안은 몇 번을 물어도 과녁이 없고, 터지지도 않는다.
+            var tooEarly = new List<ArcheryTarget>();
+            course.Fill(tooEarly, 0, 0L);
+            Assert.IsEmpty(tooEarly, "씬에 레인이 없는데 과녁이 나왔다");
+            Assert.AreEqual(-1, course.IndexAt(0L, 0L), "씬이 안 떴으면 서 있는 단계가 없다");
+            course.Fill(tooEarly, 0, 0L);
+            Assert.IsEmpty(tooEarly, "두 번째로 물어도 마찬가지여야 한다");
+
+            //  맵 씬이 떴다.
+            current = ready;
+
+            var afterLoad = new List<ArcheryTarget>();
+            course.Fill(afterLoad, 0, 0L);
+            Assert.AreEqual(2, afterLoad.Count,
+                "빈 레이아웃을 굳혀 버렸다 — 씬이 떠도 이 인스턴스는 영영 과녁을 못 만든다");
+            Assert.AreEqual(0, course.IndexAt(0L, 0L));
+        }
+
+        [Test]
         public void 웨이브_맵은_예전_생성기와_한_글자도_다르지_않다()
         {
             var kinds = new List<ArcheryTargetKind>
@@ -222,14 +251,42 @@ namespace LOP.Tests
                 course.Fill(viaCourse, wave, 500L);
                 ArcheryWaveGenerator.Fill(direct, 999UL, wave, config, 500L);
 
+                //  비교할 것이 있어야 비교가 뜻이 있다 — 둘 다 비면 아래 루프가 한 번도 안 돈다.
+                Assert.IsNotEmpty(direct, $"웨이브 {wave}에 과녁이 하나도 없다 — 비교가 공허하다");
                 Assert.AreEqual(direct.Count, viaCourse.Count, $"웨이브 {wave}의 과녁 수가 다르다");
                 for (int i = 0; i < direct.Count; i++)
                 {
+                    //  ArcheryTarget의 **모든** 칸을 잰다. 지금은 코스가 생성기에 그대로 넘기는
+                    //  한 줄이라 구조적으로 안전하지만, 누가 그 경로를 코스 안으로 베껴 오는 날
+                    //  이 시험이 잡는다 — 그날 빠지는 칸이 어느 것일지 모르니 전부 본다.
+                    Assert.AreEqual(direct[i].WaveIndex, viaCourse[i].WaveIndex);
+                    Assert.AreEqual(direct[i].SlotIndex, viaCourse[i].SlotIndex);
                     Assert.AreEqual(direct[i].Origin, viaCourse[i].Origin);
+                    Assert.AreEqual(direct[i].RiseSpeed, viaCourse[i].RiseSpeed);
                     Assert.AreEqual(direct[i].SpawnTick, viaCourse[i].SpawnTick);
-                    Assert.AreEqual(direct[i].Points, viaCourse[i].Points);
                     Assert.AreEqual(direct[i].Radius, viaCourse[i].Radius);
+                    Assert.AreEqual(direct[i].Points, viaCourse[i].Points);
                     Assert.AreEqual(direct[i].IsTrap, viaCourse[i].IsTrap);
+                    Assert.AreEqual(direct[i].Shape, viaCourse[i].Shape);
+                    Assert.AreEqual(direct[i].Facing, viaCourse[i].Facing);
+                    Assert.AreEqual(direct[i].LifetimeSeconds, viaCourse[i].LifetimeSeconds);
+                    Assert.AreEqual(direct[i].OwnerUserId, viaCourse[i].OwnerUserId);
+
+                    //  띠 목록은 참조라 값끼리 대 봐야 한다. 띠가 없는 종류(null)도 그대로여야
+                    //  한다 — 빈 목록으로 바뀌면 점수 계산이 "띠 하나"로 안 떨어진다.
+                    var directBands = direct[i].Bands;
+                    var courseBands = viaCourse[i].Bands;
+                    Assert.AreEqual(directBands == null, courseBands == null,
+                        $"웨이브 {wave} 슬롯 {i}의 띠 목록이 한쪽만 null이다");
+                    if (directBands != null)
+                    {
+                        Assert.AreEqual(directBands.Count, courseBands.Count);
+                        for (int b = 0; b < directBands.Count; b++)
+                        {
+                            Assert.AreEqual(directBands[b].OuterRatio, courseBands[b].OuterRatio);
+                            Assert.AreEqual(directBands[b].Points, courseBands[b].Points);
+                        }
+                    }
                 }
                 Assert.AreEqual(ArcheryWaveGenerator.WaveIndexAt(600L, 500L, config),
                                 course.IndexAt(600L, 500L));
