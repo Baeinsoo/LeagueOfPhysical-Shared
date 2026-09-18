@@ -15,11 +15,20 @@ namespace LOP
         /// <summary>이 자리의 과녁이 서 있는 시간(틱).</summary>
         public readonly int ExposureTicks;
 
-        public ArcheryRangeStand(int standIndex, float distanceM, int exposureTicks)
+        /// <summary>이 자리의 과녁이 좌우로 흔드는 폭(m). 0이면 안 움직인다.</summary>
+        public readonly float LateralSpan;
+
+        /// <summary>왕복 한 번이 걸리는 시간(초). <see cref="LateralSpan"/>이 0이면 안 쓰인다.</summary>
+        public readonly float LateralPeriod;
+
+        public ArcheryRangeStand(int standIndex, float distanceM, int exposureTicks,
+                                 float lateralSpan, float lateralPeriod)
         {
             StandIndex = standIndex;
             DistanceM = distanceM;
             ExposureTicks = exposureTicks;
+            LateralSpan = lateralSpan;
+            LateralPeriod = lateralPeriod;
         }
     }
 

@@ -14,7 +14,21 @@ namespace LOP.Tests
                 origin: new Vector3(1f, 0f, 2f), riseSpeed: riseSpeed, spawnTick: spawnTick,
                 radius: 0.3f, points: 2, isTrap: false,
                 shape: ArcheryTargetShape.Sphere, bands: null, facing: Vector3.zero,
-                lifetimeSeconds: ArcheryTargetMotion.LifetimeFor(riseSpeed), ownerUserId: string.Empty);
+                lifetimeSeconds: ArcheryTargetMotion.LifetimeFor(riseSpeed), ownerUserId: string.Empty,
+                lateralSpan: 0f, lateralPeriod: 0f);
+        }
+
+        //  사거리 과녁 모양 — 안 솟고(riseSpeed 0) 좌우로만 흔든다. facing은 +z(사수 쪽을 본다고
+        //  치면 사수는 −z에 있다) — 그 수평 수직선은 x축이라, 흔들림이 x로 나타나서 검증하기 쉽다.
+        static ArcheryTarget RangeTarget(long spawnTick, float lateralSpan, float lateralPeriod)
+        {
+            return new ArcheryTarget(
+                waveIndex: 0, slotIndex: 0,
+                origin: new Vector3(1f, 0f, 2f), riseSpeed: 0f, spawnTick: spawnTick,
+                radius: 0.61f, points: 5, isTrap: false,
+                shape: ArcheryTargetShape.Face, bands: null, facing: Vector3.forward,
+                lifetimeSeconds: 10f, ownerUserId: string.Empty,
+                lateralSpan: lateralSpan, lateralPeriod: lateralPeriod);
         }
 
         [Test]
@@ -35,7 +49,8 @@ namespace LOP.Tests
             Assert.AreEqual(target.Origin, ArcheryTargetMotion.PositionAt(target, 100, TickInterval));
         }
 
-        //  좌우로는 안 움직인다 — 솟았다 떨어지는 것뿐이라 x·z는 출발점 그대로다.
+        //  이 시험은 흔드는 폭이 0인 과녁(웨이브/원형 맵)을 잰다 — 솟았다 떨어지는 것뿐이라
+        //  x·z는 출발점 그대로다. 흔드는 폭이 있는 과녁(사거리 맵)은 아래 별도 시험이 잰다.
         [Test]
         public void 좌우로는_움직이지_않는다()
         {
@@ -46,6 +61,61 @@ namespace LOP.Tests
             Assert.AreEqual(target.Origin.x, mid.x, 1e-4f);
             Assert.AreEqual(target.Origin.z, mid.z, 1e-4f);
             Assert.Greater(mid.y, target.Origin.y, "솟는 중이면 출발점보다 높아야 한다");
+        }
+
+        // ---- 사거리 과녁의 좌우 흔들림 ----
+
+        [Test]
+        public void 사거리_과녁도_솟는_순간에는_출발점이다()
+        {
+            var target = RangeTarget(spawnTick: 100, lateralSpan: 3f, lateralPeriod: 3f);
+
+            Assert.AreEqual(target.Origin, ArcheryTargetMotion.PositionAt(target, 100, TickInterval));
+        }
+
+        //  삼각파는 한 주기(period)마다 정확히 제자리(출발점)로 돌아온다 — t=0, T, 2T, ...
+        [Test]
+        public void 한_주기가_지날_때마다_출발점으로_돌아온다()
+        {
+            var target = RangeTarget(spawnTick: 0, lateralSpan: 3f, lateralPeriod: 3f);
+            long ticksPerPeriod = (long)System.Math.Round(3f / TickInterval);   // 150틱
+
+            for (int period = 1; period <= 4; period++)
+            {
+                var at = ArcheryTargetMotion.PositionAt(target, ticksPerPeriod * period, TickInterval);
+                Assert.AreEqual(target.Origin.x, at.x, 1e-3f, $"{period}주기 뒤에는 출발점으로 돌아와야 한다");
+            }
+        }
+
+        //  주기 안 어디를 찍어도 흔든 폭(끝에서 끝까지)을 벗어나면 안 된다.
+        [Test]
+        public void 흔드는_폭을_벗어나지_않는다()
+        {
+            const float span = 2.5f;
+            var target = RangeTarget(spawnTick: 0, lateralSpan: span, lateralPeriod: 3f);
+            float half = span / 2f;
+
+            for (long tick = 0; tick <= 900; tick++)
+            {
+                float x = ArcheryTargetMotion.PositionAt(target, tick, TickInterval).x;
+                float offset = x - target.Origin.x;
+                Assert.LessOrEqual(offset, half + 1e-4f, $"틱 {tick}: 폭 밖으로 나갔다({offset} > {half})");
+                Assert.GreaterOrEqual(offset, -half - 1e-4f, $"틱 {tick}: 폭 밖으로 나갔다({offset} < {-half})");
+            }
+        }
+
+        //  웨이브(원형 맵) 과녁은 흔드는 폭이 늘 0이다 — 값을 아무리 다른 시각에 물어도 제자리다.
+        [Test]
+        public void 웨이브_과녁은_좌우로_전혀_안_움직인다()
+        {
+            var target = Target(spawnTick: 0, riseSpeed: 8f);   // 폭 0(웨이브 기본값)
+
+            for (long tick = 0; tick <= 200; tick += 10)
+            {
+                var at = ArcheryTargetMotion.PositionAt(target, tick, TickInterval);
+                Assert.AreEqual(target.Origin.x, at.x, 1e-5f, $"틱 {tick}에서 좌우로 움직였다");
+                Assert.AreEqual(target.Origin.z, at.z, 1e-5f, $"틱 {tick}에서 좌우로 움직였다");
+            }
         }
 
         //  정점 높이가 설계값(솟는 높이)과 맞아야 한다 — 이게 틀리면 과녁이 뜨는 공간을 벗어난다.

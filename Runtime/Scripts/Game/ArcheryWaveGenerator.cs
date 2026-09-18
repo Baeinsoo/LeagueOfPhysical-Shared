@@ -112,10 +112,12 @@ namespace LOP
                 float riseHeight = rng.Range(config.RiseHeightMin, config.RiseHeightMax);
                 float riseSpeed = ArcheryTargetMotion.RiseSpeedFor(riseHeight);
 
+                //  웨이브(원형 맵) 과녁은 좌우로 안 움직인다 — 폭 0을 넘긴다(사거리 맵만 흔든다).
                 into.Add(new ArcheryTarget(waveIndex, slot, center, riseSpeed, spawnTick,
                                            kind.Radius, kind.Points, kind.IsTrap,
                                            kind.Shape, kind.Bands, Vector3.zero,
-                                           ArcheryTargetMotion.LifetimeFor(riseSpeed), string.Empty));
+                                           ArcheryTargetMotion.LifetimeFor(riseSpeed), string.Empty,
+                                           0f, 0f));
             }
         }
 

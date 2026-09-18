@@ -14,7 +14,10 @@ namespace LOP
         public readonly int WaveIndex;
         public readonly int SlotIndex;
 
-        /// <summary>솟기 시작하는 자리(가운데 무대 언저리). 좌우로는 안 움직이므로 x·z는 내내 이 값이다.</summary>
+        /// <summary>
+        /// 솟기 시작하는 자리(가운데 무대 언저리) — 동시에 <b>좌우 흔들림의 중심</b>이다.
+        /// <see cref="LateralSpan"/>이 0이면(웨이브 과녁 기본값) 이 값 그대로 고정이다.
+        /// </summary>
         public readonly Vector3 Origin;
 
         /// <summary>솟기 시작하는 속도(m/s). 높이와 수명에서 역산한다 — <see cref="ArcheryTargetMotion.RiseSpeedFor"/>.</summary>
@@ -57,10 +60,20 @@ namespace LOP
         /// </summary>
         public readonly string OwnerUserId;
 
+        /// <summary>
+        /// 좌우로 흔드는 폭(m, 중심에서 끝까지가 아니라 끝에서 끝까지). <b>0이면 안 움직인다</b> —
+        /// 웨이브(원형 맵) 과녁의 기본값이다. 사거리 과녁만 이 값을 쓴다.
+        /// </summary>
+        public readonly float LateralSpan;
+
+        /// <summary>왕복 한 번(끝→반대 끝→제자리)이 걸리는 시간(초). <see cref="LateralSpan"/>이 0이면 안 쓰인다.</summary>
+        public readonly float LateralPeriod;
+
         public ArcheryTarget(int waveIndex, int slotIndex, Vector3 origin, float riseSpeed, long spawnTick,
                              float radius, int points, bool isTrap,
                              ArcheryTargetShape shape, IReadOnlyList<ArcheryRingBand> bands, Vector3 facing,
-                             float lifetimeSeconds, string ownerUserId)
+                             float lifetimeSeconds, string ownerUserId,
+                             float lateralSpan, float lateralPeriod)
         {
             WaveIndex = waveIndex;
             SlotIndex = slotIndex;
@@ -75,6 +88,8 @@ namespace LOP
             Facing = facing;
             LifetimeSeconds = lifetimeSeconds;
             OwnerUserId = ownerUserId ?? string.Empty;
+            LateralSpan = lateralSpan;
+            LateralPeriod = lateralPeriod;
         }
     }
 }

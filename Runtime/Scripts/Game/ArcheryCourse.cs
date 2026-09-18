@@ -151,7 +151,8 @@ namespace LOP
                                            kind.Radius, kind.Points, kind.IsTrap,
                                            kind.Shape, kind.Bands,
                                            -lane.Forward,        // 사수 쪽을 바라본다
-                                           lifetime, owners[slot]));
+                                           lifetime, owners[slot],
+                                           stand.LateralSpan, stand.LateralPeriod));
             }
         }
 
