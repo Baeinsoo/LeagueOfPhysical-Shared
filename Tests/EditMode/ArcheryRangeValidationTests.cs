@@ -70,8 +70,9 @@ namespace LOP.Tests
         [Test]
         public void 자리_수가_데이터와_다르면_말한다()
         {
-            //  씬에 자리가 둘인데 데이터는 셋을 말한다 — 화살 수와 과녁 수가 어긋난다.
-            string problem = ArcheryRangeValidation.Check(Layout(2, 12f, 30f), Settings(12f, 30f, 60f), archerCount: 2);
+            //  씬 레인엔 자리가 셋(0,1,2)인데 데이터는 둘(0,1)만 말한다 — 선언한 자리 번호는
+            //  전부 씬 범위 안이라 자리 번호 검사는 안 걸리고, 오직 개수 검사만 걸려야 한다.
+            string problem = ArcheryRangeValidation.Check(Layout(2, 12f, 30f, 45f), Settings(12f, 30f), archerCount: 2);
 
             Assert.IsNotNull(problem);
             StringAssert.Contains("자리", problem);
