@@ -47,7 +47,7 @@ namespace LOP.Tests
             var stands = new List<ArcheryRangeStand>();
             for (int i = 0; i < declaredDistances.Length; i++)
             {
-                stands.Add(new ArcheryRangeStand(i, declaredDistances[i], 200));
+                stands.Add(new ArcheryRangeStand(i, declaredDistances[i], 200, 0f, 0f));
             }
             return new ArcheryRangeSettings(default, stands, 25);
         }
@@ -99,7 +99,7 @@ namespace LOP.Tests
         public void 선언한_자리_번호가_씬에_없으면_말한다()
         {
             //  데이터는 7번 자리를 말하는데 레인엔 자리가 6개뿐이다 — 그대로 두면 매 틱 인덱싱에서 죽는다.
-            var stands = new List<ArcheryRangeStand> { new ArcheryRangeStand(6, 12f, 200) };
+            var stands = new List<ArcheryRangeStand> { new ArcheryRangeStand(6, 12f, 200, 0f, 0f) };
             var range = new ArcheryRangeSettings(default, stands, 25);
 
             string problem = ArcheryRangeValidation.Check(Layout(2, 12f), range, archerCount: 2);

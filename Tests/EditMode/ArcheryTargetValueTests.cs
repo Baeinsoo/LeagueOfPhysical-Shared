@@ -123,7 +123,7 @@ namespace LOP.Tests
         public void 주인이_있으면_주인만_가져간다()
         {
             var mine = new ArcheryTarget(0, 0, Vector3.zero, 0f, 0L, 0.5f, 5, false,
-                                         ArcheryTargetShape.Face, null, Vector3.back, 4f, "user-1");
+                                         ArcheryTargetShape.Face, null, Vector3.back, 4f, "user-1", 0f, 0f);
 
             Assert.IsTrue(ArcheryHitRules.CanTake(mine, "user-1"));
             Assert.IsFalse(ArcheryHitRules.CanTake(mine, "user-2"),
@@ -134,7 +134,7 @@ namespace LOP.Tests
         public void 서_있는_과녁은_수명이_솟는_속도와_무관하다()
         {
             var standing = new ArcheryTarget(0, 0, new Vector3(0f, 1f, 30f), 0f, 100L, 0.61f, 5, false,
-                                             ArcheryTargetShape.Face, null, Vector3.back, 4f, "user-1");
+                                             ArcheryTargetShape.Face, null, Vector3.back, 4f, "user-1", 0f, 0f);
 
             Assert.AreEqual(4f, standing.LifetimeSeconds);
             //  제자리에 선 과녁 — 어느 시각에 물어도 같은 자리다.

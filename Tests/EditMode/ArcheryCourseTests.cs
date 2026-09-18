@@ -61,12 +61,12 @@ namespace LOP.Tests
         }
 
         //  자리마다 노출이 다르다 — 단계 경계가 누적합이라는 것을 재려면 달라야 한다.
-        private static ArcheryConfig RangeConfig(int standCount = 3)
+        private static ArcheryConfig RangeConfig(int standCount = 3, float lateralSpan = 0f, float lateralPeriod = 0f)
         {
             var stands = new List<ArcheryRangeStand>();
             for (int s = 0; s < standCount; s++)
             {
-                stands.Add(new ArcheryRangeStand(s, 10f * (s + 1), 100 + s * 50));
+                stands.Add(new ArcheryRangeStand(s, 10f * (s + 1), 100 + s * 50, lateralSpan, lateralPeriod));
             }
             var range = new ArcheryRangeSettings(FaceKind(), stands, stepGapTicks: 25);
 
@@ -76,10 +76,11 @@ namespace LOP.Tests
                                      ArcheryCourseKind.Range, 0, range);
         }
 
-        private ArcheryCourse RangeCourse(ulong seed = 777UL, int laneCount = 2, int standCount = 3)
+        private ArcheryCourse RangeCourse(ulong seed = 777UL, int laneCount = 2, int standCount = 3,
+                                          float lateralSpan = 0f, float lateralPeriod = 0f)
         {
             var layout = Layout(laneCount, standCount);
-            return new ArcheryCourse(RangeConfig(standCount), new FixedSeed(seed),
+            return new ArcheryCourse(RangeConfig(standCount, lateralSpan, lateralPeriod), new FixedSeed(seed),
                                      new[] { "user-a", "user-b" }, 0.02f, () => layout);
         }
 
@@ -146,6 +147,31 @@ namespace LOP.Tests
             Assert.AreEqual(4f, targets[1].Origin.x, 1e-4f);
             Assert.AreEqual(targets[0].Origin.z, targets[1].Origin.z, 1e-4f,
                 "같은 단계에서는 모두가 같은 거리를 본다 — 같은 시험지다");
+        }
+
+        //  레인은 4m 간격, 폭 3m으로 흔들면 양쪽 끝에서 1.5m씩만 벗어난다 — 겹칠 여지가 없어야
+        //  하는데, 실제로 겹치지 않는지는 흔들리는 축(레인이 보는 쪽의 수평 수직선)이 맞아야 확인된다.
+        [Test]
+        public void 레인이_다르면_흔들려도_서로의_레인을_넘지_않는다()
+        {
+            var course = RangeCourse(laneCount: 2, standCount: 1, lateralSpan: 3f, lateralPeriod: 3f);
+            var targets = new List<ArcheryTarget>();
+            course.Fill(targets, 0, 0L);
+
+            Assert.AreEqual(2, targets.Count);
+            var laneA = targets[0];
+            var laneB = targets[1];
+            //  레인 사이 딱 가운데 — 어느 쪽도 이 선을 넘으면 안 된다.
+            float midway = (laneA.Origin.x + laneB.Origin.x) / 2f;
+
+            for (long tick = 0; tick <= 300; tick += 3)
+            {
+                float xa = ArcheryTargetMotion.PositionAt(laneA, tick, 0.02f).x;
+                float xb = ArcheryTargetMotion.PositionAt(laneB, tick, 0.02f).x;
+
+                Assert.Less(xa, midway, $"틱 {tick}: 레인 A(x={xa})가 레인 사이 가운데({midway})를 넘었다");
+                Assert.Greater(xb, midway, $"틱 {tick}: 레인 B(x={xb})가 레인 사이 가운데({midway})를 넘었다");
+            }
         }
 
         [Test]
@@ -271,6 +297,8 @@ namespace LOP.Tests
                     Assert.AreEqual(direct[i].Facing, viaCourse[i].Facing);
                     Assert.AreEqual(direct[i].LifetimeSeconds, viaCourse[i].LifetimeSeconds);
                     Assert.AreEqual(direct[i].OwnerUserId, viaCourse[i].OwnerUserId);
+                    Assert.AreEqual(direct[i].LateralSpan, viaCourse[i].LateralSpan);
+                    Assert.AreEqual(direct[i].LateralPeriod, viaCourse[i].LateralPeriod);
 
                     //  띠 목록은 참조라 값끼리 대 봐야 한다. 띠가 없는 종류(null)도 그대로여야
                     //  한다 — 빈 목록으로 바뀌면 점수 계산이 "띠 하나"로 안 떨어진다.
