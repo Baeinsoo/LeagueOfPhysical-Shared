@@ -7,8 +7,11 @@ namespace LOP
     /// </summary>
     public static class ArcheryTrajectory
     {
-        /// <summary>화살에 걸리는 중력. 캐릭터 중력(약 19.6)과 비슷한 크기로 잡아 무게감이 따로 놀지 않게 한 튜닝 값이다.</summary>
-        public const float Gravity = 20f;
+        /// <summary>
+        /// 화살에 걸리는 중력. 지구 중력(9.81)을 그대로 쓴다 — 활쏘기 모드에는 떨어지는
+        /// 캐릭터가 없어 걷기 모드의 중력(약 19.6)과 맞출 이유가 없다. 활은 활답게 날아가면 된다.
+        /// </summary>
+        public const float Gravity = 9.81f;
 
         /// <summary>이 시간이 지난 화살은 목록에서 지운다. 화면 밖으로 나간 뒤에도 들고 있을 이유가 없다.</summary>
         public const float LifetimeSeconds = 3f;

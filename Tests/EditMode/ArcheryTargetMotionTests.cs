@@ -109,9 +109,9 @@ namespace LOP.Tests
         {
             float riseSpeed = ArcheryTargetMotion.RiseSpeedFor(riseHeight: 2f);
 
-            //  v0 = sqrt(2gH) = sqrt(2 x 20 x 2) = sqrt(80) — 손으로 센 숫자다(구현식을 그대로
-            //  베끼면 식이 틀려도 이 값이 같이 틀려 못 잡는다).
-            Assert.AreEqual(8.944272f, riseSpeed, 1e-3f);
+            //  v0 = sqrt(2gH) = sqrt(2 x 9.81 x 2) = sqrt(39.24) — 손으로 센 숫자다(구현식을
+            //  그대로 베끼면 식이 틀려도 이 값이 같이 틀려 못 잡는다).
+            Assert.AreEqual(6.264184f, riseSpeed, 1e-3f);
         }
 
         //  화살과 과녁이 같은 화면에 있다 — 중력이 다르면 같은 시간에 다르게 떨어져 눈에 띈다.

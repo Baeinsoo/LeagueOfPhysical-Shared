@@ -9,6 +9,13 @@ namespace LOP
     /// </summary>
     public class ArcheryAimSystem
     {
+        private readonly ArcheryConfig config;
+
+        public ArcheryAimSystem(ArcheryConfig config)
+        {
+            this.config = config;
+        }
+
         /// <summary>살짝 당겼을 때의 화살 속도(m/s). 느리고 크게 휜다.</summary>
         public const float MinSpeed = 25f;
 
@@ -59,6 +66,24 @@ namespace LOP
         public static float SpeedFor(float drawRatio)
         {
             return Mathf.Lerp(MinSpeed, MaxSpeed, Mathf.Clamp01(drawRatio));
+        }
+
+        /// <summary>
+        /// 조준 각도(yaw/pitch)에 이 시점(<paramref name="heldSeconds"/>)의 손떨림을 얹어
+        /// 최종 발사 방향(단위 벡터)을 만든다.
+        ///
+        /// <para><b>실제 발사(이 클래스의 <see cref="Tick"/>)와 조준 가이드선
+        /// (<c>ArcheryAimGuideView</c>)이 반드시 이 함수 하나를 같이 불러야 한다.</b> 전에는
+        /// 두 곳이 각자 흔들림을 더했다 — 지금 우연히 같은 결과가 나온다고 해서 계속 그렇다는
+        /// 보장이 없다. 한쪽만 고치면 조용히 갈라지고, 그 순간부터 조준선은 거짓말을 하면서도
+        /// 겉으로는 멀쩡해 보인다. 이 함수를 공유하면 그 갈라짐 자체가 구조적으로 불가능해진다
+        /// (가이드선 쪽엔 더할 산수가 남지 않는다).</para>
+        /// </summary>
+        public static Vector3 DirectionFor(float yawDegrees, float pitchDegrees,
+                                           float heldSeconds, int phaseSeed, ArcheryConfig config)
+        {
+            Vector2 sway = ArcheryShake.Offset(heldSeconds, phaseSeed, config);
+            return ArcheryTrajectory.DirectionFrom(yawDegrees + sway.x, pitchDegrees + sway.y);
         }
 
         /// <summary>떼는 틱에만 화살을 돌려준다. 나머지 틱은 null이다.</summary>
@@ -120,7 +145,15 @@ namespace LOP
             float speed = SpeedFor(drawAtRelease);
             Vector3 origin = entity.Get<GameFramework.World.Transform>().Position.ToUnity()
                            + new Vector3(0f, EyeHeight, 0f);
-            Vector3 velocity = ArcheryTrajectory.DirectionFrom(aim.Yaw, aim.Pitch) * speed;
+
+            //  오래 당기고 있을수록 손이 떨려 조준이 흔들린다 — 그 대가가 이 발의 방향에 실제로
+            //  실려야 "오래 버티면 위험하다"가 된다. 위상은 쏜 사람마다 달라야 두 사수가 똑같이
+            //  흔들리지 않는다. 클라(예측)와 서버(권위) 둘 다 이 Tick을 불러 각자 계산하므로
+            //  — 와이어로 값을 주고받지 않으므로 — 같은 입력을 넣으면 같은 값이 나와야 한다
+            //  (그 보장의 근거는 ArcheryShake.PhaseSeedOf의 주석 참고).
+            float heldSeconds = HeldSeconds(aim.DrawStartTick, tick, tickInterval);
+            int phaseSeed = ArcheryShake.PhaseSeedOf(entity.Id);
+            Vector3 velocity = DirectionFor(aim.Yaw, aim.Pitch, heldSeconds, phaseSeed, config) * speed;
 
             if (quiver != null)
             {

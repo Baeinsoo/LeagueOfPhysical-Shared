@@ -55,9 +55,12 @@ namespace LOP.Tests
             }
         }
 
-        //  같은 입력이면 언제 물어도 같은 답 — 클라와 서버가 같은 값을 봐야 한다.
+        //  이 시험이 재는 건 "순수함수인가"다 — 내부 가변 상태나 시간 의존 없이 같은 입력에
+        //  매번 같은 값만 나오면, 클라 프로세스와 서버 프로세스가 각자 이 함수를 불러도 같은
+        //  답이 나온다는 보장이 선다(두 프로세스를 실제로 띄워 비교하진 않는다 — 순수함수라는
+        //  성질 자체가 그 보장의 근거다. ArcheryShake.PhaseSeedOf의 주석 참고).
         [Test]
-        public void 같은_입력이면_언제_물어도_같다()
+        public void 순수함수라_같은_입력엔_항상_같은_값이_나온다()
         {
             var config = Config();
             for (float t = 0f; t <= 5f; t += 0.17f)
@@ -73,10 +76,17 @@ namespace LOP.Tests
             int a = ArcheryShake.PhaseSeedOf("entity-a");
             int b = ArcheryShake.PhaseSeedOf("entity-b");
 
-            Assert.AreNotEqual(a, b);
+            //  값 자체를 못박는다 — "다르기만 하면 통과"로는 Fnv1a64를 string.GetHashCode()로
+            //  바꿔치기해도(클·서 합의가 깨지는 바로 그 사고, ArcheryShake.PhaseSeedOf의 주석
+            //  참고) 여전히 초록일 수 있다. 이 리터럴은 GameFramework.Rng.Hashing.Fnv1a64로
+            //  "entity-a"/"entity-b"를 직접 돌려 확인한 값이다 — 해시 함수가 바뀌면 이 시험부터
+            //  빨개져야 한다.
+            Assert.AreEqual(1243376476, a);
+            Assert.AreEqual(1243377781, b);
+
             //  위상은 해시의 아래 16비트만 쓰므로 서로 다른 id가 같은 위상이 될 확률이 6만분의 1쯤
-            //  있다. 이 두 id는 27484와 28789로 갈린다(GameFramework.Rng.Hashing.Fnv1a64로 직접
-            //  계산해 확인). 실패하면 id를 바꾸지 말고 위상 비트 수를 늘릴 것 — 겹침이 실제로 난다는 신호다.
+            //  있다. 이 두 id는 27484와 28789로 갈린다. 실패하면 id를 바꾸지 말고 위상 비트 수를
+            //  늘릴 것 — 겹침이 실제로 난다는 신호다.
             Assert.AreNotEqual(ArcheryShake.Offset(2.5f, a, config), ArcheryShake.Offset(2.5f, b, config));
         }
 

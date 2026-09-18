@@ -34,6 +34,15 @@ namespace LOP.Tests
             };
         }
 
+        //  이 파일은 화살 수만 잰다 — 흔들림은 관심사가 아니므로 shakeMaxDegrees=0으로 꺼 둔다.
+        static ArcheryConfig NoSwayConfig() => new ArcheryConfig(
+            wavePeriodTicks: 100, minTargets: 1, maxTargets: 1,
+            spawnRadius: 1f, spawnMinY: 0f, spawnMaxY: 1f, minSeparation: 1f,
+            trapRatioMin: 0f, trapRatioMax: 0f,
+            shakeFreeSeconds: 1f, shakeRampSeconds: 1f, shakeMaxDegrees: 0f,
+            riseHeightMin: 0.1f, riseHeightMax: 0.1f, staggerTicks: 1, restTicks: 1,
+            kinds: null);
+
         //  한 발 쏘는 데 필요한 두 틱: 당기고, 뗀다.
         static ArcheryShot? DrawAndRelease(Entity archer, ArcheryAimSystem system, long tick)
         {
@@ -47,7 +56,7 @@ namespace LOP.Tests
         public void 쏘면_화살이_하나_준다()
         {
             var archer = Archer(arrows: 3);
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
 
             Assert.IsNotNull(DrawAndRelease(archer, system, 100));
             Assert.AreEqual(2, archer.Get<ArcheryQuiver>().Remaining);
@@ -57,7 +66,7 @@ namespace LOP.Tests
         public void 화살이_없으면_못_쏜다()
         {
             var archer = Archer(arrows: 0);
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
 
             Assert.IsNull(DrawAndRelease(archer, system, 100), "화살이 0인데 화살이 나갔다");
             Assert.AreEqual(0, archer.Get<ArcheryQuiver>().Remaining, "0 아래로 내려가면 안 된다");
@@ -67,7 +76,7 @@ namespace LOP.Tests
         public void 화살통이_없으면_무제한이다()
         {
             var archer = Archer();   // 원형 맵 — 그릇 자체가 없다
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
 
             for (int i = 0; i < 10; i++)
             {
@@ -79,7 +88,7 @@ namespace LOP.Tests
         public void 취소한_당김은_화살을_안_쓴다()
         {
             var archer = Archer(arrows: 3);
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
 
             //  임계치를 못 넘고 뗐다 — 시위가 걸린 적이 없으니 화살도 안 나간다.
             Feed(archer, drawing: true, release: false, drawRatio: 0.05f);
@@ -94,7 +103,7 @@ namespace LOP.Tests
         public void 되감으면_화살_수도_되돌아온다()
         {
             var registry = new EntityRegistry();
-            var world = new ArcheryWorld(registry, new WorldEventBuffer(), new ArcheryAimSystem(), TickInterval);
+            var world = new ArcheryWorld(registry, new WorldEventBuffer(), new ArcheryAimSystem(NoSwayConfig()), TickInterval);
 
             var archer = Archer(arrows: 3);
             archer.Add(new Simulated());   // 되감기 대상은 내가 굴리는 몸뿐이다

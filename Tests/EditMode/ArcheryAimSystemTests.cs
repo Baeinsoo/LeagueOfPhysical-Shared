@@ -19,6 +19,17 @@ namespace LOP.Tests
             return entity;
         }
 
+        //  이 파일의 시험 대부분은 흔들림과 무관한 것을 잰다 — shakeMaxDegrees=0이면
+        //  ArcheryShake.Offset이 항상 (0,0)을 내놓으므로(ArcheryShake.cs 참고) 조준이 그대로다.
+        //  흔들림 자체를 재는 시험은 별도로 흔들리는 설정을 만들어 쓴다.
+        static ArcheryConfig NoSwayConfig() => new ArcheryConfig(
+            wavePeriodTicks: 100, minTargets: 1, maxTargets: 1,
+            spawnRadius: 1f, spawnMinY: 0f, spawnMaxY: 1f, minSeparation: 1f,
+            trapRatioMin: 0f, trapRatioMax: 0f,
+            shakeFreeSeconds: 1f, shakeRampSeconds: 1f, shakeMaxDegrees: 0f,
+            riseHeightMin: 0.1f, riseHeightMax: 0.1f, staggerTicks: 1, restTicks: 1,
+            kinds: null);
+
         //  당김은 손가락이 끈 거리가 정한다 — 완전히 당긴 상태(1.0)를 기본으로 먹인다.
         //  임계치(DrawThreshold) 미만이면 떼도 안 쏘므로, 취소를 재는 테스트만 따로 낮춰 부른다.
         static void Feed(Entity entity, float yaw, float pitch, bool drawing, bool release,
@@ -40,7 +51,7 @@ namespace LOP.Tests
         public void 당기기_시작한_틱을_기억한다()
         {
             var archer = Archer(Vector3.zero);
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
 
             Feed(archer, 0f, 0f, drawing: true, release: false);
             system.Tick(archer, 100, TickInterval);
@@ -54,7 +65,7 @@ namespace LOP.Tests
         public void 계속_당기고_있으면_시작_틱이_바뀌지_않는다()
         {
             var archer = Archer(Vector3.zero);
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
 
             Feed(archer, 0f, 0f, drawing: true, release: false);
             system.Tick(archer, 100, TickInterval);
@@ -67,7 +78,7 @@ namespace LOP.Tests
         public void 조준_각도가_상태에_들어온다()
         {
             var archer = Archer(Vector3.zero);
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
 
             Feed(archer, 30f, -15f, drawing: false, release: false);
             system.Tick(archer, 1, TickInterval);
@@ -150,7 +161,7 @@ namespace LOP.Tests
         public void 떼는_틱에만_화살이_나온다()
         {
             var archer = Archer(Vector3.zero);
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
 
             Feed(archer, 0f, 0f, drawing: true, release: false);
             Assert.IsNull(system.Tick(archer, 100, TickInterval));
@@ -166,7 +177,7 @@ namespace LOP.Tests
         public void 당기지_않고_떼면_화살이_없다()
         {
             var archer = Archer(Vector3.zero);
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
 
             Feed(archer, 0f, 0f, drawing: false, release: true);
 
@@ -177,7 +188,7 @@ namespace LOP.Tests
         public void 화살은_눈높이에서_조준_방향으로_떠난다()
         {
             var archer = Archer(new Vector3(5f, 0f, -3f));
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
 
             Feed(archer, 90f, 0f, drawing: true, release: false);
             system.Tick(archer, 100, TickInterval);
@@ -200,7 +211,7 @@ namespace LOP.Tests
         public void 쏘고_나면_당김이_풀린다()
         {
             var archer = Archer(Vector3.zero);
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
 
             Feed(archer, 0f, 0f, drawing: true, release: false);
             system.Tick(archer, 100, TickInterval);
@@ -217,7 +228,7 @@ namespace LOP.Tests
         public void 입력이_한_틱_비어도_당김이_끊기지_않는다()
         {
             var archer = Archer(Vector3.zero);
-            var aimSystem = new ArcheryAimSystem();
+            var aimSystem = new ArcheryAimSystem(NoSwayConfig());
             var inputSystem = new InputBufferSystem();
             var buffer = archer.Get<InputBuffer>();
 
@@ -249,7 +260,7 @@ namespace LOP.Tests
         public void 같은_릴리즈_커맨드가_두_틱_연속_남아도_두_번_쏘지_않는다()
         {
             var archer = Archer(Vector3.zero);
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
 
             Feed(archer, 0f, 0f, drawing: true, release: false);
             system.Tick(archer, 100, TickInterval);
@@ -268,7 +279,7 @@ namespace LOP.Tests
         public void 임계치를_못_넘고_떼면_쏘지_않는다()
         {
             var archer = Archer(Vector3.zero);
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
 
             Feed(archer, 0f, 0f, drawing: true, release: false,
                  drawRatio: ArcheryAimSystem.DrawThreshold - 0.01f);
@@ -283,7 +294,7 @@ namespace LOP.Tests
         public void 임계치를_넘기면_쏜다()
         {
             var archer = Archer(Vector3.zero);
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
 
             Feed(archer, 0f, 0f, drawing: true, release: false,
                  drawRatio: ArcheryAimSystem.DrawThreshold);
@@ -303,7 +314,7 @@ namespace LOP.Tests
             float Speed(float ratio)
             {
                 var archer = Archer(Vector3.zero);
-                var system = new ArcheryAimSystem();
+                var system = new ArcheryAimSystem(NoSwayConfig());
                 for (long t = 100; t < 130; t++)
                 {
                     Feed(archer, 0f, 0f, drawing: true, release: false, drawRatio: ratio);
@@ -324,7 +335,7 @@ namespace LOP.Tests
         public void 시위는_정해진_속도보다_빨리_당겨지지_않는다()
         {
             var archer = Archer(Vector3.zero);
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
             var aim = archer.Get<ArcheryAim>();
 
             //  한 틱에 최대치를 요구해도 한 틱분만 차오른다.
@@ -341,7 +352,7 @@ namespace LOP.Tests
         public void 손을_떼면_시위가_정해진_속도로_풀린다()
         {
             var archer = Archer(Vector3.zero);
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
             var aim = archer.Get<ArcheryAim>();
 
             //  완전히 당길 때까지 충분히 먹인다.
@@ -370,7 +381,7 @@ namespace LOP.Tests
         public void 쏘는_힘은_시위가_풀리기_전_값이다()
         {
             var archer = Archer(Vector3.zero);
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
 
             for (long t = 100; t < 140; t++)
             {
@@ -391,7 +402,7 @@ namespace LOP.Tests
         public void 빠르게_끌었다_놓아도_발사된다()
         {
             var archer = Archer(Vector3.zero);
-            var system = new ArcheryAimSystem();
+            var system = new ArcheryAimSystem(NoSwayConfig());
 
             //  0.15초(8틱) 동안 끝까지 끈 손가락.
             for (long t = 100; t < 108; t++)
@@ -405,5 +416,78 @@ namespace LOP.Tests
                              "0.15초면 사람이 끝까지 끄는 시간이다 — 이걸로 안 나가면 상한이 너무 작다");
         }
 
+        //  흔들림 배선의 생명줄 — ArcheryShake는 잘 만들어져 있어도 ArcheryAimSystem이 실제로
+        //  불러 방향에 섞지 않으면 아무 효과가 없다(이 슬라이스가 고치는 바로 그 문제). 같은
+        //  조준·같은 사람이라도 얼마나 오래 당겼는지가 다르면 위상이 달라 발사 방향도 달라야
+        //  이 배선이 살아있다는 뜻이다.
+        [Test]
+        public void 오래_당길수록_흔들림_위상이_달라_발사_방향이_달라진다()
+        {
+            var config = new ArcheryConfig(
+                wavePeriodTicks: 100, minTargets: 1, maxTargets: 1,
+                spawnRadius: 1f, spawnMinY: 0f, spawnMaxY: 1f, minSeparation: 1f,
+                trapRatioMin: 0f, trapRatioMax: 0f,
+                shakeFreeSeconds: 0.5f, shakeRampSeconds: 1f, shakeMaxDegrees: 5f,
+                riseHeightMin: 0.1f, riseHeightMax: 0.1f, staggerTicks: 1, restTicks: 1,
+                kinds: null);
+
+            Vector3 ShootAfterHolding(long releaseTick)
+            {
+                var archer = Archer(Vector3.zero);
+                var system = new ArcheryAimSystem(config);
+
+                Feed(archer, 0f, 0f, drawing: true, release: false);
+                system.Tick(archer, 0, TickInterval);   // 당기기 시작 — DrawStartTick=0
+                Feed(archer, 0f, 0f, drawing: false, release: true);
+                return system.Tick(archer, releaseTick, TickInterval).Value.Velocity.normalized;
+            }
+
+            //  자유 구간(0.5초=25틱)을 지나야 흔들리기 시작한다 — 막 지난 시점과 한참 지난
+            //  시점을 비교해 위상이 크게 벌어지게 한다.
+            var releasedEarly = ShootAfterHolding(30);    // 0.6초 당김
+            var releasedLate = ShootAfterHolding(150);    // 3.0초 당김
+
+            Assert.Greater(Vector3.Distance(releasedEarly, releasedLate), 1e-3f,
+                "같은 조준·같은 사람인데 당긴 시간만 다르면 흔들림 위상이 달라 방향도 달라야 한다 " +
+                "— 같으면 ArcheryAimSystem이 ArcheryShake를 안 부르고 있다는 뜻이다");
+        }
+
+        //  조준 가이드선(ArcheryAimGuideView)은 실제 발사와 다른 클래스에서 방향을 만든다 —
+        //  둘이 갈라지지 않는다는 계약은 "같은 입력을 같은 공유 함수(DirectionFor)에 넣으면
+        //  같은 답이 나온다"는 것뿐이다. 가이드선을 여기서 직접 실행할 순 없지만(Unity 뷰),
+        //  가이드선이 하는 일 — DirectionFor를 부르는 것 — 을 그대로 흉내 내 Tick이 실제로
+        //  만든 발사와 비교하면 그 계약을 잰다. DirectionFor를 공유하기 전엔 이 시험이
+        //  존재하지 않았다 — 그때는 "같은 입력"을 양쪽에 똑같이 넣는 것 자체가 두 벌의 산수를
+        //  베껴 적는 일이라, 시험이 있어도 실수를 못 잡았을 것이다.
+        [Test]
+        public void 가이드선이_DirectionFor를_같은_입력으로_불렀다면_실제_발사와_같은_방향이다()
+        {
+            var config = new ArcheryConfig(
+                wavePeriodTicks: 100, minTargets: 1, maxTargets: 1,
+                spawnRadius: 1f, spawnMinY: 0f, spawnMaxY: 1f, minSeparation: 1f,
+                trapRatioMin: 0f, trapRatioMax: 0f,
+                shakeFreeSeconds: 0.5f, shakeRampSeconds: 1f, shakeMaxDegrees: 5f,
+                riseHeightMin: 0.1f, riseHeightMax: 0.1f, staggerTicks: 1, restTicks: 1,
+                kinds: null);
+
+            var archer = Archer(Vector3.zero);
+            var system = new ArcheryAimSystem(config);
+
+            Feed(archer, 30f, -10f, drawing: true, release: false);
+            system.Tick(archer, 0, TickInterval);   // 당기기 시작 — DrawStartTick=0
+            Feed(archer, 30f, -10f, drawing: false, release: true);
+            var shot = system.Tick(archer, 100, TickInterval);   // 2.0초 당김
+            Assert.IsTrue(shot.HasValue);
+
+            //  가이드선이 매 프레임 하는 일 그대로: 같은 조준·같은 당긴 시간·같은 사람·같은
+            //  설정을 DirectionFor에 직접 넣는다.
+            float heldSeconds = ArcheryAimSystem.HeldSeconds(0, 100, TickInterval);
+            int phaseSeed = ArcheryShake.PhaseSeedOf("archer-1");
+            var guideDirection = ArcheryAimSystem.DirectionFor(30f, -10f, heldSeconds, phaseSeed, config);
+
+            Assert.AreEqual(guideDirection, shot.Value.Velocity.normalized,
+                "실제 발사 방향과 가이드선이 만든 방향이 달라졌다 — DirectionFor가 더 이상 " +
+                "공유되지 않거나 입력(당긴 시간·위상·설정)이 어긋났다는 뜻이다");
+        }
     }
 }

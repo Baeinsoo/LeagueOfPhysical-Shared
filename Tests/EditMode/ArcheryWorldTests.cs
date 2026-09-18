@@ -8,6 +8,15 @@ namespace LOP.Tests
     {
         const float TickInterval = 0.02f;
 
+        //  이 파일은 화살 목록·되감기를 잰다 — 흔들림은 관심사가 아니므로 shakeMaxDegrees=0으로 꺼 둔다.
+        static ArcheryConfig NoSwayConfig() => new ArcheryConfig(
+            wavePeriodTicks: 100, minTargets: 1, maxTargets: 1,
+            spawnRadius: 1f, spawnMinY: 0f, spawnMaxY: 1f, minSeparation: 1f,
+            trapRatioMin: 0f, trapRatioMax: 0f,
+            shakeFreeSeconds: 1f, shakeRampSeconds: 1f, shakeMaxDegrees: 0f,
+            riseHeightMin: 0.1f, riseHeightMax: 0.1f, staggerTicks: 1, restTicks: 1,
+            kinds: null);
+
         static (ArcheryWorld world, EntityRegistry registry, Entity archer) Make()
         {
             var registry = new EntityRegistry();
@@ -21,7 +30,7 @@ namespace LOP.Tests
             archer.Add(new Simulated());
             registry.Add(archer);
 
-            var world = new ArcheryWorld(registry, new WorldEventBuffer(), new ArcheryAimSystem(), TickInterval);
+            var world = new ArcheryWorld(registry, new WorldEventBuffer(), new ArcheryAimSystem(NoSwayConfig()), TickInterval);
             return (world, registry, archer);
         }
 
