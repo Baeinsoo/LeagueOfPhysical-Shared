@@ -83,7 +83,12 @@ namespace LOP
         /// </summary>
         public float TrapRatioMax { get; }
 
-        /// <summary>이 시간(초)까지는 당기고 있어도 손이 안 떨린다.</summary>
+        /// <summary>
+        /// 이 시간(초)까지는 피로로 인한 흔들림이 자라기 시작하지 않는다(당긴 순간부터가
+        /// 아니라 이 시간이 지난 뒤부터 <see cref="ShakeRampSeconds"/>에 걸쳐 자란다).
+        /// 0으로 두면 잡은 즉시 자라기 시작한다 — 배포 값은 0이다(실제 손처럼 완전히 가만있는
+        /// 구간은 없다).
+        /// </summary>
         public float ShakeFreeSeconds { get; }
 
         /// <summary>흔들림이 0에서 최대까지 자라는 데 걸리는 시간(초).</summary>

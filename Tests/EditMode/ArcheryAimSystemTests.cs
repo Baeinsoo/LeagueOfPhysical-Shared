@@ -475,15 +475,17 @@ namespace LOP.Tests
 
             Feed(archer, 30f, -10f, drawing: true, release: false);
             system.Tick(archer, 0, TickInterval);   // 당기기 시작 — DrawStartTick=0
+            //  가이드선이 읽는 것과 같은 값: 시위가 풀리기 시작하기 전, 놓는 순간의 당김.
+            float drawAtRelease = archer.Get<ArcheryAim>().DrawRatio;
             Feed(archer, 30f, -10f, drawing: false, release: true);
             var shot = system.Tick(archer, 100, TickInterval);   // 2.0초 당김
             Assert.IsTrue(shot.HasValue);
 
-            //  가이드선이 매 프레임 하는 일 그대로: 같은 조준·같은 당긴 시간·같은 사람·같은
-            //  설정을 DirectionFor에 직접 넣는다.
+            //  가이드선이 매 프레임 하는 일 그대로: 같은 조준·같은 당긴 시간·같은 당김·같은
+            //  사람·같은 설정을 DirectionFor에 직접 넣는다.
             float heldSeconds = ArcheryAimSystem.HeldSeconds(0, 100, TickInterval);
             int phaseSeed = ArcheryShake.PhaseSeedOf("archer-1");
-            var guideDirection = ArcheryAimSystem.DirectionFor(30f, -10f, heldSeconds, phaseSeed, config);
+            var guideDirection = ArcheryAimSystem.DirectionFor(30f, -10f, heldSeconds, drawAtRelease, phaseSeed, config);
 
             Assert.AreEqual(guideDirection, shot.Value.Velocity.normalized,
                 "실제 발사 방향과 가이드선이 만든 방향이 달라졌다 — DirectionFor가 더 이상 " +

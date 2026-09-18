@@ -69,8 +69,8 @@ namespace LOP
         }
 
         /// <summary>
-        /// 조준 각도(yaw/pitch)에 이 시점(<paramref name="heldSeconds"/>)의 손떨림을 얹어
-        /// 최종 발사 방향(단위 벡터)을 만든다.
+        /// 조준 각도(yaw/pitch)에 이 시점(<paramref name="heldSeconds"/>, <paramref name="drawRatio"/>)의
+        /// 손떨림을 얹어 최종 발사 방향(단위 벡터)을 만든다.
         ///
         /// <para><b>실제 발사(이 클래스의 <see cref="Tick"/>)와 조준 가이드선
         /// (<c>ArcheryAimGuideView</c>)이 반드시 이 함수 하나를 같이 불러야 한다.</b> 전에는
@@ -80,9 +80,9 @@ namespace LOP
         /// (가이드선 쪽엔 더할 산수가 남지 않는다).</para>
         /// </summary>
         public static Vector3 DirectionFor(float yawDegrees, float pitchDegrees,
-                                           float heldSeconds, int phaseSeed, ArcheryConfig config)
+                                           float heldSeconds, float drawRatio, int phaseSeed, ArcheryConfig config)
         {
-            Vector2 sway = ArcheryShake.Offset(heldSeconds, phaseSeed, config);
+            Vector2 sway = ArcheryShake.Offset(heldSeconds, drawRatio, phaseSeed, config);
             return ArcheryTrajectory.DirectionFrom(yawDegrees + sway.x, pitchDegrees + sway.y);
         }
 
@@ -146,14 +146,16 @@ namespace LOP
             Vector3 origin = entity.Get<GameFramework.World.Transform>().Position.ToUnity()
                            + new Vector3(0f, EyeHeight, 0f);
 
-            //  오래 당기고 있을수록 손이 떨려 조준이 흔들린다 — 그 대가가 이 발의 방향에 실제로
-            //  실려야 "오래 버티면 위험하다"가 된다. 위상은 쏜 사람마다 달라야 두 사수가 똑같이
-            //  흔들리지 않는다. 클라(예측)와 서버(권위) 둘 다 이 Tick을 불러 각자 계산하므로
-            //  — 와이어로 값을 주고받지 않으므로 — 같은 입력을 넣으면 같은 값이 나와야 한다
-            //  (그 보장의 근거는 ArcheryShake.PhaseSeedOf의 주석 참고).
+            //  오래 당기고 있을수록, 많이 당길수록 손이 떨려 조준이 흔들린다 — 그 대가가 이
+            //  발의 방향에 실제로 실려야 "오래·세게 버티면 위험하다"가 된다. drawAtRelease를
+            //  쓰는 이유는 위 speed 계산과 같다 — 시위가 풀리기 시작하기 전, 쏘는 그 순간의
+            //  당김이어야 한다. 위상은 쏜 사람마다 달라야 두 사수가 똑같이 흔들리지 않는다.
+            //  클라(예측)와 서버(권위) 둘 다 이 Tick을 불러 각자 계산하므로 — 와이어로 값을
+            //  주고받지 않으므로 — 같은 입력을 넣으면 같은 값이 나와야 한다(그 보장의 근거는
+            //  ArcheryShake.PhaseSeedOf의 주석 참고).
             float heldSeconds = HeldSeconds(aim.DrawStartTick, tick, tickInterval);
             int phaseSeed = ArcheryShake.PhaseSeedOf(entity.Id);
-            Vector3 velocity = DirectionFor(aim.Yaw, aim.Pitch, heldSeconds, phaseSeed, config) * speed;
+            Vector3 velocity = DirectionFor(aim.Yaw, aim.Pitch, heldSeconds, drawAtRelease, phaseSeed, config) * speed;
 
             if (quiver != null)
             {
