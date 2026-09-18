@@ -23,11 +23,14 @@ namespace LOP
         {
             public readonly List<ArcheryShot> Shots;
             public readonly Dictionary<string, ArcheryAim> Aims;
+            public readonly Dictionary<string, int> Quivers;
 
-            public SavedState(List<ArcheryShot> shots, Dictionary<string, ArcheryAim> aims)
+            public SavedState(List<ArcheryShot> shots, Dictionary<string, ArcheryAim> aims,
+                              Dictionary<string, int> quivers)
             {
                 Shots = shots;
                 Aims = aims;
+                Quivers = quivers;
             }
         }
 
@@ -91,6 +94,7 @@ namespace LOP
         protected override void SaveGameState(long tick)
         {
             var aims = new Dictionary<string, ArcheryAim>();
+            var quivers = new Dictionary<string, int>();
             foreach (var entity in EntityRegistry.All)
             {
                 // 원격(비-Simulated) 몸은 베이스가 되감지 않는 대상이다 — 여기서 같이 저장했다가
@@ -110,8 +114,14 @@ namespace LOP
                         DrawRatio = aim.DrawRatio,
                     };
                 }
+
+                var quiver = entity.Get<ArcheryQuiver>();
+                if (quiver != null)
+                {
+                    quivers[entity.Id] = quiver.Remaining;
+                }
             }
-            saved.Record(tick, new SavedState(new List<ArcheryShot>(shots), aims));
+            saved.Record(tick, new SavedState(new List<ArcheryShot>(shots), aims, quivers));
         }
 
         // 베이스가 bool을 요구한다 — 그 틱 기록이 없으면 false다.
@@ -137,6 +147,15 @@ namespace LOP
                 aim.Drawing = pair.Value.Drawing;
                 aim.DrawStartTick = pair.Value.DrawStartTick;
                 aim.DrawRatio = pair.Value.DrawRatio;
+            }
+
+            foreach (var pair in state.Quivers)
+            {
+                var quiver = EntityRegistry.Get(pair.Key)?.Get<ArcheryQuiver>();
+                if (quiver != null)
+                {
+                    quiver.Remaining = pair.Value;
+                }
             }
 
             return true;
