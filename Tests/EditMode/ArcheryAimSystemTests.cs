@@ -451,5 +451,43 @@ namespace LOP.Tests
                 "같은 조준·같은 사람인데 당긴 시간만 다르면 흔들림 위상이 달라 방향도 달라야 한다 " +
                 "— 같으면 ArcheryAimSystem이 ArcheryShake를 안 부르고 있다는 뜻이다");
         }
+
+        //  조준 가이드선(ArcheryAimGuideView)은 실제 발사와 다른 클래스에서 방향을 만든다 —
+        //  둘이 갈라지지 않는다는 계약은 "같은 입력을 같은 공유 함수(DirectionFor)에 넣으면
+        //  같은 답이 나온다"는 것뿐이다. 가이드선을 여기서 직접 실행할 순 없지만(Unity 뷰),
+        //  가이드선이 하는 일 — DirectionFor를 부르는 것 — 을 그대로 흉내 내 Tick이 실제로
+        //  만든 발사와 비교하면 그 계약을 잰다. DirectionFor를 공유하기 전엔 이 시험이
+        //  존재하지 않았다 — 그때는 "같은 입력"을 양쪽에 똑같이 넣는 것 자체가 두 벌의 산수를
+        //  베껴 적는 일이라, 시험이 있어도 실수를 못 잡았을 것이다.
+        [Test]
+        public void 가이드선이_DirectionFor를_같은_입력으로_불렀다면_실제_발사와_같은_방향이다()
+        {
+            var config = new ArcheryConfig(
+                wavePeriodTicks: 100, minTargets: 1, maxTargets: 1,
+                spawnRadius: 1f, spawnMinY: 0f, spawnMaxY: 1f, minSeparation: 1f,
+                trapRatioMin: 0f, trapRatioMax: 0f,
+                shakeFreeSeconds: 0.5f, shakeRampSeconds: 1f, shakeMaxDegrees: 5f,
+                riseHeightMin: 0.1f, riseHeightMax: 0.1f, staggerTicks: 1, restTicks: 1,
+                kinds: null);
+
+            var archer = Archer(Vector3.zero);
+            var system = new ArcheryAimSystem(config);
+
+            Feed(archer, 30f, -10f, drawing: true, release: false);
+            system.Tick(archer, 0, TickInterval);   // 당기기 시작 — DrawStartTick=0
+            Feed(archer, 30f, -10f, drawing: false, release: true);
+            var shot = system.Tick(archer, 100, TickInterval);   // 2.0초 당김
+            Assert.IsTrue(shot.HasValue);
+
+            //  가이드선이 매 프레임 하는 일 그대로: 같은 조준·같은 당긴 시간·같은 사람·같은
+            //  설정을 DirectionFor에 직접 넣는다.
+            float heldSeconds = ArcheryAimSystem.HeldSeconds(0, 100, TickInterval);
+            int phaseSeed = ArcheryShake.PhaseSeedOf("archer-1");
+            var guideDirection = ArcheryAimSystem.DirectionFor(30f, -10f, heldSeconds, phaseSeed, config);
+
+            Assert.AreEqual(guideDirection, shot.Value.Velocity.normalized,
+                "실제 발사 방향과 가이드선이 만든 방향이 달라졌다 — DirectionFor가 더 이상 " +
+                "공유되지 않거나 입력(당긴 시간·위상·설정)이 어긋났다는 뜻이다");
+        }
     }
 }

@@ -53,11 +53,16 @@ namespace LOP
         /// <summary>사람마다 다른 위상을 준다. 같은 사람이면 언제 물어도 같다.</summary>
         public static int PhaseSeedOf(string entityId)
         {
-            //  프레임워크 공용 해시(GameFramework.Rng.Hashing.Fnv1a64)를 쓴다. 문자열 해시를 직접
-            //  쓰지 않는 이유는 이 흔들림이 클·서 합의가 필요해서가 아니다(서버는 흔들림을 계산조차
-            //  안 한다 — 흔들림은 클라가 만든 값이 조준 각도에 이미 녹아 서버로 전송될 뿐이다).
-            //  진짜 이유는 string.GetHashCode()가 런타임/실행마다 값이 달라질 수 있어서다 —
-            //  그러면 같은 사람의 흔들림 패턴이 세션마다 바뀌어 보인다.
+            //  프레임워크 공용 해시(GameFramework.Rng.Hashing.Fnv1a64)를 쓴다.
+            //
+            //  ⚠️ 이 안정성은 지금 **클·서 합의의 토대**다 — 예전엔 서버가 흔들림을 계산하지
+            //  않아 상관없었지만(클라가 조준 각도에 흔들림을 이미 녹여 보내기만 했다), 지금은
+            //  클라(예측)와 서버(권위) 둘 다 ArcheryAimSystem.Tick → DirectionFor를 불러 이
+            //  함수를 *각자* 계산한다 — 와이어로 위상 값을 주고받지 않는다. 그래서 같은
+            //  entityId를 넣으면 두 프로세스가 반드시 같은 위상을 내놔야 발사 방향이 일치한다.
+            //  string.GetHashCode()로 바꾸면 런타임/버전마다(그리고 클·서가 서로 다른 실행이므로
+            //  사실상 항상) 값이 달라질 수 있어 그 즉시 클·서가 서로 다른 화살을 쏘게 된다 —
+            //  화면은 멀쩡해 보이고 reconciliation만 매 발마다 어긋난다.
             return (int)(GameFramework.Rng.Hashing.Fnv1a64(entityId) & 0x7FFFFFFF);
         }
 
