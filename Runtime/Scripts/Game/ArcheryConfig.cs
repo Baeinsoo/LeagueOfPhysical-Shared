@@ -83,7 +83,12 @@ namespace LOP
         /// </summary>
         public float TrapRatioMax { get; }
 
-        /// <summary>이 시간(초)까지는 당기고 있어도 손이 안 떨린다.</summary>
+        /// <summary>
+        /// 이 시간(초)까지는 피로로 인한 흔들림이 자라기 시작하지 않는다(당긴 순간부터가
+        /// 아니라 이 시간이 지난 뒤부터 <see cref="ShakeRampSeconds"/>에 걸쳐 자란다).
+        /// 0으로 두면 잡은 즉시 자라기 시작한다 — 배포 값은 0이다(실제 손처럼 완전히 가만있는
+        /// 구간은 없다).
+        /// </summary>
         public float ShakeFreeSeconds { get; }
 
         /// <summary>흔들림이 0에서 최대까지 자라는 데 걸리는 시간(초).</summary>
@@ -91,6 +96,15 @@ namespace LOP
 
         /// <summary>가장 심할 때의 흔들림 폭(도).</summary>
         public float ShakeMaxDegrees { get; }
+
+        /// <summary>
+        /// 피로와 무관하게 항상 실리는 흔들림의 몫(0~1) — 실제 손은 방금 잡았어도(피로=0)
+        /// 완전히 안 떨리지는 않는다. 예를 들어 0.4면 잡자마자 이미 <see cref="ShakeMaxDegrees"/>의
+        /// 40%가 실리고, 나머지 60%는 피로가 다 찼을 때(<see cref="ShakeRampSeconds"/> 경과) 더해져
+        /// 그제서야 100%(=<see cref="ShakeMaxDegrees"/>)에 닿는다. 0이면 이 슬라이스 이전과 같이
+        /// 순수 피로만으로 자란다.
+        /// </summary>
+        public float ShakeBaseRatio { get; }
 
         /// <summary>함정이 아닌 종류만. 비어 있으면 성한 과녁이 안 뜬다.</summary>
         public IReadOnlyList<ArcheryTargetKind> CleanKinds { get; }
@@ -115,7 +129,13 @@ namespace LOP
                              IReadOnlyList<ArcheryTargetKind> kinds,
                              ArcheryCourseKind courseKind = ArcheryCourseKind.Wave,
                              int matchDurationTicks = 0,
-                             ArcheryRangeSettings range = null)
+                             ArcheryRangeSettings range = null,
+                             //  개념상으로는 다른 shake_* 옆(shakeMaxDegrees 다음)이 맞지만, C#은
+                             //  기본값 있는 매개변수를 없는 것보다 앞에 두지 못한다(뒤의 riseHeightMin
+                             //  등은 기본값이 없다) — 그래서 기본값 있는 매개변수들 맨 끝에 둔다.
+                             //  기존 호출부(주로 이름 있는 인수)는 이 필드를 안 적으면 0(=피로만으로
+                             //  자라는 예전 모양)을 받으므로 그대로 컴파일된다.
+                             float shakeBaseRatio = 0f)
         {
             WavePeriodTicks = wavePeriodTicks;
             MinTargets = minTargets;
@@ -129,6 +149,7 @@ namespace LOP
             ShakeFreeSeconds = shakeFreeSeconds;
             ShakeRampSeconds = shakeRampSeconds;
             ShakeMaxDegrees = shakeMaxDegrees;
+            ShakeBaseRatio = shakeBaseRatio;
             RiseHeightMin = riseHeightMin;
             RiseHeightMax = riseHeightMax;
             StaggerTicks = staggerTicks;
