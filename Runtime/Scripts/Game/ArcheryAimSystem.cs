@@ -72,12 +72,11 @@ namespace LOP
         /// 조준 각도(yaw/pitch)에 이 시점(<paramref name="heldSeconds"/>, <paramref name="drawRatio"/>)의
         /// 손떨림을 얹어 최종 발사 방향(단위 벡터)을 만든다.
         ///
-        /// <para><b>실제 발사(이 클래스의 <see cref="Tick"/>)와 조준 가이드선
-        /// (<c>ArcheryAimGuideView</c>)이 반드시 이 함수 하나를 같이 불러야 한다.</b> 전에는
-        /// 두 곳이 각자 흔들림을 더했다 — 지금 우연히 같은 결과가 나온다고 해서 계속 그렇다는
-        /// 보장이 없다. 한쪽만 고치면 조용히 갈라지고, 그 순간부터 조준선은 거짓말을 하면서도
-        /// 겉으로는 멀쩡해 보인다. 이 함수를 공유하면 그 갈라짐 자체가 구조적으로 불가능해진다
-        /// (가이드선 쪽엔 더할 산수가 남지 않는다).</para>
+        /// <para><b>흔들림을 조준각에 얹는 곳은 여기 하나여야 한다.</b> 한때 조준 가이드선이
+        /// 같은 산수를 제 쪽에서 또 했고, 그때 얻은 교훈이 이 함수다 — 두 곳이 각자 더하면
+        /// 지금 우연히 같은 값이 나와도 한쪽만 고치는 순간 조용히 갈라진다. 화면은 멀쩡해
+        /// 보이면서 조준만 거짓말을 한다. (가이드선은 2026-09-19에 제거됐다. 화면이 착탄점을
+        /// 그려 주면 거리별 낙차를 익힐 일이 없어 조준 실력이 성립하지 않아서다.)</para>
         /// </summary>
         public static Vector3 DirectionFor(float yawDegrees, float pitchDegrees,
                                            float heldSeconds, float drawRatio, int phaseSeed, ArcheryConfig config)
