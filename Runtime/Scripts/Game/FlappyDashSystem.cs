@@ -4,7 +4,8 @@ namespace LOP
     /// 대시의 충전·발동·소진. 클·서가 같은 구체 클래스를 돌려 결과가 갈리지 않는다.
     ///
     /// <para>게이지는 <b>떨어질수록 빨리 찬다</b> — 이 게임에서 빨라지는 유일한 방법이 대시이므로,
-    /// 그 결과 "위험하게 낮게 나는 것"이 곧 보상이 된다.</para>
+    /// 그 결과 "위험하게 낮게 나는 것"이 곧 보상이 된다. 칸을 <see cref="FlappyDash.MaxCharge"/>개까지
+    /// 쌓아 두는 것도 같은 이유다: 상한이 한 칸이면 다 찬 순간부터 낮게 날 이유가 없어진다.</para>
     /// </summary>
     public class FlappyDashSystem
     {
@@ -23,8 +24,9 @@ namespace LOP
         }
 
         /// <summary>
-        /// 게이지가 가득이고 대시 중이 아닐 때만 발동한다. 게이지는 전부 쓴다 — 부분 사용이 없어야
-        /// "지금 쓸까 아낄까"가 매번 온전한 선택이 된다.
+        /// 한 칸(1.0)이 차 있고 대시 중이 아닐 때만 발동한다. 쓰는 것은 <b>딱 한 칸</b>이라
+        /// 남은 칸과 덜 찬 몫은 그대로 남는다 — 그래야 두 칸을 모아 뒀다가 연달아 쓸 수 있다.
+        /// (예전엔 게이지를 0으로 밀어서, 1.5칸일 때 쓰면 0.5칸이 증발했다.)
         /// </summary>
         public bool TryActivate(GameFramework.World.Entity entity)
         {
@@ -33,7 +35,7 @@ namespace LOP
             {
                 return false;
             }
-            dash.Charge = 0f;
+            dash.Charge -= 1f;
             dash.DashRemaining = config.DashDuration;
             return true;
         }
@@ -68,7 +70,7 @@ namespace LOP
                 }
             }
 
-            if (dash.Charge >= 1f)
+            if (dash.Charge >= FlappyDash.MaxCharge)
             {
                 return;
             }
@@ -81,7 +83,8 @@ namespace LOP
                 ? config.DashChargeDive * System.Math.Min(fallSpeed, config.MaxFallSpeed) / config.MaxFallSpeed
                 : 0f;
 
-            dash.Charge = System.Math.Min(1f, dash.Charge + (config.DashChargeBase + dive) * deltaTime);
+            dash.Charge = System.Math.Min(FlappyDash.MaxCharge,
+                                          dash.Charge + (config.DashChargeBase + dive) * deltaTime);
         }
     }
 }

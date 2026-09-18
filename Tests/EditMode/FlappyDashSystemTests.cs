@@ -79,13 +79,26 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 게이지는_1을_넘지_않는다()
+        public void 게이지는_두_칸을_넘지_않는다()
         {
-            var bird = Bird(verticalSpeed: -30f, charge: 0.999f);
+            var bird = Bird(verticalSpeed: -30f, charge: 1.999f);
 
             new FlappyDashSystem(Config()).Tick(bird, Dt);
 
-            Assert.That(bird.Get<FlappyDash>().Charge, Is.EqualTo(1f));
+            Assert.That(bird.Get<FlappyDash>().Charge, Is.EqualTo(FlappyDash.MaxCharge));
+        }
+
+        [Test]
+        public void 한_칸을_넘어도_다이브가_계속_붙는다()
+        {
+            //  이 게임의 리스크·리워드를 지키는 검사다. 상한이 한 칸이면 게이지가 차는 순간
+            //  낮게 날 이유가 사라진다 — 두 칸까지 쌓이므로 그 보상이 끊기지 않아야 한다.
+            var bird = Bird(verticalSpeed: -30f, charge: 1.2f);
+
+            new FlappyDashSystem(Config()).Tick(bird, Dt);
+
+            Assert.That(bird.Get<FlappyDash>().Charge,
+                        Is.EqualTo(1.2f + (0.13f + 1.2f) * Dt).Within(Tolerance));
         }
 
         [Test]
@@ -99,7 +112,7 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 발동하면_게이지를_전부_쓰고_지속이_찬다()
+        public void 발동하면_한_칸만_쓰고_지속이_찬다()
         {
             var system = new FlappyDashSystem(Config());
             var bird = Bird(charge: 1f);
@@ -108,6 +121,35 @@ namespace LOP.Tests
             Assert.That(bird.Get<FlappyDash>().Charge, Is.EqualTo(0f));
             Assert.That(bird.Get<FlappyDash>().DashRemaining, Is.EqualTo(0.2f).Within(Tolerance));
             Assert.That(system.IsDashing(bird), Is.True);
+        }
+
+        [Test]
+        public void 한_칸_반일_때_발동하면_반_칸이_남는다()
+        {
+            //  덜 찬 몫이 증발하면 "조금 더 모아서 쓰자"가 손해가 되어, 두 칸이 있으나 마나가 된다.
+            var system = new FlappyDashSystem(Config());
+            var bird = Bird(charge: 1.5f);
+
+            Assert.That(system.TryActivate(bird), Is.True);
+            Assert.That(bird.Get<FlappyDash>().Charge, Is.EqualTo(0.5f).Within(Tolerance));
+        }
+
+        [Test]
+        public void 두_칸이면_대시가_끝나는_대로_한_번_더_쓴다()
+        {
+            var system = new FlappyDashSystem(Config());
+            var bird = Bird(charge: FlappyDash.MaxCharge);
+
+            Assert.That(system.TryActivate(bird), Is.True, "첫 칸");
+
+            //  대시가 끝날 때까지 돌린다(0.2초 = 10틱). 낙하 속도가 0이라 그동안 다이브는 안 붙는다.
+            for (int i = 0; i < 10; i++)
+            {
+                system.Tick(bird, Dt);
+            }
+
+            Assert.That(system.IsDashing(bird), Is.False);
+            Assert.That(system.TryActivate(bird), Is.True, "모아 둔 둘째 칸");
         }
 
         [Test]
