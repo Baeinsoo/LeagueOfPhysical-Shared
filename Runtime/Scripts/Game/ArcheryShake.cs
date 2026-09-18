@@ -3,43 +3,34 @@ using UnityEngine;
 namespace LOP
 {
     /// <summary>
-    /// 시위를 잡고 있는 동안 조준이 흔들린다 — 실제 손이 활을 당기고 있을 때처럼, 잡은 그
-    /// 순간부터 떨리고 오래 버틸수록(피로) 더 떨리고 많이 당길수록(부하) 더 떨린다.
+    /// 시위를 잡고 버티는 동안 조준점이 멈추지 않고 작은 <b>8자</b>를 그리며 떠다닌다. 양궁에서
+    /// 이걸 <b>플로트(float)</b>라 부르고, 코치들은 <i>없애려 하지 말고 그 안에서 놓으라</i>고
+    /// 가르친다. 저격 게임의 sway도 같은 물건이다.
     ///
-    /// <para><b>난수가 아니라 사인파</b>로 만든다. 틱마다 난수를 뽑으면 값이 매끄럽지 않아 지직거려서
-    /// "손이 떨린다"가 아니라 화면이 고장 난 것처럼 보인다. 주기가 서로 안 맞는 사인파 여러 개를
-    /// 더하면 규칙이 눈에 안 보이면서도 매끄럽다. 난수를 안 쓰므로 클·서 난수 소비 계약도 안 건드린다.</para>
+    /// <para><b>업계 표준 모양</b>: 호흡 주기(분당 15회 = 0.25Hz)로 도는 리사주 2:1 곡선.
+    /// 가로가 세로의 두 배 속도라 누운 8자(∞)가 된다. 오래 버틸수록(피로) 커지고 많이
+    /// 당길수록(부하) 커진다.</para>
+    ///
+    /// <para><b>왜 8자인가</b> — 닫힌 곡선이라 <b>외워서 탈 수 있으면서</b> 한자리에 멈추지
+    /// 않는다. 원은 한 방향으로만 도는 게 티가 나고, 서로 안 맞는 주기를 섞으면 불규칙해서
+    /// 아예 못 배운다(그게 이 파일의 이전 버전이었고, 실물에서 "운"으로 읽혔다).</para>
+    ///
+    /// <para><b>난수가 아니라 사인파</b>다. 틱마다 난수를 뽑으면 매끄럽지 않아 "손이 떨린다"가
+    /// 아니라 화면이 고장 난 것처럼 보인다. 난수를 안 쓰므로 클·서 난수 소비 계약도 안 건드린다.</para>
     /// </summary>
     public static class ArcheryShake
     {
-        //  두 주기가 서로 나누어떨어지지 않아야 같은 모양이 반복되지 않는다(초당 진동 수).
-        private const float SlowHz = 0.7f;
-        private const float FastHz = 1.7f;
-
-        //  위아래는 좌우와 다른 주기로 움직여야 원을 그리지 않고 불규칙해 보인다.
-        private const float SlowHzPitch = 0.9f;
-        private const float FastHzPitch = 2.1f;
-
-        //  생리학적으로 사람 손은 느린 드리프트 위에 8~10Hz대의 아주 작은 잔떨림이 항상 얹혀
-        //  있다(생리적 손떨림, physiological tremor). 그게 없으면 "팔이 크게 흔들리는" 것처럼만
-        //  보이고 "손으로 쥐고 있다"는 느낌이 안 난다. 느린/빠른 성분과도 정수배로 안 맞게
-        //  8.7/9.4로 어긋나게 잡아 겹침이 안 생기게 한다.
-        private const float TremorHz = 8.7f;
-        private const float TremorHzPitch = 9.4f;
-
-        /// <summary>빠른(1.7Hz대) 성분이 전체에서 차지하는 몫.</summary>
-        private const float FastWeight = 0.30f;
-
         /// <summary>
-        /// 손떨림(8~10Hz) 성분의 몫. 나머지 둘보다 <b>훨씬 작게</b> 잡는다 — 이건 "팔이
-        /// 흔들리는 큰 움직임"이 아니라 "쥔 손이 미세하게 떠는" 결이라, 크게 넣으면 오히려
-        /// 지직거리는 잡음처럼 보인다.
+        /// 플로트가 한 바퀴 도는 빠르기(초당). <b>쉴 때의 호흡수(분당 15회)</b>에 맞춘 값이다 —
+        /// 사람이 활을 버틸 때 조준점을 가장 크게 움직이는 것이 호흡이기 때문이다.
+        ///
+        /// <para>⚠️ <b>이 값이 이 파일의 핵심이다.</b> 전에는 0.7·1.7·8.7Hz 사인 셋을 더했는데
+        /// 실물에서 "보정이 사실상 불가능"했다. 크기가 아니라 <b>속도</b>가 문제였다 — 사람이 보고
+        /// 반응하는 데 0.2초가 걸리는데 1.7Hz(주기 0.59초)짜리는 반응했을 때 이미 반대로 가 있다.
+        /// 사람이 눈으로 보고 따라갈 수 있는 건 대략 0.5Hz 아래뿐이다. 올릴 거면 그 한계를
+        /// 먼저 떠올릴 것.</para>
         /// </summary>
-        private const float TremorWeight = 0.08f;
-
-        //  세 몫을 합쳐 1을 넘지 않게 한다 — 그래야 사인이 전부 같은 부호로 겹쳐도 진폭이
-        //  config.ShakeMaxDegrees를 넘지 않는다는 보장이 선다.
-        private const float SlowWeight = 1f - FastWeight - TremorWeight;
+        private const float FloatHz = 0.25f;
 
         /// <summary>
         /// 이만큼 당기고 있었을 때의 조준 흔들림(도). x는 좌우, y는 위아래이며 <b>위가 양수</b>다
@@ -59,37 +50,55 @@ namespace LOP
                 return Vector2.zero;
             }
 
-            //  피로(fatigue): free를 넘어선 뒤 ramp에 걸쳐 0→1로 자란다. free=0이면 ramped는
-            //  heldSeconds와 같아진다 — 0으로 나누지 않고, heldSeconds가 0에 가까워질수록
-            //  fatigue도 0에 가까워지므로 여기서 끊기는 값이 없다. ramp가 0이면 나누지 않고
-            //  곧장 1로 둔다(0으로 나누기 방지).
-            float ramped = heldSeconds - config.ShakeFreeSeconds;
-            float fatigue = ramped <= 0f
-                ? 0f
-                : (config.ShakeRampSeconds > 0f ? Mathf.Clamp01(ramped / config.ShakeRampSeconds) : 1f);
-
-            //  기준선(baseline): 실제 손은 피로와 무관하게 늘 어느 정도는 떤다 — 방금 잡았어도
-            //  (fatigue=0) 0이 아니라 baseRatio만큼은 이미 흔들린다. 예전엔 이 항이 없어서
-            //  "피로가 0에서부터 자란다"는 게 곧 "짧게 쏘면 실질적으로 안 흔들린다"가 됐다(원인이
-            //  바로 이 항의 부재였다). 피로는 나머지 (1−baseRatio)만큼을 그 위에 더할 뿐이라,
-            //  오래 잡으면 여전히 1(=ShakeMaxDegrees 전부)까지 자란다 — 기준선이 피로를
-            //  대체하는 게 아니라 바닥을 들어 올릴 뿐이다.
-            float baseRatio = Mathf.Clamp01(config.ShakeBaseRatio);
-            float fatigueFactor = baseRatio + (1f - baseRatio) * fatigue;
-
-            //  부하(당긴 정도)는 별도의 곱셈 인자다 — 절반만 당기면 기준선이든 피로든 다
-            //  절반으로 줄어든다.
-            float amplitude = config.ShakeMaxDegrees * fatigueFactor * Mathf.Clamp01(drawRatio);
+            //  크기는 한 곳에서만 정한다 — 파형(아래 8자)과 크기를 같은 자리에서 섞으면
+            //  시험이 크기만 따로 재지 못한다.
+            float amplitude = AmplitudeDegrees(heldSeconds, drawRatio, config);
+            if (amplitude <= 0f)
+            {
+                return Vector2.zero;
+            }
 
             //  위상을 사람마다 다르게 준다 — 안 그러면 모두가 똑같이 흔들린다.
             //  0~1로 접어 넣는 것이 중요하다: 큰 수를 그대로 쓰면 사인에 넣는 값이 백만 단위가 되어
             //  float의 정밀도가 그 자리에서 1 근처로 떨어진다. 즉 흔들림이 뭉개진다.
             float phase = (phaseSeed & 0xFFFF) / 65536f;
 
-            float yaw = Wave(heldSeconds, phase, SlowHz, FastHz, TremorHz);
-            float pitch = Wave(heldSeconds, phase + 1.7f, SlowHzPitch, FastHzPitch, TremorHzPitch);
+            //  가로가 세로의 **두 배** 속도로 돌면 조준점이 누운 8자(∞)를 그린다. 이 2:1이
+            //  업계에서 쓰는 모양이고 — 원을 그리면 한 방향으로만 도는 게 티가 나고, 서로
+            //  안 맞는 주기를 섞으면 불규칙해서 못 배운다 — 8자는 닫힌 곡선이라 **외워서
+            //  탈 수 있으면서** 같은 자리에 멈추지 않는다. 세로가 느린 쪽인 것도 이유가 있다:
+            //  활을 버틸 때 조준점을 위아래로 미는 것이 호흡이다.
+            float turns = heldSeconds * FloatHz + phase;
+            float yaw = Mathf.Sin(2f * Mathf.PI * 2f * turns);
+            float pitch = Mathf.Sin(2f * Mathf.PI * turns);
 
             return new Vector2(yaw * amplitude, pitch * amplitude);
+        }
+
+        /// <summary>
+        /// 지금 플로트가 얼마나 큰가(도). <see cref="Offset"/>가 그리는 8자의 반지름이다 —
+        /// 8자의 어디쯤인지(위상)와 무관한 <b>크기</b>만 준다.
+        ///
+        /// <para>시험이 이 값을 쓴다. 한 시점의 <see cref="Offset"/>는 8자 위 어디냐에 따라
+        /// 0일 수도 있어서, "오래 잡으면 더 흔들린다" 같은 것을 재려면 시간을 훑어 최댓값을
+        /// 찾아야 했다 — 주기가 길어지면 그 방식이 통째로 무너진다.</para>
+        /// </summary>
+        public static float AmplitudeDegrees(float heldSeconds, float drawRatio, ArcheryConfig config)
+        {
+            if (config.ShakeMaxDegrees <= 0f)
+            {
+                return 0f;
+            }
+
+            float ramped = heldSeconds - config.ShakeFreeSeconds;
+            float fatigue = ramped <= 0f
+                ? 0f
+                : (config.ShakeRampSeconds > 0f ? Mathf.Clamp01(ramped / config.ShakeRampSeconds) : 1f);
+
+            float baseRatio = Mathf.Clamp01(config.ShakeBaseRatio);
+            return config.ShakeMaxDegrees
+                 * (baseRatio + (1f - baseRatio) * fatigue)
+                 * Mathf.Clamp01(drawRatio);
         }
 
         /// <summary>사람마다 다른 위상을 준다. 같은 사람이면 언제 물어도 같다.</summary>
@@ -108,13 +117,5 @@ namespace LOP
             return (int)(GameFramework.Rng.Hashing.Fnv1a64(entityId) & 0x7FFFFFFF);
         }
 
-        //  느린 파 + 빠른 파 + 손떨림 파. 합이 -1~1을 넘지 않도록 몫을 나눠 둔다.
-        private static float Wave(float seconds, float phase, float slowHz, float fastHz, float tremorHz)
-        {
-            float slow = Mathf.Sin((seconds * slowHz + phase) * 2f * Mathf.PI);
-            float fast = Mathf.Sin((seconds * fastHz + phase * 2f) * 2f * Mathf.PI);
-            float tremor = Mathf.Sin((seconds * tremorHz + phase * 3f) * 2f * Mathf.PI);
-            return slow * SlowWeight + fast * FastWeight + tremor * TremorWeight;
-        }
     }
 }

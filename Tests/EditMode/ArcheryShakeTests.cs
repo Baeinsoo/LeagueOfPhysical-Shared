@@ -29,16 +29,68 @@ namespace LOP.Tests
             //  (0~0.3초, ramp=2.5초)에서 사실상 0에 가깝다 — 그런데도 최소 진폭이 나와야 한다.
             var config = Config(free: 0f, ramp: 2.5f, max: 3f, baseRatio: 0.4f);
 
-            float peak = 0f;
-            for (float t = 0f; t < 0.3f; t += 0.005f)
+            //  fatigue가 사실상 0인 구간에서도 최소 30%(=baseRatio 근방)는 실려야 한다.
+            for (float t = 0f; t < 0.3f; t += 0.05f)
             {
-                peak = Mathf.Max(peak, ArcheryShake.Offset(t, drawRatio: 1f, phaseSeed: 12345, config).magnitude);
+                float amplitude = ArcheryShake.AmplitudeDegrees(t, drawRatio: 1f, config);
+                Assert.GreaterOrEqual(amplitude, 0.3f * config.ShakeMaxDegrees,
+                    $"잡은 지 {t}초(사실상 즉시)인데 진폭이 바닥에도 못 미친다 — amplitude={amplitude}");
+            }
+        }
+
+        //  진폭이 크다고 적어 놓고 파형이 그 폭을 안 쓰면 소용없다 — 한 주기 안에 두 축 모두
+        //  진폭 전부를 써야 한다. (위 시험은 크기만, 이 시험은 그 크기가 실제로 나오는지를 본다.)
+        [Test]
+        public void 파형이_한_주기_안에_진폭_전부를_쓴다()
+        {
+            var config = Config(free: 0f, ramp: 0f, max: 3f, baseRatio: 1f);   // 피로 무관하게 항상 최대
+            float amplitude = ArcheryShake.AmplitudeDegrees(1f, 1f, config);
+
+            float peakX = 0f, peakY = 0f;
+            for (float t = 0f; t < 10f; t += 0.002f)
+            {
+                var offset = ArcheryShake.Offset(t, drawRatio: 1f, phaseSeed: 12345, config);
+                peakX = Mathf.Max(peakX, Mathf.Abs(offset.x));
+                peakY = Mathf.Max(peakY, Mathf.Abs(offset.y));
             }
 
-            //  fatigue가 사실상 0인 구간에서도 최소 30%(=baseRatio 근방)는 실려야 한다.
-            Assert.GreaterOrEqual(peak, 0.3f * config.ShakeMaxDegrees,
-                $"잡은 지 0.3초 안(사실상 즉시)인데 진폭이 바닥에도 못 미친다 — peak={peak}, " +
-                $"threshold={0.3f * config.ShakeMaxDegrees}");
+            Assert.AreEqual(amplitude, peakX, 1e-2f, "좌우가 진폭을 다 안 쓴다");
+            Assert.AreEqual(amplitude, peakY, 1e-2f, "위아래가 진폭을 다 안 쓴다");
+        }
+
+        // ── 업계 표준 플로트의 모양 ──────────────────────────────────────────────
+        //
+        //  ⭐ 아래 두 시험이 **이 파일의 존재 이유**다. 이전 버전(0.7+1.7+8.7Hz 합)은 크기는
+        //  멀쩡했는데 실물에서 "보정이 사실상 불가능"했다. 크기를 재는 시험만 있었고 **속도를
+        //  재는 시험이 없었기** 때문이다.
+
+        [Test]
+        public void 조준점이_8자를_그린다()
+        {
+            var config = Config(free: 0f, ramp: 0f, max: 3f, baseRatio: 1f);
+
+            float periodX = PeriodOf(t => ArcheryShake.Offset(t, 1f, 12345, config).x);
+            float periodY = PeriodOf(t => ArcheryShake.Offset(t, 1f, 12345, config).y);
+
+            //  가로가 세로의 정확히 두 배 속도(=주기는 절반)라야 누운 8자가 된다. 1:1이면 원,
+            //  안 맞아떨어지는 비면 불규칙해서 못 배운다.
+            Assert.AreEqual(2f, periodY / periodX, 0.05f,
+                $"가로:세로 주기비가 2:1이 아니다 — x={periodX}s, y={periodY}s");
+        }
+
+        [Test]
+        public void 사람이_눈으로_보고_따라갈_수_있을_만큼_느리다()
+        {
+            var config = Config(free: 0f, ramp: 0f, max: 3f, baseRatio: 1f);
+
+            float periodX = PeriodOf(t => ArcheryShake.Offset(t, 1f, 12345, config).x);
+            float periodY = PeriodOf(t => ArcheryShake.Offset(t, 1f, 12345, config).y);
+
+            //  사람이 보고 반응하는 데 약 0.2초가 걸린다. 주기가 그것의 몇 배는 돼야 "보고
+            //  되돌리기"가 성립한다 — 닫힌 루프 추적의 한계가 대략 0.5Hz(주기 2초)다.
+            //  이전 버전의 1.7Hz(주기 0.59초)는 반응했을 때 이미 반대로 가 있었다.
+            Assert.GreaterOrEqual(Mathf.Min(periodX, periodY), 1.5f,
+                $"빠른 쪽 축의 주기가 1.5초보다 짧다 — 사람이 못 따라간다. x={periodX}s, y={periodY}s");
         }
 
         //  기준선이 있어도 당기지 않으면(drawRatio=0) 여전히 완전히 0이어야 한다 — 기준선은
@@ -228,15 +280,41 @@ namespace LOP.Tests
             }
         }
 
+        //  전에는 1초를 훑어 최댓값을 폭으로 삼았다. 플로트가 느려지면서(주기 4초) 그 방식이
+        //  무너졌다 — 1초 창에 봉우리가 안 들어와 "피로가 늘었는데 잰 값은 줄어드는" 일이 난다.
+        //  지금은 크기를 파형과 분리해 두었으니 직접 묻는다(위상과 무관).
         private static float Amplitude(ArcheryConfig config, float heldSeconds, float drawRatio)
         {
-            //  한 시점의 값은 사인파의 위상 때문에 작을 수 있다 — 잠깐 동안의 최댓값으로 폭을 잰다.
-            float peak = 0f;
-            for (float t = heldSeconds; t < heldSeconds + 1f; t += 0.01f)
+            return ArcheryShake.AmplitudeDegrees(heldSeconds, drawRatio, config);
+        }
+
+        //  한 축이 0을 **같은 방향으로** 지나는 두 시각의 간격 = 그 축의 주기(초).
+        //  주파수 상수를 시험이 알 필요가 없게 파형에서 직접 잰다.
+        private static float PeriodOf(System.Func<float, float> axis)
+        {
+            const float step = 0.002f;
+            float firstUp = -1f;
+            float previous = axis(0f);
+
+            for (float t = step; t < 30f; t += step)
             {
-                peak = Mathf.Max(peak, ArcheryShake.Offset(t, drawRatio, 12345, config).magnitude);
+                float current = axis(t);
+                if (previous <= 0f && current > 0f)
+                {
+                    if (firstUp < 0f)
+                    {
+                        firstUp = t;
+                    }
+                    else
+                    {
+                        return t - firstUp;
+                    }
+                }
+                previous = current;
             }
-            return peak;
+
+            Assert.Fail("30초 안에 주기를 못 쟀다 — 파형이 0을 두 번 안 지난다");
+            return 0f;
         }
     }
 }

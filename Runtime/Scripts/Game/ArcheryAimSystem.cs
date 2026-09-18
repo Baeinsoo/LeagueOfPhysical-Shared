@@ -17,10 +17,18 @@ namespace LOP
         }
 
         /// <summary>살짝 당겼을 때의 화살 속도(m/s). 느리고 크게 휜다.</summary>
-        public const float MinSpeed = 25f;
+        public const float MinSpeed = 60f;
 
-        /// <summary>끝까지 당겼을 때의 화살 속도(m/s). 빠르고 곧게 간다.</summary>
-        public const float MaxSpeed = 65f;
+        /// <summary>
+        /// 끝까지 당겼을 때의 화살 속도(m/s). 빠르고 곧게 간다.
+        ///
+        /// <para>실제 활(리커브 60, 컴파운드 90)보다 빠르다 — <b>일부러</b> 그렇다. 65로 두면
+        /// 90m 과녁을 맞히는 데 6도를 올려 쏴야 해서 <b>빈 하늘을 겨누고</b> 과녁은 화면 한참
+        /// 아래에 남는다. 그 거리 계산을 실력으로 삼는 길도 있지만(조준기를 달아 봤다), 우리가
+        /// 고른 것은 젤다 쪽이다 — <b>겨눈 곳이 곧 맞는 곳</b>이고 어려움은 "작은 데를 정확히"에서
+        /// 온다. 150이면 90m 보정이 1.1도로 줄어 과녁 바로 위를 겨누는 정도가 된다.</para>
+        /// </summary>
+        public const float MaxSpeed = 150f;
 
         /// <summary>이만큼 당기면 최대다. 더 당겨도 세지지 않는다.</summary>
         public const float FullDrawSeconds = 0.8f;
