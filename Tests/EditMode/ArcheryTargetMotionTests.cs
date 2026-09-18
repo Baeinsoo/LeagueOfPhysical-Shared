@@ -87,6 +87,32 @@ namespace LOP.Tests
             }
         }
 
+        //  ⚠️ 이 시험이 이 슬라이스의 존재 이유를 지킨다. 옆의 두 시험(주기마다 제자리 /
+        //  폭 안에 머문다)은 과녁이 **아예 안 움직여도** 통과한다 — 0은 늘 제자리이고 늘 폭 안이다.
+        //  그래서 흔들림이 통째로 꺼지는 회귀를 아무도 못 잡는다. 여기서는 사분주기(가장 많이
+        //  간 지점)의 자리를 정확한 값과 대조한다 — 안 움직이면 실패하고, 진폭을 폭의 절반이
+        //  아니라 폭 전체로 잘못 곱해도 실패한다.
+        [Test]
+        public void 사분주기에는_폭의_절반만큼_옆으로_가_있다()
+        {
+            const float span = 3f;
+            const float period = 3f;
+            var target = RangeTarget(spawnTick: 0, lateralSpan: span, lateralPeriod: period);
+
+            //  facing이 +z라 옆으로 가는 축은 +x다(Cross(up, forward) = right).
+            double quarter = (period * 0.25f) / TickInterval;   // 37.5틱 — 소수 틱도 물을 수 있다
+            var atPeak = ArcheryTargetMotion.PositionAt(target, quarter, TickInterval);
+            Assert.AreEqual(target.Origin.x + span / 2f, atPeak.x, 1e-3f,
+                "사분주기에는 한쪽 끝(폭의 절반)에 가 있어야 한다 — 값이 출발점 그대로면 아예 안 흔들린 것이다");
+
+            var atOpposite = ArcheryTargetMotion.PositionAt(target, quarter * 3d, TickInterval);
+            Assert.AreEqual(target.Origin.x - span / 2f, atOpposite.x, 1e-3f,
+                "사분주기 셋이면 반대쪽 끝에 가 있어야 한다");
+
+            //  흔들림은 레인 폭 방향뿐이다 — 사수 쪽으로 다가오거나 멀어지면 거리가 바뀐다.
+            Assert.AreEqual(target.Origin.z, atPeak.z, 1e-4f, "앞뒤로 움직이면 안 된다");
+            Assert.AreEqual(target.Origin.y, atPeak.y, 1e-4f, "서 있는 과녁은 위아래로 안 움직인다");
+        }
         //  주기 안 어디를 찍어도 흔든 폭(끝에서 끝까지)을 벗어나면 안 된다.
         [Test]
         public void 흔드는_폭을_벗어나지_않는다()
