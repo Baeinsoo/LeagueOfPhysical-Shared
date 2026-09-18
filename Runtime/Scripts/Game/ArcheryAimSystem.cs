@@ -9,6 +9,13 @@ namespace LOP
     /// </summary>
     public class ArcheryAimSystem
     {
+        private readonly ArcheryConfig config;
+
+        public ArcheryAimSystem(ArcheryConfig config)
+        {
+            this.config = config;
+        }
+
         /// <summary>살짝 당겼을 때의 화살 속도(m/s). 느리고 크게 휜다.</summary>
         public const float MinSpeed = 25f;
 
@@ -120,7 +127,15 @@ namespace LOP
             float speed = SpeedFor(drawAtRelease);
             Vector3 origin = entity.Get<GameFramework.World.Transform>().Position.ToUnity()
                            + new Vector3(0f, EyeHeight, 0f);
-            Vector3 velocity = ArcheryTrajectory.DirectionFrom(aim.Yaw, aim.Pitch) * speed;
+
+            //  오래 당기고 있을수록 손이 떨려 조준이 흔들린다 — 그 대가가 이 발의 방향에 실제로
+            //  실려야 "오래 버티면 위험하다"가 된다. 위상은 쏜 사람마다 달라야 두 사수가 똑같이
+            //  흔들리지 않는다(클·서가 이 발을 각자 계산하므로 같은 값이 나와야 한다).
+            float heldSeconds = HeldSeconds(aim.DrawStartTick, tick, tickInterval);
+            int phaseSeed = ArcheryShake.PhaseSeedOf(entity.Id);
+            Vector2 sway = ArcheryShake.Offset(heldSeconds, phaseSeed, config);
+
+            Vector3 velocity = ArcheryTrajectory.DirectionFrom(aim.Yaw + sway.x, aim.Pitch + sway.y) * speed;
 
             if (quiver != null)
             {

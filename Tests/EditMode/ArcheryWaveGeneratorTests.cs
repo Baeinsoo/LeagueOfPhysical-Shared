@@ -415,21 +415,21 @@ namespace LOP.Tests
         //
         //  기대값은 손으로 센 숫자다. 구현과 같은 식을 여기 다시 적으면 식이 틀렸을 때
         //  양쪽이 똑같이 틀려서 아무것도 못 잡는다:
-        //    2.4m까지 솟으려면 출발 속도 sqrt(2 x 20 x 2.4) = 9.798 m/s
-        //    수명 2 x 9.798 / 20 = 0.9798초 -> 0.02초 틱으로 올려 세면 49틱
-        //    (5-1) x 12 + 49 = 97
+        //    2.4m까지 솟으려면 출발 속도 sqrt(2 x 9.81 x 2.4) = 6.862 m/s
+        //    수명 2 x 6.862 / 9.81 = 1.399초 -> 0.02초 틱으로 올려 세면 70틱
+        //    (5-1) x 12 + 70 = 118
         [Test]
         public void 묶음_길이는_가장_높이_솟는_과녁이_떨어질_때까지다()
         {
             var config = Config();
 
-            //  아래 세 값에서 97이 나온다. 하나라도 바뀌면 97도 바뀌어야 하므로 여기서 먼저 막는다 —
-            //  안 그러면 "97이 아니다"만 보이고 왜 틀렸는지는 안 보인다.
+            //  아래 세 값에서 118이 나온다. 하나라도 바뀌면 118도 바뀌어야 하므로 여기서 먼저 막는다 —
+            //  안 그러면 "118이 아니다"만 보이고 왜 틀렸는지는 안 보인다.
             Assert.AreEqual(2.4f, TestRiseHeightMax, 1e-6f);
             Assert.AreEqual(5, config.MaxTargets);
             Assert.AreEqual(12, TestStaggerTicks);
 
-            Assert.AreEqual(97, config.BurstTicks);
+            Assert.AreEqual(118, config.BurstTicks);
         }
 
         //  spec 3.2: 동시에 뜨지 않고 하나씩 연달아 솟는다. 이 간격이 리듬을 만들고,
