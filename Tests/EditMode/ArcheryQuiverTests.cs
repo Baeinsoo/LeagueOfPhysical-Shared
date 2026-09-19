@@ -43,13 +43,20 @@ namespace LOP.Tests
             riseHeightMin: 0.1f, riseHeightMax: 0.1f, staggerTicks: 1, restTicks: 1,
             kinds: null);
 
-        //  한 발 쏘는 데 필요한 두 틱: 당기고, 뗀다.
+        //  시위가 시간을 두고 차오르므로(ArcheryAimSystem.DrawRisePerSecond) 임계치를 넘길
+        //  때까지 여러 틱을 잡고 있어야 한다. 10틱(0.2초)이면 임계치(0.075초)를 넉넉히 넘는다.
+        const long HoldTicks = 10;
+
+        //  한 발 쏘는 데 필요한 틱: 임계치를 넘길 때까지 당기고, 뗀다.
         static ArcheryShot? DrawAndRelease(Entity archer, ArcheryAimSystem system, long tick)
         {
-            Feed(archer, drawing: true, release: false);
-            system.Tick(archer, tick, TickInterval);
+            for (long t = tick; t < tick + HoldTicks; t++)
+            {
+                Feed(archer, drawing: true, release: false);
+                system.Tick(archer, t, TickInterval);
+            }
             Feed(archer, drawing: false, release: true);
-            return system.Tick(archer, tick + 1, TickInterval);
+            return system.Tick(archer, tick + HoldTicks, TickInterval);
         }
 
         [Test]
@@ -80,7 +87,7 @@ namespace LOP.Tests
 
             for (int i = 0; i < 10; i++)
             {
-                Assert.IsNotNull(DrawAndRelease(archer, system, 100 + i * 2), $"{i + 1}번째 발이 안 나갔다");
+                Assert.IsNotNull(DrawAndRelease(archer, system, 100 + i * (HoldTicks + 1)), $"{i + 1}번째 발이 안 나갔다");
             }
         }
 
@@ -111,10 +118,14 @@ namespace LOP.Tests
 
             world.SaveState(100);
 
-            Feed(archer, drawing: true, release: false);
-            world.Tick(101, TickInterval);
+            //  임계치를 넘길 때까지 잡고 있다 뗀다 — 시위가 시간을 두고 차오르기 때문이다.
+            for (long t = 101; t < 101 + HoldTicks; t++)
+            {
+                Feed(archer, drawing: true, release: false);
+                world.Tick(t, TickInterval);
+            }
             Feed(archer, drawing: false, release: true);
-            world.Tick(102, TickInterval);
+            world.Tick(101 + HoldTicks, TickInterval);
             Assert.AreEqual(2, archer.Get<ArcheryQuiver>().Remaining, "쏘고도 안 줄었다 — 시험이 아무것도 재지 못한다");
 
             world.LoadState(100);

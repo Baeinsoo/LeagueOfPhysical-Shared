@@ -43,15 +43,28 @@ namespace LOP.Tests
             };
         }
 
+        //  시위가 시간을 두고 차오르므로(ArcheryAimSystem.DrawRisePerSecond) 임계치를 넘길
+        //  때까지 여러 틱을 잡고 있어야 한다. 10틱(0.2초)이면 임계치(0.075초)를 넉넉히 넘는다.
+        const long HoldTicks = 10;
+
+        //  임계치를 넘길 때까지 [1, tick]을 잡고 있다가 tick+1에 뗀다.
+        static void DrawThenRelease(Entity archer, ArcheryWorld world)
+        {
+            for (long t = 1; t <= HoldTicks; t++)
+            {
+                Feed(archer, drawing: true, release: false);
+                world.Tick(t, TickInterval);
+            }
+            Feed(archer, drawing: false, release: true);
+            world.Tick(HoldTicks + 1, TickInterval);
+        }
+
         [Test]
         public void 쏘면_화살_목록에_들어간다()
         {
             var (world, _, archer) = Make();
 
-            Feed(archer, drawing: true, release: false);
-            world.Tick(1, TickInterval);
-            Feed(archer, drawing: false, release: true);
-            world.Tick(2, TickInterval);
+            DrawThenRelease(archer, world);
 
             Assert.AreEqual(1, world.Shots.Count);
             Assert.AreEqual("archer-1", world.Shots[0].ShooterId);
@@ -62,10 +75,7 @@ namespace LOP.Tests
         {
             var (world, _, archer) = Make();
 
-            Feed(archer, drawing: true, release: false);
-            world.Tick(1, TickInterval);
-            Feed(archer, drawing: false, release: true);
-            world.Tick(2, TickInterval);
+            DrawThenRelease(archer, world);
 
             int fired = 0;
             foreach (var e in world.EventBuffer.Snapshot)
@@ -91,14 +101,11 @@ namespace LOP.Tests
         {
             var (world, _, archer) = Make();
 
-            Feed(archer, drawing: true, release: false);
-            world.Tick(1, TickInterval);
-            Feed(archer, drawing: false, release: true);
-            world.Tick(2, TickInterval);
+            DrawThenRelease(archer, world);
             Assert.AreEqual(1, world.Shots.Count);
 
             Feed(archer, drawing: false, release: false);
-            long expiryTick = 2 + (long)(ArcheryTrajectory.LifetimeSeconds / TickInterval) + 1;
+            long expiryTick = (HoldTicks + 1) + (long)(ArcheryTrajectory.LifetimeSeconds / TickInterval) + 1;
             world.Tick(expiryTick, TickInterval);
 
             Assert.AreEqual(0, world.Shots.Count);
@@ -129,15 +136,19 @@ namespace LOP.Tests
         {
             var (world, _, archer) = Make();
 
-            Feed(archer, drawing: true, release: false);
-            world.Tick(10, TickInterval);
-            world.SaveState(10);
+            //  임계치를 넘길 때까지 잡고 있다가(아직 뗀 건 아니다) 그 시점을 저장한다.
+            for (long t = 1; t <= HoldTicks; t++)
+            {
+                Feed(archer, drawing: true, release: false);
+                world.Tick(t, TickInterval);
+            }
+            world.SaveState(HoldTicks);
 
             Feed(archer, drawing: false, release: true);
-            world.Tick(11, TickInterval);
+            world.Tick(HoldTicks + 1, TickInterval);
             Assert.AreEqual(1, world.Shots.Count);
 
-            world.LoadState(10);
+            world.LoadState(HoldTicks);
 
             Assert.AreEqual(0, world.Shots.Count);
         }
