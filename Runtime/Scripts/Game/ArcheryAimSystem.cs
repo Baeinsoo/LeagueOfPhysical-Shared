@@ -114,6 +114,16 @@ namespace LOP
             //  여기서 먼저 붙들어 둔다. 안 그러면 놓을 때마다 힘이 조금씩 모자란다.
             float drawAtRelease = aim.DrawRatio;
 
+            //  당기기 시작한 틱은 "안 당기다가 당기기 시작한" 그 틱에만 새로 찍는다.
+            //  새 당김은 반드시 0부터 시작해야 한다 — 그래야 압축된 당김 같은 이어붙은 탭도
+            //  각자 정해진 세기로 출발한다. 이 0 리셋은 **시위 램프보다 먼저** 일어나야 하므로
+            //  (그렇지 않으면 이 틱의 위 한 틱분 상승이 버려진다) 여기에 위치한다.
+            if (command.Drawing && aim.Drawing == false)
+            {
+                aim.DrawStartTick = tick;
+                aim.DrawRatio = 0f;
+            }
+
             //  시위는 정해진 속도로만 움직인다 — 손가락이 순간이동해도 활은 못 그런다.
             //  당길 때는 목표(1)를 향해 빠르게, 뗀 뒤에는 0을 향해 느리게 간다.
             //  클라가 보낸 크기는 그대로 믿지 않는다 — 수정된 클라가 50 같은 값을 실어도
@@ -122,16 +132,6 @@ namespace LOP
             float drawSpeed = drawTarget > aim.DrawRatio ? DrawRisePerSecond : DrawFallPerSecond;
             aim.DrawRatio = Mathf.MoveTowards(
                 aim.DrawRatio, drawTarget, drawSpeed * tickInterval);
-
-            // 당기기 시작한 틱은 "안 당기다가 당기기 시작한" 그 틱에만 새로 찍는다.
-            if (command.Drawing && aim.Drawing == false)
-            {
-                aim.DrawStartTick = tick;
-                //  화면은 잡고 있는 내내 DrawRatio=1만 보낸다 — 쏜 뒤 남은 값을 지우지 않으면
-                //  바로 이어 누른 두 번째 당김이 그 잔여값에서부터 램프를 시작해, 짧게 연타만
-                //  해도(버스트) 만작에 가까운 화살이 공짜로 나간다. 새 당김은 반드시 0부터.
-                aim.DrawRatio = 0f;
-            }
 
             if (command.Release == false)
             {

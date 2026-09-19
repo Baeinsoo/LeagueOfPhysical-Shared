@@ -346,16 +346,16 @@ namespace LOP.Tests
             var aim = archer.Get<ArcheryAim>();
 
             //  첫 틱은 "안 당기다가 당기기 시작한" 그 틱이라 0에서 다시 출발한다(Important 1
-            //  회귀 방지 — 새 당김의 시작 값). 상한을 재려면 그다음 틱을 봐야 한다.
+            //  회귀 방지 — 새 당김의 시작 값). 그 첫 틱부터 램프가 돈다.
             Feed(archer, 0f, 0f, drawing: true, release: false, drawRatio: 1f);
             system.Tick(archer, 100, TickInterval);
-            Assert.AreEqual(0f, aim.DrawRatio, 1e-4f, "당기기 시작한 틱은 0에서 출발해야 한다");
+
+            float perTick = ArcheryAimSystem.DrawRisePerSecond * TickInterval;
+            Assert.AreEqual(perTick, aim.DrawRatio, 1e-4f, "당기기 시작한 첫 틱도 한 틱분 상승해야 한다");
 
             Feed(archer, 0f, 0f, drawing: true, release: false, drawRatio: 1f);
             system.Tick(archer, 101, TickInterval);
-
-            float perTick = ArcheryAimSystem.DrawRisePerSecond * TickInterval;
-            Assert.AreEqual(perTick, aim.DrawRatio, 1e-4f);
+            Assert.AreEqual(perTick * 2f, aim.DrawRatio, 1e-4f);
         }
 
         //  Important 1 회귀 방지: 쏘고 나서 남은 당김(aim.DrawRatio)이 바로 이어 누른 다음
@@ -596,17 +596,16 @@ namespace LOP.Tests
         [Test]
         public void 같은_시간이면_틱_간격이_달라도_같은_힘이_된다()
         {
-            //  50Hz와 30Hz — 같은 0.3초를 잡고 있었으면 거의 같은 곳까지 당겨져 있어야 한다.
+            //  50Hz와 30Hz — 같은 0.3초를 잡고 있었으면 정확히 같은 곳까지 당겨져 있어야 한다.
             //  0.3초를 고른 이유: 양쪽에서 정확히 15틱/9틱으로 떨어져 반올림 차가 안 생긴다.
             //
-            //  ⚠️ 완전한 1e-3 정밀 일치는 아니다(Important 1) — 당기기 시작한 첫 틱은 항상
-            //  0에서 다시 출발하므로, 그 한 틱의 몫(DrawRisePerSecond * tickInterval)만큼은
-            //  틱 간격이 다르면 서로 다르다. 50Hz/30Hz 한 틱 차이의 최댓값은
-            //  2 * |1/30 − 1/50| ≈ 0.0267이다 — 그보다 큰 차이가 나면(예: 램프가 초가 아니라
-            //  틱 수만 세도록 되돌아가면) 이 시험이 잡아야 한다.
-            const float oneTickQuantizationBound = 0.03f;
-            Assert.AreEqual(RampFor(0.3f, 1f/50f), RampFor(0.3f, 1f/30f), oneTickQuantizationBound,
-                "틱 간격이 달라졌다고 당김이 한 틱 몫 이상 달라진다 — 화면/프레임레이트가 힘에 새고 있다");
+            //  당기기 시작한 첫 틱은 0에서 다시 출발하고 **그 틱부터 램프가 돈다**(이전 수정).
+            //  따라서 두 틱레이트 모두 같은 경과시간을 같은 틱 수로 나누어(반올림 무시하고)
+            //  정확히 같은 상승을 누적한다. 양쪽이 모두 0.3s = 15틱(50Hz) = 9틱(30Hz)일 때,
+            //  각각 15 * 0.04 = 30 * (1/30 * 2) = 0.6의 같은 값에 도달한다.
+            const float tolerance = 1e-3f;
+            Assert.AreEqual(RampFor(0.3f, 1f/50f), RampFor(0.3f, 1f/30f), tolerance,
+                "틱 간격이 달라도 같은 경과시간이면 같은 당김이어야 한다");
         }
 
         [Test]
