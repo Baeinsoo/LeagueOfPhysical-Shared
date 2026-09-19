@@ -21,14 +21,28 @@ namespace LOP
         /// <summary>왕복 한 번이 걸리는 시간(초). <see cref="LateralSpan"/>이 0이면 안 쓰인다.</summary>
         public readonly float LateralPeriod;
 
+        /// <summary>
+        /// 이 자리에 서는 과녁 면의 반지름(m). <b>0이면 과녁 종류에 적힌 값</b>을 쓴다.
+        ///
+        /// <para>거리마다 다른 이유는 실제 양궁과 같다 — 세계양궁연맹은 먼 거리(90/70/60m)에
+        /// 122cm 과녁을, 가까운 거리(50/30m)에 80cm를, 실내 18m에 40cm를 쓴다. <b>거리가
+        /// 짧으면 과녁을 줄여 체감 난이도를 맞추는 것</b>이다. 한 크기로 통일하면 가까운 자리는
+        /// 거저 10점이고 먼 자리는 흔들림이 링을 통째로 잡아먹어, 양쪽 다 실력을 못 가린다
+        /// (화면에서 10점 링이 12m 57px vs 90m 7.6px — 7.5배 차이였다).</para>
+        /// </summary>
+        public readonly float FaceRadiusM;
+
+        //  faceRadiusM은 기본 0 = "과녁 종류에 적힌 값을 쓴다". 이 자리 크기를 신경 안 쓰는
+        //  호출부(대부분의 시험)가 그대로 컴파일되고, 뜻도 그대로다.
         public ArcheryRangeStand(int standIndex, float distanceM, int exposureTicks,
-                                 float lateralSpan, float lateralPeriod)
+                                 float lateralSpan, float lateralPeriod, float faceRadiusM = 0f)
         {
             StandIndex = standIndex;
             DistanceM = distanceM;
             ExposureTicks = exposureTicks;
             LateralSpan = lateralSpan;
             LateralPeriod = lateralPeriod;
+            FaceRadiusM = faceRadiusM;
         }
     }
 

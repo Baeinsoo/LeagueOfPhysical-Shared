@@ -337,5 +337,81 @@ namespace LOP.Tests
             Assert.AreEqual(1, targets.Count);
             Assert.AreEqual("user-a", targets[0].OwnerUserId);
         }
-    }
+    
+        // ── 거리마다 다른 과녁 크기 ─────────────────────────────────────────────
+        //
+        //  한 크기로 통일하면 가까운 자리는 거저 10점이고 먼 자리는 흔들림이 링을 통째로
+        //  잡아먹는다 — 양쪽 다 실력을 못 가린다(화면에서 10점 링이 12m 57px vs 90m 7.6px).
+        //  실제 양궁도 거리마다 과녁 크기를 바꿔 이걸 맞춘다.
+
+        [Test]
+        public void 자리에_정해진_크기가_있으면_그걸_쓴다()
+        {
+            var layout = Layout(laneCount: 1, standCount: 2);
+            var stands = new List<ArcheryRangeStand>
+            {
+                new ArcheryRangeStand(0, 12f, 200, 0f, 0f, faceRadiusM: 0.20f),
+                new ArcheryRangeStand(1, 90f, 200, 0f, 0f, faceRadiusM: 0.61f),
+            };
+            var config = RangeConfigWith(stands);
+            var course = new ArcheryCourse(config, new FixedSeed(1UL), new[] { "user-a" }, 0.02f, () => layout);
+
+            //  두 단계를 모두 채워, 각 자리가 제 크기로 섰는지 본다(순서는 씨앗이 정한다).
+            var radiusByStand = new Dictionary<int, float>();
+            for (int step = 0; step < 2; step++)
+            {
+                var targets = new List<ArcheryTarget>();
+                course.Fill(targets, step, 1000L);
+                Assert.AreEqual(1, targets.Count);
+                //  어느 자리인지는 세운 위치(z)로 안다 — layout이 자리마다 다른 자리를 준다.
+                radiusByStand[targets[0].Origin == layout.Lanes[0].Stands[0] ? 0 : 1] = targets[0].Radius;
+            }
+
+            Assert.AreEqual(0.20f, radiusByStand[0], 1e-4f, "가까운 자리가 제 크기로 안 섰다");
+            Assert.AreEqual(0.61f, radiusByStand[1], 1e-4f, "먼 자리가 제 크기로 안 섰다");
+        }
+
+        [Test]
+        public void 크기를_안_주면_과녁_종류에_적힌_값을_쓴다()
+        {
+            var layout = Layout(laneCount: 1, standCount: 1);
+            var stands = new List<ArcheryRangeStand> { new ArcheryRangeStand(0, 30f, 200, 0f, 0f) };
+            var course = new ArcheryCourse(RangeConfigWith(stands), new FixedSeed(1UL),
+                                           new[] { "user-a" }, 0.02f, () => layout);
+
+            var targets = new List<ArcheryTarget>();
+            course.Fill(targets, 0, 1000L);
+
+            Assert.AreEqual(FaceKind().Radius, targets[0].Radius, 1e-4f);
+        }
+
+        //  점수 띠는 **비율**이라 반지름을 바꿔도 따라와야 한다 — 안 따라오면 작은 과녁의
+        //  10점 링이 옛 크기 그대로라 "가운데를 맞혔는데 5점"이 난다.
+        [Test]
+        public void 과녁이_작아져도_점수_띠는_비율_그대로_따라온다()
+        {
+            var layout = Layout(laneCount: 1, standCount: 1);
+            var stands = new List<ArcheryRangeStand> { new ArcheryRangeStand(0, 12f, 200, 0f, 0f, faceRadiusM: 0.20f) };
+            var course = new ArcheryCourse(RangeConfigWith(stands), new FixedSeed(1UL),
+                                           new[] { "user-a" }, 0.02f, () => layout);
+
+            var targets = new List<ArcheryTarget>();
+            course.Fill(targets, 0, 1000L);
+            var target = targets[0];
+
+            Assert.AreEqual(0.20f, target.Radius, 1e-4f);
+            //  가장 안쪽 띠는 0.2 비율 = 반지름 0.04m 안쪽이 10점. 비율이 그대로인지 본다.
+            Assert.AreEqual(0.2f, target.Bands[0].OuterRatio, 1e-4f);
+            Assert.AreEqual(10, target.Bands[0].Points);
+        }
+
+        private static ArcheryConfig RangeConfigWith(List<ArcheryRangeStand> stands)
+        {
+            var range = new ArcheryRangeSettings(FaceKind(), stands, stepGapTicks: 25);
+            return new ArcheryConfig(120, 3, 5, 3.5f, 0.3f, 0.6f, 1.2f, 0f, 1f,
+                                     1.2f, 2.5f, 0f, 1.2f, 2.4f, 12, 20,
+                                     new List<ArcheryTargetKind> { FaceKind() },
+                                     ArcheryCourseKind.Range, 0, range);
+        }
+}
 }

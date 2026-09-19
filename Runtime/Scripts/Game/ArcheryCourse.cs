@@ -139,6 +139,12 @@ namespace LOP
             long spawnTick = gameplayStartTick + stepStartTicks[index];
             float lifetime = stand.ExposureTicks * tickInterval;
 
+            //  이 자리에 정해진 크기가 있으면 그걸 쓴다. 거리마다 과녁을 다르게 하는 것은 실제
+            //  양궁 규격과 같다 — 가까우면 작은 과녁. 한 크기로 두면 가까운 자리는 거저 10점,
+            //  먼 자리는 흔들림이 링을 통째로 잡아먹어 양쪽 다 실력을 못 가린다.
+            //  점수 띠(ArcheryRing)는 **비율**이라 반지름만 바꿔도 알아서 따라온다.
+            float faceRadius = stand.FaceRadiusM > 0f ? stand.FaceRadiusM : kind.Radius;
+
             //  사수마다 자기 레인에 하나씩. 슬롯 번호가 곧 사수 번호라, 먹힌 과녁을 알리는
             //  비트마스크(ArcheryStateToC)를 그대로 쓸 수 있다.
             int count = Mathf.Min(owners.Count, layout.Lanes.Count);
@@ -148,7 +154,7 @@ namespace LOP
                 Vector3 center = lane.Stands[stand.StandIndex];
 
                 into.Add(new ArcheryTarget(index, slot, center, 0f, spawnTick,
-                                           kind.Radius, kind.Points, kind.IsTrap,
+                                           faceRadius, kind.Points, kind.IsTrap,
                                            kind.Shape, kind.Bands,
                                            -lane.Forward,        // 사수 쪽을 바라본다
                                            lifetime, owners[slot],
