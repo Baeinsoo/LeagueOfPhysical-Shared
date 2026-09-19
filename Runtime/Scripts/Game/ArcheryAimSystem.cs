@@ -30,8 +30,11 @@ namespace LOP
         /// </summary>
         public const float MaxSpeed = 150f;
 
-        /// <summary>이만큼 당기면 최대다. 더 당겨도 세지지 않는다.</summary>
-        public const float FullDrawSeconds = 0.8f;
+        /// <summary>
+        /// 누르고 이만큼 지나면 만작이다(초). <b>당김 시간의 진실원본</b> — 아래 램프 속도가
+        /// 여기서 유도되고, 시간 기반 헬퍼 <see cref="DrawRatio"/>도 이 값을 쓴다.
+        /// </summary>
+        public const float FullDrawSeconds = 0.5f;
 
         /// <summary>
         /// 이만큼은 끌어야 시위가 걸린다(0~1). 못 미치면 쏘지 않고 취소다 — 화면을 스치기만 해도
@@ -40,12 +43,15 @@ namespace LOP
         public const float DrawThreshold = 0.15f;
 
         /// <summary>
-        /// 시위가 당겨지는 최대 속도(초당 당김 비율). 완전히 당기는 데 최소 0.1초가 걸린다.
+        /// 시위가 당겨지는 속도(초당 당김 비율). <b>만작 시간에서 유도한다</b> — 따로 박으면 두
+        /// 상수가 서로 다른 만작 시간을 말하게 된다.
         ///
-        /// <para>사람이 엄지로 끄는 속도(보통 0.15~0.25초)보다 빠르게 잡았다 — 여기서 손을 막으면
-        /// 끝까지 끌었는데 안 나가는 일이 생긴다. 아주 빠르게 튕기는 입력만 깎아 낸다.</para>
+        /// <para>예전엔 10f였다(0.1초). 그땐 당김을 <b>손가락이 끈 거리</b>가 정했고 이 값은
+        /// "손가락이 순간이동해도 활은 못 그런다"는 상한일 뿐이었다. 지금은 화면이
+        /// <c>DrawRatio = 1</c>만 보내고 <b>이 속도가 곧 당기는 동작 자체</b>다 —
+        /// 그래서 힘이 양쪽의 틱 수로만 정해진다(클라가 고를 수 있는 크기가 없다).</para>
         /// </summary>
-        public const float DrawRisePerSecond = 10f;
+        public const float DrawRisePerSecond = 1f / FullDrawSeconds;
 
         /// <summary>
         /// 손을 뗀 뒤 시위가 풀리는 속도(초당 당김 비율). 0까지 1/3초쯤 걸린다.

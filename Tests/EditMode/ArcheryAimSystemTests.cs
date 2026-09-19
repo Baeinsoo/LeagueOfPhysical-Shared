@@ -163,8 +163,14 @@ namespace LOP.Tests
             var archer = Archer(Vector3.zero);
             var system = new ArcheryAimSystem(NoSwayConfig());
 
-            Feed(archer, 0f, 0f, drawing: true, release: false);
-            Assert.IsNull(system.Tick(archer, 100, TickInterval));
+            //  시위가 시간을 두고 차오르므로(예전엔 한 틱에 임계치를 넘었다) 임계치를 넘길
+            //  때까지 여러 틱을 잡고 있는다 — 이 시험이 재는 것은 "떼는 틱에만 화살이 나온다"이지
+            //  당김 속도가 아니다.
+            for (long t = 100; t < 120; t++)
+            {
+                Feed(archer, 0f, 0f, drawing: true, release: false);
+                Assert.IsNull(system.Tick(archer, t, TickInterval));
+            }
 
             Feed(archer, 0f, 0f, drawing: false, release: true);
             Assert.IsNotNull(system.Tick(archer, 120, TickInterval));
@@ -190,8 +196,12 @@ namespace LOP.Tests
             var archer = Archer(new Vector3(5f, 0f, -3f));
             var system = new ArcheryAimSystem(NoSwayConfig());
 
-            Feed(archer, 90f, 0f, drawing: true, release: false);
-            system.Tick(archer, 100, TickInterval);
+            //  임계치를 넘길 때까지 잡고 있어야 실제로 발사된다.
+            for (long t = 100; t < 140; t++)
+            {
+                Feed(archer, 90f, 0f, drawing: true, release: false);
+                system.Tick(archer, t, TickInterval);
+            }
             Feed(archer, 90f, 0f, drawing: false, release: true);
             var shot = system.Tick(archer, 140, TickInterval);
 
@@ -232,21 +242,25 @@ namespace LOP.Tests
             var inputSystem = new InputBufferSystem();
             var buffer = archer.Get<InputBuffer>();
 
-            // tick 100: 진짜 커맨드로 당기기 시작
-            inputSystem.Enqueue(buffer, 100, new InputCommand { SequenceNumber = 1, Drawing = true, DrawRatio = 1f });
-            inputSystem.Consume(buffer, 100);
-            aimSystem.Tick(archer, 100, TickInterval);
+            // tick 100~103: 진짜 커맨드로 당기기 시작해 임계치를 넘길 때까지 잡고 있는다
+            //  (시위가 시간을 두고 차오르므로 한 틱만으론 임계치를 못 넘는다).
+            for (long t = 100; t < 104; t++)
+            {
+                inputSystem.Enqueue(buffer, t, new InputCommand { SequenceNumber = t - 99, Drawing = true, DrawRatio = 1f });
+                inputSystem.Consume(buffer, t);
+                aimSystem.Tick(archer, t, TickInterval);
+            }
 
-            // tick 101: 입력이 유실 — 서버가 PredictMissing으로 직전 값을 이어 쓴다
+            // tick 104: 입력이 유실 — 서버가 PredictMissing으로 직전 값을 이어 쓴다
             inputSystem.PredictMissing(buffer, maxTicks: 30);
-            aimSystem.Tick(archer, 101, TickInterval);
+            aimSystem.Tick(archer, 104, TickInterval);
 
             Assert.IsTrue(archer.Get<ArcheryAim>().Drawing, "예측(유실 보정) 틱에서도 당김이 유지돼야 한다");
 
-            // tick 102: 진짜 Release 커맨드가 도착
-            inputSystem.Enqueue(buffer, 102, new InputCommand { SequenceNumber = 2, Release = true, DrawRatio = 1f });
-            inputSystem.Consume(buffer, 102);
-            var shot = aimSystem.Tick(archer, 102, TickInterval);
+            // tick 105: 진짜 Release 커맨드가 도착
+            inputSystem.Enqueue(buffer, 105, new InputCommand { SequenceNumber = 6, Release = true, DrawRatio = 1f });
+            inputSystem.Consume(buffer, 105);
+            var shot = aimSystem.Tick(archer, 105, TickInterval);
 
             Assert.IsTrue(shot.HasValue, "예측 틱을 거쳐도 발사가 나와야 한다");
             Assert.Greater(shot.Value.Velocity.magnitude, ArcheryAimSystem.MinSpeed,
@@ -262,8 +276,12 @@ namespace LOP.Tests
             var archer = Archer(Vector3.zero);
             var system = new ArcheryAimSystem(NoSwayConfig());
 
-            Feed(archer, 0f, 0f, drawing: true, release: false);
-            system.Tick(archer, 100, TickInterval);
+            //  임계치를 넘길 때까지 잡고 있는다.
+            for (long t = 100; t < 120; t++)
+            {
+                Feed(archer, 0f, 0f, drawing: true, release: false);
+                system.Tick(archer, t, TickInterval);
+            }
 
             Feed(archer, 0f, 0f, drawing: false, release: true);
             var first = system.Tick(archer, 120, TickInterval);
@@ -296,13 +314,18 @@ namespace LOP.Tests
             var archer = Archer(Vector3.zero);
             var system = new ArcheryAimSystem(NoSwayConfig());
 
-            Feed(archer, 0f, 0f, drawing: true, release: false,
-                 drawRatio: ArcheryAimSystem.DrawThreshold);
-            system.Tick(archer, 100, TickInterval);
+            //  목표(DrawThreshold)까지 시위가 차오를 시간을 준다 — 시위는 한 틱에 목표로
+            //  순간이동하지 않는다.
+            for (long t = 100; t < 110; t++)
+            {
+                Feed(archer, 0f, 0f, drawing: true, release: false,
+                     drawRatio: ArcheryAimSystem.DrawThreshold);
+                system.Tick(archer, t, TickInterval);
+            }
 
             Feed(archer, 0f, 0f, drawing: true, release: true,
                  drawRatio: ArcheryAimSystem.DrawThreshold);
-            Assert.IsNotNull(system.Tick(archer, 101, TickInterval));
+            Assert.IsNotNull(system.Tick(archer, 110, TickInterval));
         }
 
         //  당긴 만큼 빨라진다 — 드래그 거리가 파워를 정한다는 계약 그 자체다.
@@ -436,8 +459,13 @@ namespace LOP.Tests
                 var archer = Archer(Vector3.zero);
                 var system = new ArcheryAimSystem(config);
 
-                Feed(archer, 0f, 0f, drawing: true, release: false);
-                system.Tick(archer, 0, TickInterval);   // 당기기 시작 — DrawStartTick=0
+                //  실제로 그만큼 당긴 시간 동안 매 틱 잡고 있어야 임계치를 넘겨 발사된다
+                //  (시위가 시간을 두고 차오르므로 한 틱만으론 안 된다).
+                for (long t = 0; t < releaseTick; t++)
+                {
+                    Feed(archer, 0f, 0f, drawing: true, release: false);
+                    system.Tick(archer, t, TickInterval);   // 당기기 시작 — DrawStartTick=0
+                }
                 Feed(archer, 0f, 0f, drawing: false, release: true);
                 return system.Tick(archer, releaseTick, TickInterval).Value.Velocity.normalized;
             }
@@ -473,8 +501,12 @@ namespace LOP.Tests
             var archer = Archer(Vector3.zero);
             var system = new ArcheryAimSystem(config);
 
-            Feed(archer, 30f, -10f, drawing: true, release: false);
-            system.Tick(archer, 0, TickInterval);   // 당기기 시작 — DrawStartTick=0
+            //  임계치를 넘길 때까지 매 틱 잡고 있는다 — 한 틱만으론 발사되지 않는다.
+            for (long t = 0; t < 100; t++)
+            {
+                Feed(archer, 30f, -10f, drawing: true, release: false);
+                system.Tick(archer, t, TickInterval);   // 당기기 시작 — DrawStartTick=0
+            }
             //  가이드선이 읽는 것과 같은 값: 시위가 풀리기 시작하기 전, 놓는 순간의 당김.
             float drawAtRelease = archer.Get<ArcheryAim>().DrawRatio;
             Feed(archer, 30f, -10f, drawing: false, release: true);
@@ -487,9 +519,54 @@ namespace LOP.Tests
             int phaseSeed = ArcheryShake.PhaseSeedOf("archer-1");
             var guideDirection = ArcheryAimSystem.DirectionFor(30f, -10f, heldSeconds, drawAtRelease, phaseSeed, config);
 
-            Assert.AreEqual(guideDirection, shot.Value.Velocity.normalized,
+            //  완전히 당긴 상태(speed=MaxSpeed)에서는 "단위벡터 × speed" 후 다시 정규화하는
+            //  왕복에서 부동소수점 맨 끝자리가 흔들릴 수 있다 — 그건 이 계약(같은 함수를
+            //  같은 입력으로 불렀나)과 무관한 잡음이라 미세 허용오차로 비교한다.
+            Assert.Less(Vector3.Distance(guideDirection, shot.Value.Velocity.normalized), 1e-5f,
                 "실제 발사 방향과 가이드선이 만든 방향이 달라졌다 — DirectionFor가 더 이상 " +
                 "공유되지 않거나 입력(당긴 시간·위상·설정)이 어긋났다는 뜻이다");
+        }
+
+        //  잡고 있는 동안 화면이 보내는 값은 늘 1이다 — 얼마나 당겨졌는지는 시뮬이 정한다.
+        //  같은 **경과 시간**이면 틱 간격이 달라도 같은 값이 나와야 한다. 이게 이 변경의 계약이다:
+        //  화면이 제 시계로 램프를 계산하면 프레임레이트가 다른 두 기기가 다른 화살을 쏜다.
+        static float RampFor(float seconds, float tickInterval)
+        {
+            var archer = Archer(Vector3.zero);
+            var system = new ArcheryAimSystem(NoSwayConfig());
+            int ticks = Mathf.RoundToInt(seconds / tickInterval);
+            for (int i = 0; i < ticks; i++)
+            {
+                Feed(archer, 0f, 0f, drawing: true, release: false, drawRatio: 1f);
+                system.Tick(archer, 100 + i, tickInterval);
+            }
+            return archer.Get<ArcheryAim>().DrawRatio;
+        }
+
+        [Test]
+        public void 같은_시간이면_틱_간격이_달라도_같은_힘이_된다()
+        {
+            //  50Hz와 30Hz — 같은 0.3초를 잡고 있었으면 같은 곳까지 당겨져 있어야 한다.
+            //  0.3초를 고른 이유: 양쪽에서 정확히 15틱/9틱으로 떨어져 반올림 차가 안 생긴다.
+            Assert.AreEqual(RampFor(0.3f, 1f/50f), RampFor(0.3f, 1f/30f), 1e-3f,
+                "틱 간격이 달라졌다고 당김이 달라진다 — 화면/프레임레이트가 힘에 새고 있다");
+        }
+
+        [Test]
+        public void 만작까지_정해진_시간이_걸린다()
+        {
+            Assert.Less(RampFor(ArcheryAimSystem.FullDrawSeconds * 0.5f, TickInterval), 0.75f,
+                "절반만 잡고 있었는데 거의 만작이다 — 램프가 너무 빠르다");
+            Assert.AreEqual(1f, RampFor(ArcheryAimSystem.FullDrawSeconds + 0.05f, TickInterval), 1e-3f,
+                "만작 시간을 넘겼는데 아직 1이 아니다");
+        }
+
+        [Test]
+        public void 램프_속도는_만작_시간에서_유도된다()
+        {
+            //  두 상수가 서로 다른 만작 시간을 말하면 안 된다. 값을 바꿔도 이 관계는 남아야 한다.
+            Assert.AreEqual(1f / ArcheryAimSystem.FullDrawSeconds,
+                            ArcheryAimSystem.DrawRisePerSecond, 1e-5f);
         }
     }
 }
