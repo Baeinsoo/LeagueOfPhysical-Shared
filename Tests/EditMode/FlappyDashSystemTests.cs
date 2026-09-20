@@ -48,14 +48,18 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 절반_속도로_떨어지면_다이브도_절반만_더해진다()
+        public void 절반_속도로_떨어지면_다이브는_8분의_1이다()
         {
-            //  정규화가 살아 있는지 보는 검사다. 낙하 속도에 비례해야 "낮게 날수록 보상"이 성립한다.
+            //  정규화가 살아 있는지 보는 검사다. <b>비례가 아니라 세제곱</b>이라는 것이 요점이다 —
+            //  절반(15/30)이면 1/8만 받는다. 예전엔 이 테스트가 "절반이면 절반"을 지켰는데,
+            //  그 선형 곡선이 평범한 비행과 과감한 다이브를 구분하지 못해 게이지가 늘 가득 찼다.
+            //  곡선을 바꾸면서 지키는 값도 같이 옮겼다(무엇을 재는지는 그대로다).
             var bird = Bird(verticalSpeed: -15f);
 
             new FlappyDashSystem(Config()).Tick(bird, Dt);
 
-            Assert.That(bird.Get<FlappyDash>().Charge, Is.EqualTo((0.13f + 0.6f) * Dt).Within(Tolerance));
+            Assert.That(bird.Get<FlappyDash>().Charge,
+                        Is.EqualTo((0.13f + 1.2f * 0.125f) * Dt).Within(Tolerance));
         }
 
         [Test]
@@ -216,6 +220,76 @@ namespace LOP.Tests
             new FlappyDashSystem(Config()).Tick(bird, Dt);
 
             Assert.That(bird.Get<FlappyDash>().Charge, Is.EqualTo(0.13f * Dt).Within(Tolerance));
+        }
+
+        //  ── 충전 곡선 — 이 게임의 리스크·리워드를 숫자로 못박는다 ──────────────
+        //  곡선을 건드리면 여기가 먼저 빨개진다.
+
+        //  새 경제의 값. 기본 충전 0(공짜 없음) · 다이브 계수 1.4 · 실제 물리값.
+        private static FlappyConfig DiveConfig()
+            => new FlappyConfig(forwardSpeed: 6.8f, flapImpulse: 18.6f, gravity: 59f, maxFallSpeed: 30f,
+                                bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f,
+                                stunTime: 0.8f, invulnTime: 0.6f,
+                                dashMult: 2f, dashDuration: 0.2f, dashChargeBase: 0f, dashChargeDive: 1.4f);
+
+        [Test]
+        public void 평범한_날갯짓_속도에서는_거의_안_찬다()
+        {
+            //  날갯짓은 튀었다 떨어지는 반복이라 평범하게 날아도 시간의 절반이 낙하다.
+            //  그 평균 낙하(9.3 m/s = 최대의 31%)가 충전의 31%를 받아가면 "과감함"이 값을 잃는다.
+            //  세제곱이면 31% → 3%다.
+            var bird = Bird(verticalSpeed: -9.3f);
+
+            new FlappyDashSystem(DiveConfig()).Tick(bird, 1f);
+
+            float max = DiveConfig().DashChargeDive;   // 최대 낙하에서의 1초치
+            Assert.Less(bird.Get<FlappyDash>().Charge, max * 0.05f,
+                        "평범한 비행이 최대의 5%를 넘으면 과감함을 구분하지 못한다");
+        }
+
+        [Test]
+        public void 최대_낙하에서는_계수를_그대로_받는다()
+        {
+            var bird = Bird(verticalSpeed: -30f);   // MaxFallSpeed
+
+            new FlappyDashSystem(DiveConfig()).Tick(bird, 0.1f);
+
+            Assert.That(bird.Get<FlappyDash>().Charge,
+                        Is.EqualTo(DiveConfig().DashChargeDive * 0.1f).Within(1e-5f));
+        }
+
+        [Test]
+        public void 회랑_전체를_다이브하면_반_칸이다()
+        {
+            //  14.56m(화면 세로 = 회랑)를 중력 59로 떨어지는 동안 실제로 얼마나 차는지.
+            //  이 값이 "한 칸 = 깊은 다이브 두 번"이라는 경제를 지킨다 — 회랑 높이나 중력을
+            //  바꾸면 여기가 먼저 말해 준다.
+            FlappyConfig config = DiveConfig();
+            var system = new FlappyDashSystem(config);
+            var bird = Bird();
+            var velocity = bird.Get<Velocity>();
+
+            float fallen = 0f;
+            while (fallen < 14.56f)
+            {
+                float vy = velocity.Linear.Y - config.Gravity * Dt;
+                if (vy < -config.MaxFallSpeed) { vy = -config.MaxFallSpeed; }
+                velocity.Linear = new System.Numerics.Vector3(velocity.Linear.X, vy, 0f);
+                fallen += -vy * Dt;
+                system.Tick(bird, Dt);
+            }
+
+            Assert.That(bird.Get<FlappyDash>().Charge, Is.EqualTo(0.50f).Within(0.06f));
+        }
+
+        [Test]
+        public void 기본_충전이_0이면_올라갈_때는_안_찬다()
+        {
+            var bird = Bird(verticalSpeed: +18.6f);
+
+            new FlappyDashSystem(DiveConfig()).Tick(bird, 1f);
+
+            Assert.That(bird.Get<FlappyDash>().Charge, Is.EqualTo(0f).Within(Tolerance));
         }
     }
 }

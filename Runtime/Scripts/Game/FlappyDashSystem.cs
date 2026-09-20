@@ -75,13 +75,23 @@ namespace LOP
                 return;
             }
 
-            //  떨어지는 중일 때만 다이브 몫이 붙고, 그 크기는 낙하 속도에 비례한다. 최대낙하로 나눠
-            //  정규화하는 것이 핵심이다 — 중력·최대낙하를 튜닝해도 "최고 속도로 떨어지면 최대 충전"
-            //  이라는 감각이 그대로 유지된다(이 값들은 실제로 프로토타입과 다르다).
+            //  떨어지는 중일 때만 다이브 몫이 붙는다. 최대낙하로 나눠 정규화하는 것이 핵심이다 —
+            //  중력·최대낙하를 튜닝해도 "최고 속도로 떨어지면 최대 충전"이라는 감각이 유지된다.
+            //
+            //  <b>세제곱인 것이 그다음으로 핵심이다.</b> 날갯짓은 튀었다 떨어지는 반복이라
+            //  평범하게 날아도 시간의 절반이 낙하다. 속도에 단순 비례하면 그 평범한 비행
+            //  (평균 9.3 = 최대의 31%)이 31%를 그대로 받아가서, "과감하게 내려간다"와
+            //  "그냥 난다"를 구분하지 못한다 — 게이지가 늘 가득 차 리스크·리워드가 꺼진다.
+            //  세제곱이면 31% → 3%로 33배 벌어진다.
+            //
+            //  지수는 컨피그로 빼지 않는다. 튜닝 손잡이가 아니라 <i>곡선의 모양</i>이고, 바꾸면
+            //  "한 칸 = 깊은 다이브 두 번"이라는 경제가 통째로 다시 계산돼야 한다
+            //  (<see cref="FlappyDash.MaxCharge"/>를 상수로 둔 것과 같은 이유다).
             float fallSpeed = -(entity.Get<GameFramework.World.Velocity>()?.Linear.Y ?? 0f);
-            float dive = fallSpeed > 0f && config.MaxFallSpeed > 0f
-                ? config.DashChargeDive * System.Math.Min(fallSpeed, config.MaxFallSpeed) / config.MaxFallSpeed
+            float normalized = fallSpeed > 0f && config.MaxFallSpeed > 0f
+                ? System.Math.Min(fallSpeed, config.MaxFallSpeed) / config.MaxFallSpeed
                 : 0f;
+            float dive = config.DashChargeDive * normalized * normalized * normalized;
 
             dash.Charge = System.Math.Min(FlappyDash.MaxCharge,
                                           dash.Charge + (config.DashChargeBase + dive) * deltaTime);
