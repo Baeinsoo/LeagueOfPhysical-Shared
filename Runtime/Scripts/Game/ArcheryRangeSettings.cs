@@ -58,15 +58,31 @@ namespace LOP
         /// <summary>과녁이 사라진 뒤 다음 과녁이 설 때까지의 틈(틱).</summary>
         public int StepGapTicks { get; }
 
+        /// <summary>
+        /// 자리 하나마다 주어지는 화살 수. 전체 화살은 <c>자리 수 × 이 값</c>이다.
+        ///
+        /// <para>한 자리에 여러 발을 주는 이유는 이 게임의 실력이 <b>리드 추정</b>이기 때문이다 —
+        /// 화살이 날아가는 동안 과녁이 움직이니 빈 공간을 겨눠야 하는데, 그건 *빗나간 걸 보고
+        /// 고치면서* 는다. 한 자리에 한 발이면 표본이 하나뿐이라 고칠 기회가 없다.</para>
+        ///
+        /// <para>화살은 <b>전체 주머니</b>라(<c>ArcheryQuiver.Remaining</c>) 어려운 자리에 더 쓰고
+        /// 쉬운 자리에 아낄 수 있다 — 배분도 선택이다.</para>
+        /// </summary>
+        public int ArrowsPerStand { get; }
+
         /// <summary>웨이브 맵이 드는 빈 값. 널 검사를 부르는 쪽마다 하지 않으려는 것이다.</summary>
         public static readonly ArcheryRangeSettings None =
             new ArcheryRangeSettings(default, new ArcheryRangeStand[0], 0);
 
-        public ArcheryRangeSettings(ArcheryTargetKind kind, IReadOnlyList<ArcheryRangeStand> stands, int stepGapTicks)
+        //  arrowsPerStand는 기본 1 = "자리마다 한 발". 이 값을 신경 안 쓰는 호출부(대부분의
+        //  시험)가 그대로 컴파일되고, 뜻도 옛 동작 그대로다.
+        public ArcheryRangeSettings(ArcheryTargetKind kind, IReadOnlyList<ArcheryRangeStand> stands,
+                                    int stepGapTicks, int arrowsPerStand = 1)
         {
             Kind = kind;
             Stands = stands ?? new ArcheryRangeStand[0];
             StepGapTicks = stepGapTicks;
+            ArrowsPerStand = arrowsPerStand;
         }
     }
 }

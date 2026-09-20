@@ -61,14 +61,15 @@ namespace LOP.Tests
         }
 
         //  자리마다 노출이 다르다 — 단계 경계가 누적합이라는 것을 재려면 달라야 한다.
-        private static ArcheryConfig RangeConfig(int standCount = 3, float lateralSpan = 0f, float lateralPeriod = 0f)
+        private static ArcheryConfig RangeConfig(int standCount = 3, float lateralSpan = 0f,
+                                                 float lateralPeriod = 0f, int arrowsPerStand = 1)
         {
             var stands = new List<ArcheryRangeStand>();
             for (int s = 0; s < standCount; s++)
             {
                 stands.Add(new ArcheryRangeStand(s, 10f * (s + 1), 100 + s * 50, lateralSpan, lateralPeriod));
             }
-            var range = new ArcheryRangeSettings(FaceKind(), stands, stepGapTicks: 25);
+            var range = new ArcheryRangeSettings(FaceKind(), stands, stepGapTicks: 25, arrowsPerStand);
 
             return new ArcheryConfig(120, 3, 5, 3.5f, 0.3f, 0.6f, 1.2f, 0f, 1f,
                                      1.2f, 2.5f, 0f, 1.2f, 2.4f, 12, 20,
@@ -77,10 +78,12 @@ namespace LOP.Tests
         }
 
         private ArcheryCourse RangeCourse(ulong seed = 777UL, int laneCount = 2, int standCount = 3,
-                                          float lateralSpan = 0f, float lateralPeriod = 0f)
+                                          float lateralSpan = 0f, float lateralPeriod = 0f,
+                                          int arrowsPerStand = 1)
         {
             var layout = Layout(laneCount, standCount);
-            return new ArcheryCourse(RangeConfig(standCount, lateralSpan, lateralPeriod), new FixedSeed(seed),
+            return new ArcheryCourse(RangeConfig(standCount, lateralSpan, lateralPeriod, arrowsPerStand),
+                                     new FixedSeed(seed),
                                      new[] { "user-a", "user-b" }, 0.02f, () => layout);
         }
 
@@ -219,11 +222,24 @@ namespace LOP.Tests
             Assert.AreEqual(525L, course.MatchDurationTicks);
         }
 
+        //  화살은 **자리 수 × 자리당 발수**다. 자리당 여러 발이 필요한 이유는 이 게임의 실력이
+        //  **리드 추정**이기 때문이다 — 화살이 날아가는 동안 과녁이 움직이니 빈 공간을 겨눠야 하고,
+        //  그건 *빗나간 걸 보고 고치면서* 는다. 한 과녁에 한 발이면 표본이 하나뿐이라 고칠 기회가 없다.
         [Test]
-        public void 화살은_과녁_수만큼_주어진다()
+        public void 화살은_자리_수_곱하기_자리당_발수다()
         {
-            Assert.AreEqual(3, RangeCourse(standCount: 3).ArrowsPerArcher);
-            Assert.AreEqual(5, RangeCourse(standCount: 5).ArrowsPerArcher);
+            Assert.AreEqual(3, RangeCourse(standCount: 3, arrowsPerStand: 1).ArrowsPerArcher);
+            Assert.AreEqual(9, RangeCourse(standCount: 3, arrowsPerStand: 3).ArrowsPerArcher);
+            Assert.AreEqual(10, RangeCourse(standCount: 5, arrowsPerStand: 2).ArrowsPerArcher);
+        }
+
+        //  자리당 발수가 0이면 화살이 0발이 되는데, 0은 **무제한**이라는 뜻이라
+        //  "한 발도 못 쏜다"가 아니라 "무한정 쏜다"로 뒤집힌다. 데이터 실수 한 칸이
+        //  판을 통째로 망가뜨리지 않게 최소 1로 본다.
+        [Test]
+        public void 자리당_발수가_0이어도_무제한이_되지_않는다()
+        {
+            Assert.AreEqual(3, RangeCourse(standCount: 3, arrowsPerStand: 0).ArrowsPerArcher);
         }
 
         [Test]
