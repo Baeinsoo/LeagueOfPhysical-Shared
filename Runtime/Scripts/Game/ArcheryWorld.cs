@@ -1,4 +1,6 @@
+using GameFramework;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace LOP
 {
@@ -11,6 +13,9 @@ namespace LOP
         private readonly ArcheryAimSystem aimSystem;
         private readonly ArcheryCourse course;
         private readonly float tickInterval;
+        private readonly MovementSystem movementSystem;
+        private readonly KinematicMoveSystem kinematicMoveSystem;
+        private readonly GameFramework.World.IMotionBridge motionBridge;
         private readonly List<ArcheryShot> shots = new List<ArcheryShot>();
 
         // 되감기용 보관. 틱마다 그 시점의 조준 상태와 화살 목록을 통째로 둔다.
@@ -50,18 +55,26 @@ namespace LOP
                             GameFramework.World.WorldEventBuffer eventBuffer,
                             ArcheryAimSystem aimSystem,
                             ArcheryCourse course,
-                            float tickInterval)
+                            float tickInterval,
+                            MovementSystem movementSystem,
+                            KinematicMoveSystem kinematicMoveSystem,
+                            GameFramework.World.IMotionBridge motionBridge)
             : base(entityRegistry, eventBuffer)
         {
             this.aimSystem = aimSystem;
             this.course = course;
             this.tickInterval = tickInterval;
+            this.movementSystem = movementSystem;
+            this.kinematicMoveSystem = kinematicMoveSystem;
+            this.motionBridge = motionBridge;
         }
 
         protected override void Mutation(long tick, float deltaTime)
         {
             //  자리마다 화살을 다시 채운다. 쏘기 **전에** 해야 그 자리의 첫 발이 바로 나간다.
             int wave = course.IndexAt(tick, GameplayStartTick);
+
+            Walk(deltaTime, tick);
 
             foreach (var entity in EntityRegistry.All)
             {
@@ -84,6 +97,80 @@ namespace LOP
             }
 
             RemoveExpired(tick);
+        }
+
+        /// <summary>
+        /// 사수를 <b>자기 사대 안에서</b> 걷게 한다. 조준(그리고 화살이 떠나는 자리)보다 먼저
+        /// 해야 쏜 자리가 실제로 서 있던 자리가 된다.
+        ///
+        /// <para><b>속도가 0이면 통째로 건너뛴다</b> — 이동을 안 켠 맵(원형)에서 중력만 돌아
+        /// 사수가 바닥으로 떨어지는 일이 없게. 즉 이 슬라이스 이전 동작이 기본값이다.</para>
+        ///
+        /// <para>속도 계산과 실제 이동을 <b>두 번에 나눠</b> 도는 것은 공용 월드와 같은 모양이다 —
+        /// 모두의 속도가 정해진 뒤에 움직여야 서로를 밀어내는 판정이 순서를 안 탄다.</para>
+        /// </summary>
+        private void Walk(float deltaTime, long tick)
+        {
+            if (course.MoveSpeed <= 0f)
+            {
+                return;
+            }
+
+            foreach (var entity in EntityRegistry.All)
+            {
+                if (entity.Has<GameFramework.World.Simulated>() == false)
+                {
+                    continue;
+                }
+
+                //  공용 이동 시스템은 걷는 쪽으로 몸을 돌린다(보통은 맞다). 활쏘기에서는 몸이
+                //  과녁을 봐야 하므로 되돌려 둔다 — 옆으로 걸었다고 몸이 돌면 옆을 보고 쏘는
+                //  그림이 된다.
+                var transform = entity.Get<GameFramework.World.Transform>();
+                var facing = transform == null
+                    ? default(System.Numerics.Quaternion)
+                    : transform.Rotation;
+
+                movementSystem.Tick(entity, tick, deltaTime);
+
+                if (transform != null)
+                {
+                    transform.Rotation = facing;
+                }
+            }
+
+            motionBridge.SyncTransforms();
+            foreach (var entity in EntityRegistry.All)
+            {
+                if (entity.Has<GameFramework.World.Simulated>() == false)
+                {
+                    continue;
+                }
+
+                motionBridge.Depenetrate(entity);
+                motionBridge.Separate(entity);
+                kinematicMoveSystem.Tick(entity, deltaTime);
+                motionBridge.PushMotion(entity);
+                ClampToStance(entity);
+            }
+        }
+
+        /// <summary>
+        /// 사대 밖으로 나갔으면 되돌려 놓는다. <b>사대를 모르는 몸은 건드리지 않는다</b> —
+        /// 기준이 없는데 원점으로 끌면 맵 한복판으로 순간이동한다.
+        /// </summary>
+        private void ClampToStance(GameFramework.World.Entity entity)
+        {
+            var stance = entity.Get<ArcheryStance>();
+            var transform = entity.Get<GameFramework.World.Transform>();
+            if (stance == null || transform == null)
+            {
+                return;
+            }
+
+            transform.Position = ArcheryShootingBox.Clamp(
+                transform.Position.ToUnity(), stance.Origin, stance.Facing,
+                course.ShootingBoxHalfWidth, course.ShootingBoxHalfDepth).ToNumerics();
         }
 
         /// <summary>

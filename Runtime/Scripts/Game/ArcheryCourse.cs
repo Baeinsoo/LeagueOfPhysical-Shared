@@ -60,6 +60,19 @@ namespace LOP
         public int ArrowsPerStand => StepCount == 0 ? 0 : Mathf.Max(1, config.Range.ArrowsPerStand);
 
         /// <summary>
+        /// 사수가 좌우로 움직일 수 있는 거리(m). <b>사거리 맵에서만</b> 0이 아니다.
+        /// </summary>
+        public float ShootingBoxHalfWidth => StepCount == 0 ? 0f : config.Range.BoxHalfWidthM;
+
+        /// <summary>사수가 앞뒤로 움직일 수 있는 거리(m). <b>사거리 맵에서만</b> 0이 아니다.</summary>
+        public float ShootingBoxHalfDepth => StepCount == 0 ? 0f : config.Range.BoxHalfDepthM;
+
+        /// <summary>
+        /// 사수의 걷는 속도(m/s). <b>0이면 이동이 아예 안 돈다</b> — 웨이브 맵(원형)이 여기다.
+        /// </summary>
+        public float MoveSpeed => StepCount == 0 ? 0f : config.Range.MoveSpeedMps;
+
+        /// <summary>
         /// 이 판의 길이(틱). 사거리는 <b>노출과 간격의 합</b>이라 순서와 무관하다 — 그래서 씨앗이
         /// 없어도 답할 수 있다. 웨이브 맵은 데이터가 적어 둔 값을 그대로 쓴다.
         /// </summary>
