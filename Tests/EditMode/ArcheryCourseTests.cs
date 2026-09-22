@@ -225,12 +225,63 @@ namespace LOP.Tests
         //  화살은 **자리 수 × 자리당 발수**다. 자리당 여러 발이 필요한 이유는 이 게임의 실력이
         //  **리드 추정**이기 때문이다 — 화살이 날아가는 동안 과녁이 움직이니 빈 공간을 겨눠야 하고,
         //  그건 *빗나간 걸 보고 고치면서* 는다. 한 과녁에 한 발이면 표본이 하나뿐이라 고칠 기회가 없다.
+        //  ── 자리가 바뀌면 화살이 다시 채워진다 ──────────────────────────────
+        //
+        //  **전체를 한 주머니로 두면 제일 쉬운 자리에 다 붓는 것이 최적**이 된다 —
+        //  12m의 10점 링은 화면에서 18.8px, 90m는 7.6px이라 같은 화살의 기대 점수가
+        //  비교가 안 된다. 그러면 거리를 여섯 개 둔 의미가 사라진다.
+        //  (과녁이 맞으면 사라지던 시절엔 그 제동이 저절로 걸려 있었다 — 2026-09-22에 뗐다.)
         [Test]
-        public void 화살은_자리_수_곱하기_자리당_발수다()
+        public void 자리가_바뀌면_화살이_다시_채워진다()
         {
-            Assert.AreEqual(3, RangeCourse(standCount: 3, arrowsPerStand: 1).ArrowsPerArcher);
-            Assert.AreEqual(9, RangeCourse(standCount: 3, arrowsPerStand: 3).ArrowsPerArcher);
-            Assert.AreEqual(10, RangeCourse(standCount: 5, arrowsPerStand: 2).ArrowsPerArcher);
+            var registry = new GameFramework.World.EntityRegistry();
+            var course = RangeCourse(standCount: 3, arrowsPerStand: 3);
+            var world = new ArcheryWorld(registry, new GameFramework.World.WorldEventBuffer(),
+                                         new ArcheryAimSystem(RangeConfig(3, arrowsPerStand: 3)),
+                                         course, 0.02f);
+            world.GameplayStartTick = 0;   // 기본값이 long.MaxValue라 안 세우면 "아직 출발 전"이다
+
+            var archer = new GameFramework.World.Entity("archer");
+            archer.Add(new ArcheryAim());
+            archer.Add(new ArcheryQuiver { Remaining = 0, RefilledWave = -1 });
+            archer.Add(new GameFramework.World.Simulated());
+            registry.Add(archer);
+
+            //  첫 자리: 바닥난 화살통이 그 자리 몫으로 채워진다.
+            world.Tick(0, 0.02f);
+            Assert.AreEqual(3, archer.Get<ArcheryQuiver>().Remaining, "첫 자리에서 안 채워졌다");
+
+            //  같은 자리 안에서는 다시 안 채운다 — 채우면 무제한이 된다.
+            archer.Get<ArcheryQuiver>().Remaining = 1;
+            world.Tick(1, 0.02f);
+            Assert.AreEqual(1, archer.Get<ArcheryQuiver>().Remaining, "같은 자리인데 다시 채웠다");
+
+            //  다음 자리로 넘어가면 다시 3발. **남은 1발은 안 넘어간다.**
+            long next = FirstTickOfStep(course, 1);
+            world.Tick(next, 0.02f);
+            Assert.AreEqual(3, archer.Get<ArcheryQuiver>().Remaining, "자리가 바뀌었는데 안 채워졌다");
+        }
+
+        //  그 자리가 시작하는 첫 틱. 경계가 누적합이라 코스에 직접 묻는다.
+        private static long FirstTickOfStep(ArcheryCourse course, int step)
+        {
+            for (long t = 0; t < 100000; t++)
+            {
+                if (course.IndexAt(t, 0) == step)
+                {
+                    return t;
+                }
+            }
+            throw new System.InvalidOperationException("그 자리가 시작하는 틱을 못 찾았다");
+        }
+
+        [Test]
+        public void 화살은_자리_하나마다_주어진다()
+        {
+            //  자리 수와 무관하다 — 전체 주머니가 아니라 **자리마다** 받는 수다.
+            Assert.AreEqual(1, RangeCourse(standCount: 3, arrowsPerStand: 1).ArrowsPerStand);
+            Assert.AreEqual(3, RangeCourse(standCount: 3, arrowsPerStand: 3).ArrowsPerStand);
+            Assert.AreEqual(2, RangeCourse(standCount: 5, arrowsPerStand: 2).ArrowsPerStand);
         }
 
         //  자리당 발수가 0이면 화살이 0발이 되는데, 0은 **무제한**이라는 뜻이라
@@ -239,7 +290,7 @@ namespace LOP.Tests
         [Test]
         public void 자리당_발수가_0이어도_무제한이_되지_않는다()
         {
-            Assert.AreEqual(3, RangeCourse(standCount: 3, arrowsPerStand: 0).ArrowsPerArcher);
+            Assert.AreEqual(1, RangeCourse(standCount: 3, arrowsPerStand: 0).ArrowsPerStand);
         }
 
         [Test]
@@ -336,7 +387,7 @@ namespace LOP.Tests
                                 course.IndexAt(600L, 500L));
             }
 
-            Assert.AreEqual(0, course.ArrowsPerArcher, "웨이브 맵은 화살이 무제한이다");
+            Assert.AreEqual(0, course.ArrowsPerStand, "웨이브 맵은 화살이 무제한이다");
         }
 
         [Test]
