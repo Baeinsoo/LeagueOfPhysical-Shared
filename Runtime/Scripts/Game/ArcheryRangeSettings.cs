@@ -70,19 +70,43 @@ namespace LOP
         /// </summary>
         public int ArrowsPerStand { get; }
 
+        /// <summary>
+        /// 사수가 좌우로 움직일 수 있는 거리(m). <b>0이면 제자리</b>다 — 이동을 안 켠 맵이 기본값 자리다.
+        /// </summary>
+        public float BoxHalfWidthM { get; }
+
+        /// <summary>
+        /// 사수가 앞뒤로 움직일 수 있는 거리(m). <b>0이면 제자리</b>다.
+        ///
+        /// <para>좌우보다 <b>훨씬 작게</b> 잡는다 — 앞으로 걸어 나간 만큼 거리가 줄어들기 때문이다.
+        /// 1m면 12m 자리에서 8%, 90m 자리에서 1% 차이라 거리의 뜻이 유지된다. 이 값을 크게
+        /// 키우면 "거리 여섯"과 거리별 과녁 크기, 거리 배수를 안 둔 채점까지 함께 무너진다.</para>
+        /// </summary>
+        public float BoxHalfDepthM { get; }
+
+        /// <summary>사수의 걷는 속도(m/s). <b>0이면 안 움직인다</b>(사대 크기와 무관하게).</summary>
+        public float MoveSpeedMps { get; }
+
         /// <summary>웨이브 맵이 드는 빈 값. 널 검사를 부르는 쪽마다 하지 않으려는 것이다.</summary>
         public static readonly ArcheryRangeSettings None =
             new ArcheryRangeSettings(default, new ArcheryRangeStand[0], 0);
 
         //  arrowsPerStand는 기본 1 = "자리마다 한 발". 이 값을 신경 안 쓰는 호출부(대부분의
         //  시험)가 그대로 컴파일되고, 뜻도 옛 동작 그대로다.
+        //  사대 값 셋은 기본 0 = "안 움직인다". 이동을 신경 안 쓰는 호출부(대부분의 시험)가
+        //  그대로 컴파일되고, 뜻도 이 슬라이스 이전 동작 그대로다.
         public ArcheryRangeSettings(ArcheryTargetKind kind, IReadOnlyList<ArcheryRangeStand> stands,
-                                    int stepGapTicks, int arrowsPerStand = 1)
+                                    int stepGapTicks, int arrowsPerStand = 1,
+                                    float boxHalfWidthM = 0f, float boxHalfDepthM = 0f,
+                                    float moveSpeedMps = 0f)
         {
             Kind = kind;
             Stands = stands ?? new ArcheryRangeStand[0];
             StepGapTicks = stepGapTicks;
             ArrowsPerStand = arrowsPerStand;
+            BoxHalfWidthM = boxHalfWidthM;
+            BoxHalfDepthM = boxHalfDepthM;
+            MoveSpeedMps = moveSpeedMps;
         }
     }
 }

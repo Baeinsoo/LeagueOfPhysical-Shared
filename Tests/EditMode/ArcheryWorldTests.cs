@@ -38,7 +38,7 @@ namespace LOP.Tests
             archer.Add(new Simulated());
             registry.Add(archer);
 
-            var world = new ArcheryWorld(registry, new WorldEventBuffer(), new ArcheryAimSystem(NoSwayConfig()), WaveCourse(NoSwayConfig()), TickInterval);
+            var world = ArcheryWorldFixture.Still(registry, new ArcheryAimSystem(NoSwayConfig()), WaveCourse(NoSwayConfig()), TickInterval);
             return (world, registry, archer);
         }
 

@@ -118,7 +118,7 @@ namespace LOP.Tests
         public void 되감으면_화살_수도_되돌아온다()
         {
             var registry = new EntityRegistry();
-            var world = new ArcheryWorld(registry, new WorldEventBuffer(), new ArcheryAimSystem(NoSwayConfig()), WaveCourse(NoSwayConfig()), TickInterval);
+            var world = ArcheryWorldFixture.Still(registry, new ArcheryAimSystem(NoSwayConfig()), WaveCourse(NoSwayConfig()), TickInterval);
 
             var archer = Archer(arrows: 3);
             archer.Add(new Simulated());   // 되감기 대상은 내가 굴리는 몸뿐이다

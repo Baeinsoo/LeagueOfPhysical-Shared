@@ -236,7 +236,7 @@ namespace LOP.Tests
         {
             var registry = new GameFramework.World.EntityRegistry();
             var course = RangeCourse(standCount: 3, arrowsPerStand: 3);
-            var world = new ArcheryWorld(registry, new GameFramework.World.WorldEventBuffer(),
+            var world = ArcheryWorldFixture.Still(registry,
                                          new ArcheryAimSystem(RangeConfig(3, arrowsPerStand: 3)),
                                          course, 0.02f);
             world.GameplayStartTick = 0;   // 기본값이 long.MaxValue라 안 세우면 "아직 출발 전"이다
