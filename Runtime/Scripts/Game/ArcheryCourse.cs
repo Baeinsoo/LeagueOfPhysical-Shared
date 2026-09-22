@@ -49,13 +49,15 @@ namespace LOP
         public int StepCount => config.CourseKind == ArcheryCourseKind.Range ? config.Range.Stands.Count : 0;
 
         /// <summary>
-        /// 사수 한 명이 받는 화살 수 = <c>자리 수 × 자리당 발수</c>. <b>0이면 무제한</b>(웨이브 맵).
+        /// <b>자리 하나마다</b> 주어지는 화살 수. <b>0이면 무제한</b>(웨이브 맵).
         ///
-        /// <para>자리당 발수가 0으로 들어오면 <b>최소 1</b>로 본다 — 곱해서 0이 되면 "한 발도
-        /// 못 쏜다"가 아니라 <b>무제한</b>으로 뒤집히기 때문이다. 데이터 한 칸이 판을 통째로
-        /// 망가뜨리지 않게 막는다.</para>
+        /// <para>자리가 바뀌면 다시 채워진다(<see cref="ArcheryQuiver.RefilledWave"/>) — 전체를
+        /// 한 주머니로 두면 제일 쉬운 자리에 다 붓는 것이 최적이 되어 거리 여섯이 무의미해진다.</para>
+        ///
+        /// <para>데이터가 0이면 <b>최소 1</b>로 본다 — 0은 "한 발도 못 쏜다"가 아니라
+        /// <b>무제한</b>으로 뒤집히기 때문이다. 한 칸 실수가 판을 통째로 망가뜨리지 않게 막는다.</para>
         /// </summary>
-        public int ArrowsPerArcher => StepCount * Mathf.Max(1, config.Range.ArrowsPerStand);
+        public int ArrowsPerStand => StepCount == 0 ? 0 : Mathf.Max(1, config.Range.ArrowsPerStand);
 
         /// <summary>
         /// 이 판의 길이(틱). 사거리는 <b>노출과 간격의 합</b>이라 순서와 무관하다 — 그래서 씨앗이

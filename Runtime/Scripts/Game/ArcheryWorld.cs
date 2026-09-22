@@ -9,6 +9,7 @@ namespace LOP
     public class ArcheryWorld : GameFramework.World.WorldBase
     {
         private readonly ArcheryAimSystem aimSystem;
+        private readonly ArcheryCourse course;
         private readonly float tickInterval;
         private readonly List<ArcheryShot> shots = new List<ArcheryShot>();
 
@@ -23,10 +24,10 @@ namespace LOP
         {
             public readonly List<ArcheryShot> Shots;
             public readonly Dictionary<string, ArcheryAim> Aims;
-            public readonly Dictionary<string, int> Quivers;
+            public readonly Dictionary<string, (int Remaining, int RefilledWave)> Quivers;
 
             public SavedState(List<ArcheryShot> shots, Dictionary<string, ArcheryAim> aims,
-                              Dictionary<string, int> quivers)
+                              Dictionary<string, (int Remaining, int RefilledWave)> quivers)
             {
                 Shots = shots;
                 Aims = aims;
@@ -48,21 +49,28 @@ namespace LOP
         public ArcheryWorld(GameFramework.World.EntityRegistry entityRegistry,
                             GameFramework.World.WorldEventBuffer eventBuffer,
                             ArcheryAimSystem aimSystem,
+                            ArcheryCourse course,
                             float tickInterval)
             : base(entityRegistry, eventBuffer)
         {
             this.aimSystem = aimSystem;
+            this.course = course;
             this.tickInterval = tickInterval;
         }
 
         protected override void Mutation(long tick, float deltaTime)
         {
+            //  자리마다 화살을 다시 채운다. 쏘기 **전에** 해야 그 자리의 첫 발이 바로 나간다.
+            int wave = course.IndexAt(tick, GameplayStartTick);
+
             foreach (var entity in EntityRegistry.All)
             {
                 if (entity.Has<GameFramework.World.Simulated>() == false)
                 {
                     continue;
                 }
+
+                Refill(entity, wave);
 
                 var shot = aimSystem.Tick(entity, tick, tickInterval);
                 if (shot.HasValue)
@@ -76,6 +84,31 @@ namespace LOP
             }
 
             RemoveExpired(tick);
+        }
+
+        /// <summary>
+        /// 자리가 바뀌었으면 그 자리 몫으로 화살을 다시 채운다. <b>남은 것은 안 넘어간다</b> —
+        /// 넘기면 쉬운 자리에서 아껴 어려운 자리에 몰아 쓰는 대신, 거꾸로 <b>쉬운 자리에 다 붓는
+        /// 것</b>이 최적이 된다(같은 화살로 얻는 기대 점수가 거리마다 두 배 넘게 차이난다).
+        ///
+        /// <para>되감기에 안전하다 — <see cref="ArcheryQuiver.RefilledWave"/>도 같이 저장·복원되므로
+        /// 재생할 때 같은 틱에서 같은 판단이 나온다.</para>
+        /// </summary>
+        private void Refill(GameFramework.World.Entity entity, int wave)
+        {
+            if (wave < 0 || course.ArrowsPerStand <= 0)
+            {
+                return;   // 아직 출발 전이거나 무제한 맵(원형)
+            }
+
+            var quiver = entity.Get<ArcheryQuiver>();
+            if (quiver == null || quiver.RefilledWave == wave)
+            {
+                return;
+            }
+
+            quiver.Remaining = course.ArrowsPerStand;
+            quiver.RefilledWave = wave;
         }
 
         // 화면 밖으로 나간 화살을 계속 들고 있으면 목록이 한 판 내내 자란다.
@@ -94,7 +127,7 @@ namespace LOP
         protected override void SaveGameState(long tick)
         {
             var aims = new Dictionary<string, ArcheryAim>();
-            var quivers = new Dictionary<string, int>();
+            var quivers = new Dictionary<string, (int Remaining, int RefilledWave)>();
             foreach (var entity in EntityRegistry.All)
             {
                 // 원격(비-Simulated) 몸은 베이스가 되감지 않는 대상이다 — 여기서 같이 저장했다가
@@ -118,7 +151,7 @@ namespace LOP
                 var quiver = entity.Get<ArcheryQuiver>();
                 if (quiver != null)
                 {
-                    quivers[entity.Id] = quiver.Remaining;
+                    quivers[entity.Id] = (quiver.Remaining, quiver.RefilledWave);
                 }
             }
             saved.Record(tick, new SavedState(new List<ArcheryShot>(shots), aims, quivers));
@@ -154,7 +187,8 @@ namespace LOP
                 var quiver = EntityRegistry.Get(pair.Key)?.Get<ArcheryQuiver>();
                 if (quiver != null)
                 {
-                    quiver.Remaining = pair.Value;
+                    quiver.Remaining = pair.Value.Remaining;
+                    quiver.RefilledWave = pair.Value.RefilledWave;
                 }
             }
 
