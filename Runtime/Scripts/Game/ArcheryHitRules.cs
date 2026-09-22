@@ -40,6 +40,25 @@ namespace LOP
         }
 
         /// <summary>
+        /// 맞히고 나면 이 과녁이 <b>사라지는가.</b>
+        ///
+        /// <para><b>주인 없는 과녁만 사라진다</b>(원형 맵) — 거기선 먼저 맞힌 사람이 먹으므로
+        /// 사라지지 않으면 한 과녁으로 여럿이 무한정 점수를 낸다.</para>
+        ///
+        /// <para><b>주인 있는 과녁은 안 사라진다</b>(사거리 맵). 주인만 맞힐 수 있어
+        /// (<see cref="CanTake"/>) 훔쳐 갈 사람이 없고, 자리마다 여러 발을 <b>같은 과녁에</b>
+        /// 꽂는 것이 실제 양궁의 모양이다. 사라지게 두면 첫 발이 맞는 순간 남은 화살이 쏠 곳을
+        /// 잃고, 그 자리의 남은 시간(최대 17초)도 통째로 죽는다. 무엇보다 <b>착탄 기록판에
+        /// 점이 하나밖에 안 찍혀</b> 군집이 안 보인다 — 리드를 고칠 근거가 사라진다.</para>
+        ///
+        /// <para>무한 득점은 화살 수(<c>ArcheryQuiver</c>)가 막는다.</para>
+        /// </summary>
+        public static bool ConsumedOnHit(in ArcheryTarget target)
+        {
+            return string.IsNullOrEmpty(target.OwnerUserId);
+        }
+
+        /// <summary>
         /// 맞은 결과를 정한다. <paramref name="normalizedOffset"/>은 맞은 자리가 중심에서 얼마나
         /// 벗어났는지를 과녁 반지름으로 나눈 값이다(0이 정중앙, 1이 가장자리).
         /// </summary>
