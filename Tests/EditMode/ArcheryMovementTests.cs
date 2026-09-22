@@ -6,14 +6,14 @@ using UnityEngine;
 namespace LOP.Tests
 {
     //  사수가 사대 안에서 걷는다. 재는 것은 셋이다 —
-    //   ① 입력대로 움직이나  ② 사대를 못 벗어나나  ③ 몸이 걷는 방향으로 돌아가지 않나.
+    //   ① 입력대로 움직이나  ② 사대를 못 벗어나나  ③ 몸이 걷는 쪽으로 도나.
     //
-    //  ③이 중요한 이유: 공용 MovementSystem은 걷는 방향으로 몸을 돌린다(보통은 맞다).
-    //  활쏘기에서는 몸이 과녁을 봐야 하는데, 옆으로 걸었다고 몸이 돌면 옆을 보고 쏘는 그림이 된다.
+    //  ②가 이 기능의 존재 이유다 — 앞으로 걸어 나갈 수 있으면 90m가 60m가 되어 거리 여섯이
+    //  무의미해진다. ③은 다른 게임과 같은 공유 코드를 쓰는지를 잰다.
     public class ArcheryMovementTests
     {
         const float TickInterval = 0.02f;
-        const float MoveSpeed = 3.5f;
+        const float MoveSpeed = 4f;
         const float HalfWidth = 2f;
         const float HalfDepth = 1f;
 
@@ -118,9 +118,13 @@ namespace LOP.Tests
             Assert.LessOrEqual(Position(archer).x, HalfWidth + 1e-3f, "사대 옆면을 넘었다");
         }
 
-        //  ③ 몸은 과녁을 계속 본다.
+        //  ③ 몸은 걷는 쪽을 본다 — 다른 게임과 같은 공유 코드다.
+        //
+        //  (2026-09-23에 뒤집은 결정: 처음엔 "활쏘기에서는 몸이 과녁을 봐야 한다"고 회전을
+        //  막았는데, 사용자가 플랩왕과 같게 해 달라고 했다. 조준은 카메라가 들고 있어
+        //  판정에는 영향이 없다 — 몸의 방향은 보이는 것뿐이다.)
         [Test]
-        public void 걸어도_몸이_돌아가지_않는다()
+        public void 걸으면_그쪽으로_몸이_돈다()
         {
             var (world, archer) = Make();
             var before = archer.Get<GameFramework.World.Transform>().Rotation;
@@ -129,10 +133,11 @@ namespace LOP.Tests
             Run(world, 30);
 
             var after = archer.Get<GameFramework.World.Transform>().Rotation;
-            Assert.AreEqual(before.X, after.X, 1e-4f, "걷는 방향으로 몸이 돌았다");
-            Assert.AreEqual(before.Y, after.Y, 1e-4f, "걷는 방향으로 몸이 돌았다 — 옆을 보고 쏘게 된다");
-            Assert.AreEqual(before.Z, after.Z, 1e-4f);
-            Assert.AreEqual(before.W, after.W, 1e-4f);
+            Assert.AreNotEqual(before.Y, after.Y, "오른쪽으로 걷는데 몸이 그대로다");
+
+            //  +x로 걸으면 yaw 90도를 본다(MovementMotor가 각도를 스냅으로 쓴다).
+            float yaw = new Quaternion(after.X, after.Y, after.Z, after.W).eulerAngles.y;
+            Assert.AreEqual(90f, yaw, 0.5f, "걷는 쪽(+x)을 안 본다");
         }
 
         //  속도 0 = 이동을 안 켠 맵(원형). 이때는 중력조차 돌면 안 된다 — 사수가 바닥으로 떨어진다.
