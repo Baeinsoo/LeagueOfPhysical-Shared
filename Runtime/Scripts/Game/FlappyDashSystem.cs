@@ -41,6 +41,25 @@ namespace LOP
         }
 
         /// <summary>
+        /// 부스트 패드를 밟았을 때. <b>게이지를 쓰지 않는 공짜 대시</b>다 — 남은 시간만 채운다.
+        ///
+        /// <para>새 가속 상태를 만들지 않고 대시를 재사용하는 이유: 그러면 와이어·예측·롤백·
+        /// 스택 규칙이 전부 새로 생기는데, 대시를 쓰면 그게 전부 0이고 감각도 같다(수평 직선).</para>
+        ///
+        /// <para>더 긴 쪽으로만 갱신한다. 패드 위를 지나는 동안 매 틱 다시 밟히므로, 덮어쓰면
+        /// 패드를 나가는 순간 항상 <c>duration</c>이 남아 "긴 패드가 더 오래 간다"가 깨진다.</para>
+        /// </summary>
+        public void Boost(GameFramework.World.Entity entity, float duration)
+        {
+            var dash = entity.Get<FlappyDash>();
+            if (dash == null || duration <= 0f)
+            {
+                return;
+            }
+            dash.DashRemaining = System.Math.Max(dash.DashRemaining, duration);
+        }
+
+        /// <summary>
         /// 대시를 그 자리에서 끝낸다. 스턴에 들어갈 때 부른다 — 멈춰 있는 동안 타이머만 계속 흐르면
         /// 스턴이 풀렸을 때 남은 대시가 되살아나 "맞고 나서 갑자기 튀어나가는" 그림이 된다.
         /// </summary>

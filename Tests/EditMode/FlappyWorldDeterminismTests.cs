@@ -64,6 +64,7 @@ namespace LOP.Tests
                                //  결승선을 등록하지 않는다 — 이 테스트들의 관심사가 아니고, 없으면 아무도 통과하지 않는다.
                                new FinishSystem(new FinishLineBounds(FinishAxis.X), FinishAxis.X, increasing: true),
                                new FlappyWindmillField(),
+                               new FlappyBoostPadField(),
                                new EmptySkyQuery(), new NoopMotionBridge(), layerMask: ~0);
             world.GameplayStartTick = 0;
             return world;

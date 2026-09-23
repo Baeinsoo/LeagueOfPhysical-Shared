@@ -9,8 +9,8 @@ namespace LOP
     /// Flappy Race의 시뮬 코어. 클·서가 같은 구체 클래스를 돌려 결과가 갈리지 않게 한다.
     /// 한 틱: 맨 앞에서 풍차 날개를 이 틱의 각도로 세운다(누적이 아니라 대입 — FlappyWindmillField).
     /// ⓪ 출발틱 전이면 아무것도 굴리지 않고 속도만 0으로 둔다.
-    /// ① 스턴 시간 감소 → ② 속도(중력·플랩·고정 전진, 스턴 중이면 스킵) →
-    /// ③ 맵에서 밀어내기(스폰 겹침 등) → ④ 맵은 막으며 이동(MoveBlockedByMap)
+    /// ① 스턴 시간 감소 → ② 부스트 패드를 밟았으면 공짜 대시 → ③ 속도(중력·플랩·고정 전진, 스턴 중이면 스킵) →
+    /// ④ 맵에서 밀어내기(스폰 겹침 등) → ⑤ 맵은 막으며 이동(MoveBlockedByMap)
     /// + 부딪히면 스턴 진입(무적 중에도 막힘, 재진입만 안 함).
     ///
     /// <para><b>새끼리는 부딪히지 않는다 — 서로 통과한다.</b> 몸싸움을 두면 남의 새도 클라가
@@ -31,6 +31,7 @@ namespace LOP
         private readonly FlappyDashSystem _dashSystem;
         private readonly FinishSystem _finishSystem;
         private readonly FlappyWindmillField _windmillField;
+        private readonly FlappyBoostPadField _boostPadField;
         private readonly ICollisionQuery _collisionQuery;
         private readonly GameFramework.World.IMotionBridge _motionBridge;
         private readonly int _layerMask;
@@ -60,6 +61,7 @@ namespace LOP
             FlappyDashSystem dashSystem,
             FinishSystem finishSystem,
             FlappyWindmillField windmillField,
+            FlappyBoostPadField boostPadField,
             ICollisionQuery collisionQuery,
             GameFramework.World.IMotionBridge motionBridge,
             int layerMask)
@@ -70,6 +72,7 @@ namespace LOP
             _dashSystem = dashSystem;
             _finishSystem = finishSystem;
             _windmillField = windmillField;
+            _boostPadField = boostPadField;
             _collisionQuery = collisionQuery;
             _motionBridge = motionBridge;
             _layerMask = layerMask;
@@ -115,6 +118,15 @@ namespace LOP
                 if (input != null && input.Dash)
                 {
                     _dashSystem.TryActivate(_birds[i]);
+                }
+
+                //  패드를 밟았으면 공짜로 대시가 붙는다. 발동 뒤에 두는 이유는 같다 — 이동 앞이라야
+                //  이번 틱부터 수평 직선이 된다. 스턴 중인 새는 위에서 이미 빠졌으므로 못 받는다.
+                var position = _birds[i].Get<GameFramework.World.Transform>()?.Position;
+                if (position != null
+                    && _boostPadField.TryDuration(position.Value.X, position.Value.Y, out float boost))
+                {
+                    _dashSystem.Boost(_birds[i], boost);
                 }
 
                 bool finished = _birds[i].Get<FinishState>()?.Finished ?? false;
