@@ -123,10 +123,20 @@ namespace LOP
                     continue;
                 }
 
-                //  몸은 걷는 쪽을 본다 — 다른 게임과 **같은 공유 코드**다(각도를 스냅으로
-                //  쓰므로 "회전 속도"라는 값은 없다). 겨누는 방향과 몸의 방향이 갈리지만,
-                //  조준은 카메라가 들고 있어 판정에는 영향이 없다.
+                //  공용 이동 시스템은 걷는 쪽으로 몸을 돌린다(보통은 맞다). 활쏘기에서 몸은
+                //  **겨누는 쪽**을 봐야 하므로 되돌려 둔다 — 회전의 주인은 ArcheryAimSystem
+                //  하나다(두 곳이 쓰면 마지막에 쓴 쪽이 이기는, 순서에 기대는 코드가 된다).
+                var transform = entity.Get<GameFramework.World.Transform>();
+                var facing = transform == null
+                    ? default(System.Numerics.Quaternion)
+                    : transform.Rotation;
+
                 movementSystem.Tick(entity, tick, deltaTime);
+
+                if (transform != null)
+                {
+                    transform.Rotation = facing;
+                }
             }
 
             motionBridge.SyncTransforms();

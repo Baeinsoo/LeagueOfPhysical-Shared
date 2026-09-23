@@ -110,6 +110,17 @@ namespace LOP
 
             aim.Yaw = command.AimYaw;
             aim.Pitch = command.AimPitch;
+
+            //  몸은 **겨누는 쪽**을 본다. 공용 이동 시스템은 걷는 쪽으로 몸을 돌리는데(보통은
+            //  맞다), 활쏘기에서 몸과 조준이 갈리면 옆을 보고 쏘는 그림이 된다. 그래서 회전의
+            //  주인은 여기 하나다 — ArcheryWorld가 이동이 쓴 회전을 되돌려 놓고 이 값만 남긴다.
+            //
+            //  고개 각도(Pitch)는 빼고 좌우(Yaw)만 쓴다 — 몸이 위아래로 눕지 않게.
+            var transform = entity.Get<GameFramework.World.Transform>();
+            if (transform != null)
+            {
+                transform.Rotation = Quaternion.Euler(0f, aim.Yaw, 0f).ToNumerics();
+            }
             //  쏘는 힘은 시위가 풀리기 **전** 값이다 — 떼는 틱에도 아래에서 한 틱분이 깎이므로
             //  여기서 먼저 붙들어 둔다. 안 그러면 놓을 때마다 힘이 조금씩 모자란다.
             float drawAtRelease = aim.DrawRatio;
