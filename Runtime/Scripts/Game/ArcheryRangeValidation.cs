@@ -12,20 +12,24 @@ namespace LOP
         public const float DistanceToleranceMeters = 1.5f;
 
         /// <summary>문제가 있으면 사람이 읽을 한 문장, 없으면 null.</summary>
-        public static string Check(ArcheryRangeLayout layout, ArcheryRangeSettings range, int archerCount)
+        public static string Check(ArcheryRangeLayout layout, ArcheryRangeSettings range, int archerCount,
+                                   ArcheryCourseKind courseKind = ArcheryCourseKind.Range)
         {
+            //  한 발 승부는 모두가 레인 0 하나를 같이 쓰고, 자리를 여러 번 다시 쓴다.
+            bool shootOff = courseKind == ArcheryCourseKind.ShootOff;
+
             if (layout == null || layout.IsEmpty)
             {
                 return "맵에 ArcheryLane이 하나도 없다 — 사거리 맵인데 레인을 안 찍었거나 맵 씬이 안 떴다";
             }
 
-            if (layout.Lanes.Count < archerCount)
+            if (shootOff == false && layout.Lanes.Count < archerCount)
             {
                 return $"레인이 {layout.Lanes.Count}개인데 사수는 {archerCount}명이다 — "
                      + "남는 사수는 과녁이 영영 안 뜬다";
             }
 
-            if (layout.StandCount != range.Stands.Count)
+            if (shootOff == false && layout.StandCount != range.Stands.Count)
             {
                 return $"씬의 과녁 자리가 {layout.StandCount}개인데 마스터데이터는 {range.Stands.Count}개를 말한다 "
                      + "— 화살 수(= 과녁 수)가 어긋난다";
@@ -43,7 +47,8 @@ namespace LOP
                 }
             }
 
-            for (int lane = 0; lane < layout.Lanes.Count; lane++)
+            int lanesToCheck = shootOff ? 1 : layout.Lanes.Count;
+            for (int lane = 0; lane < lanesToCheck; lane++)
             {
                 for (int s = 0; s < range.Stands.Count; s++)
                 {

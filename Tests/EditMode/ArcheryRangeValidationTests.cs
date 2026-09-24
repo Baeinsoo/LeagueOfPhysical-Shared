@@ -106,5 +106,23 @@ namespace LOP.Tests
 
             Assert.IsNotNull(problem, "씬에 없는 자리 번호를 가리키면 매 틱 인덱싱에서 죽는다");
         }
+
+        [Test]
+        public void ShootOff는_레인_하나로_네_명을_받는다()
+        {
+            var layout = Layout(1, 10f, 20f, 30f);
+            var stands = new[] { new ArcheryRangeStand(0, 10f, 250, 0f, 0f), new ArcheryRangeStand(0, 10f, 250, 0f, 0f),
+                                 new ArcheryRangeStand(2, 30f, 250, 0f, 0f), new ArcheryRangeStand(1, 20f, 250, 0f, 0f) };
+            var range = new ArcheryRangeSettings(default, stands, 200);
+            Assert.IsNull(ArcheryRangeValidation.Check(layout, range, 4, ArcheryCourseKind.ShootOff));
+        }
+
+        [Test]
+        public void ShootOff도_범위_밖_자리_번호는_거절()
+        {
+            var layout = Layout(1, 10f, 20f, 30f);
+            var range = new ArcheryRangeSettings(default, new[] { new ArcheryRangeStand(5, 10f, 250, 0f, 0f) }, 200);
+            Assert.IsNotNull(ArcheryRangeValidation.Check(layout, range, 4, ArcheryCourseKind.ShootOff));
+        }
     }
 }

@@ -11,5 +11,8 @@ namespace LOP
 
         /// <summary>정해진 순서대로 거리별 과녁이 선다(사거리 맵). 난수는 판 시작에 한 번뿐이다.</summary>
         Range = 1,
+
+        /// <summary>한 발 승부. 모두 레인 0에서 공유 과녁 하나에 라운드마다 한 발. 순서는 데이터 그대로.</summary>
+        ShootOff = 2,
     }
 }

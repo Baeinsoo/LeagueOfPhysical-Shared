@@ -79,6 +79,43 @@ namespace LOP.Tests
             Assert.AreEqual(40f, velocity.z, Tolerance);
             Assert.AreEqual(10f - ArcheryTrajectory.Gravity, velocity.y, Tolerance);
         }
-    
+
+        [Test]
+        public void 바람이_없으면_바람_넣기_전_식과_같은_자리다()
+        {
+            //  바람을 넣기 전의 식을 그대로 옮겨 적었다. 곱하는 순서가 달라 끝자리가 다를 수 있어 오차를 둔다.
+            var shot = new ArcheryShot("a", 0, new Vector3(1f, 2f, 3f), new Vector3(4f, 5f, 60f));
+            for (float t = 0f; t < 3f; t += 0.1f)
+            {
+                Vector3 old = shot.Origin + shot.Velocity * t
+                            + new Vector3(0f, -0.5f * ArcheryTrajectory.Gravity * t * t, 0f);
+                Vector3 now = ArcheryTrajectory.PositionAt(shot, t);
+                Assert.AreEqual(old.x, now.x, 1e-4f);
+                Assert.AreEqual(old.y, now.y, 1e-4f);
+                Assert.AreEqual(old.z, now.z, 1e-4f);
+            }
+        }
+
+        [Test]
+        public void 바람은_반_a_t제곱만큼_민다()
+        {
+            var shot = new ArcheryShot("a", 0, Vector3.zero, new Vector3(0f, 0f, 60f), new Vector3(10f, 0f, 0f));
+            var p = ArcheryTrajectory.PositionAt(shot, 0.5f);
+            Assert.AreEqual(0.5f * 10f * 0.25f, p.x, 1e-5f);
+            Assert.AreEqual(10f * 0.5f, ArcheryTrajectory.VelocityAt(shot, 0.5f).x, 1e-5f);
+        }
+
+        [Test]
+        public void WithWind는_바람만_바꾼다()
+        {
+            var shot = new ArcheryShot("a", 7, Vector3.one, Vector3.forward);
+            var windy = shot.WithWind(Vector3.right);
+            Assert.AreEqual("a", windy.ShooterId);
+            Assert.AreEqual(7, windy.FireTick);
+            Assert.AreEqual(Vector3.one, windy.Origin);
+            Assert.AreEqual(Vector3.forward, windy.Velocity);
+            Assert.AreEqual(Vector3.right, windy.Wind);
+        }
+
     }
 }

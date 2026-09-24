@@ -69,11 +69,16 @@ namespace LOP
         /// <summary>왕복 한 번(끝→반대 끝→제자리)이 걸리는 시간(초). <see cref="LateralSpan"/>이 0이면 안 쓰인다.</summary>
         public readonly float LateralPeriod;
 
+        /// <summary>
+        /// 모두가 같이 쏘는 과녁인가(한 발 승부). 누구나 맞히고, 맞아도 안 사라진다.
+        /// </summary>
+        public readonly bool IsShared;
+
         public ArcheryTarget(int waveIndex, int slotIndex, Vector3 origin, float riseSpeed, long spawnTick,
                              float radius, int points, bool isTrap,
                              ArcheryTargetShape shape, IReadOnlyList<ArcheryRingBand> bands, Vector3 facing,
                              float lifetimeSeconds, string ownerUserId,
-                             float lateralSpan, float lateralPeriod)
+                             float lateralSpan, float lateralPeriod, bool isShared = false)
         {
             WaveIndex = waveIndex;
             SlotIndex = slotIndex;
@@ -90,6 +95,7 @@ namespace LOP
             OwnerUserId = ownerUserId ?? string.Empty;
             LateralSpan = lateralSpan;
             LateralPeriod = lateralPeriod;
+            IsShared = isShared;
         }
     }
 }

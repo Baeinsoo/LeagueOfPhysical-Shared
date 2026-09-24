@@ -60,6 +60,20 @@ namespace LOP
                             Points    = h.points,
                         }
                     };
+                case ArcheryRoundResultEvent r:
+                {
+                    var msg = new ArcheryRoundResultToC { RoundIndex = r.roundIndex, Multiplier = r.multiplier };
+                    foreach (var p in r.placements)
+                    {
+                        msg.Placements.Add(new ArcheryRoundPlacementToC
+                        {
+                            ShooterId = p.ShooterId, Hit = p.Hit,
+                            FaceX = p.FaceOffset.x, FaceY = p.FaceOffset.y,
+                            Distance = p.Distance, Rank = p.Rank, Points = p.Points,
+                        });
+                    }
+                    return new WorldEventToC { ArcheryRoundResult = msg };
+                }
                 default:
                     return null;
             }
@@ -92,6 +106,17 @@ namespace LOP
                         shooterId: rec.ArcheryHit.ShooterId,
                         fireTick:  rec.ArcheryHit.FireTick,
                         points:    rec.ArcheryHit.Points);
+                case WorldEventToC.EventOneofCase.ArcheryRoundResult:
+                {
+                    var list = new System.Collections.Generic.List<ArcheryRoundPlacement>();
+                    foreach (var p in rec.ArcheryRoundResult.Placements)
+                    {
+                        list.Add(new ArcheryRoundPlacement(p.ShooterId, p.Hit, new Vector2(p.FaceX, p.FaceY),
+                                                           p.Distance, p.Rank, p.Points));
+                    }
+                    return new ArcheryRoundResultEvent(rec.ArcheryRoundResult.RoundIndex,
+                                                       rec.ArcheryRoundResult.Multiplier, list);
+                }
                 default:
                     return null;
             }

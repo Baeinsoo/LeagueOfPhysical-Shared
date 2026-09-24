@@ -17,6 +17,10 @@ namespace LOP.Tests
                 ArcheryTargetShape.Face, null, Vector3.zero, 10f, ownerUserId, 0f, 0f);
         }
 
+        private static ArcheryTarget SharedFace(string owner = "")
+            => new ArcheryTarget(0, 0, Vector3.zero, 0f, 0, 0.6f, 5, false, ArcheryTargetShape.Face,
+                                 null, Vector3.back, 5f, owner, 0f, 0f, isShared: true);
+
         //  ── 맞고 나면 사라지는가 ────────────────────────────────────────────
         //
         //  주인이 있는 과녁(사거리)은 **안 사라져야** 자리당 여러 발을 같은 과녁에 꽂을 수 있다.
@@ -95,6 +99,30 @@ namespace LOP.Tests
 
             Assert.AreEqual(0, outcome.Gained);
             Assert.AreEqual(0, outcome.Lost);
+        }
+
+        //  ── 공유 과녁(한 발 승부) ────────────────────────────────────────────
+
+        [Test]
+        public void 공유_과녁은_누구나_맞힌다()
+        {
+            Assert.IsTrue(ArcheryHitRules.CanTake(SharedFace(), "anyone"));
+            Assert.IsTrue(ArcheryHitRules.CanTake(SharedFace(), "someone-else"));
+        }
+
+        [Test]
+        public void 공유_과녁은_맞아도_안_사라진다()
+        {
+            Assert.IsFalse(ArcheryHitRules.ConsumedOnHit(SharedFace()));
+        }
+
+        [Test]
+        public void 공유가_아니면_예전_규칙_그대로()
+        {
+            var unowned = new ArcheryTarget(0, 0, Vector3.zero, 0f, 0, 0.6f, 5, false,
+                                            ArcheryTargetShape.Face, null, Vector3.back, 5f, "", 0f, 0f);
+            Assert.IsFalse(unowned.IsShared);
+            Assert.IsTrue(ArcheryHitRules.ConsumedOnHit(unowned));
         }
     }
 }

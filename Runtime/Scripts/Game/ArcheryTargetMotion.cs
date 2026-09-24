@@ -116,6 +116,14 @@ namespace LOP
             return axis / Mathf.Sqrt(sqrMagnitude);
         }
 
+        /// <summary>사수가 보는 기준 오른쪽(수평 단위벡터). <paramref name="facing"/>은 과녁이 사수를 보는 쪽이다.</summary>
+        public static Vector3 ShooterRightAxis(Vector3 facing)
+        {
+            Vector3 axis = Vector3.Cross(Vector3.up, -facing);
+            float sqr = axis.sqrMagnitude;
+            return sqr < 1e-8f ? Vector3.right : axis / Mathf.Sqrt(sqr);
+        }
+
         /// <summary>아직 공중에 있나. 솟기 전과 떨어진 뒤에는 거짓이다.</summary>
         public static bool IsAlive(in ArcheryTarget target, double tick, float tickInterval)
         {

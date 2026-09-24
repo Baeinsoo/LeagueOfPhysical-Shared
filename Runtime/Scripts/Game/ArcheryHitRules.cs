@@ -33,10 +33,13 @@ namespace LOP
         /// 이 화살이 이 과녁을 가져갈 수 있나. <b>주인이 없으면 누구든</b>(원형 맵), 주인이 있으면
         /// 주인만(사거리 맵). 점수뿐 아니라 <b>사라지는 것까지</b> 이 한 번으로 막는다 — 점수만
         /// 막고 사라지게 두면 남의 과녁을 태워 버리는 방해가 열린다.
+        /// 공유 과녁(한 발 승부)은 누구나 맞힌다.
         /// </summary>
         public static bool CanTake(in ArcheryTarget target, string shooterUserId)
         {
-            return string.IsNullOrEmpty(target.OwnerUserId) || target.OwnerUserId == shooterUserId;
+            return target.IsShared
+                || string.IsNullOrEmpty(target.OwnerUserId)
+                || target.OwnerUserId == shooterUserId;
         }
 
         /// <summary>
@@ -52,10 +55,14 @@ namespace LOP
         /// 점이 하나밖에 안 찍혀</b> 군집이 안 보인다 — 리드를 고칠 근거가 사라진다.</para>
         ///
         /// <para>무한 득점은 화살 수(<c>ArcheryQuiver</c>)가 막는다.</para>
+        ///
+        /// <para>공유 과녁(한 발 승부)은 누구나 맞히고 안 사라진다 — 여럿이 같은 과녁에 꽂아야
+        /// 비교가 된다.</para>
         /// </summary>
         public static bool ConsumedOnHit(in ArcheryTarget target)
         {
-            return string.IsNullOrEmpty(target.OwnerUserId);
+            //  공유 과녁은 모두의 화살이 한 과녁에 꽂혀야 비교가 된다.
+            return target.IsShared == false && string.IsNullOrEmpty(target.OwnerUserId);
         }
 
         /// <summary>

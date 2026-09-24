@@ -32,10 +32,17 @@ namespace LOP
         /// </summary>
         public readonly float FaceRadiusM;
 
+        /// <summary>이 라운드의 바람(가속도, m/s²). 양수면 사수가 보는 기준 오른쪽으로 민다. 한 발 승부만 쓴다.</summary>
+        public readonly float WindMps2;
+
+        /// <summary>이 라운드의 점수 배수(마지막 라운드 ×2). 한 발 승부만 쓴다.</summary>
+        public readonly int PointsMultiplier;
+
         //  faceRadiusM은 기본 0 = "과녁 종류에 적힌 값을 쓴다". 이 자리 크기를 신경 안 쓰는
         //  호출부(대부분의 시험)가 그대로 컴파일되고, 뜻도 그대로다.
         public ArcheryRangeStand(int standIndex, float distanceM, int exposureTicks,
-                                 float lateralSpan, float lateralPeriod, float faceRadiusM = 0f)
+                                 float lateralSpan, float lateralPeriod, float faceRadiusM = 0f,
+                                 float windMps2 = 0f, int pointsMultiplier = 1)
         {
             StandIndex = standIndex;
             DistanceM = distanceM;
@@ -43,6 +50,8 @@ namespace LOP
             LateralSpan = lateralSpan;
             LateralPeriod = lateralPeriod;
             FaceRadiusM = faceRadiusM;
+            WindMps2 = windMps2;
+            PointsMultiplier = pointsMultiplier;
         }
     }
 
