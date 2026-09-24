@@ -291,5 +291,65 @@ namespace LOP.Tests
 
             Assert.That(bird.Get<FlappyDash>().Charge, Is.EqualTo(0f).Within(Tolerance));
         }
+
+        [Test]
+        public void 부스트는_게이지를_쓰지_않는다()
+        {
+            //  패드는 공짜 대시다. 게이지를 쓰면 다이브로 번 것과 뒤섞여 경제가 무너진다.
+            var bird = Bird(charge: 0f);
+
+            new FlappyDashSystem(Config()).Boost(bird, 0.6f);
+
+            Assert.That(bird.Get<FlappyDash>().DashRemaining, Is.EqualTo(0.6f).Within(Tolerance));
+            Assert.That(bird.Get<FlappyDash>().Charge, Is.EqualTo(0f).Within(Tolerance));
+        }
+
+        [Test]
+        public void 부스트는_더_긴_쪽으로만_갱신된다()
+        {
+            //  패드 위를 지나는 동안 매 틱 다시 밟힌다 — 덮어쓰면 나가는 순간 항상 duration이 남아
+            //  "긴 패드가 더 오래 간다"가 깨진다.
+            var bird = Bird();
+            var system = new FlappyDashSystem(Config());
+
+            system.Boost(bird, 0.6f);
+            system.Boost(bird, 0.3f);
+
+            Assert.That(bird.Get<FlappyDash>().DashRemaining, Is.EqualTo(0.6f).Within(Tolerance));
+
+            system.Boost(bird, 0.9f);
+
+            Assert.That(bird.Get<FlappyDash>().DashRemaining, Is.EqualTo(0.9f).Within(Tolerance));
+        }
+
+        [Test]
+        public void 부스트는_취소_뒤에_다시_받을_수_있다()
+        {
+            //  스턴에 들어가며 Cancel된 새가 풀린 뒤 패드를 밟으면 다시 붙어야 한다.
+            var bird = Bird();
+            var system = new FlappyDashSystem(Config());
+
+            system.Boost(bird, 0.6f);
+            system.Cancel(bird);
+
+            Assert.That(bird.Get<FlappyDash>().DashRemaining, Is.EqualTo(0f).Within(Tolerance));
+
+            system.Boost(bird, 0.6f);
+
+            Assert.That(bird.Get<FlappyDash>().DashRemaining, Is.EqualTo(0.6f).Within(Tolerance));
+        }
+
+        [Test]
+        public void 지속시간이_0이면_부스트가_아니다()
+        {
+            //  씬에서 값을 비워 둔 패드가 대시를 "0초"로 덮어쓰지 않게 한다.
+            var bird = Bird();
+            var system = new FlappyDashSystem(Config());
+            system.Boost(bird, 0.6f);
+
+            system.Boost(bird, 0f);
+
+            Assert.That(bird.Get<FlappyDash>().DashRemaining, Is.EqualTo(0.6f).Within(Tolerance));
+        }
     }
 }

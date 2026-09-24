@@ -112,6 +112,7 @@ namespace LOP.Tests
                 new FlappyDashSystem(Config()),
                 //  결승선을 등록하지 않는다 — 이 테스트들의 관심사가 아니고, 없으면 아무도 통과하지 않는다.
                 new FinishSystem(new FinishLineBounds(FinishAxis.X), FinishAxis.X, increasing: true),
-                new FlappyWindmillField(), collisionQuery, motionBridge, layerMask: ~0);
+                new FlappyWindmillField(), new FlappyBoostPadField(),
+                collisionQuery, motionBridge, layerMask: ~0);
     }
 }
