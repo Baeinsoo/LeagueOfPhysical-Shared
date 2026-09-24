@@ -13,12 +13,22 @@ namespace LOP
         public readonly Vector3 Origin;
         public readonly Vector3 Velocity;
 
-        public ArcheryShot(string shooterId, long fireTick, Vector3 origin, Vector3 velocity)
+        /// <summary>
+        /// 이 화살을 옆으로 미는 바람(가속도, m/s²). 쏜 틱의 코스에서 정해진다 —
+        /// 발사 틱만 알면 양쪽이 같은 값을 채우므로 통신하지 않는다.
+        /// </summary>
+        public readonly Vector3 Wind;
+
+        public ArcheryShot(string shooterId, long fireTick, Vector3 origin, Vector3 velocity,
+                           Vector3 wind = default)
         {
             ShooterId = shooterId;
             FireTick = fireTick;
             Origin = origin;
             Velocity = velocity;
+            Wind = wind;
         }
+
+        public ArcheryShot WithWind(Vector3 wind) => new ArcheryShot(ShooterId, FireTick, Origin, Velocity, wind);
     }
 }

@@ -33,12 +33,12 @@ namespace LOP
             float t = secondsSinceFire;
             return shot.Origin
                  + shot.Velocity * t
-                 + new Vector3(0f, -0.5f * Gravity * t * t, 0f);
+                 + (shot.Wind + new Vector3(0f, -Gravity, 0f)) * (0.5f * t * t);
         }
 
         public static Vector3 VelocityAt(in ArcheryShot shot, float secondsSinceFire)
         {
-            return shot.Velocity + new Vector3(0f, -Gravity * secondsSinceFire, 0f);
+            return shot.Velocity + (shot.Wind + new Vector3(0f, -Gravity, 0f)) * secondsSinceFire;
         }
     }
 }
