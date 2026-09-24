@@ -81,13 +81,18 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 바람이_없으면_궤적이_예전과_같다()
+        public void 바람이_없으면_바람_넣기_전_식과_같은_자리다()
         {
-            var still = new ArcheryShot("a", 0, Vector3.zero, new Vector3(0f, 5f, 60f));
-            var calm = still.WithWind(Vector3.zero);
-            for (float t = 0f; t < 1f; t += 0.1f)
+            //  바람을 넣기 전의 식을 그대로 옮겨 적었다. 곱하는 순서가 달라 끝자리가 다를 수 있어 오차를 둔다.
+            var shot = new ArcheryShot("a", 0, new Vector3(1f, 2f, 3f), new Vector3(4f, 5f, 60f));
+            for (float t = 0f; t < 3f; t += 0.1f)
             {
-                Assert.AreEqual(ArcheryTrajectory.PositionAt(still, t), ArcheryTrajectory.PositionAt(calm, t));
+                Vector3 old = shot.Origin + shot.Velocity * t
+                            + new Vector3(0f, -0.5f * ArcheryTrajectory.Gravity * t * t, 0f);
+                Vector3 now = ArcheryTrajectory.PositionAt(shot, t);
+                Assert.AreEqual(old.x, now.x, 1e-4f);
+                Assert.AreEqual(old.y, now.y, 1e-4f);
+                Assert.AreEqual(old.z, now.z, 1e-4f);
             }
         }
 
