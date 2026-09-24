@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+// WorldEventToC oneof 안에 담기는 payload. 따로 보내는 패킷이 아니다.
+message ArcheryRoundPlacementToC
+{
+	string shooter_id = 1;
+	bool   hit        = 2;
+	float  face_x     = 3;   // 미터, 사수 기준 오른쪽
+	float  face_y     = 4;   // 미터, 위
+	float  distance   = 5;   // 미터
+	int32  rank       = 6;   // 0이 1등
+	int32  points     = 7;
+}
+
+message ArcheryRoundResultToC
+{
+	int32 round_index = 1;
+	int32 multiplier  = 2;
+	repeated ArcheryRoundPlacementToC placements = 3;
+}

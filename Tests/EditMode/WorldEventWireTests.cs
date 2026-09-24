@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using NUnit.Framework;
+using UnityEngine;
 using GameFramework.World;
 
 namespace LOP.Tests
@@ -71,6 +73,30 @@ namespace LOP.Tests
             Assert.AreEqual(original.shooterId, restored.shooterId);
             Assert.AreEqual(original.fireTick,  restored.fireTick);
             Assert.AreEqual(original.points,    restored.points);
+        }
+
+        [Test]
+        public void 라운드_결과는_와이어를_왕복해도_같다()
+        {
+            var placements = new List<ArcheryRoundPlacement>
+            {
+                new ArcheryRoundPlacement("e1", true, new Vector2(0.03f, -0.01f), 0.0316f, 0, 6),
+                new ArcheryRoundPlacement("e2", false, Vector2.zero, 0f, 1, 0),
+            };
+            var wire = WorldEventWire.ToWire(new ArcheryRoundResultEvent(11, 2, placements));
+            var back = (ArcheryRoundResultEvent)WorldEventWire.FromWire(wire);
+
+            Assert.AreEqual(11, back.roundIndex);
+            Assert.AreEqual(2, back.multiplier);
+            Assert.AreEqual(2, back.placements.Count);
+            Assert.AreEqual("e1", back.placements[0].ShooterId);
+            Assert.IsTrue(back.placements[0].Hit);
+            Assert.AreEqual(0.03f, back.placements[0].FaceOffset.x, 1e-6f);
+            Assert.AreEqual(-0.01f, back.placements[0].FaceOffset.y, 1e-6f);
+            Assert.AreEqual(0.0316f, back.placements[0].Distance, 1e-6f);
+            Assert.AreEqual(6, back.placements[0].Points);
+            Assert.IsFalse(back.placements[1].Hit);
+            Assert.AreEqual(1, back.placements[1].Rank);
         }
     }
 }
