@@ -182,5 +182,71 @@ namespace LOP.Tests
 
             Assert.AreEqual(77f, remote.Get<ArcheryAim>().Yaw, 1e-3f);   // 옛 값으로 덮이면 안 된다
         }
+
+        private readonly System.Collections.Generic.List<GameObject> spawned =
+            new System.Collections.Generic.List<GameObject>();
+
+        [TearDown]
+        public void TearDown()
+        {
+            foreach (var go in spawned) { Object.DestroyImmediate(go); }
+            spawned.Clear();
+        }
+
+        //  레인 하나, 사대는 원점, +z를 본다. 자리 하나(10m).
+        private ArcheryRangeLayout OneLane()
+        {
+            var root = new GameObject("lane0");
+            spawned.Add(root);
+            var lane = root.AddComponent<ArcheryLane>();
+            var stand = new GameObject("stand0");
+            stand.transform.SetParent(root.transform);
+            stand.transform.localPosition = new Vector3(0f, 1.3f, 10f);
+            lane.Stands = new[] { stand.transform };
+            return ArcheryRangeLayout.From(new[] { lane });
+        }
+
+        //  라운드 0 하나, 바람 8. 노출이 길어 쏘는 틱이 라운드 안에 든다.
+        private static ArcheryConfig WindyShootOffConfig()
+        {
+            var kind = new ArcheryTargetKind(0.4f, 5, 0, false, ArcheryTargetShape.Face,
+                new[] { new ArcheryRingBand(1f, 5) });
+            var stands = new[] { new ArcheryRangeStand(0, 10f, 250, 0f, 0f, 0f, windMps2: 8f) };
+            var range = new ArcheryRangeSettings(kind, stands, stepGapTicks: 200);
+            return new ArcheryConfig(
+                wavePeriodTicks: 100, minTargets: 1, maxTargets: 1,
+                spawnRadius: 1f, spawnMinY: 0f, spawnMaxY: 1f, minSeparation: 1f,
+                trapRatioMin: 0f, trapRatioMax: 0f,
+                shakeFreeSeconds: 1f, shakeRampSeconds: 1f, shakeMaxDegrees: 0f,
+                riseHeightMin: 0.1f, riseHeightMax: 0.1f, staggerTicks: 1, restTicks: 1,
+                kinds: null, courseKind: ArcheryCourseKind.ShootOff, matchDurationTicks: 0, range: range);
+        }
+
+        [Test]
+        public void ShootOff에서_쏜_화살에는_그_틱의_바람이_실린다()
+        {
+            var layout = OneLane();
+            var config = WindyShootOffConfig();
+            var course = new ArcheryCourse(config, new ZeroSeed(), new[] { "archer-1" }, TickInterval, () => layout);
+
+            var registry = new EntityRegistry();
+            var archer = new Entity("archer-1");
+            archer.Add(new GameFramework.World.Transform());
+            archer.Add(new Velocity());
+            archer.Add(new ArcheryAim());
+            archer.Add(new InputBuffer());
+            archer.Add(new Simulated());
+            registry.Add(archer);
+
+            var world = ArcheryWorldFixture.Still(registry, new ArcheryAimSystem(config), course, TickInterval);
+            world.GameplayStartTick = 0;
+
+            DrawThenRelease(archer, world);
+
+            Assert.AreEqual(1, world.Shots.Count);
+            var shot = world.Shots[0];
+            Assert.AreEqual(course.WindAt(shot.FireTick, world.GameplayStartTick), shot.Wind);
+            Assert.AreNotEqual(0f, shot.Wind.x);
+        }
     }
 }

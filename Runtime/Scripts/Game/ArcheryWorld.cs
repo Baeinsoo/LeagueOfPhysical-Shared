@@ -88,11 +88,13 @@ namespace LOP
                 var shot = aimSystem.Tick(entity, tick, tickInterval);
                 if (shot.HasValue)
                 {
-                    shots.Add(shot.Value);
+                    var fired = shot.Value.WithWind(course.WindAt(tick, GameplayStartTick));
+                    shots.Add(fired);
 
                     // 남은 이 사건으로만 내 발사를 안다 — 입력 메아리는 늦게 와서 안 읽힌다.
+                    // 바람은 싣지 않는다 — 받는 쪽이 발사 틱으로 다시 계산한다.
                     EventBuffer.Append(new ArcheryShotFiredEvent(
-                        shot.Value.ShooterId, shot.Value.FireTick, shot.Value.Origin, shot.Value.Velocity));
+                        fired.ShooterId, fired.FireTick, fired.Origin, fired.Velocity));
                 }
             }
 

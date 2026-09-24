@@ -45,8 +45,14 @@ namespace LOP
             this.tickInterval = tickInterval;
         }
 
-        /// <summary>사거리 코스의 단계 수. 웨이브 맵은 끝이 없으므로 0이다.</summary>
-        public int StepCount => config.CourseKind == ArcheryCourseKind.Range ? config.Range.Stands.Count : 0;
+        /// <summary>레인이 있는 코스인가(사거리, 한 발 승부). 웨이브(원형)만 아니다.</summary>
+        public bool IsLaned => config.CourseKind == ArcheryCourseKind.Range
+                            || config.CourseKind == ArcheryCourseKind.ShootOff;
+
+        public bool IsShootOff => config.CourseKind == ArcheryCourseKind.ShootOff;
+
+        /// <summary>레인 코스의 단계 수. 웨이브 맵은 끝이 없으므로 0이다.</summary>
+        public int StepCount => IsLaned ? config.Range.Stands.Count : 0;
 
         /// <summary>
         /// <b>자리 하나마다</b> 주어지는 화살 수. <b>0이면 무제한</b>(웨이브 맵).
@@ -57,20 +63,20 @@ namespace LOP
         /// <para>데이터가 0이면 <b>최소 1</b>로 본다 — 0은 "한 발도 못 쏜다"가 아니라
         /// <b>무제한</b>으로 뒤집히기 때문이다. 한 칸 실수가 판을 통째로 망가뜨리지 않게 막는다.</para>
         /// </summary>
-        public int ArrowsPerStand => StepCount == 0 ? 0 : Mathf.Max(1, config.Range.ArrowsPerStand);
+        public int ArrowsPerStand => StepCount == 0 ? 0 : (IsShootOff ? 1 : Mathf.Max(1, config.Range.ArrowsPerStand));
 
         /// <summary>
         /// 사수가 좌우로 움직일 수 있는 거리(m). <b>사거리 맵에서만</b> 0이 아니다.
         /// </summary>
-        public float ShootingBoxHalfWidth => StepCount == 0 ? 0f : config.Range.BoxHalfWidthM;
+        public float ShootingBoxHalfWidth => StepCount == 0 || IsShootOff ? 0f : config.Range.BoxHalfWidthM;
 
         /// <summary>사수가 앞뒤로 움직일 수 있는 거리(m). <b>사거리 맵에서만</b> 0이 아니다.</summary>
-        public float ShootingBoxHalfDepth => StepCount == 0 ? 0f : config.Range.BoxHalfDepthM;
+        public float ShootingBoxHalfDepth => StepCount == 0 || IsShootOff ? 0f : config.Range.BoxHalfDepthM;
 
         /// <summary>
         /// 사수의 걷는 속도(m/s). <b>0이면 이동이 아예 안 돈다</b> — 웨이브 맵(원형)이 여기다.
         /// </summary>
-        public float MoveSpeed => StepCount == 0 ? 0f : config.Range.MoveSpeedMps;
+        public float MoveSpeed => StepCount == 0 || IsShootOff ? 0f : config.Range.MoveSpeedMps;
 
         /// <summary>
         /// 이 판의 길이(틱). 사거리는 <b>노출과 간격의 합</b>이라 순서와 무관하다 — 그래서 씨앗이
@@ -80,7 +86,7 @@ namespace LOP
         {
             get
             {
-                if (config.CourseKind != ArcheryCourseKind.Range)
+                if (IsLaned == false)
                 {
                     return config.MatchDurationTicks;
                 }
@@ -102,7 +108,7 @@ namespace LOP
         /// </summary>
         public int IndexAt(long tick, long gameplayStartTick)
         {
-            if (config.CourseKind != ArcheryCourseKind.Range)
+            if (IsLaned == false)
             {
                 return ArcheryWaveGenerator.WaveIndexAt(tick, gameplayStartTick, config);
             }
@@ -138,7 +144,7 @@ namespace LOP
         /// <summary>그 단계의 과녁을 채운다(먼저 비운다).</summary>
         public void Fill(List<ArcheryTarget> into, int index, long gameplayStartTick)
         {
-            if (config.CourseKind != ArcheryCourseKind.Range)
+            if (IsLaned == false)
             {
                 ArcheryWaveGenerator.Fill(into, matchSeed.Value, index, config, gameplayStartTick);
                 return;
@@ -166,6 +172,16 @@ namespace LOP
             //  점수 띠(ArcheryRing)는 **비율**이라 반지름만 바꿔도 알아서 따라온다.
             float faceRadius = stand.FaceRadiusM > 0f ? stand.FaceRadiusM : kind.Radius;
 
+            if (IsShootOff)
+            {
+                var shared = layout.Lanes[0];
+                into.Add(new ArcheryTarget(index, 0, shared.Stands[stand.StandIndex], 0f, spawnTick,
+                                           faceRadius, kind.Points, kind.IsTrap, kind.Shape, kind.Bands,
+                                           -shared.Forward, lifetime, string.Empty,
+                                           stand.LateralSpan, stand.LateralPeriod, isShared: true));
+                return;
+            }
+
             //  사수마다 자기 레인에 하나씩. 슬롯 번호가 곧 사수 번호라, 먹힌 과녁을 알리는
             //  비트마스크(ArcheryStateToC)를 그대로 쓸 수 있다.
             int count = Mathf.Min(owners.Count, layout.Lanes.Count);
@@ -181,6 +197,64 @@ namespace LOP
                                            lifetime, owners[slot],
                                            stand.LateralSpan, stand.LateralPeriod));
             }
+        }
+
+        public int MultiplierAt(int index)
+        {
+            if (IsShootOff == false || index < 0 || index >= StepCount)
+            {
+                return 1;
+            }
+            return Mathf.Max(1, config.Range.Stands[index].PointsMultiplier);
+        }
+
+        //  한 발 승부는 순서를 안 섞으므로 씬 없이도 계산된다 — 순서 = 데이터 순서.
+        public long RoundCloseTick(int index, long gameplayStartTick)
+        {
+            long cursor = gameplayStartTick;
+            for (int i = 0; i < index; i++)
+            {
+                cursor += config.Range.Stands[i].ExposureTicks + config.Range.StepGapTicks;
+            }
+            return cursor + config.Range.Stands[index].ExposureTicks;
+        }
+
+        public float StandDistanceAt(int index)
+        {
+            if (IsLaned == false || index < 0 || index >= StepCount || TryEnsureBuilt() == false)
+            {
+                return 0f;
+            }
+            return config.Range.Stands[order[index]].DistanceM;
+        }
+
+        public int ExposureTicksAt(int index)
+            => IsShootOff && index >= 0 && index < StepCount ? config.Range.Stands[index].ExposureTicks : 0;
+
+        public ArcheryRangeLayout.Lane? SharedLane
+            => IsShootOff && TryEnsureBuilt() ? layout.Lanes[0] : (ArcheryRangeLayout.Lane?)null;
+
+        /// <summary>
+        /// 그 틱에 쏜 화살을 미는 바람. 한 발 승부가 아니거나, 라운드 밖이거나, 맵 씬이 아직
+        /// 안 떴으면 0이다 — 쏘는 틱엔 과녁이 서 있어야 하므로 씬이 떠 있는 게 정상이다.
+        /// </summary>
+        public Vector3 WindAt(long tick, long gameplayStartTick)
+        {
+            if (IsShootOff == false)
+            {
+                return Vector3.zero;
+            }
+            int index = IndexAt(tick, gameplayStartTick);
+            if (index < 0 || index >= StepCount || TryEnsureBuilt() == false)
+            {
+                return Vector3.zero;
+            }
+            float wind = config.Range.Stands[index].WindMps2;
+            if (wind == 0f)
+            {
+                return Vector3.zero;
+            }
+            return ArcheryTargetMotion.ShooterRightAxis(-layout.Lanes[0].Forward) * wind;
         }
 
         /// <summary>
@@ -216,13 +290,17 @@ namespace LOP
                 draw[i] = i;
             }
 
-            //  피셔–예이츠. 뒤에서부터 한 칸씩 자리를 바꾼다 — 난수를 정확히 count−1번 쓴다.
-            var rng = new GameFramework.Rng.DeterministicRandom(
-                GameFramework.Rng.Hashing.Combine(matchSeed.Value, CourseSalt));
-            for (int i = count - 1; i > 0; i--)
+            //  한 발 승부는 데이터 순서 그대로다(난수를 안 쓴다).
+            if (IsShootOff == false)
             {
-                int j = rng.Range(0, i + 1);
-                (draw[i], draw[j]) = (draw[j], draw[i]);
+                //  피셔–예이츠. 뒤에서부터 한 칸씩 자리를 바꾼다 — 난수를 정확히 count−1번 쓴다.
+                var rng = new GameFramework.Rng.DeterministicRandom(
+                    GameFramework.Rng.Hashing.Combine(matchSeed.Value, CourseSalt));
+                for (int i = count - 1; i > 0; i--)
+                {
+                    int j = rng.Range(0, i + 1);
+                    (draw[i], draw[j]) = (draw[j], draw[i]);
+                }
             }
 
             var starts = new long[count];

@@ -480,5 +480,133 @@ namespace LOP.Tests
                                      new List<ArcheryTargetKind> { FaceKind() },
                                      ArcheryCourseKind.Range, 0, range);
         }
+
+        //  라운드 넷: 자리 0,2,0,1을 다시 쓴다. 마지막은 두 배, 셋째는 바람.
+        private static ArcheryConfig ShootOffConfig()
+        {
+            var stands = new List<ArcheryRangeStand>
+            {
+                new ArcheryRangeStand(0, 10f, 250, 0f, 0f),
+                new ArcheryRangeStand(2, 30f, 250, 0f, 0f),
+                new ArcheryRangeStand(0, 10f, 250, 0f, 0f, 0f, windMps2: 12f),
+                new ArcheryRangeStand(1, 20f, 300, 0f, 0f, 0f, 0f, pointsMultiplier: 2),
+            };
+            //  데이터에 화살·박스·속도를 적어도 ShootOff는 무시해야 한다 — 일부러 채운다.
+            var range = new ArcheryRangeSettings(FaceKind(), stands, stepGapTicks: 200, arrowsPerStand: 5,
+                                                 boxHalfWidthM: 3f, boxHalfDepthM: 1.5f, moveSpeedMps: 4f);
+            return new ArcheryConfig(120, 3, 5, 3.5f, 0.3f, 0.6f, 1.2f, 0f, 1f,
+                                     1.2f, 2.5f, 0f, 1.2f, 2.4f, 12, 20,
+                                     new List<ArcheryTargetKind> { FaceKind() },
+                                     ArcheryCourseKind.ShootOff, 0, range);
+        }
+
+        private ArcheryCourse ShootOffCourse(ArcheryRangeLayout layout = null)
+        {
+            var l = layout ?? Layout(laneCount: 2, standCount: 3);
+            return new ArcheryCourse(ShootOffConfig(), new FixedSeed(777UL),
+                                     new[] { "user-a", "user-b", "user-c", "user-d" }, 0.02f, () => l);
+        }
+
+        [Test]
+        public void ShootOff는_데이터_순서_그대로_선다()
+        {
+            var course = ShootOffCourse();
+            var targets = new List<ArcheryTarget>();
+            //  라운드 1(두 번째)은 자리 2(30m) — 섞였다면 씨앗에 따라 다른 자리가 나온다.
+            course.Fill(targets, 1, 0);
+            Assert.AreEqual(1, targets.Count);
+            Assert.AreEqual(30f, targets[0].Origin.z, 1e-4f);   // 자리 2 = z 30
+            Assert.AreEqual(0f, targets[0].Origin.x, 1e-4f);    // 레인 0(x=0)
+        }
+
+        [Test]
+        public void ShootOff는_레인_0에_공유_과녁_하나()
+        {
+            var course = ShootOffCourse();
+            var targets = new List<ArcheryTarget>();
+            course.Fill(targets, 0, 0);
+            Assert.AreEqual(1, targets.Count);
+            Assert.IsTrue(targets[0].IsShared);
+            Assert.AreEqual(string.Empty, targets[0].OwnerUserId);
+        }
+
+        [Test]
+        public void ShootOff는_씨앗이_달라도_같은_순서()
+        {
+            var layout = Layout(2, 3);
+            var a = new ArcheryCourse(ShootOffConfig(), new FixedSeed(1UL), new[] { "u" }, 0.02f, () => layout);
+            var b = new ArcheryCourse(ShootOffConfig(), new FixedSeed(999UL), new[] { "u" }, 0.02f, () => layout);
+            var ta = new List<ArcheryTarget>();
+            var tb = new List<ArcheryTarget>();
+            for (int i = 0; i < 4; i++)
+            {
+                a.Fill(ta, i, 0);
+                b.Fill(tb, i, 0);
+                Assert.AreEqual(ta[0].Origin, tb[0].Origin);
+            }
+        }
+
+        [Test]
+        public void ShootOff는_한_발_박스_0_속도_0()
+        {
+            var course = ShootOffCourse();
+            Assert.AreEqual(1, course.ArrowsPerStand);
+            Assert.AreEqual(0f, course.ShootingBoxHalfWidth);
+            Assert.AreEqual(0f, course.ShootingBoxHalfDepth);
+            Assert.AreEqual(0f, course.MoveSpeed);
+            Assert.AreEqual(4, course.StepCount);
+            Assert.IsTrue(course.IsLaned);
+            Assert.IsTrue(course.IsShootOff);
+        }
+
+        [Test]
+        public void 라운드_마감_틱은_앞_라운드들의_노출과_간격의_합_더하기_이_노출()
+        {
+            var course = ShootOffCourse();
+            Assert.AreEqual(1000 + 250, course.RoundCloseTick(0, 1000));
+            Assert.AreEqual(1000 + 450 + 250, course.RoundCloseTick(1, 1000));
+            Assert.AreEqual(1000 + 450 * 3 + 300, course.RoundCloseTick(3, 1000));
+        }
+
+        [Test]
+        public void 배수는_데이터_값이고_범위_밖은_1()
+        {
+            var course = ShootOffCourse();
+            Assert.AreEqual(1, course.MultiplierAt(0));
+            Assert.AreEqual(2, course.MultiplierAt(3));
+            Assert.AreEqual(1, course.MultiplierAt(9));
+        }
+
+        [Test]
+        public void 바람은_사수_기준_오른쪽이_양수()
+        {
+            var course = ShootOffCourse();
+            //  라운드 2가 시작하는 틱 = 450 × 2. 레인은 +z를 보므로 오른쪽은 +x.
+            var wind = course.WindAt(900 + 10, 0);
+            Assert.AreEqual(12f, wind.x, 1e-4f);
+            Assert.AreEqual(0f, wind.y, 1e-4f);
+            Assert.AreEqual(0f, wind.z, 1e-4f);
+            Assert.AreEqual(Vector3.zero, course.WindAt(10, 0));     // 라운드 0은 바람 없음
+        }
+
+        [Test]
+        public void 레이아웃이_없으면_바람은_0()
+        {
+            var course = new ArcheryCourse(ShootOffConfig(), new FixedSeed(1UL), new[] { "u" }, 0.02f,
+                                           () => ArcheryRangeLayout.From(new ArcheryLane[0]));
+            Assert.AreEqual(Vector3.zero, course.WindAt(910, 0));
+        }
+
+        [Test]
+        public void 사거리는_공유_과녁이_아니고_예전처럼_레인마다_하나()
+        {
+            var course = RangeCourse();
+            var targets = new List<ArcheryTarget>();
+            course.Fill(targets, 0, 0);
+            Assert.AreEqual(2, targets.Count);
+            Assert.IsFalse(targets[0].IsShared);
+            Assert.IsFalse(course.IsShootOff);
+            Assert.AreEqual(Vector3.zero, course.WindAt(10, 0));
+        }
 }
 }
