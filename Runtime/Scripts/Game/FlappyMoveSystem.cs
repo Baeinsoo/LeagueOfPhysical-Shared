@@ -74,9 +74,13 @@ namespace LOP
             }
 
             // 전진은 플레이어가 바꿀 수 없는 상수이고, 대시만 그것을 배수로 늘린다 — 이 게임에서
-            // 전진 속도가 조작의 결과가 되는 유일한 자리다.
+            // 전진 속도가 조작의 결과가 되는 유일한 자리다. 배수는 대시 시작에 가장 크고 끝으로 갈수록
+            // 1배로 줄어든다(<see cref="FlappyDashCurve"/>). 남은 시간을 모르면 시작 배수로 본다.
             // z를 0으로 붙잡아 코스 밖으로 새지 않게 한다.
-            velocity.x = dashing ? config.ForwardSpeed * config.DashMult : config.ForwardSpeed;
+            float dashRemaining = entity.Get<FlappyDash>()?.DashRemaining ?? config.DashDuration;
+            velocity.x = dashing
+                ? config.ForwardSpeed * FlappyDashCurve.Multiplier(dashRemaining, config.DashDuration, config.DashMult)
+                : config.ForwardSpeed;
             velocity.z = 0f;
 
             worldVelocity.Linear = velocity.ToNumerics();
