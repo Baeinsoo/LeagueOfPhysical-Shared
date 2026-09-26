@@ -448,6 +448,48 @@ namespace LOP.Tests
             Assert.AreEqual(1f - perTick * 2f, aim.DrawRatio, 1e-4f);
         }
 
+        static ArcheryConfig SlowArrowConfig() => new ArcheryConfig(
+            wavePeriodTicks: 100, minTargets: 1, maxTargets: 1,
+            spawnRadius: 1f, spawnMinY: 0f, spawnMaxY: 1f, minSeparation: 1f,
+            trapRatioMin: 0f, trapRatioMax: 0f,
+            shakeFreeSeconds: 1f, shakeRampSeconds: 1f, shakeMaxDegrees: 0f,
+            riseHeightMin: 0.1f, riseHeightMax: 0.1f, staggerTicks: 1, restTicks: 1,
+            kinds: null, arrowMinSpeedMps: 40f, arrowMaxSpeedMps: 65f);
+
+        [Test]
+        public void 맵이_화살_속도를_정하면_그_속도로_나간다()
+        {
+            var archer = Archer(Vector3.zero);
+            var system = new ArcheryAimSystem(SlowArrowConfig());
+
+            for (long t = 100; t < 140; t++)
+            {
+                Feed(archer, 0f, 0f, drawing: true, release: false, drawRatio: 1f);
+                system.Tick(archer, t, TickInterval);
+            }
+
+            Feed(archer, 0f, 0f, drawing: false, release: true, drawRatio: 0f);
+            var shot = system.Tick(archer, 140, TickInterval);
+
+            Assert.AreEqual(65f, shot.Value.Velocity.magnitude, 1e-3f);
+        }
+
+        [Test]
+        public void 맵이_속도를_안_정하면_예전_속도다()
+        {
+            var config = NoSwayConfig();
+            Assert.AreEqual(ArcheryAimSystem.MinSpeed, config.ArrowMinSpeed);
+            Assert.AreEqual(ArcheryAimSystem.MaxSpeed, config.ArrowMaxSpeed);
+        }
+
+        [Test]
+        public void 당긴_만큼_맵이_정한_두_속도_사이에서_고른다()
+        {
+            Assert.AreEqual(40f, ArcheryAimSystem.SpeedFor(0f, 40f, 65f), 1e-4f);
+            Assert.AreEqual(52.5f, ArcheryAimSystem.SpeedFor(0.5f, 40f, 65f), 1e-4f);
+            Assert.AreEqual(65f, ArcheryAimSystem.SpeedFor(2f, 40f, 65f), 1e-4f);
+        }
+
         //  떼는 틱에도 시위가 한 틱분 풀린다 — 그 깎인 값으로 쏘면 놓을 때마다 힘이 모자란다.
         [Test]
         public void 쏘는_힘은_시위가_풀리기_전_값이다()
