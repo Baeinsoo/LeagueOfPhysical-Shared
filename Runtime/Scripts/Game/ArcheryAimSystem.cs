@@ -78,7 +78,13 @@ namespace LOP
 
         public static float SpeedFor(float drawRatio)
         {
-            return Mathf.Lerp(MinSpeed, MaxSpeed, Mathf.Clamp01(drawRatio));
+            return SpeedFor(drawRatio, MinSpeed, MaxSpeed);
+        }
+
+        /// <summary>당긴 만큼 맵이 정한 두 속도 사이에서 고른다.</summary>
+        public static float SpeedFor(float drawRatio, float minSpeed, float maxSpeed)
+        {
+            return Mathf.Lerp(minSpeed, maxSpeed, Mathf.Clamp01(drawRatio));
         }
 
         /// <summary>
@@ -171,7 +177,7 @@ namespace LOP
                 return null;
             }
 
-            float speed = SpeedFor(drawAtRelease);
+            float speed = SpeedFor(drawAtRelease, config.ArrowMinSpeed, config.ArrowMaxSpeed);
             Vector3 origin = entity.Get<GameFramework.World.Transform>().Position.ToUnity()
                            + new Vector3(0f, EyeHeight, 0f);
 

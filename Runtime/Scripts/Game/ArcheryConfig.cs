@@ -121,6 +121,18 @@ namespace LOP
         /// <summary>사거리 코스에만 쓰이는 값들. 웨이브 맵에서는 <see cref="ArcheryRangeSettings.None"/>이다.</summary>
         public ArcheryRangeSettings Range { get; }
 
+        /// <summary>
+        /// 살짝 당겨 쐈을 때의 화살 속도(m/s). 맵이 안 정하면(0) <see cref="ArcheryAimSystem.MinSpeed"/>.
+        /// </summary>
+        public float ArrowMinSpeed { get; }
+
+        /// <summary>
+        /// 끝까지 당겨 쐈을 때의 화살 속도(m/s). 맵이 안 정하면(0) <see cref="ArcheryAimSystem.MaxSpeed"/>.
+        /// <para>한 발 승부는 느리게 둔다 — 남의 화살이 날아가는 게 <b>보여야</b> 긴장이 생기는데,
+        /// 150m/s면 20m 과녁까지 0.13초라 눈에 거의 안 걸린다.</para>
+        /// </summary>
+        public float ArrowMaxSpeed { get; }
+
         public ArcheryConfig(int wavePeriodTicks, int minTargets, int maxTargets,
                              float spawnRadius, float spawnMinY, float spawnMaxY, float minSeparation,
                              float trapRatioMin, float trapRatioMax,
@@ -135,7 +147,9 @@ namespace LOP
                              //  등은 기본값이 없다) — 그래서 기본값 있는 매개변수들 맨 끝에 둔다.
                              //  기존 호출부(주로 이름 있는 인수)는 이 필드를 안 적으면 0(=피로만으로
                              //  자라는 예전 모양)을 받으므로 그대로 컴파일된다.
-                             float shakeBaseRatio = 0f)
+                             float shakeBaseRatio = 0f,
+                             float arrowMinSpeedMps = 0f,
+                             float arrowMaxSpeedMps = 0f)
         {
             WavePeriodTicks = wavePeriodTicks;
             MinTargets = minTargets;
@@ -191,6 +205,8 @@ namespace LOP
             CourseKind = courseKind;
             MatchDurationTicks = matchDurationTicks;
             Range = range ?? ArcheryRangeSettings.None;
+            ArrowMinSpeed = arrowMinSpeedMps > 0f ? arrowMinSpeedMps : ArcheryAimSystem.MinSpeed;
+            ArrowMaxSpeed = arrowMaxSpeedMps > 0f ? arrowMaxSpeedMps : ArcheryAimSystem.MaxSpeed;
         }
     }
 }
