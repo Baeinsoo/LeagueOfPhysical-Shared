@@ -247,6 +247,34 @@ namespace LOP.Tests
                         "평범한 비행이 최대의 5%를 넘으면 과감함을 구분하지 못한다");
         }
 
+        //  문턱 29 m/s — 정지에서 약 7.1m 떨어져야 넘는다(점프 세 번 높이면 이미 최고 속도).
+        private static FlappyConfig ThresholdConfig()
+            => new FlappyConfig(forwardSpeed: 6.8f, flapImpulse: 18.6f, gravity: 59f, maxFallSpeed: 30f,
+                                bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f,
+                                stunTime: 1.2f, invulnTime: 0.6f,
+                                dashMult: 2f, dashDuration: 0.4f, dashChargeBase: 0f, dashChargeDive: 1.3f,
+                                dashChargeMinFall: 29f);
+
+        [Test]
+        public void 문턱보다_느리게_떨어지면_하나도_안_찬다()
+        {
+            var bird = Bird(verticalSpeed: -28.9f);
+
+            new FlappyDashSystem(ThresholdConfig()).Tick(bird, 1f);
+
+            Assert.AreEqual(0f, bird.Get<FlappyDash>().Charge);
+        }
+
+        [Test]
+        public void 문턱을_넘으면_원래_곡선대로_받는다()
+        {
+            var bird = Bird(verticalSpeed: -30f);
+
+            new FlappyDashSystem(ThresholdConfig()).Tick(bird, 0.1f);
+
+            Assert.That(bird.Get<FlappyDash>().Charge, Is.EqualTo(1.3f * 0.1f).Within(1e-5f));
+        }
+
         [Test]
         public void 최대_낙하에서는_계수를_그대로_받는다()
         {
