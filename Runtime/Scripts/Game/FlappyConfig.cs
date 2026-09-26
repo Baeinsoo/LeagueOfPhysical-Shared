@@ -33,7 +33,8 @@ namespace LOP
         /// <summary>스턴이 풀린 뒤 다시 걸리지 않는 시간(초). 같은 벽에 연달아 걸리는 것을 막는다.</summary>
         public readonly float InvulnTime;
 
-        /// <summary>대시 중 전진 배수. 이 게임에서 전진 속도가 바뀌는 유일한 경우다.</summary>
+        /// <summary>대시를 누른 순간의 전진 배수. 대시가 끝날 때까지 곧게 1배로 줄어든다
+        /// (<see cref="FlappyDashCurve"/>). 이 게임에서 전진 속도가 바뀌는 유일한 경우다.</summary>
         public readonly float DashMult;
 
         /// <summary>대시가 지속되는 시간(초).</summary>

@@ -40,6 +40,31 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 대시는_시작에_가장_빠르고_남은_시간에_비례해_줄어든다()
+        {
+            //  시작 배수 2, 대시 0.2초: 남은 시간이 절반이면 1.5배, 거의 끝나면 1배에 가깝다.
+            var bird = Bird(verticalSpeed: 0f);
+            var dash = new FlappyDash { DashRemaining = 0.1f };
+            bird.Add(dash);
+
+            new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: true, finished: false);
+            Assert.That(VelocityOf(bird).X, Is.EqualTo(11f * 1.5f).Within(Tolerance));
+
+            dash.DashRemaining = 0.2f;
+            new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: true, finished: false);
+            Assert.That(VelocityOf(bird).X, Is.EqualTo(22f).Within(Tolerance), "누른 순간은 시작 배수 그대로");
+        }
+
+        [Test]
+        public void 곡선의_거리는_틱마다_줄어드는_배수를_더한_값이다()
+        {
+            //  시작 3배, 0.4초(20틱), 전진 6.8: 배수는 3, 2.9, … 1.1로 20틱.
+            //  합 = 20 + 2 × (20+19+…+1)/20 = 41 → 6.8 × 0.02 × 41 = 5.576m.
+            float d = FlappyDashCurve.Distance(6.8f, 0.4f, 0.4f, 3f, 0.02f);
+            Assert.That(d, Is.EqualTo(5.576f).Within(1e-3f));
+        }
+
+        [Test]
         public void 대시_중에는_세로_속도가_0이고_중력이_안_먹는다()
         {
             var bird = Bird(verticalSpeed: -5f);
