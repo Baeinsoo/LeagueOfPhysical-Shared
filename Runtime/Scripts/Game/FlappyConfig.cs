@@ -48,6 +48,12 @@ namespace LOP
         /// </summary>
         public readonly float DashChargeDive;
 
+        /// <summary>
+        /// 다이브 충전이 붙기 시작하는 낙하 속도(m/s). 이보다 느리게 떨어지면 다이브 몫이 0이다.
+        /// 0이면 문턱 없음. "점프 세 번 높이쯤은 떨어져야 찬다"는 감각을 속도로 옮긴 값이다.
+        /// </summary>
+        public readonly float DashChargeMinFall;
+
         /// <summary>추격자(뒤에서 오는 벽)가 출발 전에 서 있는 x. 출발선 한참 뒤다.</summary>
         public readonly float ChaserStartX;
 
@@ -79,7 +85,9 @@ namespace LOP
                             float chaserAcceleration = 0f, float chaserMaxSpeed = 0f,
                             //  추격자 값과 같은 이유로 기본값을 준다 — 골인 감속과 무관한 테스트가
                             //  자리채움을 안 적게. 실제 provider는 항상 명시한다.
-                            float finishBrake = 0f)
+                            float finishBrake = 0f,
+                            //  같은 이유로 기본값(문턱 없음)을 준다. 실제 provider는 항상 명시한다.
+                            float dashChargeMinFall = 0f)
         {
             ForwardSpeed = forwardSpeed;
             FlapImpulse = flapImpulse;
@@ -99,6 +107,7 @@ namespace LOP
             ChaserAcceleration = chaserAcceleration;
             ChaserMaxSpeed = chaserMaxSpeed;
             FinishBrake = finishBrake;
+            DashChargeMinFall = dashChargeMinFall;
         }
     }
 }

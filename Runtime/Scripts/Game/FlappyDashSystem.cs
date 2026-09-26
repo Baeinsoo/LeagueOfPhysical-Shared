@@ -106,8 +106,11 @@ namespace LOP
             //  지수는 컨피그로 빼지 않는다. 튜닝 손잡이가 아니라 <i>곡선의 모양</i>이고, 바꾸면
             //  "한 칸 = 깊은 다이브 두 번"이라는 경제가 통째로 다시 계산돼야 한다
             //  (<see cref="FlappyDash.MaxCharge"/>를 상수로 둔 것과 같은 이유다).
+            //  문턱 아래 낙하는 다이브로 치지 않는다 — 세제곱만으로는 얕은 하강도 조금씩 쌓여,
+            //  깊이 내리꽂지 않아도 게이지가 찼다. 문턱을 넘은 뒤에는 원래 곡선 그대로 받는다.
             float fallSpeed = -(entity.Get<GameFramework.World.Velocity>()?.Linear.Y ?? 0f);
-            float normalized = fallSpeed > 0f && config.MaxFallSpeed > 0f
+            bool deepEnough = fallSpeed >= config.DashChargeMinFall;
+            float normalized = deepEnough && fallSpeed > 0f && config.MaxFallSpeed > 0f
                 ? System.Math.Min(fallSpeed, config.MaxFallSpeed) / config.MaxFallSpeed
                 : 0f;
             float dive = config.DashChargeDive * normalized * normalized * normalized;
