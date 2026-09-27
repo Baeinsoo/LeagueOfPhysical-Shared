@@ -578,6 +578,29 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 과녁_반지름은_자리에_정한_값이고_없으면_과녁_종류_값()
+        {
+            var shootOff = ShootOffCourse();
+            Assert.AreEqual(0.61f, shootOff.FaceRadiusAt(0), 1e-4f);   // 자리에 크기가 없다 → 종류 값
+            Assert.AreEqual(0f, shootOff.FaceRadiusAt(-1));
+            Assert.AreEqual(0f, shootOff.FaceRadiusAt(99));
+
+            var layout = Layout(laneCount: 1, standCount: 1);
+            var stands = new List<ArcheryRangeStand> { new ArcheryRangeStand(0, 12f, 200, 0f, 0f, faceRadiusM: 0.20f) };
+            var range = new ArcheryCourse(RangeConfigWith(stands), new FixedSeed(1UL), new[] { "user-a" }, 0.02f, () => layout);
+            Assert.AreEqual(0.20f, range.FaceRadiusAt(0), 1e-4f);
+        }
+
+        [Test]
+        public void 과녁_띠는_과녁_종류의_띠를_안쪽부터()
+        {
+            var bands = ShootOffCourse().FaceBands;
+            Assert.AreEqual(3, bands.Count);
+            Assert.AreEqual(0.2f, bands[0].OuterRatio, 1e-4f);
+            Assert.AreEqual(10, bands[0].Points);
+        }
+
+        [Test]
         public void 바람은_사수_기준_오른쪽이_양수()
         {
             var course = ShootOffCourse();
