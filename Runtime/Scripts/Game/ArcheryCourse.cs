@@ -170,7 +170,7 @@ namespace LOP
             //  양궁 규격과 같다 — 가까우면 작은 과녁. 한 크기로 두면 가까운 자리는 거저 10점,
             //  먼 자리는 흔들림이 링을 통째로 잡아먹어 양쪽 다 실력을 못 가린다.
             //  점수 띠(ArcheryRing)는 **비율**이라 반지름만 바꿔도 알아서 따라온다.
-            float faceRadius = stand.FaceRadiusM > 0f ? stand.FaceRadiusM : kind.Radius;
+            float faceRadius = FaceRadiusAt(index);
 
             if (IsShootOff)
             {
@@ -227,6 +227,23 @@ namespace LOP
             }
             return config.Range.Stands[order[index]].DistanceM;
         }
+
+        /// <summary>그 라운드(자리) 과녁의 반지름(m). 자리에 정한 크기가 없으면 과녁 종류의 값. 레인형이 아니거나 범위 밖이면 0.</summary>
+        public float FaceRadiusAt(int index)
+        {
+            if (IsLaned == false || index < 0 || index >= StepCount || TryEnsureBuilt() == false)
+            {
+                return 0f;
+            }
+            var stand = config.Range.Stands[order[index]];
+            return stand.FaceRadiusM > 0f ? stand.FaceRadiusM : config.Range.Kind.Radius;
+        }
+
+        /// <summary>레인형 과녁의 점수 띠(안쪽부터). 레인형이 아니면 빈 목록.</summary>
+        public IReadOnlyList<ArcheryRingBand> FaceBands
+            => IsLaned && config.Range.Kind.Bands != null
+                ? config.Range.Kind.Bands
+                : System.Array.Empty<ArcheryRingBand>();
 
         public int ExposureTicksAt(int index)
             => IsShootOff && index >= 0 && index < StepCount ? config.Range.Stands[index].ExposureTicks : 0;
