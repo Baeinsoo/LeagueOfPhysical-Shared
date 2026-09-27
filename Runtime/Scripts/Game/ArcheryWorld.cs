@@ -130,6 +130,13 @@ namespace LOP
                     seated.Add(entity);
                 }
             }
+            //  명단의 몸이 다 모이기 전엔 안 앉힌다 — 클·서가 다른 명단으로 계산하면 서로 다른 자리가
+            //  나오고, 되감아 다시 돌려도 같은 틀린 자리가 나와 영영 안 맞는다. 궁수 몸은 판 중간에
+            //  지워지지 않으므로(접속이 끊겨도 남는다) 한번 모이면 끝까지 같은 명단이다.
+            if (seated.Count != course.RosterCount)
+            {
+                return;
+            }
             seated.Sort((x, y) => string.CompareOrdinal(x.Id, y.Id));
 
             int round = course.SeatRoundAt(tick, GameplayStartTick);

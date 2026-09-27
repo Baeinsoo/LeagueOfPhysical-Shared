@@ -584,6 +584,13 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 시작_틱을_아직_모르면_첫_라운드_자리()
+        {
+            //  시작 틱을 모를 때 월드는 long.MaxValue를 들고 있다 — 더하면 넘쳐서 마지막 라운드가 나오면 안 된다.
+            Assert.AreEqual(0, ShootOffCourse().SeatRoundAt(500, long.MaxValue));
+        }
+
+        [Test]
         public void 결과_화면이_닫히는_틱은_라운드_마감에_틈을_더하고_60을_뺀다()
         {
             var course = ShootOffCourse();

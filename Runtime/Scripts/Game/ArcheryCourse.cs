@@ -248,6 +248,9 @@ namespace LOP
         public int ExposureTicksAt(int index)
             => IsShootOff && index >= 0 && index < StepCount ? config.Range.Stands[index].ExposureTicks : 0;
 
+        /// <summary>매치 명단의 사람 수(판 시작 때 정해진다).</summary>
+        public int RosterCount => owners.Count;
+
         /// <summary>결과 화면이 닫히는 틱 = 다음 라운드 과녁이 서기 이만큼 전(1.2초).</summary>
         public const int ResultLeadTicks = 60;
 
@@ -261,7 +264,9 @@ namespace LOP
         /// </summary>
         public int SeatRoundAt(long tick, long gameplayStartTick)
         {
-            if (IsShootOff == false || StepCount == 0)
+            //  시작 틱을 모르면(long.MaxValue) 더하는 순간 넘친다 — IndexAt과 같이 막는다.
+            if (IsShootOff == false || StepCount == 0
+                || gameplayStartTick == long.MaxValue || tick < gameplayStartTick)
             {
                 return 0;
             }

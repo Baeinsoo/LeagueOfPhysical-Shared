@@ -284,6 +284,25 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void ShootOff에서_명단의_몸이_다_모이기_전엔_아무도_옮기지_않는다()
+        {
+            //  명단은 셋인데 몸은 둘 — 클·서가 다른 명단으로 자리를 계산하면 영영 안 맞는다.
+            var layout = OneLane();
+            var config = TwoRoundShootOffConfig();
+            var course = new ArcheryCourse(config, new ZeroSeed(), new[] { "a", "b", "c" }, TickInterval, () => layout);
+            var registry = new EntityRegistry();
+            var a = Seated(registry, "a");
+            Seated(registry, "b");
+            a.Get<GameFramework.World.Transform>().Position = new System.Numerics.Vector3(7f, 0f, 0f);
+            var world = ArcheryWorldFixture.Still(registry, new ArcheryAimSystem(config), course, TickInterval);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, TickInterval);
+
+            Assert.AreEqual(7f, a.Get<GameFramework.World.Transform>().Position.X, 1e-4f);
+        }
+
+        [Test]
         public void ShootOff에서_굴리지_않는_몸은_옮기지_않는다()
         {
             var layout = OneLane();
