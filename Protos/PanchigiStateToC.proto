@@ -18,4 +18,9 @@ message PanchigiStateToC
 	repeated string eliminated_entity_ids = 5;
 	// 지금까지 지나간 턴 수(친 것 + 패스한 것). 상한은 클라도 마스터데이터에서 직접 읽는다.
 	int32 turn_count = 6;
+	// 플레이어 엔티티별 타수(벌타 포함). 끝난 사람은 기록 타수 — 상한에 닿았으면 상한+1.
+	// 상한 자체는 클라도 마스터데이터에서 직접 읽으므로 싣지 않는다.
+	map<string, int32> strokes = 7;
+	// 끝난(홀아웃했거나 상한에 닿은) 플레이어 엔티티들
+	repeated string finished_entity_ids = 8;
 }
