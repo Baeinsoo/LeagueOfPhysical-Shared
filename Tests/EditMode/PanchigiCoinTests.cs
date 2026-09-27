@@ -57,6 +57,22 @@ namespace LOP.Tests
             Assert.AreEqual(0, flipped);
         }
 
+        [Test]
+        public void 핀_수는_판에_놓인_동전_수다()
+        {
+            //  4인 판은 동전이 8개다 — 6으로 고정하면 점수판이 서버와 어긋난다.
+            var entities = new List<Entity> { Player() };
+            for (int i = 0; i < 8; i++) { entities.Add(Coin(Quaternion.identity)); }
+
+            Assert.AreEqual(8, PanchigiCoin.PinCount(entities, fallback: 6));
+        }
+
+        [Test]
+        public void 동전이_아직_안_왔으면_핀_수는_기본값이다()
+        {
+            Assert.AreEqual(6, PanchigiCoin.PinCount(new List<Entity> { Player() }, fallback: 6));
+        }
+
         private static Entity Coin(Quaternion rotation)
         {
             var entity = new Entity(System.Guid.NewGuid().ToString());

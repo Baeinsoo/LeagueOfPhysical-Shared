@@ -41,6 +41,19 @@ namespace LOP
         }
 
         /// <summary>
+        /// 볼링 핀 수 = 판에 놓인 동전 수(인원수에 따라 6개 또는 8개). 동전이 아직 안 왔으면 기본값.
+        /// </summary>
+        public static int PinCount(IEnumerable<GameFramework.World.Entity> entities, int fallback)
+        {
+            int count = 0;
+            foreach (var entity in entities)
+            {
+                if (entity?.Get<EntityKind>()?.Kind == EntityType.Coin) { count++; }
+            }
+            return count > 0 ? count : fallback;
+        }
+
+        /// <summary>
         /// 넘겨받은 엔티티 중 동전이 몇 개고 그중 몇 개가 뒤집혔나. 판이 몇 대 몇인지를
         /// 화면에 그리는 쪽이 쓴다.
         /// </summary>
