@@ -74,6 +74,7 @@ namespace LOP
             //  자리마다 화살을 다시 채운다. 쏘기 **전에** 해야 그 자리의 첫 발이 바로 나간다.
             int wave = course.IndexAt(tick, GameplayStartTick);
 
+            Seat(tick);
             Walk(deltaTime, tick);
 
             foreach (var entity in EntityRegistry.All)
@@ -99,6 +100,59 @@ namespace LOP
             }
 
             RemoveExpired(tick);
+        }
+
+        private readonly List<GameFramework.World.Entity> seated = new List<GameFramework.World.Entity>();
+
+        /// <summary>
+        /// 한 발 승부: 사수를 이번 라운드 자리에 세운다(<see cref="ArcheryShootOffSeats"/>). 틱에서 바로
+        /// 계산하므로 클·서가 따로 돌려도 같은 자리가 나오고, 되감아 다시 돌려도 같다. 조준(화살이 떠나는
+        /// 자리)보다 먼저 해야 쏜 자리가 실제로 서 있던 자리가 된다. 명단은 사대를 가진 몸의 id 순서다.
+        /// 회전은 건드리지 않는다 — 몸의 방향은 조준이 정한다.
+        /// </summary>
+        private void Seat(long tick)
+        {
+            if (course.IsShootOff == false)
+            {
+                return;
+            }
+            var lane = course.SharedLane;
+            if (lane == null)
+            {
+                return;   // 맵 씬이 아직 안 떴다
+            }
+
+            seated.Clear();
+            foreach (var entity in EntityRegistry.All)
+            {
+                if (entity.Has<ArcheryStance>())
+                {
+                    seated.Add(entity);
+                }
+            }
+            //  명단의 몸이 다 모이기 전엔 안 앉힌다 — 클·서가 다른 명단으로 계산하면 서로 다른 자리가
+            //  나오고, 되감아 다시 돌려도 같은 틀린 자리가 나와 영영 안 맞는다. 궁수 몸은 판 중간에
+            //  지워지지 않으므로(접속이 끊겨도 남는다) 한번 모이면 끝까지 같은 명단이다.
+            if (seated.Count != course.RosterCount)
+            {
+                return;
+            }
+            seated.Sort((x, y) => string.CompareOrdinal(x.Id, y.Id));
+
+            int round = course.SeatRoundAt(tick, GameplayStartTick);
+            Vector3 right = ArcheryTargetMotion.ShooterRightAxis(-lane.Value.Forward);
+            for (int i = 0; i < seated.Count; i++)
+            {
+                var entity = seated[i];
+                var transform = entity.Get<GameFramework.World.Transform>();
+                if (entity.Has<GameFramework.World.Simulated>() == false || transform == null)
+                {
+                    continue;
+                }
+                int slot = ArcheryShootOffSeats.SlotOf(i, round, seated.Count);
+                Vector3 at = lane.Value.ShooterPosition + right * ArcheryShootOffSeats.LateralOffset(slot, seated.Count);
+                transform.Position = at.ToNumerics();
+            }
         }
 
         /// <summary>

@@ -248,6 +248,36 @@ namespace LOP
         public int ExposureTicksAt(int index)
             => IsShootOff && index >= 0 && index < StepCount ? config.Range.Stands[index].ExposureTicks : 0;
 
+        /// <summary>매치 명단의 사람 수(판 시작 때 정해진다).</summary>
+        public int RosterCount => owners.Count;
+
+        /// <summary>결과 화면이 닫히는 틱 = 다음 라운드 과녁이 서기 이만큼 전(1.2초).</summary>
+        public const int ResultLeadTicks = 60;
+
+        /// <summary>라운드 <paramref name="index"/>의 결과 화면이 닫히는 틱. 모든 클라가 같은 틱에 닫는다.</summary>
+        public long ResultEndTick(int index, long gameplayStartTick)
+            => RoundCloseTick(index, gameplayStartTick) + config.Range.StepGapTicks - ResultLeadTicks;
+
+        /// <summary>
+        /// 지금 몇 라운드 몫의 자리에 앉아 있어야 하나. 라운드 i의 결과 화면이 닫히면 i+1 자리로 옮긴다 —
+        /// 결과를 보는 동안에는 자리가 안 바뀐다. 판이 끝나면 마지막 라운드 자리에 그대로 둔다.
+        /// </summary>
+        public int SeatRoundAt(long tick, long gameplayStartTick)
+        {
+            //  시작 틱을 모르면(long.MaxValue) 더하는 순간 넘친다 — IndexAt과 같이 막는다.
+            if (IsShootOff == false || StepCount == 0
+                || gameplayStartTick == long.MaxValue || tick < gameplayStartTick)
+            {
+                return 0;
+            }
+            int round = 0;
+            while (round < StepCount - 1 && tick >= ResultEndTick(round, gameplayStartTick))
+            {
+                round++;
+            }
+            return round;
+        }
+
         public ArcheryRangeLayout.Lane? SharedLane
             => IsShootOff && TryEnsureBuilt() ? layout.Lanes[0] : (ArcheryRangeLayout.Lane?)null;
 
