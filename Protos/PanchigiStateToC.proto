@@ -7,19 +7,15 @@ import "PanchigiPlayerRolls.proto";
 // @auto_generate
 message PanchigiStateToC
 {
-	// 4~6은 옛 규칙(낙 횟수·탈락·턴 수)이 쓰던 번호다 — 다시 쓰면 옛 빌드와 섞일 때 엉뚱하게 읽힌다.
-	reserved 4, 5, 6;
+	// 4~6은 옛 규칙(낙 횟수·탈락·턴 수), 7~8은 골프식(타수·끝난 사람, 로컬에만 배포됨)이 쓰던 번호다 —
+	// 다시 쓰면 옛 빌드와 섞일 때 엉뚱하게 읽힌다.
+	reserved 4, 5, 6, 7, 8;
 	// 0 = Settling(동전이 구르는 중), 1 = Aiming(누군가 조준 중)
 	int32 phase = 1;
 	// 지금 칠 차례인 플레이어 엔티티. Settling이면 빈 문자열
 	string current_entity_id = 2;
 	// 조준 마감 틱. Aiming일 때만 유효
 	int64 aim_deadline_tick = 3;
-	// 플레이어 엔티티별 타수(벌타 포함). 끝난 사람은 기록 타수 — 상한에 닿았으면 상한+1.
-	// 상한 자체는 클라도 마스터데이터에서 직접 읽으므로 싣지 않는다.
-	map<string, int32> strokes = 7;
-	// 끝난(홀아웃했거나 상한에 닿은) 플레이어 엔티티들
-	repeated string finished_entity_ids = 8;
 	// 참가 순서대로 사람별 타격 기록(볼링식). 점수판은 클라가 계산한다.
 	repeated PanchigiPlayerRolls players = 9;
 }

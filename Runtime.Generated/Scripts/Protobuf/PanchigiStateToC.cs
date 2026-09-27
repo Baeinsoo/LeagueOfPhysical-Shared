@@ -23,17 +23,14 @@ public static partial class PanchigiStateToCReflection {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
           "ChZQYW5jaGlnaVN0YXRlVG9DLnByb3RvGhlQYW5jaGlnaVBsYXllclJvbGxz",
-          "LnByb3RvIo4CChBQYW5jaGlnaVN0YXRlVG9DEg0KBXBoYXNlGAEgASgFEhkK",
+          "LnByb3RvIpwBChBQYW5jaGlnaVN0YXRlVG9DEg0KBXBoYXNlGAEgASgFEhkK",
           "EWN1cnJlbnRfZW50aXR5X2lkGAIgASgJEhkKEWFpbV9kZWFkbGluZV90aWNr",
-          "GAMgASgDEi8KB3N0cm9rZXMYByADKAsyHi5QYW5jaGlnaVN0YXRlVG9DLlN0",
-          "cm9rZXNFbnRyeRIbChNmaW5pc2hlZF9lbnRpdHlfaWRzGAggAygJEiUKB3Bs",
-          "YXllcnMYCSADKAsyFC5QYW5jaGlnaVBsYXllclJvbGxzGi4KDFN0cm9rZXNF",
-          "bnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAU6AjgBSgQIBBAFSgQI",
-          "BRAGSgQIBhAHYgZwcm90bzM="));
+          "GAMgASgDEiUKB3BsYXllcnMYCSADKAsyFC5QYW5jaGlnaVBsYXllclJvbGxz",
+          "SgQIBBAFSgQIBRAGSgQIBhAHSgQIBxAISgQICBAJYgZwcm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::PanchigiPlayerRollsReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::PanchigiStateToC), global::PanchigiStateToC.Parser, new[]{ "Phase", "CurrentEntityId", "AimDeadlineTick", "Strokes", "FinishedEntityIds", "Players" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, })
+          new pbr::GeneratedClrTypeInfo(typeof(global::PanchigiStateToC), global::PanchigiStateToC.Parser, new[]{ "Phase", "CurrentEntityId", "AimDeadlineTick", "Players" }, null, null, null, null)
         }));
   }
   #endregion
@@ -83,8 +80,6 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
     phase_ = other.phase_;
     currentEntityId_ = other.currentEntityId_;
     aimDeadlineTick_ = other.aimDeadlineTick_;
-    strokes_ = other.strokes_.Clone();
-    finishedEntityIds_ = other.finishedEntityIds_.Clone();
     players_ = other.players_.Clone();
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
@@ -140,35 +135,6 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
     }
   }
 
-  /// <summary>Field number for the "strokes" field.</summary>
-  public const int StrokesFieldNumber = 7;
-  private static readonly pbc::MapField<string, int>.Codec _map_strokes_codec
-      = new pbc::MapField<string, int>.Codec(pb::FieldCodec.ForString(10, ""), pb::FieldCodec.ForInt32(16, 0), 58);
-  private readonly pbc::MapField<string, int> strokes_ = new pbc::MapField<string, int>();
-  /// <summary>
-  /// 플레이어 엔티티별 타수(벌타 포함). 끝난 사람은 기록 타수 — 상한에 닿았으면 상한+1.
-  /// 상한 자체는 클라도 마스터데이터에서 직접 읽으므로 싣지 않는다.
-  /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public pbc::MapField<string, int> Strokes {
-    get { return strokes_; }
-  }
-
-  /// <summary>Field number for the "finished_entity_ids" field.</summary>
-  public const int FinishedEntityIdsFieldNumber = 8;
-  private static readonly pb::FieldCodec<string> _repeated_finishedEntityIds_codec
-      = pb::FieldCodec.ForString(66);
-  private readonly pbc::RepeatedField<string> finishedEntityIds_ = new pbc::RepeatedField<string>();
-  /// <summary>
-  /// 끝난(홀아웃했거나 상한에 닿은) 플레이어 엔티티들
-  /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public pbc::RepeatedField<string> FinishedEntityIds {
-    get { return finishedEntityIds_; }
-  }
-
   /// <summary>Field number for the "players" field.</summary>
   public const int PlayersFieldNumber = 9;
   private static readonly pb::FieldCodec<global::PanchigiPlayerRolls> _repeated_players_codec
@@ -201,8 +167,6 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
     if (Phase != other.Phase) return false;
     if (CurrentEntityId != other.CurrentEntityId) return false;
     if (AimDeadlineTick != other.AimDeadlineTick) return false;
-    if (!Strokes.Equals(other.Strokes)) return false;
-    if(!finishedEntityIds_.Equals(other.finishedEntityIds_)) return false;
     if(!players_.Equals(other.players_)) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
@@ -214,8 +178,6 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
     if (Phase != 0) hash ^= Phase.GetHashCode();
     if (CurrentEntityId.Length != 0) hash ^= CurrentEntityId.GetHashCode();
     if (AimDeadlineTick != 0L) hash ^= AimDeadlineTick.GetHashCode();
-    hash ^= Strokes.GetHashCode();
-    hash ^= finishedEntityIds_.GetHashCode();
     hash ^= players_.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
@@ -247,8 +209,6 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
       output.WriteRawTag(24);
       output.WriteInt64(AimDeadlineTick);
     }
-    strokes_.WriteTo(output, _map_strokes_codec);
-    finishedEntityIds_.WriteTo(output, _repeated_finishedEntityIds_codec);
     players_.WriteTo(output, _repeated_players_codec);
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
@@ -272,8 +232,6 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
       output.WriteRawTag(24);
       output.WriteInt64(AimDeadlineTick);
     }
-    strokes_.WriteTo(ref output, _map_strokes_codec);
-    finishedEntityIds_.WriteTo(ref output, _repeated_finishedEntityIds_codec);
     players_.WriteTo(ref output, _repeated_players_codec);
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
@@ -294,8 +252,6 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
     if (AimDeadlineTick != 0L) {
       size += 1 + pb::CodedOutputStream.ComputeInt64Size(AimDeadlineTick);
     }
-    size += strokes_.CalculateSize(_map_strokes_codec);
-    size += finishedEntityIds_.CalculateSize(_repeated_finishedEntityIds_codec);
     size += players_.CalculateSize(_repeated_players_codec);
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -318,8 +274,6 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
     if (other.AimDeadlineTick != 0L) {
       AimDeadlineTick = other.AimDeadlineTick;
     }
-    strokes_.MergeFrom(other.strokes_);
-    finishedEntityIds_.Add(other.finishedEntityIds_);
     players_.Add(other.players_);
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -350,14 +304,6 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
         }
         case 24: {
           AimDeadlineTick = input.ReadInt64();
-          break;
-        }
-        case 58: {
-          strokes_.AddEntriesFrom(input, _map_strokes_codec);
-          break;
-        }
-        case 66: {
-          finishedEntityIds_.AddEntriesFrom(input, _repeated_finishedEntityIds_codec);
           break;
         }
         case 74: {
@@ -393,14 +339,6 @@ public sealed partial class PanchigiStateToC : pb::IMessage<PanchigiStateToC>
         }
         case 24: {
           AimDeadlineTick = input.ReadInt64();
-          break;
-        }
-        case 58: {
-          strokes_.AddEntriesFrom(ref input, _map_strokes_codec);
-          break;
-        }
-        case 66: {
-          finishedEntityIds_.AddEntriesFrom(ref input, _repeated_finishedEntityIds_codec);
           break;
         }
         case 74: {
