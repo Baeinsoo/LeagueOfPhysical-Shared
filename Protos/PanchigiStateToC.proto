@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "PanchigiPlayerRolls.proto";
+
 // 판치기 턴 상태(서버 → 클라). 바뀔 때만 reliable로 간다.
 // 남은 시간은 마감을 *틱*으로 보내 클라가 공유 틱 시계로 직접 그린다 — 주기 전송이 필요 없다.
 // @auto_generate
@@ -18,4 +20,6 @@ message PanchigiStateToC
 	map<string, int32> strokes = 7;
 	// 끝난(홀아웃했거나 상한에 닿은) 플레이어 엔티티들
 	repeated string finished_entity_ids = 8;
+	// 참가 순서대로 사람별 타격 기록(볼링식). 점수판은 클라가 계산한다.
+	repeated PanchigiPlayerRolls players = 9;
 }

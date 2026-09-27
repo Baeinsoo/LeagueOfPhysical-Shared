@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+// 판치기 볼링 — 한 사람의 타격 기록. 점수·표기는 싣지 않는다(클라가 PanchigiBowlingScore로 계산).
+message PanchigiRollInfo
+{
+	// 이번 타격에 뒤집은 개수. 파울이면 의미 없음
+	int32 flipped = 1;
+	// 동전이 판 밖으로 나갔다 — 0점, 판은 치기 직전 상태로
+	bool foul = 2;
+}
+
+message PanchigiPlayerRolls
+{
+	string entity_id = 1;
+	repeated PanchigiRollInfo rolls = 2;
+}
