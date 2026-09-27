@@ -55,6 +55,7 @@ namespace LOP.Tests
 
             world.Tick(FlappyWorldFixture.StartTick, 0.02f);
 
+            Assert.That(recorder.Masks, Is.Not.Empty);
             Assert.That(recorder.Masks.TrueForAll(m => (m & (1 << hologram)) != 0));
         }
     }
