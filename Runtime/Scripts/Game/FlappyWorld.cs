@@ -36,6 +36,9 @@ namespace LOP
         private readonly GameFramework.World.IMotionBridge _motionBridge;
         private readonly int _layerMask;
 
+        //  대시 중인 새의 sweep에서 뺄 층. 레이어가 없는 프로젝트(테스트)에선 0이라 아무것도 안 뺀다.
+        private readonly int _hologramMask;
+
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다. 굴릴 대상(Simulated)만 담는다
         // — 새끼리 안 부딪히므로 "부딪힐 상대" 목록이 따로 필요 없다.
         private readonly List<GameFramework.World.Entity> _birds = new List<GameFramework.World.Entity>();
@@ -76,6 +79,9 @@ namespace LOP
             _collisionQuery = collisionQuery;
             _motionBridge = motionBridge;
             _layerMask = layerMask;
+
+            int hologramLayer = LayerMask.NameToLayer(FlappyHologram.LayerName);
+            _hologramMask = hologramLayer >= 0 ? 1 << hologramLayer : 0;
         }
 
         protected override void Mutation(long tick, float deltaTime)
@@ -280,9 +286,11 @@ namespace LOP
             //  지면 훑기를 끄는 이유가 이 게임에는 하나 더 있다: 그 훑기는 몸이 이번 틱에 실제로
             //  가는 거리보다 멀리(발밑 5cm) 보는데, 아래 SawHit이 그것까지 "부딪혔다"로 세서
             //  맵에 안 닿은 새가 스턴에 걸렸다. 부딪힘 판정은 몸 기준이어야 한다.
+            //  대시 중이면 홀로그램을 통과한다 — 새마다 자기 대시 상태로 고르므로 남이 뚫었다고 열리지 않는다.
+            int mask = _dashSystem.IsDashing(entity) ? _layerMask & ~_hologramMask : _layerMask;
             var result = KinematicMover.Move(new KinematicMoveInput(
                 transform.Position.ToUnity(), velocity.Linear.ToUnity(),
-                body.Radius, body.Height, deltaTime, _layerMask,
+                body.Radius, body.Height, deltaTime, mask,
                 stepOffset: 0f, groundProbe: 0f), _hitTracker);
 
             if (_hitTracker.SawHit)

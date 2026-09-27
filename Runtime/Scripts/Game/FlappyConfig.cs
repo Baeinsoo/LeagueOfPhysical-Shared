@@ -73,6 +73,15 @@ namespace LOP
         /// <summary>결승선을 넘은 뒤의 감속(m/s²). 이 값이 골인 뒤 몇 미터를 더 가는지를 정한다.</summary>
         public readonly float FinishBrake;
 
+        /// <summary>상승기류 안에서 위로 미는 가속(m/s²).</summary>
+        public readonly float AirflowUpAccel;
+
+        /// <summary>상승기류가 밀어 올리는 세로 속도의 상한(m/s). 로켓처럼 솟지 않게.</summary>
+        public readonly float AirflowRiseCap;
+
+        /// <summary>낙하 샤프트 안의 중력 배수. 최고 낙하 속도는 그대로라 게이지 정규화는 안 흔들린다.</summary>
+        public readonly float ShaftGravityMult;
+
         public FlappyConfig(float forwardSpeed, float flapImpulse, float gravity, float maxFallSpeed,
                             float bodyRadius, float bodyHeight, float restitution,
                             float stunTime, float invulnTime,
@@ -88,7 +97,9 @@ namespace LOP
                             //  자리채움을 안 적게. 실제 provider는 항상 명시한다.
                             float finishBrake = 0f,
                             //  같은 이유로 기본값(문턱 없음)을 준다. 실제 provider는 항상 명시한다.
-                            float dashChargeMinFall = 0f)
+                            float dashChargeMinFall = 0f,
+                            //  같은 이유로 기본값 — 실제 provider는 항상 명시한다.
+                            float airflowUpAccel = 0f, float airflowRiseCap = 0f, float shaftGravityMult = 1f)
         {
             ForwardSpeed = forwardSpeed;
             FlapImpulse = flapImpulse;
@@ -109,6 +120,9 @@ namespace LOP
             ChaserMaxSpeed = chaserMaxSpeed;
             FinishBrake = finishBrake;
             DashChargeMinFall = dashChargeMinFall;
+            AirflowUpAccel = airflowUpAccel;
+            AirflowRiseCap = airflowRiseCap;
+            ShaftGravityMult = shaftGravityMult;
         }
     }
 }

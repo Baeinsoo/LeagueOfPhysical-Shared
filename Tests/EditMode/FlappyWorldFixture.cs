@@ -9,6 +9,10 @@ namespace LOP.Tests
     /// </summary>
     internal static class FlappyWorldFixture
     {
+        //  이 픽스처의 새들은 출발 게이트를 열어 둔 채(GameplayStartTick = 0) 조립되므로, 첫 실제
+        //  틱은 항상 1이다 — 기존 테스트들이 반복해 온 `world.Tick(1, 0.02f)` 관례를 이름 붙인 것뿐이다.
+        public const long StartTick = 1;
+
         public static FlappyConfig Config()
             => new FlappyConfig(forwardSpeed: 11f, flapImpulse: 23f, gravity: 70f, maxFallSpeed: 30f,
                                 bodyRadius: 0.45f, bodyHeight: 0.9f, restitution: 0.35f,
@@ -91,6 +95,20 @@ namespace LOP.Tests
         }
 
         /// <summary>
+        /// 실제 레이어 마스크(예: 홀로그램 층 포함/제외)를 확인하고 싶을 때 쓰는 오버로드.
+        /// 마스크 기록이 목적이라 <see cref="StartTick"/>부터 바로 굴릴 수 있게 출발 게이트를 열어 둔다.
+        /// </summary>
+        public static FlappyWorld Create(ICollisionQuery collisionQuery, out Entity bird, int layerMask)
+        {
+            var registry = new EntityRegistry();
+            bird = Bird("bird-1");
+            registry.Add(bird);
+            var world = Build(registry, collisionQuery, new NoopMotionBridge(), layerMask);
+            world.GameplayStartTick = 0;
+            return world;
+        }
+
+        /// <summary>
         /// 내 새(시뮬 대상) 하나 + 원격 새(시뮬 대상 아님) 하나를 함께 등록해 조립한다.
         /// 원격 새는 InputBuffer도 없다 — 서버가 보내주는 스냅샷만 받는 쪽이라 입력을 낼 일이 없다.
         /// </summary>
@@ -105,7 +123,7 @@ namespace LOP.Tests
             return Build(registry, collisionQuery, new NoopMotionBridge());
         }
 
-        private static FlappyWorld Build(EntityRegistry registry, ICollisionQuery collisionQuery, IMotionBridge motionBridge)
+        private static FlappyWorld Build(EntityRegistry registry, ICollisionQuery collisionQuery, IMotionBridge motionBridge, int layerMask = ~0)
             => new FlappyWorld(registry, new WorldEventBuffer(),
                 new FlappyMoveSystem(Config()),
                 new FlappyStunSystem(Config()),
@@ -113,6 +131,6 @@ namespace LOP.Tests
                 //  결승선을 등록하지 않는다 — 이 테스트들의 관심사가 아니고, 없으면 아무도 통과하지 않는다.
                 new FinishSystem(new FinishLineBounds(FinishAxis.X), FinishAxis.X, increasing: true),
                 new FlappyWindmillField(), new FlappyBoostPadField(),
-                collisionQuery, motionBridge, layerMask: ~0);
+                collisionQuery, motionBridge, layerMask: layerMask);
     }
 }

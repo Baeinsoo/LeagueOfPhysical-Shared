@@ -10,10 +10,18 @@ namespace LOP
     public class FlappyMoveSystem
     {
         private readonly FlappyConfig config;
+        private readonly FlappyAirflowField airflow;
 
-        public FlappyMoveSystem(FlappyConfig config)
+        /// <summary>기류가 없는 판·테스트용.</summary>
+        public FlappyMoveSystem(FlappyConfig config) : this(config, new FlappyAirflowField())
+        {
+        }
+
+        [VContainer.Inject]
+        public FlappyMoveSystem(FlappyConfig config, FlappyAirflowField airflow)
         {
             this.config = config;
+            this.airflow = airflow;
         }
 
         /// <param name="dashing">
@@ -58,19 +66,14 @@ namespace LOP
             }
             else
             {
-                velocity.y -= config.Gravity * deltaTime;
-                if (velocity.y < -config.MaxFallSpeed)
-                {
-                    velocity.y = -config.MaxFallSpeed;
-                }
-
-                // 플랩은 지금까지의 세로 속도를 지우고 새로 준다 — 낙하 중에 눌러도 늘 같은 높이로 뜬다.
-                // 중력 다음에 오는 것이 중요하다. 앞에 두면 누른 틱의 중력만큼 손해를 봐서 높이가 흔들린다.
                 var input = entity.Get<InputBuffer>()?.Current;
-                if (input != null && input.Jump)
-                {
-                    velocity.y = config.FlapImpulse;
-                }
+                bool flap = input != null && input.Jump;
+                //  기류는 이번 틱 움직이기 전 자리로 고른다 — 검사기 탐색·재생도 같은 자리를 본다.
+                var position = entity.Get<GameFramework.World.Transform>()?.Position ?? System.Numerics.Vector3.Zero;
+                FlappyAirflowKind air = airflow.Sample(position.X, position.Y);
+                velocity.y = FlappyVerticalKernel.Next(velocity.y, flap, air,
+                    config.FlapImpulse, config.Gravity, config.MaxFallSpeed, deltaTime,
+                    config.AirflowUpAccel, config.AirflowRiseCap, config.ShaftGravityMult);
             }
 
             // 전진은 플레이어가 바꿀 수 없는 상수이고, 대시만 그것을 배수로 늘린다 — 이 게임에서
