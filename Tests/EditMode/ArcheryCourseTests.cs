@@ -569,6 +569,28 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 자리는_결과_화면이_닫힐_때_다음_라운드_몫으로_바뀐다()
+        {
+            //  노출 250·250·250·300, 틈 200. 라운드 0은 250에 닫히고 결과는 250+200-60=390에 닫힌다.
+            var course = ShootOffCourse();
+            Assert.AreEqual(0, course.SeatRoundAt(0, 0L));
+            Assert.AreEqual(0, course.SeatRoundAt(389, 0L));
+            Assert.AreEqual(1, course.SeatRoundAt(390, 0L));
+            Assert.AreEqual(1, course.SeatRoundAt(839, 0L));
+            Assert.AreEqual(2, course.SeatRoundAt(840, 0L));
+            Assert.AreEqual(3, course.SeatRoundAt(1290, 0L));
+            Assert.AreEqual(3, course.SeatRoundAt(99999, 0L));   // 판이 끝나도 마지막 자리
+            Assert.AreEqual(0, course.SeatRoundAt(0, 5000L));    // 출발 전
+        }
+
+        [Test]
+        public void 결과_화면이_닫히는_틱은_라운드_마감에_틈을_더하고_60을_뺀다()
+        {
+            var course = ShootOffCourse();
+            Assert.AreEqual(course.RoundCloseTick(1, 0L) + 200 - 60, course.ResultEndTick(1, 0L));
+        }
+
+        [Test]
         public void 배수는_데이터_값이고_범위_밖은_1()
         {
             var course = ShootOffCourse();

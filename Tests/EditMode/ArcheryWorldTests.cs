@@ -222,6 +222,85 @@ namespace LOP.Tests
                 kinds: null, courseKind: ArcheryCourseKind.ShootOff, matchDurationTicks: 0, range: range);
         }
 
+        //  라운드 둘(노출 250, 틈 200) — 라운드 0 결과는 390에 닫힌다.
+        private static ArcheryConfig TwoRoundShootOffConfig()
+        {
+            var kind = new ArcheryTargetKind(0.4f, 5, 0, false, ArcheryTargetShape.Face,
+                new[] { new ArcheryRingBand(1f, 5) });
+            var stands = new[] { new ArcheryRangeStand(0, 10f, 250, 0f, 0f), new ArcheryRangeStand(0, 10f, 250, 0f, 0f) };
+            var range = new ArcheryRangeSettings(kind, stands, stepGapTicks: 200);
+            return new ArcheryConfig(
+                wavePeriodTicks: 100, minTargets: 1, maxTargets: 1,
+                spawnRadius: 1f, spawnMinY: 0f, spawnMaxY: 1f, minSeparation: 1f,
+                trapRatioMin: 0f, trapRatioMax: 0f,
+                shakeFreeSeconds: 1f, shakeRampSeconds: 1f, shakeMaxDegrees: 0f,
+                riseHeightMin: 0.1f, riseHeightMax: 0.1f, staggerTicks: 1, restTicks: 1,
+                kinds: null, courseKind: ArcheryCourseKind.ShootOff, matchDurationTicks: 0, range: range);
+        }
+
+        private static Entity Seated(EntityRegistry registry, string id, bool simulated = true)
+        {
+            var archer = new Entity(id);
+            archer.Add(new GameFramework.World.Transform());
+            archer.Add(new Velocity());
+            archer.Add(new ArcheryAim());
+            archer.Add(new InputBuffer());
+            archer.Add(new ArcheryStance(Vector3.zero, Vector3.forward));
+            if (simulated)
+            {
+                archer.Add(new Simulated());
+            }
+            registry.Add(archer);
+            return archer;
+        }
+
+        [Test]
+        public void ShootOff에서는_각자_제_자리에_나란히_서고_결과_화면이_닫히면_한_칸씩_돈다()
+        {
+            var layout = OneLane();   // 사대는 원점, +z를 본다 → 오른쪽은 +x
+            var config = TwoRoundShootOffConfig();
+            var course = new ArcheryCourse(config, new ZeroSeed(), new[] { "a", "b", "c" }, TickInterval, () => layout);
+            var registry = new EntityRegistry();
+            var c = Seated(registry, "c");
+            var a = Seated(registry, "a");
+            var b = Seated(registry, "b");
+            var world = ArcheryWorldFixture.Still(registry, new ArcheryAimSystem(config), course, TickInterval);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, TickInterval);
+            //  id 순서 a·b·c가 자리 0·1·2 — 왼쪽부터.
+            Assert.AreEqual(-1.6f, a.Get<GameFramework.World.Transform>().Position.X, 1e-4f);
+            Assert.AreEqual(0f, b.Get<GameFramework.World.Transform>().Position.X, 1e-4f);
+            Assert.AreEqual(1.6f, c.Get<GameFramework.World.Transform>().Position.X, 1e-4f);
+
+            for (long t = 1; t <= 390; t++)
+            {
+                world.Tick(t, TickInterval);
+            }
+            //  한 칸씩 돌았다: a는 가운데, b는 오른쪽, c는 왼쪽.
+            Assert.AreEqual(0f, a.Get<GameFramework.World.Transform>().Position.X, 1e-4f);
+            Assert.AreEqual(1.6f, b.Get<GameFramework.World.Transform>().Position.X, 1e-4f);
+            Assert.AreEqual(-1.6f, c.Get<GameFramework.World.Transform>().Position.X, 1e-4f);
+        }
+
+        [Test]
+        public void ShootOff에서_굴리지_않는_몸은_옮기지_않는다()
+        {
+            var layout = OneLane();
+            var config = TwoRoundShootOffConfig();
+            var course = new ArcheryCourse(config, new ZeroSeed(), new[] { "a", "b" }, TickInterval, () => layout);
+            var registry = new EntityRegistry();
+            Seated(registry, "a");
+            var b = Seated(registry, "b", simulated: false);
+            b.Get<GameFramework.World.Transform>().Position = new System.Numerics.Vector3(5f, 0f, 5f);
+            var world = ArcheryWorldFixture.Still(registry, new ArcheryAimSystem(config), course, TickInterval);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, TickInterval);
+
+            Assert.AreEqual(5f, b.Get<GameFramework.World.Transform>().Position.X, 1e-4f);
+        }
+
         [Test]
         public void ShootOff에서_쏜_화살에는_그_틱의_바람이_실린다()
         {
