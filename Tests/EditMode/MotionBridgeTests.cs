@@ -25,6 +25,7 @@ namespace LOP.Tests
             public override void SetPosition(System.Numerics.Vector3 position) { }
             public override void SetRotation(System.Numerics.Quaternion rotation) { }
             public override void SetVelocity(System.Numerics.Vector3 linear) { }
+            public override void SetKinematic(bool kinematic) { }
 
             public override System.Numerics.Vector3 GetPosition() => StalePose;
             public override System.Numerics.Quaternion GetRotation() => System.Numerics.Quaternion.Identity;

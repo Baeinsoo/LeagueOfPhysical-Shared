@@ -37,6 +37,22 @@ namespace LOP
             }
         }
 
+        public override void SetKinematic(bool kinematic)
+        {
+            if (_rigidbody == null || _rigidbody.isKinematic == kinematic)
+            {
+                return;
+            }
+
+            //  키네마틱 몸에 속도를 쓰면 Unity가 경고한다 — 굳히기 전에 멈춰 둔다.
+            if (kinematic)
+            {
+                _rigidbody.linearVelocity = Vector3.zero;
+                _rigidbody.angularVelocity = Vector3.zero;
+            }
+            _rigidbody.isKinematic = kinematic;
+        }
+
         public override void SetVelocity(System.Numerics.Vector3 linear)
         {
             if (_rigidbody != null)
