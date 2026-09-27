@@ -13,10 +13,12 @@ namespace LOP.Tests
             if (go != null) { Object.DestroyImmediate(go); }
         }
 
+        private Rigidbody rb;
+
         private UnityPhysicsBody Body(bool kinematic)
         {
             go = new GameObject("kinematic-test");
-            var rb = go.AddComponent<Rigidbody>();
+            rb = go.AddComponent<Rigidbody>();
             rb.isKinematic = kinematic;
             var col = go.AddComponent<BoxCollider>();
             return new UnityPhysicsBody(rb, col);
@@ -30,6 +32,28 @@ namespace LOP.Tests
             body.SetKinematic(true);
 
             Assert.IsTrue(body.IsKinematic);
+        }
+
+        [Test]
+        public void 굳힌_몸은_아무것과도_부딪히지_않는다()
+        {
+            //  판치기에서 판 옆에 치운 동전이 판 위 동전을 막는 벽이 되면 안 된다.
+            var body = Body(kinematic: false);
+
+            body.SetKinematic(true);
+
+            Assert.IsFalse(rb.detectCollisions);
+        }
+
+        [Test]
+        public void 다시_풀면_부딪힌다()
+        {
+            var body = Body(kinematic: false);
+            body.SetKinematic(true);
+
+            body.SetKinematic(false);
+
+            Assert.IsTrue(rb.detectCollisions);
         }
 
         [Test]
