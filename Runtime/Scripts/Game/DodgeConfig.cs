@@ -30,12 +30,21 @@ namespace LOP
         public readonly float RockSpeed;
         public readonly float RockRadius;
         public readonly float TileOnSeconds;
+        /// <summary>세기가 아무리 올라도 패턴 사이 간격은 이보다 짧지 않다.</summary>
+        public readonly float MinIntervalSeconds;
+        /// <summary>세기가 아무리 올라도 예고는 이보다 짧지 않다 — 예약 시간 + 반응 시간보다 길어야 피할 수 있다(스펙 §3.2).</summary>
+        public readonly float MinWarnSeconds;
+        public readonly float SuddenDeathBase;
+        /// <summary>서든데스 1초마다 세기가 기본의 이만큼씩 오른다. 멈추지 않아 판이 반드시 끝난다.</summary>
+        public readonly float SuddenDeathGrowth;
 
         public DodgeConfig(int lives, float invulnerableSeconds, float hitRadius, float leadSeconds, float arenaHalf,
                            int tileCount, float firstPatternDelaySeconds, float patternIntervalSeconds, int onlyKind,
                            float warnSeconds, float bulletSpeed, float bulletRadius, float bombRadius,
                            float bombActiveSeconds, float laserWidth, float laserOnSeconds, float rockSpeed,
-                           float rockRadius, float tileOnSeconds)
+                           float rockRadius, float tileOnSeconds,
+                           float minIntervalSeconds = 0.5f, float minWarnSeconds = 0.8f,
+                           float suddenDeathBase = 1.5f, float suddenDeathGrowth = 0.02f)
         {
             Lives = lives; InvulnerableSeconds = invulnerableSeconds; HitRadius = hitRadius; LeadSeconds = leadSeconds;
             ArenaHalf = arenaHalf; TileCount = tileCount; FirstPatternDelaySeconds = firstPatternDelaySeconds;
@@ -43,6 +52,8 @@ namespace LOP
             BulletSpeed = bulletSpeed; BulletRadius = bulletRadius; BombRadius = bombRadius;
             BombActiveSeconds = bombActiveSeconds; LaserWidth = laserWidth; LaserOnSeconds = laserOnSeconds;
             RockSpeed = rockSpeed; RockRadius = rockRadius; TileOnSeconds = tileOnSeconds;
+            MinIntervalSeconds = minIntervalSeconds; MinWarnSeconds = minWarnSeconds;
+            SuddenDeathBase = suddenDeathBase; SuddenDeathGrowth = suddenDeathGrowth;
         }
 
         /// <summary>초 → 틱. 0초를 0틱으로 두면 "켜졌다 바로 꺼져 아무도 못 보는" 위험이 생겨 최소 1틱이다.</summary>
@@ -56,6 +67,8 @@ namespace LOP
         public int BombActiveTicks => Ticks(BombActiveSeconds);
         public int LaserOnTicks => Ticks(LaserOnSeconds);
         public int TileOnTicks => Ticks(TileOnSeconds);
+        public int MinIntervalTicks => Ticks(MinIntervalSeconds);
+        public int MinWarnTicks => Ticks(MinWarnSeconds);
 
         /// <summary>탄·바위가 출발하는 선. 벽 안쪽보다 조금 바깥이라 벽 너머에서 날아 들어온다.</summary>
         public float EdgeDistance => ArenaHalf + 0.5f;
