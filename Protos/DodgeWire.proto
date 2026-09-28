@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+// DodgeStateToC가 싣는 조각들. @auto_generate가 없다 — 단독으로 보내지 않는다.
+message DodgePatternWire
+{
+	int32 id = 1;
+	int32 kind = 2;
+	int64 start_tick = 3;
+	uint64 seed = 4;
+	// DodgePattern.P0..P3 (뜻은 DodgeHazards 머리 표)
+	repeated float p = 5;
+}
+
+message DodgePlayerWire
+{
+	string entity_id = 1;
+	int32 lives = 2;
+	int64 invulnerable_until_tick = 3;
+	// 탈락 안 했으면 -1
+	int64 eliminated_tick = 4;
+}

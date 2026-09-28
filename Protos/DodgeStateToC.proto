@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+import "DodgeWire.proto";
+
+// 피하기 판 상태 전체(서버 → 클라). 바뀔 때만 reliable로 간다.
+// 사건이 아니라 상태로 보낸다 — 끊겼다 돌아온 사람도 받는 즉시 지금 떠 있는 위험과 목숨이 맞춰진다.
+// @auto_generate
+message DodgeStateToC
+{
+	// 받는 쪽은 자기가 가진 판본보다 작으면 버린다(늦게 도착한 낡은 소식).
+	int32 version = 1;
+	repeated DodgePatternWire patterns = 2;
+	repeated DodgePlayerWire players = 3;
+}
