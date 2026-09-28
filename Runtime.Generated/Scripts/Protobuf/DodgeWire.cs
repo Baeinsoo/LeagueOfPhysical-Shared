@@ -22,16 +22,16 @@ public static partial class DodgeWireReflection {
   static DodgeWireReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "Cg9Eb2RnZVdpcmUucHJvdG8iWQoQRG9kZ2VQYXR0ZXJuV2lyZRIKCgJpZBgB",
+          "Cg9Eb2RnZVdpcmUucHJvdG8ibQoQRG9kZ2VQYXR0ZXJuV2lyZRIKCgJpZBgB",
           "IAEoBRIMCgRraW5kGAIgASgFEhIKCnN0YXJ0X3RpY2sYAyABKAMSDAoEc2Vl",
-          "ZBgEIAEoBBIJCgFwGAUgAygCIm0KD0RvZGdlUGxheWVyV2lyZRIRCgllbnRp",
-          "dHlfaWQYASABKAkSDQoFbGl2ZXMYAiABKAUSHwoXaW52dWxuZXJhYmxlX3Vu",
-          "dGlsX3RpY2sYAyABKAMSFwoPZWxpbWluYXRlZF90aWNrGAQgASgDYgZwcm90",
-          "bzM="));
+          "ZBgEIAEoBBIJCgFwGAUgAygCEhIKCndhcm5fdGlja3MYBiABKAUibQoPRG9k",
+          "Z2VQbGF5ZXJXaXJlEhEKCWVudGl0eV9pZBgBIAEoCRINCgVsaXZlcxgCIAEo",
+          "BRIfChdpbnZ1bG5lcmFibGVfdW50aWxfdGljaxgDIAEoAxIXCg9lbGltaW5h",
+          "dGVkX3RpY2sYBCABKANiBnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::DodgePatternWire), global::DodgePatternWire.Parser, new[]{ "Id", "Kind", "StartTick", "Seed", "P" }, null, null, null, null),
+          new pbr::GeneratedClrTypeInfo(typeof(global::DodgePatternWire), global::DodgePatternWire.Parser, new[]{ "Id", "Kind", "StartTick", "Seed", "P", "WarnTicks" }, null, null, null, null),
           new pbr::GeneratedClrTypeInfo(typeof(global::DodgePlayerWire), global::DodgePlayerWire.Parser, new[]{ "EntityId", "Lives", "InvulnerableUntilTick", "EliminatedTick" }, null, null, null, null)
         }));
   }
@@ -82,6 +82,7 @@ public sealed partial class DodgePatternWire : pb::IMessage<DodgePatternWire>
     startTick_ = other.startTick_;
     seed_ = other.seed_;
     p_ = other.p_.Clone();
+    warnTicks_ = other.warnTicks_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -153,6 +154,21 @@ public sealed partial class DodgePatternWire : pb::IMessage<DodgePatternWire>
     get { return p_; }
   }
 
+  /// <summary>Field number for the "warn_ticks" field.</summary>
+  public const int WarnTicksFieldNumber = 6;
+  private int warnTicks_;
+  /// <summary>
+  /// 예고 길이(틱). 세기가 오르면 줄어든다. 0이면 받는 쪽이 설정 기본값을 쓴다.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int WarnTicks {
+    get { return warnTicks_; }
+    set {
+      warnTicks_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -173,6 +189,7 @@ public sealed partial class DodgePatternWire : pb::IMessage<DodgePatternWire>
     if (StartTick != other.StartTick) return false;
     if (Seed != other.Seed) return false;
     if(!p_.Equals(other.p_)) return false;
+    if (WarnTicks != other.WarnTicks) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -185,6 +202,7 @@ public sealed partial class DodgePatternWire : pb::IMessage<DodgePatternWire>
     if (StartTick != 0L) hash ^= StartTick.GetHashCode();
     if (Seed != 0UL) hash ^= Seed.GetHashCode();
     hash ^= p_.GetHashCode();
+    if (WarnTicks != 0) hash ^= WarnTicks.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -220,6 +238,10 @@ public sealed partial class DodgePatternWire : pb::IMessage<DodgePatternWire>
       output.WriteUInt64(Seed);
     }
     p_.WriteTo(output, _repeated_p_codec);
+    if (WarnTicks != 0) {
+      output.WriteRawTag(48);
+      output.WriteInt32(WarnTicks);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -247,6 +269,10 @@ public sealed partial class DodgePatternWire : pb::IMessage<DodgePatternWire>
       output.WriteUInt64(Seed);
     }
     p_.WriteTo(ref output, _repeated_p_codec);
+    if (WarnTicks != 0) {
+      output.WriteRawTag(48);
+      output.WriteInt32(WarnTicks);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -270,6 +296,9 @@ public sealed partial class DodgePatternWire : pb::IMessage<DodgePatternWire>
       size += 1 + pb::CodedOutputStream.ComputeUInt64Size(Seed);
     }
     size += p_.CalculateSize(_repeated_p_codec);
+    if (WarnTicks != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(WarnTicks);
+    }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
     }
@@ -295,6 +324,9 @@ public sealed partial class DodgePatternWire : pb::IMessage<DodgePatternWire>
       Seed = other.Seed;
     }
     p_.Add(other.p_);
+    if (other.WarnTicks != 0) {
+      WarnTicks = other.WarnTicks;
+    }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
 
@@ -335,6 +367,10 @@ public sealed partial class DodgePatternWire : pb::IMessage<DodgePatternWire>
           p_.AddEntriesFrom(input, _repeated_p_codec);
           break;
         }
+        case 48: {
+          WarnTicks = input.ReadInt32();
+          break;
+        }
       }
     }
   #endif
@@ -373,6 +409,10 @@ public sealed partial class DodgePatternWire : pb::IMessage<DodgePatternWire>
         case 42:
         case 45: {
           p_.AddEntriesFrom(ref input, _repeated_p_codec);
+          break;
+        }
+        case 48: {
+          WarnTicks = input.ReadInt32();
           break;
         }
       }
