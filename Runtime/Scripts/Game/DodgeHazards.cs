@@ -59,6 +59,9 @@ namespace LOP
         private static long TravelTicks(float speed, in DodgeConfig c)
             => (long)Mathf.Ceil((c.EdgeDistance * 2f * 1.5f + 2f) / Mathf.Max(speed, 0.01f) * DodgeConfig.TicksPerSecond);
 
+        /// <summary>이 패턴의 예고 길이. 옛 목록처럼 값이 없으면(0) 설정 기본값 — 0틱 예고는 "켜진 채 나타남"이다.</summary>
+        public static int Warn(in DodgePattern p, in DodgeConfig c) => p.WarnTicks > 0 ? p.WarnTicks : c.WarnTicks;
+
         public static long LifetimeTicks(in DodgePattern p, in DodgeConfig c)
         {
             switch (p.Kind)
@@ -70,13 +73,13 @@ namespace LOP
                 case DodgePatternKind.BulletAimed:
                     return (AimedWaves - 1) * AimedWaveGapTicks + TravelTicks(c.BulletSpeed * AimedSpeedScale, c);
                 case DodgePatternKind.Bomb:
-                    return c.WarnTicks + c.BombActiveTicks - 1;
+                    return Warn(p, c) + c.BombActiveTicks - 1;
                 case DodgePatternKind.Laser:
-                    return c.WarnTicks + c.LaserOnTicks - 1;
+                    return Warn(p, c) + c.LaserOnTicks - 1;
                 case DodgePatternKind.Rock:
-                    return c.WarnTicks + TravelTicks(c.RockSpeed, c);
+                    return Warn(p, c) + TravelTicks(c.RockSpeed, c);
                 case DodgePatternKind.Tiles:
-                    return c.WarnTicks + c.TileOnTicks - 1;
+                    return Warn(p, c) + c.TileOnTicks - 1;
                 default:
                     return 0;
             }
@@ -209,22 +212,22 @@ namespace LOP
 
         private static void Bomb(in DodgePattern p, long age, in DodgeConfig c, List<DodgeShape> into)
         {
-            bool active = age >= c.WarnTicks;
+            bool active = age >= Warn(p, c);
             into.Add(new DodgeShape
             {
                 Type = DodgeShapeType.Circle, Active = active,
-                Progress = active ? 1f : (float)age / c.WarnTicks,
+                Progress = active ? 1f : (float)age / Warn(p, c),
                 X0 = p.P0, Z0 = p.P1, X1 = p.P0, Z1 = p.P1, Radius = p.P2,
             });
         }
 
         private static void Laser(in DodgePattern p, long age, in DodgeConfig c, List<DodgeShape> into)
         {
-            bool active = age >= c.WarnTicks;
+            bool active = age >= Warn(p, c);
             into.Add(new DodgeShape
             {
                 Type = DodgeShapeType.Segment, Active = active,
-                Progress = active ? 1f : (float)age / c.WarnTicks,
+                Progress = active ? 1f : (float)age / Warn(p, c),
                 X0 = p.P0, Z0 = p.P1, X1 = p.P2, Z1 = p.P3, Radius = c.LaserWidth * 0.5f,
             });
         }
@@ -233,20 +236,20 @@ namespace LOP
         {
             int side = (int)p.P0;
             Vector2 entry = EdgePoint(side, p.P1, c.EdgeDistance);
-            if (age < c.WarnTicks)
+            if (age < Warn(p, c))
             {
                 // 예고: 벽 바로 안쪽, 굴러 들어올 자리에 원을 띄운다.
                 Vector2 mark = entry + Inward(side) * 1.2f;
                 into.Add(new DodgeShape
                 {
-                    Type = DodgeShapeType.Circle, Active = false, Progress = (float)age / c.WarnTicks,
+                    Type = DodgeShapeType.Circle, Active = false, Progress = (float)age / Warn(p, c),
                     X0 = mark.x, Z0 = mark.y, X1 = mark.x, Z1 = mark.y, Radius = c.RockRadius,
                 });
                 return;
             }
             Vector2 dir = Rotate(Inward(side), p.P2);
             Vector2 origin = entry - dir * c.RockRadius;
-            long rollAge = age - c.WarnTicks;
+            long rollAge = age - Warn(p, c);
             float step = c.RockSpeed / DodgeConfig.TicksPerSecond;
             Vector2 now = origin + dir * (step * rollAge);
             Vector2 prev = origin + dir * (step * Mathf.Max(0, rollAge - 1));
@@ -261,8 +264,8 @@ namespace LOP
         {
             int n = Mathf.Max(1, c.TileCount);
             float size = c.ArenaHalf * 2f / n;
-            bool active = age >= c.WarnTicks;
-            float progress = active ? 1f : (float)age / c.WarnTicks;
+            bool active = age >= Warn(p, c);
+            float progress = active ? 1f : (float)age / Warn(p, c);
             for (int i = 0; i < n * n && i < 64; i++)
             {
                 if ((p.Seed & (1UL << i)) == 0)

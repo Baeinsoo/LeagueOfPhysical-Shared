@@ -22,10 +22,14 @@ namespace LOP
         public readonly long StartTick;
         public readonly ulong Seed;
         public readonly float P0, P1, P2, P3;
+        /// <summary>예고 길이(틱). 세기가 오르면 진행기가 줄인다. 0이면 설정 기본값(<see cref="DodgeHazards.Warn"/>).</summary>
+        public readonly int WarnTicks;
 
-        public DodgePattern(int id, DodgePatternKind kind, long startTick, ulong seed, float p0, float p1, float p2, float p3)
+        public DodgePattern(int id, DodgePatternKind kind, long startTick, ulong seed,
+                            float p0, float p1, float p2, float p3, int warnTicks = 0)
         {
             Id = id; Kind = kind; StartTick = startTick; Seed = seed; P0 = p0; P1 = p1; P2 = p2; P3 = p3;
+            WarnTicks = warnTicks;
         }
     }
 

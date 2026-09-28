@@ -9,6 +9,8 @@ message DodgePatternWire
 	uint64 seed = 4;
 	// DodgePattern.P0..P3 (뜻은 DodgeHazards 머리 표)
 	repeated float p = 5;
+	// 예고 길이(틱). 세기가 오르면 줄어든다. 0이면 받는 쪽이 설정 기본값을 쓴다.
+	int32 warn_ticks = 6;
 }
 
 message DodgePlayerWire

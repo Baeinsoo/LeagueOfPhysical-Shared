@@ -149,4 +149,29 @@ public class DodgeHazardsTests
         Assert.IsTrue(DodgeHazards.IsOver(bomb, 10 + life + 1, C));
         Assert.AreEqual(0, ShapesAt(bomb, 10 + life + 1).Count);
     }
+
+    [Test]
+    public void 예고를_짧게_잡은_폭탄은_그만큼_일찍_켜진다()
+    {
+        var quick = new DodgePattern(1, DodgePatternKind.Bomb, 0, 0, 0f, 0f, 2f, 0f, warnTicks: 20);
+        Assert.IsFalse(ShapesAt(quick, 19)[0].Active);
+        Assert.IsTrue(ShapesAt(quick, 20)[0].Active);
+        Assert.IsTrue(DodgeHazards.Hits(quick, 20, Vector2.zero, Vector2.zero, C));
+    }
+
+    [Test]
+    public void 예고가_0이면_설정_기본값을_쓴다()
+    {
+        var old = new DodgePattern(1, DodgePatternKind.Laser, 0, 0, -9f, 0f, 9f, 0f);
+        Assert.AreEqual(C.WarnTicks, DodgeHazards.Warn(old, C));
+        Assert.IsFalse(ShapesAt(old, C.WarnTicks - 1)[0].Active);
+        Assert.IsTrue(ShapesAt(old, C.WarnTicks)[0].Active);
+    }
+
+    [Test]
+    public void 수명도_패턴의_예고를_따른다()
+    {
+        var quick = new DodgePattern(1, DodgePatternKind.Tiles, 0, 1UL, 0f, 0f, 0f, 0f, warnTicks: 20);
+        Assert.AreEqual(20 + C.TileOnTicks - 1, DodgeHazards.LifetimeTicks(quick, C));
+    }
 }
