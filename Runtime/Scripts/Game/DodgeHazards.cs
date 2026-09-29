@@ -241,6 +241,13 @@ namespace LOP
             });
         }
 
+        /// <summary>바위가 굴러가는 방향. 들어오는 변의 안쪽 방향을 P2만큼 비튼다.</summary>
+        public static Vector2 RockDirection(in DodgePattern p) => Rotate(Inward((int)p.P0), p.P2);
+
+        /// <summary>바위가 굴러 나오는 첫 자리(벽 바깥). 그림이 예고 동안 여기 서 있어야 켜질 때 튀지 않는다.</summary>
+        public static Vector2 RockStart(in DodgePattern p, in DodgeConfig c) =>
+            EdgePoint((int)p.P0, p.P1, c.EdgeDistance) - RockDirection(p) * c.RockRadius;
+
         private static void Rock(in DodgePattern p, long age, in DodgeConfig c, List<DodgeShape> into)
         {
             int side = (int)p.P0;
@@ -256,8 +263,8 @@ namespace LOP
                 });
                 return;
             }
-            Vector2 dir = Rotate(Inward(side), p.P2);
-            Vector2 origin = entry - dir * c.RockRadius;
+            Vector2 dir = RockDirection(p);
+            Vector2 origin = RockStart(p, c);
             long rollAge = age - Warn(p, c);
             float step = c.RockSpeed / DodgeConfig.TicksPerSecond;
             Vector2 now = origin + dir * (step * rollAge);

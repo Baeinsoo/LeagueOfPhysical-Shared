@@ -196,4 +196,20 @@ public class DodgeHazardsTests
             }
         }
     }
+
+    // 장독 그림이 예고 자리에서 켜지는 순간 뒤로 튀지 않게 — 굴러 나올 첫 자리와 방향을 한 식에서 꺼낸다(검토 Important 2).
+    [Test]
+    public void 바위의_출발점과_방향은_첫_굴림과_같다()
+    {
+        var rock = new DodgePattern(1, DodgePatternKind.Rock, 0, 0, 1f, 2.5f, 0.3f, 0f);
+        var first = ShapesAt(rock, C.WarnTicks)[0];
+        var next = ShapesAt(rock, C.WarnTicks + 1)[0];
+        Vector2 start = DodgeHazards.RockStart(rock, C);
+        Assert.AreEqual(first.X0, start.x, 1e-4f);
+        Assert.AreEqual(first.Z0, start.y, 1e-4f);
+        Vector2 dir = DodgeHazards.RockDirection(rock);
+        Vector2 moved = new Vector2(next.X0 - first.X0, next.Z0 - first.Z0).normalized;
+        Assert.AreEqual(dir.x, moved.x, 1e-4f);
+        Assert.AreEqual(dir.y, moved.y, 1e-4f);
+    }
 }
