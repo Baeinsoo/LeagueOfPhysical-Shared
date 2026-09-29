@@ -40,15 +40,20 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 대시는_시작에_가장_빠르고_남은_시간에_비례해_줄어든다()
+        public void 대시는_누른_순간부터_최고_속도를_유지하다_끝에서_줄어든다()
         {
-            //  시작 배수 2, 대시 0.2초: 남은 시간이 절반이면 1.5배, 거의 끝나면 1배에 가깝다.
+            //  시작 배수 2, 대시 0.2초, 유지 구간 70%(꼬리 30%=0.06초): 남은 시간이 0.1초면 아직 유지 구간(t=0.5≥0.3),
+            //  0.03초(t=0.15, 꼬리의 절반)면 1 + 1×0.5 = 1.5배로 곧게 내려온다.
             var bird = Bird(verticalSpeed: 0f);
             var dash = new FlappyDash { DashRemaining = 0.1f };
             bird.Add(dash);
 
             new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: true, finished: false);
-            Assert.That(VelocityOf(bird).X, Is.EqualTo(11f * 1.5f).Within(Tolerance));
+            Assert.That(VelocityOf(bird).X, Is.EqualTo(22f).Within(Tolerance), "아직 유지 구간");
+
+            dash.DashRemaining = 0.03f;
+            new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: true, finished: false);
+            Assert.That(VelocityOf(bird).X, Is.EqualTo(11f * 1.5f).Within(Tolerance), "꼬리 구간 절반");
 
             dash.DashRemaining = 0.2f;
             new FlappyMoveSystem(Config()).Tick(bird, Dt, dashing: true, finished: false);
@@ -56,12 +61,31 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 곡선의_거리는_틱마다_줄어드는_배수를_더한_값이다()
+        public void 새_곡선의_추가_거리는_원래_곡선의_1_2배다()
         {
-            //  시작 3배, 0.4초(20틱), 전진 6.8: 배수는 3, 2.9, … 1.1로 20틱.
-            //  합 = 20 + 2 × (20+19+…+1)/20 = 41 → 6.8 × 0.02 × 41 = 5.576m.
-            float d = FlappyDashCurve.Distance(6.8f, 0.4f, 0.4f, 3f, 0.02f);
-            Assert.That(d, Is.EqualTo(5.576f).Within(1e-3f));
+            //  원래 곡선(0.4초·3배·곧은 감속) 추가 거리 2.856m는 옛 곡선의 틱 합이다 — 옛 곡선은 이제 코드에 없어 숫자로 박는다.
+            //  새 곡선(0.48초·최고 배율 2.2·유지 70%+꼬리 30% 감속)은 1.2배에 맞춘 값이다.
+            float d = FlappyDashCurve.Distance(6.8f, 0.48f, 0.48f, 2.2f, 0.02f);
+            float extra = d - 6.8f * 0.48f;
+            Assert.That(extra, Is.EqualTo(3.4091f).Within(1e-3f));
+            Assert.That(extra / 2.856f, Is.EqualTo(1.1937f).Within(1e-3f));
+        }
+
+        [Test]
+        public void 배율은_누른_순간_최고이고_끝_30퍼센트에서만_줄어든다()
+        {
+            Assert.That(FlappyDashCurve.Multiplier(0.48f, 0.48f, 2.2f), Is.EqualTo(2.2f).Within(Tolerance));
+            Assert.That(FlappyDashCurve.Multiplier(0.24f, 0.48f, 2.2f), Is.EqualTo(2.2f).Within(Tolerance), "유지 구간");
+            Assert.That(FlappyDashCurve.Multiplier(0.144f, 0.48f, 2.2f), Is.EqualTo(2.2f).Within(Tolerance), "유지 구간 경계");
+            Assert.That(FlappyDashCurve.Multiplier(0.072f, 0.48f, 2.2f), Is.EqualTo(1.6f).Within(Tolerance), "꼬리 구간 절반");
+            Assert.That(FlappyDashCurve.Multiplier(0f, 0.48f, 2.2f), Is.EqualTo(1f).Within(Tolerance));
+            float previous = float.MaxValue;
+            for (float r = 0.48f; r >= 0f; r -= 0.02f)
+            {
+                float m = FlappyDashCurve.Multiplier(r, 0.48f, 2.2f);
+                Assert.That(m, Is.LessThanOrEqualTo(previous + Tolerance), $"remaining={r:F2}");
+                previous = m;
+            }
         }
 
         [Test]

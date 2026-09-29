@@ -1,12 +1,15 @@
 namespace LOP
 {
     /// <summary>
-    /// 대시 동안의 전진 배율. 누른 순간 <c>peak</c>배로 튀어 나갔다가 남은 시간에 비례해 곧게 줄어
-    /// 기본 속도(1배)로 돌아온다 — 일정한 속도로 미끄러지면 대시가 아니라 "빠른 이동"으로 보였다
-    /// (2026-09-26 플레이 피드백). 이동과 맵 도구가 같은 곡선을 보도록 여기 한 곳에만 둔다.
+    /// 대시 동안의 전진 배율. 누른 순간 <c>peak</c>배로 튀어 나가 대부분 그 속도를 유지하다가 끝 30%에서 곧게
+    /// 기본 속도(1배)로 돌아온다 — 카트라이더·마리오카트 부스터 모양. 곧게만 줄이면 부드럽게 밀리는 느낌이었다
+    /// (2026-09-28 플레이 피드백). 이동과 맵 도구가 같은 곡선을 보도록 여기 한 곳에만 둔다.
     /// </summary>
     public static class FlappyDashCurve
     {
+        /// <summary>최고 배율을 유지하는 몫. 남은 시간이 대시 길이의 30% 밑으로 떨어질 때부터 곧게 1배로 내려온다.</summary>
+        public const float HoldShare = 0.7f;
+
         /// <param name="remaining">대시가 남은 시간(초).</param>
         /// <param name="dashDuration">대시 한 번의 길이(초). 곡선은 이 길이에 맞춰 줄어든다 —
         /// 패드가 이보다 길게 붙여도 남은 시간이 이 길이를 넘는 동안은 <c>peak</c>에 머문다.</param>
@@ -25,7 +28,12 @@ namespace LOP
             {
                 t = 0f;
             }
-            return 1f + (peak - 1f) * t;
+            float tail = 1f - HoldShare;
+            if (t >= tail)
+            {
+                return peak;
+            }
+            return 1f + (peak - 1f) * (t / tail);
         }
 
         /// <summary>
