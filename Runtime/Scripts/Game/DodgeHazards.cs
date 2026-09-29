@@ -95,6 +95,7 @@ namespace LOP
                 return;
             }
 
+            int first = into.Count;
             switch (p.Kind)
             {
                 case DodgePatternKind.BulletRain: Rain(p, age, c, into); break;
@@ -104,6 +105,14 @@ namespace LOP
                 case DodgePatternKind.Laser: Laser(p, age, c, into); break;
                 case DodgePatternKind.Rock: Rock(p, age, c, into); break;
                 case DodgePatternKind.Tiles: Tiles(p, age, c, into); break;
+            }
+
+            // 그림이 물건을 고르게 종류를 싣는다 — 판정(Hits)은 이 값을 보지 않는다.
+            for (int i = first; i < into.Count; i++)
+            {
+                var s = into[i];
+                s.Kind = p.Kind;
+                into[i] = s;
             }
         }
 

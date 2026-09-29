@@ -174,4 +174,26 @@ public class DodgeHazardsTests
         var quick = new DodgePattern(1, DodgePatternKind.Tiles, 0, 1UL, 0f, 0f, 0f, 0f, warnTicks: 20);
         Assert.AreEqual(20 + C.TileOnTicks - 1, DodgeHazards.LifetimeTicks(quick, C));
     }
+
+    [Test]
+    public void 도형은_자기_패턴_종류를_안다()
+    {
+        var all = new[]
+        {
+            new DodgePattern(1, DodgePatternKind.BulletRain, 0, 1UL, 0f, 8f, 4f, 0.15f),
+            new DodgePattern(2, DodgePatternKind.BulletWall, 0, 0, 0f, 0f, 3f, 0.9f),
+            new DodgePattern(3, DodgePatternKind.BulletAimed, 0, 0, -10f, 0f, 0f, 0f),
+            new DodgePattern(4, DodgePatternKind.Bomb, 0, 0, 0f, 0f, 2f, 0f),
+            new DodgePattern(5, DodgePatternKind.Laser, 0, 0, -9f, 0f, 9f, 0f),
+            new DodgePattern(6, DodgePatternKind.Rock, 0, 0, 3f, 0f, 0f, 0f),
+            new DodgePattern(7, DodgePatternKind.Tiles, 0, 1UL, 0f, 0f, 0f, 0f),
+        };
+        foreach (var p in all)
+        {
+            foreach (long t in new long[] { 5, C.WarnTicks + 5 })
+            {
+                foreach (var s in ShapesAt(p, t)) Assert.AreEqual(p.Kind, s.Kind, $"{p.Kind} @ {t}");
+            }
+        }
+    }
 }
