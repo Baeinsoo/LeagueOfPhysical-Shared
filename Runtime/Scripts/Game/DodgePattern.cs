@@ -41,6 +41,8 @@ namespace LOP
     /// </summary>
     public struct DodgeShape
     {
+        /// <summary>어느 패턴에서 나왔나 — 그림이 물건을 고를 때 쓴다. 판정은 안 본다.</summary>
+        public DodgePatternKind Kind;
         public DodgeShapeType Type;
         public bool Active;
         public float Progress;

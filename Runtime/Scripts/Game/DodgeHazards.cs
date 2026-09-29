@@ -95,6 +95,7 @@ namespace LOP
                 return;
             }
 
+            int first = into.Count;
             switch (p.Kind)
             {
                 case DodgePatternKind.BulletRain: Rain(p, age, c, into); break;
@@ -104,6 +105,14 @@ namespace LOP
                 case DodgePatternKind.Laser: Laser(p, age, c, into); break;
                 case DodgePatternKind.Rock: Rock(p, age, c, into); break;
                 case DodgePatternKind.Tiles: Tiles(p, age, c, into); break;
+            }
+
+            // 그림이 물건을 고르게 종류를 싣는다 — 판정(Hits)은 이 값을 보지 않는다.
+            for (int i = first; i < into.Count; i++)
+            {
+                var s = into[i];
+                s.Kind = p.Kind;
+                into[i] = s;
             }
         }
 
@@ -232,6 +241,13 @@ namespace LOP
             });
         }
 
+        /// <summary>바위가 굴러가는 방향. 들어오는 변의 안쪽 방향을 P2만큼 비튼다.</summary>
+        public static Vector2 RockDirection(in DodgePattern p) => Rotate(Inward((int)p.P0), p.P2);
+
+        /// <summary>바위가 굴러 나오는 첫 자리(벽 바깥). 그림이 예고 동안 여기 서 있어야 켜질 때 튀지 않는다.</summary>
+        public static Vector2 RockStart(in DodgePattern p, in DodgeConfig c) =>
+            EdgePoint((int)p.P0, p.P1, c.EdgeDistance) - RockDirection(p) * c.RockRadius;
+
         private static void Rock(in DodgePattern p, long age, in DodgeConfig c, List<DodgeShape> into)
         {
             int side = (int)p.P0;
@@ -247,8 +263,8 @@ namespace LOP
                 });
                 return;
             }
-            Vector2 dir = Rotate(Inward(side), p.P2);
-            Vector2 origin = entry - dir * c.RockRadius;
+            Vector2 dir = RockDirection(p);
+            Vector2 origin = RockStart(p, c);
             long rollAge = age - Warn(p, c);
             float step = c.RockSpeed / DodgeConfig.TicksPerSecond;
             Vector2 now = origin + dir * (step * rollAge);
