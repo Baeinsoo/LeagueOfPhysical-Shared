@@ -9,6 +9,10 @@ namespace LOP
         Laser = 5,
         Rock = 6,
         Tiles = 7,
+        /// <summary>탄막 — 가운데 투척기에서 원형으로 퍼지는 겹.</summary>
+        Ring = 8,
+        /// <summary>탄막 — 가운데 투척기에서 돌아가며 쏘는 갈래.</summary>
+        Spiral = 9,
     }
 
     /// <summary>

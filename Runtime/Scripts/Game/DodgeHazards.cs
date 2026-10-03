@@ -15,6 +15,8 @@ namespace LOP
     /// Laser       | x0 | z0 | x1 | z1
     /// Rock        | 변 | 변 따라 위치 | 각 비틀기(rad)
     /// Tiles       Seed=켜질 칸 비트마스크(칸 i = (i % N, i / N))
+    /// Ring        | 중심 x | 중심 z | 탄 수 N | 첫 각(rad)   (겹 3개, 겹마다 반 칸 엇갈림)
+    /// Spiral      | 중심 x | 중심 z | 갈래 수 | 틱당 회전(rad, 부호=방향)
     /// 변: 0=북(+z에서 남쪽으로) 1=동 2=남 3=서.
     /// </summary>
     public static class DodgeHazards
@@ -24,6 +26,15 @@ namespace LOP
         private const int AimedFan = 3;
         private const float AimedFanStep = 0.13f;
         private const float AimedSpeedScale = 1.3f;
+
+        /// <summary>탄막 투척기(가운데 심판) 자리 — 진행기가 여기서 쏘고, 맵 "Thrower" 충돌체와 클라 심판 그림도 여기다.</summary>
+        public static readonly Vector2 Thrower = Vector2.zero;
+
+        public const int RingWaves = 3;
+        public const int RingWaveGapTicks = 20;
+        /// <summary>갈래 이웃 탄 간격(틱). 탄 속도 4 m/s면 0.96m — 판정 지름(0.76m)보다 넓어 사이로 빠진다.</summary>
+        public const int SpiralEmitTicks = 12;
+        public const int SpiralShots = 10;
 
         [System.ThreadStatic] private static List<DodgeShape> scratch;
 
@@ -80,6 +91,10 @@ namespace LOP
                     return Warn(p, c) + TravelTicks(c.RockSpeed, c);
                 case DodgePatternKind.Tiles:
                     return Warn(p, c) + c.TileOnTicks - 1;
+                case DodgePatternKind.Ring:
+                    return (RingWaves - 1) * RingWaveGapTicks + TravelTicks(c.BulletSpeed, c);
+                case DodgePatternKind.Spiral:
+                    return (SpiralShots - 1) * SpiralEmitTicks + TravelTicks(c.BulletSpeed, c);
                 default:
                     return 0;
             }
@@ -105,6 +120,8 @@ namespace LOP
                 case DodgePatternKind.Laser: Laser(p, age, c, into); break;
                 case DodgePatternKind.Rock: Rock(p, age, c, into); break;
                 case DodgePatternKind.Tiles: Tiles(p, age, c, into); break;
+                case DodgePatternKind.Ring: Ring(p, age, c, into); break;
+                case DodgePatternKind.Spiral: Spiral(p, age, c, into); break;
             }
 
             // 그림이 물건을 고르게 종류를 싣는다 — 판정(Hits)은 이 값을 보지 않는다.
@@ -186,6 +203,49 @@ namespace LOP
                 float along = rng.Range(-h, h);
                 float angle = spread > 0f ? rng.Range(-spread, spread) : 0f;
                 Bullet(EdgePoint(side, along, c.EdgeDistance), Rotate(Inward(side), angle), c.BulletSpeed, bulletAge, c, into);
+            }
+        }
+
+        // 링: 중심에서 N개가 같은 각으로. 겹은 RingWaveGapTicks마다, 홀수 겹은 반 칸(π/N) 돌려 틈이 엇갈린다.
+        private static void Ring(in DodgePattern p, long age, in DodgeConfig c, List<DodgeShape> into)
+        {
+            var origin = new Vector2(p.P0, p.P1);
+            int n = Mathf.Max(1, (int)p.P2);
+            float step = 2f * Mathf.PI / n;
+            for (int wave = 0; wave < RingWaves; wave++)
+            {
+                long waveAge = age - wave * RingWaveGapTicks;
+                if (waveAge < 0)
+                {
+                    break;
+                }
+                float phase = p.P3 + (wave % 2) * step * 0.5f;
+                for (int j = 0; j < n; j++)
+                {
+                    float a = phase + j * step;
+                    Bullet(origin, new Vector2(Mathf.Cos(a), Mathf.Sin(a)), c.BulletSpeed, waveAge, c, into);
+                }
+            }
+        }
+
+        // 나선: 갈래마다 SpiralEmitTicks마다 한 발. 쏘는 각 = 갈래 기본각 + 회전 × 쏜 틱. 쏜 탄은 곧게 간다.
+        private static void Spiral(in DodgePattern p, long age, in DodgeConfig c, List<DodgeShape> into)
+        {
+            var origin = new Vector2(p.P0, p.P1);
+            int arms = Mathf.Max(1, (int)p.P2);
+            for (int shot = 0; shot < SpiralShots; shot++)
+            {
+                long emit = shot * SpiralEmitTicks;
+                long bulletAge = age - emit;
+                if (bulletAge < 0)
+                {
+                    break;
+                }
+                for (int arm = 0; arm < arms; arm++)
+                {
+                    float a = arm * 2f * Mathf.PI / arms + p.P3 * emit;
+                    Bullet(origin, new Vector2(Mathf.Cos(a), Mathf.Sin(a)), c.BulletSpeed, bulletAge, c, into);
+                }
             }
         }
 

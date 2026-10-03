@@ -59,8 +59,8 @@ namespace LOP
     {
         public static readonly DodgePatternKind[] AllKinds =
         {
-            DodgePatternKind.BulletRain, DodgePatternKind.Bomb, DodgePatternKind.BulletWall, DodgePatternKind.Laser,
-            DodgePatternKind.BulletAimed, DodgePatternKind.Rock, DodgePatternKind.Tiles,
+            DodgePatternKind.Ring, DodgePatternKind.Bomb, DodgePatternKind.BulletWall, DodgePatternKind.Laser,
+            DodgePatternKind.BulletAimed, DodgePatternKind.Rock, DodgePatternKind.Spiral, DodgePatternKind.Tiles,
         };
 
         private readonly DodgeStage[] stages;

@@ -229,4 +229,62 @@ public class DodgeHazardsTests
             Assert.AreEqual(DodgeHazards.Hits(p, tick, at, at, c), any, at.ToString());
         }
     }
+
+    // ── 탄막(가운데 투척기) ──
+
+    static float Angle(DodgeShape s, Vector2 o) => Mathf.Atan2(s.Z0 - o.y, s.X0 - o.x);
+
+    // 링: 가운데에서 N개가 같은 각도로 동시에 퍼진다. 겹(wave)이 시간차로 이어지고 겹마다 반 칸 엇갈린다.
+    [Test]
+    public void 링은_한_겹에_N개가_같은_간격으로_퍼진다()
+    {
+        var ring = new DodgePattern(1, DodgePatternKind.Ring, 0, 0, 0f, 0f, 24f, 0f);
+        var first = ShapesAt(ring, 10);
+        Assert.AreEqual(24, first.Count);
+        float r = new Vector2(first[0].X0, first[0].Z0).magnitude;
+        Assert.AreEqual(C.BulletSpeed / DodgeConfig.TicksPerSecond * 10, r, 1e-3f);
+        float gap = Vector2.Distance(new Vector2(first[0].X0, first[0].Z0), new Vector2(first[1].X0, first[1].Z0));
+        Assert.AreEqual(2f * r * Mathf.Sin(Mathf.PI / 24f), gap, 1e-3f);   // 멀수록 틈이 넓다
+    }
+
+    [Test]
+    public void 링_다음_겹은_반_칸_엇갈린다()
+    {
+        var ring = new DodgePattern(1, DodgePatternKind.Ring, 0, 0, 0f, 0f, 24f, 0f);
+        long t = DodgeHazards.RingWaveGapTicks + 5;
+        var all = ShapesAt(ring, t);
+        Assert.AreEqual(48, all.Count);
+        float a0 = Angle(all[0], Vector2.zero), b0 = Angle(all[24], Vector2.zero);
+        Assert.AreEqual(Mathf.PI / 24f, Mathf.DeltaAngle(a0 * Mathf.Rad2Deg, b0 * Mathf.Rad2Deg) * Mathf.Deg2Rad, 1e-3f);
+    }
+
+    // 나선 한 갈래의 이웃 탄은 몸이 빠질 만큼 떨어져 있다 — 촘촘하면 갈래가 벽이 되고, 그 벽이 사람보다 빨리 돌아 못 피한다.
+    [Test]
+    public void 나선_갈래는_사이로_빠질_수_있다()
+    {
+        float radial = C.BulletSpeed / DodgeConfig.TicksPerSecond * DodgeHazards.SpiralEmitTicks;
+        Assert.Greater(radial, 2f * (C.BulletRadius + C.HitRadius));
+    }
+
+    // 나선: 갈래마다 일정 틱마다 한 발씩, 쏘는 각이 돌아간다. 쏜 탄은 곧게 날아간다.
+    [Test]
+    public void 나선은_쏠_때마다_각이_돌아간다()
+    {
+        float w = 0.05f;
+        var spiral = new DodgePattern(1, DodgePatternKind.Spiral, 0, 0, 0f, 0f, 2f, w);
+        var shapes = ShapesAt(spiral, DodgeHazards.SpiralEmitTicks * 2 + 1);   // 0·E·2E에 쐈다
+        Assert.AreEqual(2 * 3, shapes.Count);
+        float first = Angle(shapes[0], Vector2.zero), second = Angle(shapes[2], Vector2.zero);
+        Assert.AreEqual(w * DodgeHazards.SpiralEmitTicks, Mathf.DeltaAngle(first * Mathf.Rad2Deg, second * Mathf.Rad2Deg) * Mathf.Deg2Rad, 1e-3f);
+    }
+
+    [Test]
+    public void 탄막은_다_날아간_뒤에_끝난다()
+    {
+        var ring = new DodgePattern(1, DodgePatternKind.Ring, 0, 0, 0f, 0f, 24f, 0f);
+        var spiral = new DodgePattern(2, DodgePatternKind.Spiral, 0, 0, 0f, 0f, 2f, 0.05f);
+        Assert.IsFalse(DodgeHazards.IsOver(ring, DodgeHazards.LifetimeTicks(ring, C), C));
+        Assert.AreEqual(0, ShapesAt(ring, DodgeHazards.LifetimeTicks(ring, C)).FindAll(s => Mathf.Abs(s.X0) < C.ArenaHalf && Mathf.Abs(s.Z0) < C.ArenaHalf).Count);
+        Assert.Greater(DodgeHazards.LifetimeTicks(spiral, C), DodgeHazards.SpiralEmitTicks * (DodgeHazards.SpiralShots - 1));
+    }
 }

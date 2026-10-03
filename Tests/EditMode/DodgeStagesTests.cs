@@ -61,7 +61,7 @@ public class DodgeStagesTests
         Assert.AreEqual(2, at.Index);
         Assert.AreEqual(1100, at.StartTick);
         Assert.AreEqual(long.MaxValue, at.EndTick);
-        Assert.AreEqual(7, at.Kinds.Length);
+        Assert.AreEqual(8, at.Kinds.Length);
         Assert.AreEqual(C.SuddenDeathBase, at.Intensity, 1e-5f);
         Assert.AreEqual(C.PatternIntervalTicks, at.IntervalTicks);
     }
@@ -92,6 +92,6 @@ public class DodgeStagesTests
     public void 종류가_빈_스테이지는_전부를_쓴다()
     {
         var t = new DodgeStageTable(new[] { new DodgeStage("빈", 10f, new DodgePatternKind[0], 1f, 0f, 1.8f) });
-        Assert.AreEqual(7, t.At(0, 0, C).Kinds.Length);
+        Assert.AreEqual(8, t.At(0, 0, C).Kinds.Length);
     }
 }
