@@ -212,4 +212,21 @@ public class DodgeHazardsTests
         Assert.AreEqual(dir.x, moved.x, 1e-4f);
         Assert.AreEqual(dir.y, moved.y, 1e-4f);
     }
+
+    // 검사기가 같은 식을 쓰도록 도형 하나 판정을 밖으로 뺐다 — Hits와 결과가 같아야 한다.
+    [Test]
+    public void 도형_하나_판정은_Hits와_같다()
+    {
+        var c = C;
+        var p = new DodgePattern(1, DodgePatternKind.Bomb, 0, 0, 0f, 0f, 2f, 0f);
+        long tick = c.WarnTicks + 1;
+        var shapes = new System.Collections.Generic.List<DodgeShape>();
+        DodgeHazards.Shapes(p, tick, c, shapes);
+        foreach (var at in new[] { Vector2.zero, new Vector2(1.9f, 0f), new Vector2(2.5f, 0f) })
+        {
+            bool any = false;
+            foreach (var s in shapes) any |= DodgeHazards.ShapeHits(s, at, at, c);
+            Assert.AreEqual(DodgeHazards.Hits(p, tick, at, at, c), any, at.ToString());
+        }
+    }
 }
