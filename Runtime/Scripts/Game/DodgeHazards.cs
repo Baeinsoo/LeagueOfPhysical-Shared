@@ -124,25 +124,29 @@ namespace LOP
             Shapes(p, tick, c, list);
             foreach (var s in list)
             {
-                if (!s.Active)
-                {
-                    continue;
-                }
-                switch (s.Type)
-                {
-                    case DodgeShapeType.Circle:
-                        if (DodgeGeometry.ClosestApproach(from, to, new Vector2(s.X1, s.Z1), new Vector2(s.X0, s.Z0))
-                            <= c.HitRadius + s.Radius) return true;
-                        break;
-                    case DodgeShapeType.Segment:
-                        if (DodgeGeometry.SegmentDistance(from, to, new Vector2(s.X0, s.Z0), new Vector2(s.X1, s.Z1))
-                            <= c.HitRadius + s.Radius) return true;
-                        break;
-                    case DodgeShapeType.Rect:
-                        // 바닥은 발밑 칸으로 본다 — 판정 반지름을 더하면 칸 경계에 선 사람이 억울하다.
-                        if (to.x >= s.X0 && to.x < s.X1 && to.y >= s.Z0 && to.y < s.Z1) return true;
-                        break;
-                }
+                if (ShapeHits(s, from, to, c)) return true;
+            }
+            return false;
+        }
+
+        /// <summary>몸이 from→to로 움직일 때 도형 하나에 닿았나. 예고 중인 도형은 판정이 없다. 검사기도 이 식을 쓴다.</summary>
+        public static bool ShapeHits(in DodgeShape s, Vector2 from, Vector2 to, in DodgeConfig c)
+        {
+            if (!s.Active)
+            {
+                return false;
+            }
+            switch (s.Type)
+            {
+                case DodgeShapeType.Circle:
+                    return DodgeGeometry.ClosestApproach(from, to, new Vector2(s.X1, s.Z1), new Vector2(s.X0, s.Z0))
+                           <= c.HitRadius + s.Radius;
+                case DodgeShapeType.Segment:
+                    return DodgeGeometry.SegmentDistance(from, to, new Vector2(s.X0, s.Z0), new Vector2(s.X1, s.Z1))
+                           <= c.HitRadius + s.Radius;
+                case DodgeShapeType.Rect:
+                    // 바닥은 발밑 칸으로 본다 — 판정 반지름을 더하면 칸 경계에 선 사람이 억울하다.
+                    return to.x >= s.X0 && to.x < s.X1 && to.y >= s.Z0 && to.y < s.Z1;
             }
             return false;
         }
