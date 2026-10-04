@@ -3,7 +3,7 @@ using UnityEngine;
 namespace LOP
 {
     /// <summary>
-    /// 새 캡슐이 움직이는 장애물(풍차·진자)과 겹쳤나. 장애물이 새를 쳐서 들어온 경우를 잡는다 —
+    /// 새 캡슐이 움직이는 장애물(풍차·진자·셔터)과 겹쳤나. 장애물이 새를 쳐서 들어온 경우를 잡는다 —
     /// sweep은 시작부터 겹친 것을 히트로 안 세서, 이걸 따로 안 보면 밀려나기만 하고 기절하지 않는다.
     /// 캡슐 모양은 <see cref="KinematicMover"/>와 같은 규약(발 위치 + 반지름·높이).
     /// </summary>
@@ -20,7 +20,8 @@ namespace LOP
             {
                 Collider other = Buffer[i];
                 if (other.GetComponentInParent<FlappyPendulum>() != null
-                    || other.GetComponentInParent<FlappyWindmill>() != null)
+                    || other.GetComponentInParent<FlappyWindmill>() != null
+                    || other.GetComponentInParent<FlappyShutter>() != null)
                 {
                     return true;
                 }

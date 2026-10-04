@@ -8,7 +8,7 @@ namespace LOP
     /// <summary>
     /// Flappy Race의 시뮬 코어. 클·서가 같은 구체 클래스를 돌려 결과가 갈리지 않게 한다.
     /// 한 틱: 맨 앞에서 풍차 날개를 이 틱의 각도로 세운다(누적이 아니라 대입 — FlappyWindmillField).
-    /// 진자도 풍차 다음에 세운다.
+    /// 진자·셔터도 풍차 다음에 세운다.
     /// ⓪ 출발틱 전이면 아무것도 굴리지 않고 속도만 0으로 둔다.
     /// ① 스턴 시간 감소 → ①' 장애물이 쳐서 들어오면 기절 → ② 부스트 패드를 밟았으면 공짜 대시 →
     /// ③ 속도(중력·플랩·고정 전진, 스턴 중이면 스킵) →
@@ -34,6 +34,7 @@ namespace LOP
         private readonly FinishSystem _finishSystem;
         private readonly FlappyWindmillField _windmillField;
         private readonly FlappyPendulumField _pendulumField;
+        private readonly FlappyShutterField _shutterField;
         private readonly FlappyBoostPadField _boostPadField;
         private readonly ICollisionQuery _collisionQuery;
         private readonly GameFramework.World.IMotionBridge _motionBridge;
@@ -71,7 +72,8 @@ namespace LOP
             ICollisionQuery collisionQuery,
             GameFramework.World.IMotionBridge motionBridge,
             int layerMask,
-            FlappyPendulumField pendulumField = null)
+            FlappyPendulumField pendulumField = null,
+            FlappyShutterField shutterField = null)
             : base(entityRegistry, eventBuffer)
         {
             _moveSystem = moveSystem;
@@ -84,6 +86,7 @@ namespace LOP
             _motionBridge = motionBridge;
             _layerMask = layerMask;
             _pendulumField = pendulumField;
+            _shutterField = shutterField;
 
             int hologramLayer = LayerMask.NameToLayer(FlappyHologram.LayerName);
             _hologramMask = hologramLayer >= 0 ? 1 << hologramLayer : 0;
@@ -95,6 +98,7 @@ namespace LOP
             // 한 틱 낡은 자세를 보고, 화면에 열려 있는 통로에서 죽는다.
             _windmillField.PoseForTick(tick, deltaTime);
             _pendulumField?.PoseForTick(tick, deltaTime);
+            _shutterField?.PoseForTick(tick, deltaTime);
 
             CollectBirds();
 
@@ -118,7 +122,9 @@ namespace LOP
 
             //  움직이는 장애물이 새를 쳐서 들어왔으면 기절. 시간 감소 뒤라 이번 틱부터 멈추고,
             //  이동 앞이라 이번 틱 속도를 만들지 않는다. 밀어내기는 아래 ④가 지금처럼 한다.
-            if (_windmillField.Count > 0 || (_pendulumField != null && _pendulumField.Count > 0))
+            if (_windmillField.Count > 0
+                || (_pendulumField != null && _pendulumField.Count > 0)
+                || (_shutterField != null && _shutterField.Count > 0))
             {
                 for (int i = 0; i < _birds.Count; i++)
                 {
