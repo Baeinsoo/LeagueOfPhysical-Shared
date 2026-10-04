@@ -27,6 +27,13 @@ namespace LOP
         /// <param name="increasing">그 축의 값이 커지는 방향으로 달리면 true(Flappy=+x), 작아지면 false(Skydive=−y).</param>
         public static float Past(Bounds body, Bounds line, FinishAxis axis, bool increasing)
         {
+            //  땅 결승(Skydive)이 크기 있는 판이면 그 판 위에 내려야 한다 — 높이만 맞고 옆으로 벗어나면 아직이다.
+            //  크기 없는 표식(옛 맵)은 그 높이의 무한 평면 그대로. Flappy의 선(x축)은 위아래로 넘어가는 일이 없어 그대로 둔다.
+            if (axis == FinishAxis.Y && line.size.x > 0f && line.size.z > 0f &&
+                (body.max.x < line.min.x || body.min.x > line.max.x || body.max.z < line.min.z || body.min.z > line.max.z))
+            {
+                return -1f;
+            }
             return increasing
                 ? Component(body.max, axis) - Component(line.min, axis)
                 : Component(line.max, axis) - Component(body.min, axis);
