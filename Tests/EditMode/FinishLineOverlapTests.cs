@@ -59,6 +59,28 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 땅_결승은_판_위에_내려야_한다()
+        {
+            //  Skydive 결승 제단: 지름 16m 판. 높이만 맞고 옆으로 벗어나면 결승이 아니다(정글에 내리면 걸어 올라와야 한다).
+            var altar = new Bounds(new Vector3(20f, 24f, -100f), new Vector3(16f, 0.4f, 16f));   // max.y = 24.2
+            var onAltar = new Bounds(new Vector3(25f, 24.5f, -95f), new Vector3(0.8f, 1.8f, 0.8f));   // min.y = 23.6
+            var besideAltar = new Bounds(new Vector3(40f, 1f, -100f), new Vector3(0.8f, 1.8f, 0.8f));   // 높이는 한참 아래, 옆으로 20m
+
+            Assert.GreaterOrEqual(FinishLineOverlap.Past(onAltar, altar, FinishAxis.Y, increasing: false), 0f);
+            Assert.Less(FinishLineOverlap.Past(besideAltar, altar, FinishAxis.Y, increasing: false), 0f);
+        }
+
+        [Test]
+        public void 크기_없는_결승_표식은_높이만_본다()
+        {
+            //  옛 맵(더미·피라미드)은 렌더러 없는 표식이라 두께 0인 무한 평면 — 어디서든 그 높이를 지나면 결승.
+            var marker = new Bounds(new Vector3(0f, 1.5f, 0f), Vector3.zero);
+            var farAway = new Bounds(new Vector3(300f, 1f, -200f), new Vector3(0.8f, 1.8f, 0.8f));
+
+            Assert.GreaterOrEqual(FinishLineOverlap.Past(farAway, marker, FinishAxis.Y, increasing: false), 0f);
+        }
+
+        [Test]
         public void 축을_바꾸면_그_축으로_잰다()
         {
             var line = new Bounds(Vector3.zero, new Vector3(20f, 20f, 0.2f));
