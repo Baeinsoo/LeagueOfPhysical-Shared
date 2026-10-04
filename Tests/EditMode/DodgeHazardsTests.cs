@@ -247,6 +247,20 @@ public class DodgeHazardsTests
         Assert.AreEqual(2f * r * Mathf.Sin(Mathf.PI / 24f), gap, 1e-3f);   // 멀수록 틈이 넓다
     }
 
+    // 링에는 부채꼴 틈이 하나 — 바깥 탄 벽의 "구멍 찾기"를 심판 기준으로 옮겼다. 겹마다 같은 쪽이 비어 지나갈 길이 이어진다.
+    [Test]
+    public void 링에는_겹마다_같은_쪽에_부채꼴_틈이_있다()
+    {
+        var ring = new DodgePattern(1, DodgePatternKind.Ring, 0, 3, 0f, 0f, 24f, 0f);
+        Assert.AreEqual(21, ShapesAt(ring, 10).Count);
+        Assert.AreEqual(42, ShapesAt(ring, DodgeHazards.RingWaveGapTicks + 5).Count);
+        foreach (var s in ShapesAt(ring, DodgeHazards.RingWaveGapTicks + 5))
+        {
+            float a = Mathf.Repeat(Angle(s, Vector2.zero), 2f * Mathf.PI);
+            Assert.IsFalse(a > 0.01f && a < 2f * Mathf.PI / 24f * 2.4f, "틈 부채꼴(0~2.5칸) 안에 탄이 있다: " + a);
+        }
+    }
+
     [Test]
     public void 링_다음_겹은_반_칸_엇갈린다()
     {
