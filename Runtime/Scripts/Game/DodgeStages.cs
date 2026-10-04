@@ -59,7 +59,8 @@ namespace LOP
     {
         public static readonly DodgePatternKind[] AllKinds =
         {
-            DodgePatternKind.Ring, DodgePatternKind.Bomb, DodgePatternKind.BulletWall, DodgePatternKind.Laser,
+            // 탄은 전부 심판이 쏜다 — 바깥에서 오는 탄비·탄 벽은 섞지 않는다(코드는 남는다).
+            DodgePatternKind.Ring, DodgePatternKind.Bomb, DodgePatternKind.Laser,
             DodgePatternKind.BulletAimed, DodgePatternKind.Rock, DodgePatternKind.Spiral, DodgePatternKind.Tiles,
         };
 

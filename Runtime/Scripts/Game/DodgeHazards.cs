@@ -15,7 +15,7 @@ namespace LOP
     /// Laser       | x0 | z0 | x1 | z1
     /// Rock        | 변 | 변 따라 위치 | 각 비틀기(rad)
     /// Tiles       Seed=켜질 칸 비트마스크(칸 i = (i % N, i / N))
-    /// Ring        | 중심 x | 중심 z | 탄 수 N | 첫 각(rad)   (겹 3개, 겹마다 반 칸 엇갈림)
+    /// Ring        Seed=틈 탄 수(첫 각부터 그만큼 비움) | 중심 x | 중심 z | 탄 수 N | 첫 각(rad)   (겹 3개, 겹마다 반 칸 엇갈림, 틈은 같은 쪽)
     /// Spiral      | 중심 x | 중심 z | 갈래 수 | 틱당 회전(rad, 부호=방향)
     /// 변: 0=북(+z에서 남쪽으로) 1=동 2=남 3=서.
     /// </summary>
@@ -26,9 +26,6 @@ namespace LOP
         private const int AimedFan = 3;
         private const float AimedFanStep = 0.13f;
         private const float AimedSpeedScale = 1.3f;
-
-        /// <summary>탄막 투척기(가운데 심판) 자리 — 진행기가 여기서 쏘고, 맵 "Thrower" 충돌체와 클라 심판 그림도 여기다.</summary>
-        public static readonly Vector2 Thrower = Vector2.zero;
 
         public const int RingWaves = 3;
         public const int RingWaveGapTicks = 20;
@@ -220,9 +217,14 @@ namespace LOP
                     break;
                 }
                 float phase = p.P3 + (wave % 2) * step * 0.5f;
+                float gap = p.Seed * step - 1e-4f;   // 첫 각부터 이만큼은 비운다 — 겹마다 같은 부채꼴이라 길이 이어진다
                 for (int j = 0; j < n; j++)
                 {
                     float a = phase + j * step;
+                    if (Mathf.Repeat(a - p.P3, 2f * Mathf.PI) < gap)
+                    {
+                        continue;
+                    }
                     Bullet(origin, new Vector2(Mathf.Cos(a), Mathf.Sin(a)), c.BulletSpeed, waveAge, c, into);
                 }
             }
