@@ -17,6 +17,7 @@ namespace LOP
     /// Tiles       Seed=켜질 칸 비트마스크(칸 i = (i % N, i / N))
     /// Ring        Seed=틈 탄 수(첫 각부터 그만큼 비움) | 중심 x | 중심 z | 탄 수 N | 첫 각(rad)   (겹 3개, 겹마다 반 칸 엇갈림, 틈은 같은 쪽)
     /// Spiral      | 중심 x | 중심 z | 갈래 수 | 틱당 회전(rad, 부호=방향)
+    /// BulletStream | 출발 x | 출발 z | 목표 x | 목표 z   (StreamShots발, StreamGapTicks마다)
     /// 변: 0=북(+z에서 남쪽으로) 1=동 2=남 3=서.
     /// </summary>
     public static class DodgeHazards
@@ -32,6 +33,12 @@ namespace LOP
         /// <summary>갈래 이웃 탄 간격(틱). 탄 속도 4 m/s면 0.96m — 판정 지름(0.76m)보다 넓어 사이로 빠진다.</summary>
         public const int SpiralEmitTicks = 12;
         public const int SpiralShots = 10;
+        public const int StreamShots = 5;
+        public const int StreamGapTicks = 8;            // 0.16초
+        private const float StreamSpeedScale = 1.35f;
+
+        /// <summary>링 겹(wave)의 속도 배율 — 뒤 겹일수록 느려 같은 방향 탄이 벽처럼 늘어선다(스택).</summary>
+        public static float RingWaveSpeed(int wave) => wave switch { 0 => 1f, 1 => 0.8f, _ => 0.62f };
 
         [System.ThreadStatic] private static List<DodgeShape> scratch;
 
@@ -89,7 +96,9 @@ namespace LOP
                 case DodgePatternKind.Tiles:
                     return Warn(p, c) + c.TileOnTicks - 1;
                 case DodgePatternKind.Ring:
-                    return (RingWaves - 1) * RingWaveGapTicks + TravelTicks(c.BulletSpeed, c);
+                    return (RingWaves - 1) * RingWaveGapTicks + TravelTicks(c.BulletSpeed * RingWaveSpeed(RingWaves - 1), c);
+                case DodgePatternKind.BulletStream:
+                    return (StreamShots - 1) * StreamGapTicks + TravelTicks(c.BulletSpeed * StreamSpeedScale, c);
                 case DodgePatternKind.Spiral:
                     return (SpiralShots - 1) * SpiralEmitTicks + TravelTicks(c.BulletSpeed, c);
                 default:
@@ -119,6 +128,7 @@ namespace LOP
                 case DodgePatternKind.Tiles: Tiles(p, age, c, into); break;
                 case DodgePatternKind.Ring: Ring(p, age, c, into); break;
                 case DodgePatternKind.Spiral: Spiral(p, age, c, into); break;
+                case DodgePatternKind.BulletStream: Stream(p, age, c, into); break;
             }
 
             // 그림이 물건을 고르게 종류를 싣는다 — 판정(Hits)은 이 값을 보지 않는다.
@@ -225,8 +235,25 @@ namespace LOP
                     {
                         continue;
                     }
-                    Bullet(origin, new Vector2(Mathf.Cos(a), Mathf.Sin(a)), c.BulletSpeed, waveAge, c, into);
+                    Bullet(origin, new Vector2(Mathf.Cos(a), Mathf.Sin(a)), c.BulletSpeed * RingWaveSpeed(wave), waveAge, c, into);
                 }
+            }
+        }
+
+        // 조준 연사: 같은 목표로 StreamGapTicks마다 한 발. 목표는 고른 순간의 그 사람 자리라 조금 비켜 걸으면 줄이 지나간다.
+        private static void Stream(in DodgePattern p, long age, in DodgeConfig c, List<DodgeShape> into)
+        {
+            var origin = new Vector2(p.P0, p.P1);
+            Vector2 to = new Vector2(p.P2, p.P3) - origin;
+            Vector2 dir = to.sqrMagnitude > 1e-6f ? to.normalized : Vector2.down;
+            for (int shot = 0; shot < StreamShots; shot++)
+            {
+                long bulletAge = age - shot * StreamGapTicks;
+                if (bulletAge < 0)
+                {
+                    break;
+                }
+                Bullet(origin, dir, c.BulletSpeed * StreamSpeedScale, bulletAge, c, into);
             }
         }
 

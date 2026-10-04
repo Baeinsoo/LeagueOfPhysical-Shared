@@ -301,4 +301,35 @@ public class DodgeHazardsTests
         Assert.AreEqual(0, ShapesAt(ring, DodgeHazards.LifetimeTicks(ring, C)).FindAll(s => Mathf.Abs(s.X0) < C.ArenaHalf && Mathf.Abs(s.Z0) < C.ArenaHalf).Count);
         Assert.Greater(DodgeHazards.LifetimeTicks(spiral, C), DodgeHazards.SpiralEmitTicks * (DodgeHazards.SpiralShots - 1));
     }
+
+    // 스택 — 링 겹마다 속도가 달라 같은 방향 탄이 벽처럼 늘어선다(업계 표준 부품).
+    [Test]
+    public void 링_겹은_뒤로_갈수록_느리다()
+    {
+        Assert.AreEqual(1f, DodgeHazards.RingWaveSpeed(0));
+        Assert.Less(DodgeHazards.RingWaveSpeed(1), DodgeHazards.RingWaveSpeed(0));
+        Assert.Less(DodgeHazards.RingWaveSpeed(2), DodgeHazards.RingWaveSpeed(1));
+        var ring = new DodgePattern(1, DodgePatternKind.Ring, 0, 0, 0f, 0f, 8f, 0f);
+        long t = DodgeHazards.RingWaveGapTicks + 10;
+        var all = ShapesAt(ring, t);
+        float r0 = new Vector2(all[0].X0, all[0].Z0).magnitude, r1 = new Vector2(all[8].X0, all[8].Z0).magnitude;
+        Assert.AreEqual(C.BulletSpeed / DodgeConfig.TicksPerSecond * t, r0, 1e-3f);
+        Assert.AreEqual(C.BulletSpeed * DodgeHazards.RingWaveSpeed(1) / DodgeConfig.TicksPerSecond * 10, r1, 1e-3f);
+    }
+
+    // 조준 연사(스트리밍) — 같은 목표로 짧은 간격의 탄 줄. 조금씩 비켜 걸으며 피한다.
+    [Test]
+    public void 조준_연사는_같은_목표로_간격을_두고_나간다()
+    {
+        var target = new Vector2(4f, 3f);
+        var stream = new DodgePattern(1, DodgePatternKind.BulletStream, 0, 0, 0f, 0f, target.x, target.y);
+        var shapes = ShapesAt(stream, DodgeHazards.StreamGapTicks * 2 + 1);
+        Assert.AreEqual(3, shapes.Count);   // 0·G·2G에 쐈다
+        foreach (var s in shapes)
+        {
+            var dir = new Vector2(s.X0, s.Z0).normalized;
+            Assert.AreEqual(0f, Vector2.Angle(dir, target.normalized), 0.5f);
+        }
+        Assert.AreEqual(DodgeHazards.StreamShots, ShapesAt(stream, DodgeHazards.StreamGapTicks * DodgeHazards.StreamShots).Count);
+    }
 }

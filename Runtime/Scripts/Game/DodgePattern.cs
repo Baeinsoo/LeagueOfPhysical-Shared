@@ -13,6 +13,8 @@ namespace LOP
         Ring = 8,
         /// <summary>탄막 — 가운데 투척기에서 돌아가며 쏘는 갈래.</summary>
         Spiral = 9,
+        /// <summary>탄막 — 심판이 한 사람 쪽으로 짧은 간격으로 연사(스트리밍). 고정 탄막 위에 겹쳐 압박한다.</summary>
+        BulletStream = 10,
     }
 
     /// <summary>
