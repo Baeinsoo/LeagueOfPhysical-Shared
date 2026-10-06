@@ -21,8 +21,15 @@ namespace LOP
         /// <summary>새 몸 캡슐의 반지름. 맵 충돌과 새끼리 몸싸움이 같은 값을 쓴다.</summary>
         public readonly float BodyRadius;
 
-        /// <summary>새 몸 캡슐의 전체 높이(발밑부터 정수리까지).</summary>
+        /// <summary>새 몸 캡슐의 전체 높이(발밑부터 정수리까지). 누운 캡슐이면 지름과 같다.</summary>
         public readonly float BodyHeight;
+
+        /// <summary>
+        /// 누운 캡슐의 축 방향 전체 길이. <c>BodyRadius*2</c>보다 커야 실제로 눕는다 — 그보다
+        /// 작거나 0이면(기본값) 지금까지대로 선 캡슐(<see cref="BodyHeight"/>)로 본다. 새 몸을
+        /// 세우는 쪽은 이 값을 직접 보지 않고 <see cref="FlappyBodyShape.For"/>를 거친다.
+        /// </summary>
+        public readonly float BodyLength;
 
         /// <summary>몸싸움 반발계수 — 0이면 부딪힌 자리에 얹히고, 1이면 온전히 튕겨 나간다.</summary>
         public readonly float Restitution;
@@ -99,7 +106,9 @@ namespace LOP
                             //  같은 이유로 기본값(문턱 없음)을 준다. 실제 provider는 항상 명시한다.
                             float dashChargeMinFall = 0f,
                             //  같은 이유로 기본값 — 실제 provider는 항상 명시한다.
-                            float airflowUpAccel = 0f, float airflowRiseCap = 0f, float shaftGravityMult = 1f)
+                            float airflowUpAccel = 0f, float airflowRiseCap = 0f, float shaftGravityMult = 1f,
+                            //  0이면 선 캡슐(BodyHeight) — 이 열이 없던 기존 테스트가 전부 그대로 통과하게.
+                            float bodyLength = 0f)
         {
             ForwardSpeed = forwardSpeed;
             FlapImpulse = flapImpulse;
@@ -123,6 +132,7 @@ namespace LOP
             AirflowUpAccel = airflowUpAccel;
             AirflowRiseCap = airflowRiseCap;
             ShaftGravityMult = shaftGravityMult;
+            BodyLength = bodyLength;
         }
     }
 }
