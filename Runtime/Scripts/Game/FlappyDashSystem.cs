@@ -13,8 +13,9 @@ namespace LOP
         private readonly FlappyMapRulesField rules;
 
         /// <param name="rules">
-        /// 맵이 다이브 충전을 켜 뒀나. <c>null</c>이면 마커 자체가 없는 맵(지금의 라이브 맵)으로 보고
-        /// 켜진 것처럼 동작한다 — <see cref="FlappyMapRulesField"/>를 모르는 테스트·옛 동작을 지킨다.
+        /// 맵이 다이브 충전을 켜 뒀나. <c>null</c>은 규칙 없이 만든 테스트·도구용이라 켜진 것처럼 동작한다 —
+        /// 실제 판은 DI가 늘 필드를 넣는다. 필드가 있으면 <see cref="FlappyMapRulesField"/> 그대로,
+        /// 마커 없음 = 꺼짐이다.
         /// </param>
         public FlappyDashSystem(FlappyConfig config, FlappyMapRulesField rules = null)
         {
