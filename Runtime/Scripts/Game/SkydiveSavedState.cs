@@ -26,10 +26,13 @@ namespace LOP
         //  되감기 전 라이브의 흔적(stale 값)을 보고 착지 판정을 그르친다.
         public readonly bool IsGrounded;
 
+        //  저장한 세이브 발판. 안 담으면 되감은 뒤 저장이 사라지거나(되감기 전 저장) 남는다(되감기 뒤 저장).
+        public readonly int SavePadId;
+
         private SkydiveSavedState(float axis, bool gliding, float stamina,
                                   bool emergencyUsed, float emergencyRemaining, SkydiveMotionState motion,
                                   System.Numerics.Vector3 drift, System.Numerics.Vector3 driftAnchor,
-                                  long finishedTick, float finishDepth, bool isGrounded)
+                                  long finishedTick, float finishDepth, bool isGrounded, int savePadId)
         {
             Axis = axis;
             Gliding = gliding;
@@ -42,6 +45,7 @@ namespace LOP
             FinishedTick = finishedTick;
             FinishDepth = finishDepth;
             IsGrounded = isGrounded;
+            SavePadId = savePadId;
         }
 
         public static SkydiveSavedState Capture(GameFramework.World.Entity entity)
@@ -60,7 +64,8 @@ namespace LOP
                 wind?.Anchor ?? System.Numerics.Vector3.Zero,
                 entity.Get<FinishState>()?.FinishedTick ?? FinishState.NotFinished,
                 entity.Get<FinishState>()?.Depth ?? 0f,
-                entity.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false);
+                entity.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false,
+                entity.Get<SkydiveSave>()?.PadId ?? SkydiveSave.None);
         }
 
         public void RestoreTo(GameFramework.World.Entity entity)
@@ -112,6 +117,12 @@ namespace LOP
             if (groundState != null)
             {
                 groundState.IsGrounded = IsGrounded;
+            }
+
+            var save = entity.Get<SkydiveSave>();
+            if (save != null)
+            {
+                save.PadId = SavePadId;
             }
         }
     }

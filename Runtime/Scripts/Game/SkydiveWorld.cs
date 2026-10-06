@@ -24,6 +24,7 @@ namespace LOP
         private readonly ICollisionQuery _collisionQuery;
         private readonly GameFramework.World.IMotionBridge _motionBridge;
         private readonly int _layerMask;
+        private readonly SavePadField _savePads;
 
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
         private readonly List<GameFramework.World.Entity> _divers = new List<GameFramework.World.Entity>();
@@ -58,7 +59,8 @@ namespace LOP
             SkydiveConfig config,
             ICollisionQuery collisionQuery,
             GameFramework.World.IMotionBridge motionBridge,
-            int layerMask)
+            int layerMask,
+            SavePadField savePads = null)
             : base(entityRegistry, eventBuffer)
         {
             _moveSystem = moveSystem;
@@ -72,6 +74,7 @@ namespace LOP
             _collisionQuery = collisionQuery;
             _motionBridge = motionBridge;
             _layerMask = layerMask;
+            _savePads = savePads;
             _beforePositionLookup = TryGetBeforeMovePosition;
         }
 
@@ -385,6 +388,9 @@ namespace LOP
             for (int i = 0; i < _divers.Count; i++)
             {
                 GameFramework.World.Entity diver = _divers[i];
+
+                //  세이브 발판 — 이동·접지가 끝난 자리에서 본다(완주와 같은 이유).
+                SkydiveSaveSystem.Tick(diver, _savePads);
 
                 //  완주는 "선을 넘는 것"이 아니라 "선 아래에서 살아서 접지"다(스펙 §2.0).
                 //  선을 먼저 넘고 한두 틱 뒤에 부딪히는 순간이 있어, 순서만으로는 완주한 뒤에

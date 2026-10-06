@@ -23,16 +23,32 @@ namespace LOP
         public const float SpreadRadius = 2f;
         private const int RespawnSpreadCount = 6;
 
+        /// <summary>
+        /// 되살아날 자리(흩뿌리기 전). 발판 맵이면 내가 저장한 발판, 저장이 없으면 출발 — 아래에 자동 체크포인트가
+        /// 있어도 쓰지 않는다(저장 안 한 대가). 발판 없는 맵은 옛 규칙(지나온 가장 낮은 체크포인트).
+        /// </summary>
+        public static Vector3 BasePoint(GameFramework.World.Entity diver, float deathY, IReadOnlyList<float> shelfYs, float spawnY,
+                                        IReadOnlyDictionary<float, Vector3> respawnPoints, SavePadField pads)
+        {
+            if (pads != null && pads.Count > 0)
+            {
+                int padId = diver.Get<SkydiveSave>()?.PadId ?? SkydiveSave.None;
+                if (pads.TryGetRespawn(padId, out Vector3 padPoint))
+                {
+                    return padPoint;
+                }
+                return respawnPoints.TryGetValue(spawnY, out Vector3 spawn) ? spawn : new Vector3(0f, spawnY, 0f);
+            }
+            float shelfY = SkydiveCheckpoints.LastPassedShelfY(deathY, shelfYs, spawnY);
+            return respawnPoints.TryGetValue(shelfY, out Vector3 point) ? point : new Vector3(0f, shelfY, 0f);
+        }
+
         public static void To(GameFramework.World.Entity diver, float deathY, SkydiveConfig config,
                               IReadOnlyList<float> shelfYs, float spawnY,
                               IReadOnlyDictionary<float, Vector3> respawnPoints,
-                              ref int spreadOrder)
+                              ref int spreadOrder, SavePadField pads = null)
         {
-            float shelfY = SkydiveCheckpoints.LastPassedShelfY(deathY, shelfYs, spawnY);
-
-            Vector3 basePoint = respawnPoints.TryGetValue(shelfY, out Vector3 point)
-                ? point
-                : new Vector3(0f, shelfY, 0f);
+            Vector3 basePoint = BasePoint(diver, deathY, shelfYs, spawnY, respawnPoints, pads);
 
             float angle = spreadOrder % RespawnSpreadCount * (2f * Mathf.PI / RespawnSpreadCount);
             spreadOrder++;
@@ -68,7 +84,7 @@ namespace LOP
                 posture.Axis = 0f;
             }
 
-            Debug.Log($"[Respawn] {diver.Id} 부활 — 죽은 고도 {deathY:F0} → 선반 {shelfY:F0}");
+            Debug.Log($"[Respawn] {diver.Id} 부활 — 죽은 고도 {deathY:F0} → {basePoint}");
         }
     }
 }
