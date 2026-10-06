@@ -69,11 +69,13 @@ namespace LOP
         }
 
         //  콜라이더와 같은 모양으로 맞춘다 — PhysicsBodyFactory가 center를 (0, height/2, 0)에 둔다.
+        //  누운(X축) 캡슐은 가로(x) 치수가 지름이 아니라 Length다 — 세로(y)·안쪽(z)은 그대로 Height·지름.
         private static Bounds BodyBounds(GameFramework.World.Transform transform,
                                          GameFramework.World.CapsuleShape shape)
         {
             Vector3 center = transform.Position.ToUnity() + new Vector3(0f, shape.Height * 0.5f, 0f);
-            return new Bounds(center, new Vector3(shape.Radius * 2f, shape.Height, shape.Radius * 2f));
+            float sizeX = shape.Axis == GameFramework.World.CapsuleAxis.X ? shape.Length : shape.Radius * 2f;
+            return new Bounds(center, new Vector3(sizeX, shape.Height, shape.Radius * 2f));
         }
     }
 }

@@ -11,10 +11,12 @@ namespace LOP
     {
         private static readonly Collider[] Buffer = new Collider[16];
 
-        public static bool StruckBy(Vector3 basePosition, float radius, float height, int layerMask)
+        //  lyingLength: 누운 캡슐의 축 방향 전체 길이. 0 이하면 세운(Y) 캡슐(오늘 그대로) —
+        //  두 끝점 식은 CapsuleEnds.Of가 KinematicMover.Cast와 함께 쓴다.
+        public static bool StruckBy(Vector3 basePosition, float radius, float height, int layerMask,
+            float lyingLength = 0f)
         {
-            Vector3 p1 = basePosition + Vector3.up * radius;
-            Vector3 p2 = basePosition + Vector3.up * (height - radius);
+            CapsuleEnds.Of(basePosition, radius, height, lyingLength, out Vector3 p1, out Vector3 p2);
             int count = Physics.OverlapCapsuleNonAlloc(p1, p2, radius, Buffer, layerMask, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < count; i++)
             {
