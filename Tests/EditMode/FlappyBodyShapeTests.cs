@@ -35,5 +35,17 @@ namespace LOP.Tests
             Assert.That(shape.Axis, Is.EqualTo(CapsuleAxis.Y));
             Assert.That(shape.Height, Is.EqualTo(0.9f));
         }
+
+        [Test]
+        public void BodyLength가_지름과_같으면_아직_선_캡슐이다()
+        {
+            //  경계값 — 지름(반지름×2 = 0.9)과 "같으면" 누운 게 아니다(엄격한 초과만 누움).
+            //  FlappyChaserSystem의 꼬리 판정도 이 경계를 같은 식(IsLying)으로 봐야 한다.
+            Assert.That(FlappyBodyShape.IsLying(Config(0.9f)), Is.False);
+
+            CapsuleShape shape = FlappyBodyShape.For(Config(0.9f));
+            Assert.That(shape.Axis, Is.EqualTo(CapsuleAxis.Y));
+            Assert.That(shape.Height, Is.EqualTo(0.9f));
+        }
     }
 }

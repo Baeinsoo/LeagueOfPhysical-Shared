@@ -8,11 +8,18 @@ namespace LOP
     public static class FlappyBodyShape
     {
         /// <summary>
-        /// <see cref="FlappyConfig.BodyLength"/>가 지름(반지름×2)보다 크면 그만큼 누운 캡슐,
-        /// 아니면(0 포함) 지금까지대로 선 캡슐이다.
+        /// 누웠는지 가르는 단 하나의 문턱. <see cref="For"/>(몸 만들기)와 <c>FlappyChaserSystem</c>
+        /// (추격자 꼬리)이 각자 다른 문턱을 쓰면 둘이 "이 새가 누웠나"에 다른 답을 하게 된다 —
+        /// 그래서 이 한 식에 모은다. <see cref="FlappyConfig.BodyLength"/>가 지름(반지름×2)보다
+        /// 커야 누운 캡슐이다 — 같으면(구와 같은 길이) 누운 게 아니다.
+        /// </summary>
+        public static bool IsLying(FlappyConfig config) => config.BodyLength > config.BodyRadius * 2f;
+
+        /// <summary>
+        /// <see cref="IsLying"/>이면 그만큼 누운 캡슐, 아니면(0 포함) 지금까지대로 선 캡슐이다.
         /// </summary>
         public static GameFramework.World.CapsuleShape For(FlappyConfig config) =>
-            config.BodyLength > config.BodyRadius * 2f
+            IsLying(config)
                 ? GameFramework.World.CapsuleShape.Lying(config.BodyRadius, config.BodyLength)
                 : new GameFramework.World.CapsuleShape(config.BodyRadius, config.BodyHeight);
     }
