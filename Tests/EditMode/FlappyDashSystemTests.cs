@@ -379,5 +379,36 @@ namespace LOP.Tests
 
             Assert.That(bird.Get<FlappyDash>().DashRemaining, Is.EqualTo(0.6f).Within(Tolerance));
         }
+
+        //  ── 맵 룰(FlappyMapRules) — 수동 대시가 꺼진 맵 ──────────────────────
+        //  마커가 없는 지금의 라이브 맵이 이 상태다: 추격자도, 다이브 충전도 없다.
+
+        [Test]
+        public void 수동_대시가_꺼지면_아무리_떨어져도_충전이_안_된다()
+        {
+            var rules = new FlappyMapRulesField();   // Set을 안 불렀으니 기본값(둘 다 꺼짐)
+            var system = new FlappyDashSystem(Config(), rules);
+            var bird = Bird(verticalSpeed: -30f);   // 최대낙하로 떨어져도
+
+            for (int i = 0; i < 1000; i++)
+            {
+                system.Tick(bird, Dt);
+            }
+
+            Assert.That(bird.Get<FlappyDash>().Charge, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void 수동_대시가_꺼져도_부스트_패드는_그대로_대시한다()
+        {
+            //  패드는 게이지를 쓰지 않는 공짜 대시라 맵 룰과 무관해야 한다.
+            var rules = new FlappyMapRulesField();
+            var system = new FlappyDashSystem(Config(), rules);
+            var bird = Bird();
+
+            system.Boost(bird, 0.6f);
+
+            Assert.That(system.IsDashing(bird), Is.True);
+        }
     }
 }

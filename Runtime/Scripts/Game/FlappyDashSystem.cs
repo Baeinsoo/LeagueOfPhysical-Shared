@@ -10,10 +10,16 @@ namespace LOP
     public class FlappyDashSystem
     {
         private readonly FlappyConfig config;
+        private readonly FlappyMapRulesField rules;
 
-        public FlappyDashSystem(FlappyConfig config)
+        /// <param name="rules">
+        /// 맵이 다이브 충전을 켜 뒀나. <c>null</c>이면 마커 자체가 없는 맵(지금의 라이브 맵)으로 보고
+        /// 켜진 것처럼 동작한다 — <see cref="FlappyMapRulesField"/>를 모르는 테스트·옛 동작을 지킨다.
+        /// </param>
+        public FlappyDashSystem(FlappyConfig config, FlappyMapRulesField rules = null)
         {
             this.config = config;
+            this.rules = rules;
         }
 
         /// <summary>지금 대시 중인가. 이동이 이 값을 보고 수평 직선으로 갈지 정한다.</summary>
@@ -87,6 +93,14 @@ namespace LOP
                 {
                     dash.DashRemaining = 0f;
                 }
+            }
+
+            //  맵이 수동 대시를 꺼 두면(FlappyMapRules.ManualDash == false) 다이브로는 한 칸도
+            //  못 채운다 — 대시는 부스트 패드(Boost)로만 받는다. 마커가 없는 맵(rules == null)은
+            //  켜진 것으로 본다 — 지금까지대로다.
+            if (rules != null && rules.ManualDash == false)
+            {
+                return;
             }
 
             if (dash.Charge >= FlappyDash.MaxCharge)
