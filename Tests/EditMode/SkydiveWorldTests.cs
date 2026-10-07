@@ -29,7 +29,8 @@ namespace LOP.Tests
                                   WindField wind = null,
                                   DoorField doors = null,
                                   FinishLineBounds finish = null,
-                                  BodyCollisionSystem bodyCollisionSystem = null)
+                                  BodyCollisionSystem bodyCollisionSystem = null,
+                                  CatchTargetField catchTargets = null)
             => new SkydiveWorld(registry, new WorldEventBuffer(),
                                 new SkydiveMoveSystem(), new StaminaSystem(),
                                 new WindDriftSystem(),
@@ -41,7 +42,8 @@ namespace LOP.Tests
                                     Config().BodyRadius, Config().BodyHeight, Config().Restitution, Vector3.one),
                                 Config(),
                                 query ?? new HalfSpaceQuery(),
-                                new FlappyWorldFixture.NoopMotionBridge(), layerMask: ~0);
+                                new FlappyWorldFixture.NoopMotionBridge(), layerMask: ~0,
+                                catchTargets: catchTargets);
 
         //  결승선은 "서서 접지한 다이버의 몸이 실제로 닿는 높이"에 둬야 한다 — 그래야 아래 세
         //  테스트가 서로 다른 결론(접지 전 통과 안 됨 / 치명 착지는 통과 안 됨 / 안전 착지는
@@ -253,6 +255,41 @@ namespace LOP.Tests
             for (int t = 0; t < 20; t++) { world.Tick(t, 0.02f); }
 
             Assert.AreEqual(SkydiveMotionState.Walking, diver.Get<MotionState>().Value);
+        }
+
+        [Test]
+        public void 공중에서_별에_닿으면_결승이고_그_뒤로는_펴진_채_내려앉는다()
+        {
+            //  별 붙잡기(왕국의 눈물 엔딩 오마주) — 월드 한 틱을 실제로 돌려 Detection의 잡기와 다음 틱의 강제 펼침이 이어지는지.
+            var registry = new EntityRegistry();
+            var diver = FinishingDiver("a");   // y 1000, 발밑은 허공
+            registry.Add(diver);
+            var stars = new CatchTargetField();
+            stars.Add(new CatchTarget(new Vector3(0f, 1000f, 0f), 0f, 0f, 0f, 0f, 0, catchRadius: 6f));
+            var world = World(registry, catchTargets: stars);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);
+            Assert.IsTrue(Finished(registry, "a"), "접지 없이 공중에서 결승");
+
+            world.Tick(1, 0.02f);
+            Assert.IsTrue(diver.Get<Posture>().Gliding, "잡은 뒤엔 입력 없이도 펴진다");
+        }
+
+        [Test]
+        public void 별이_멀면_공중에서_결승이_아니다()
+        {
+            var registry = new EntityRegistry();
+            var diver = FinishingDiver("a");
+            registry.Add(diver);
+            var stars = new CatchTargetField();
+            stars.Add(new CatchTarget(new Vector3(0f, 600f, 0f), 0f, 0f, 0f, 0f, 0, catchRadius: 6f));
+            var world = World(registry, catchTargets: stars);
+            world.GameplayStartTick = 0;
+
+            world.Tick(0, 0.02f);
+            Assert.IsFalse(Finished(registry, "a"));
+            Assert.IsFalse(diver.Get<Posture>().Gliding);
         }
 
         [Test]
