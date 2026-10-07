@@ -25,6 +25,7 @@ namespace LOP
         private readonly GameFramework.World.IMotionBridge _motionBridge;
         private readonly int _layerMask;
         private readonly SavePadField _savePads;
+        private readonly ObstacleField _obstacles;
 
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
         private readonly List<GameFramework.World.Entity> _divers = new List<GameFramework.World.Entity>();
@@ -60,7 +61,8 @@ namespace LOP
             ICollisionQuery collisionQuery,
             GameFramework.World.IMotionBridge motionBridge,
             int layerMask,
-            SavePadField savePads = null)
+            SavePadField savePads = null,
+            ObstacleField obstacles = null)
             : base(entityRegistry, eventBuffer)
         {
             _moveSystem = moveSystem;
@@ -75,6 +77,7 @@ namespace LOP
             _motionBridge = motionBridge;
             _layerMask = layerMask;
             _savePads = savePads;
+            _obstacles = obstacles;
             _beforePositionLookup = TryGetBeforeMovePosition;
         }
 
@@ -186,13 +189,19 @@ namespace LOP
         private void PoseDoors(long tick)
         {
             System.Collections.Generic.IReadOnlyList<DoorVolume> doors = _doorField.All;
-            if (doors.Count == 0)
+            int obstacleCount = _obstacles?.All.Count ?? 0;
+            if (doors.Count == 0 && obstacleCount == 0)
             {
                 return;
             }
             for (int i = 0; i < doors.Count; i++)
             {
                 doors[i].Pose(tick);
+            }
+            //  도는 원판·조리개도 문과 같은 자리에서 이 틱 자세로 세운다(되감기 재생도 같은 경로).
+            for (int i = 0; i < obstacleCount; i++)
+            {
+                _obstacles.All[i].Pose(tick);
             }
             //  트랜스폼을 방금 바꿨다. 겹침 질의가 옛 자리를 보지 않도록 여기서 한 번 맞춘다.
             _motionBridge.SyncTransforms();
