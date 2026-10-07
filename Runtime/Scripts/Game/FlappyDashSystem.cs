@@ -97,8 +97,8 @@ namespace LOP
             }
 
             //  맵이 수동 대시를 꺼 두면(FlappyMapRules.ManualDash == false) 다이브로는 한 칸도
-            //  못 채운다 — 대시는 부스트 패드(Boost)로만 받는다. 마커가 없는 맵(rules == null)은
-            //  켜진 것으로 본다 — 지금까지대로다.
+            //  못 채운다 — 대시는 부스트 패드(Boost)로만 받는다. 마커가 없는 맵도 같다(필드 기본값이 꺼짐).
+            //  rules == null은 규칙 없이 만든 테스트·도구뿐이고, 그때만 예전처럼 채운다.
             if (rules != null && rules.ManualDash == false)
             {
                 return;
