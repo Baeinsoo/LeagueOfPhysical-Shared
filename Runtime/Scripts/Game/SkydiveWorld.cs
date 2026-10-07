@@ -26,6 +26,7 @@ namespace LOP
         private readonly int _layerMask;
         private readonly SavePadField _savePads;
         private readonly ObstacleField _obstacles;
+        private readonly CatchTargetField _catchTargets;
 
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
         private readonly List<GameFramework.World.Entity> _divers = new List<GameFramework.World.Entity>();
@@ -62,7 +63,8 @@ namespace LOP
             GameFramework.World.IMotionBridge motionBridge,
             int layerMask,
             SavePadField savePads = null,
-            ObstacleField obstacles = null)
+            ObstacleField obstacles = null,
+            CatchTargetField catchTargets = null)
             : base(entityRegistry, eventBuffer)
         {
             _moveSystem = moveSystem;
@@ -78,6 +80,7 @@ namespace LOP
             _layerMask = layerMask;
             _savePads = savePads;
             _obstacles = obstacles;
+            _catchTargets = catchTargets;
             _beforePositionLookup = TryGetBeforeMovePosition;
         }
 
@@ -119,6 +122,11 @@ namespace LOP
             for (int i = 0; i < _divers.Count; i++)
             {
                 ApplyPostureInput(_divers[i], deltaTime);
+                //  별을 잡은 뒤엔 입력과 상관없이 펴진 채 천천히 내려앉는다(엔딩처럼) — 입력 바로 뒤라 이번 틱 이동에 먹는다.
+                if ((_divers[i].Get<GameFramework.World.GroundState>()?.IsGrounded ?? false) == false)
+                {
+                    SkydiveCatch.SettleAfterFinish(_divers[i], _config.StaminaMax);
+                }
             }
 
             // 자세가 정해진 뒤에 실린다 — 자세가 곧 "얼마나 빨리 실리나"이므로, 앞에 두면
@@ -400,6 +408,12 @@ namespace LOP
 
                 //  세이브 발판 — 이동·접지가 끝난 자리에서 본다(완주와 같은 이유).
                 SkydiveSaveSystem.Tick(diver, _savePads);
+
+                //  별 붙잡기 결승 — 공중에서 닿으면 그 틱이 결승(접지를 묻지 않는다).
+                if (SkydiveCatch.TryCatch(diver, _catchTargets, tick, _config.BodyRadius, _config.BodyHeight))
+                {
+                    continue;
+                }
 
                 //  완주는 "선을 넘는 것"이 아니라 "선 아래에서 살아서 접지"다(스펙 §2.0).
                 //  선을 먼저 넘고 한두 틱 뒤에 부딪히는 순간이 있어, 순서만으로는 완주한 뒤에
