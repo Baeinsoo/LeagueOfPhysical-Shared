@@ -75,7 +75,11 @@ namespace LOP
             {
                 var capsuleCollider = root.AddComponent<CapsuleCollider>();
                 capsuleCollider.radius = capsule.Radius;
-                capsuleCollider.height = capsule.Height;
+                //  direction: 0=X(누운), 1=Y(세운). height는 "축 방향 전체 길이"라 Length를 준다
+                //  (세운 캡슐은 Length==Height라 지금까지와 같다) — center는 여전히 발밑에서
+                //  세로로 Height/2만큼 올린 자리다(누운 캡슐도 세로 두께는 Height=지름).
+                capsuleCollider.direction = capsule.Axis == GameFramework.World.CapsuleAxis.X ? 0 : 1;
+                capsuleCollider.height = capsule.Length;
                 capsuleCollider.center = new Vector3(0, capsule.Height * 0.5f, 0);
                 collider = capsuleCollider;
             }

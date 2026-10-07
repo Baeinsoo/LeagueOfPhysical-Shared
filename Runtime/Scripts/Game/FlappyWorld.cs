@@ -266,7 +266,10 @@ namespace LOP
             {
                 return false;
             }
-            return FlappyMoverOverlap.StruckBy(transform.Position.ToUnity(), body.Radius, body.Height, _layerMask);
+            //  누운 몸(X축)이면 가로 치수(Length)를 넘긴다 — CapsuleEnds.Of가 두 끝점을 그에 맞게 벌린다.
+            float lyingLength = body.Axis == GameFramework.World.CapsuleAxis.X ? body.Length : 0f;
+            return FlappyMoverOverlap.StruckBy(transform.Position.ToUnity(), body.Radius, body.Height, _layerMask,
+                lyingLength);
         }
 
         // 맵은 막는다 — KinematicMover가 벽까지만 이동시키고 미끄러뜨린다(collide-and-slide).
@@ -325,10 +328,12 @@ namespace LOP
             //  맵에 안 닿은 새가 스턴에 걸렸다. 부딪힘 판정은 몸 기준이어야 한다.
             //  대시 중이면 홀로그램을 통과한다 — 새마다 자기 대시 상태로 고르므로 남이 뚫었다고 열리지 않는다.
             int mask = _dashSystem.IsDashing(entity) ? _layerMask & ~_hologramMask : _layerMask;
+            //  누운 몸(X축)이면 가로 치수(Length)를 넘긴다 — StruckByMover와 같은 식(CapsuleEnds.Of)이다.
+            float lyingLength = body.Axis == GameFramework.World.CapsuleAxis.X ? body.Length : 0f;
             var result = KinematicMover.Move(new KinematicMoveInput(
                 transform.Position.ToUnity(), velocity.Linear.ToUnity(),
                 body.Radius, body.Height, deltaTime, mask,
-                stepOffset: 0f, groundProbe: 0f), _hitTracker);
+                stepOffset: 0f, groundProbe: 0f, lyingLength: lyingLength), _hitTracker);
 
             if (_hitTracker.SawHit)
             {

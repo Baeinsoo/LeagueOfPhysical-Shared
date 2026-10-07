@@ -102,6 +102,24 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 누운_몸은_길이로_결승선에_닿는다()
+        {
+            //  반지름 0.45·세로두께 0.9(=반지름×2)인 누운 몸(Axis=X, Length=1.28). 세운 몸이라면
+            //  부리가 98.85(center+radius)라 근접면(99)에 아직 못 미치지만, 누운 몸은
+            //  98.4+0.64(=Length/2)=99.04로 넘는다 — BodyBounds가 가로 치수에 Length를 써야 한다.
+            var bird = new Entity("lyingBird");
+            bird.Add(new GameFramework.World.Transform { Position = new System.Numerics.Vector3(98.4f, 0f, 0f) });
+            bird.Add(CapsuleShape.Lying(Radius, 1.28f));
+            bird.Add(new FinishState());
+
+            new FinishSystem(Line(), FinishAxis.X, increasing: true).Tick(bird, 20);
+
+            Assert.IsTrue(bird.Get<FinishState>().Finished);
+            Assert.AreEqual(20, bird.Get<FinishState>().FinishedTick);
+            Assert.That(bird.Get<FinishState>().Depth, Is.EqualTo(0.04f).Within(1e-3f));
+        }
+
+        [Test]
         public void 결승선을_모르면_아무도_통과하지_않는다()
         {
             //  맵이 아직 안 올라온 순간이 실제로 있다. 그때 전원 통과로 읽으면 판이 즉시 끝난다.

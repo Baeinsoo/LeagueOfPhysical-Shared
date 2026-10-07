@@ -23,10 +23,13 @@ namespace LOP
         //  몸이 닿지도 않은 바닥을 "밟았다"로 답하고 몸을 그쪽으로 끌어내리기까지 한다.
         //  그래서 값을 게임이 정한다(stepOffset과 같은 이유로 커널 상수에서 뺐다).
         public readonly float groundProbe;
+        //  누운 캡슐(가로로 긴 몸)의 축 방향 전체 길이. 0 이하면 세운(Y) 캡슐 — 오늘의 식 그대로다.
+        //  CapsuleEnds.Of가 이 값으로 두 끝점을 고른다(Game.CapsuleShape.Axis/Length, Task 1).
+        public readonly float lyingLength;
 
         public KinematicMoveInput(Vector3 position, Vector3 velocity, float radius,
             float height, float deltaTime, int layerMask, float stepOffset,
-            float groundProbe = KinematicMover.WalkGroundProbe)
+            float groundProbe = KinematicMover.WalkGroundProbe, float lyingLength = 0f)
         {
             this.position = position;
             this.velocity = velocity;
@@ -36,6 +39,7 @@ namespace LOP
             this.layerMask = layerMask;
             this.stepOffset = stepOffset;
             this.groundProbe = groundProbe;
+            this.lyingLength = lyingLength;
         }
     }
 
@@ -207,12 +211,12 @@ namespace LOP
         }
 
         // 발밑(pos)에서 lift만큼 올린 캡슐로 sweep. lift=0이면 발밑 기준.
+        // 두 끝점은 CapsuleEnds.Of가 고른다 — FlappyMoverOverlap의 overlap과 식을 공유한다.
         private static CollisionHit Cast(Vector3 pos, float lift, Vector3 dir, float dist,
             in KinematicMoveInput input, ICollisionQuery query)
         {
             Vector3 basePos = pos + Vector3.up * lift;
-            Vector3 p1 = basePos + Vector3.up * input.radius;
-            Vector3 p2 = basePos + Vector3.up * (input.height - input.radius);
+            CapsuleEnds.Of(basePos, input.radius, input.height, input.lyingLength, out Vector3 p1, out Vector3 p2);
             return query.CapsuleCast(p1, p2, input.radius, dir, dist, input.layerMask);
         }
     }
