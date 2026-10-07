@@ -49,6 +49,15 @@ namespace LOP
                               ref int spreadOrder, SavePadField pads = null)
         {
             Vector3 basePoint = BasePoint(diver, deathY, shelfYs, spawnY, respawnPoints, pads);
+            ApplyAt(diver, basePoint, config.StaminaMax, ref spreadOrder);
+            Debug.Log($"[Respawn] {diver.Id} 부활 — 죽은 고도 {deathY:F0} → {basePoint}");
+        }
+
+        /// <summary>
+        /// 정해진 자리에 되살린다 — 흩뿌림·속도 0·착지 충격 비움·스태미나 가득·대자. 체크포인트 부활과 별 맵의 "다시 떨어지기"가 같이 쓴다.
+        /// </summary>
+        public static void ApplyAt(GameFramework.World.Entity diver, Vector3 basePoint, float staminaMax, ref int spreadOrder)
+        {
 
             float angle = spreadOrder % RespawnSpreadCount * (2f * Mathf.PI / RespawnSpreadCount);
             spreadOrder++;
@@ -71,7 +80,7 @@ namespace LOP
             var stamina = diver.Get<Stamina>();
             if (stamina != null)
             {
-                stamina.Current = config.StaminaMax;
+                stamina.Current = staminaMax;
                 stamina.EmergencyUsed = false;
                 stamina.EmergencyRemaining = 0f;
             }
@@ -84,7 +93,6 @@ namespace LOP
                 posture.Axis = 0f;
             }
 
-            Debug.Log($"[Respawn] {diver.Id} 부활 — 죽은 고도 {deathY:F0} → {basePoint}");
         }
     }
 }

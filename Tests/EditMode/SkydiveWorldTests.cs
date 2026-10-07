@@ -801,6 +801,30 @@ namespace LOP.Tests
             Assert.IsTrue(Finished(registry, "a"), "안전하게 내려섰는데 완주가 안 됐다");
         }
 
+        [Test]
+        public void 별이_있는_맵에서는_착지해도_완주가_아니다()
+        {
+            //  별만 결승(사용자 10-07) — 별을 놓치고 땅에 내려서도 결승선이 결승을 주면 별이 무의미해진다.
+            var registry = new EntityRegistry();
+            var diver = FinishingDiver("a");
+            diver.Get<GameFramework.World.Transform>().Position = new Vector3(0f, 0.3f, 0f).ToNumerics();
+            diver.Get<Velocity>().Linear = new Vector3(0f, -Config().GlideFallSpeed, 0f).ToNumerics();
+            diver.Get<Posture>().Gliding = true;
+            registry.Add(diver);
+
+            var map = new HalfSpaceQuery();
+            map.AddGround(0f);
+            var stars = new CatchTargetField();
+            stars.Add(new CatchTarget(new Vector3(0f, 600f, 0f), 0f, 0f, 0f, 0f, 0, catchRadius: 6f));
+            var world = World(registry, map, finish: GroundFinishLine(), catchTargets: stars);
+            world.GameplayStartTick = 0;
+
+            for (int t = 0; t < 10; t++) { world.Tick(t, 0.02f); }
+
+            Assert.IsTrue(diver.Get<GroundState>().IsGrounded);
+            Assert.IsFalse(Finished(registry, "a"), "별 맵인데 착지로 완주됐다");
+        }
+
         //  문 자세는 틱의 순수 함수라(스펙 §2.3), 그 판이 틱의 어느 지점에서 서느냐가 곧
         //  "누가 그 자세를 보느냐"다. 클라 뷰가 프레임 사이에 패널을 소수 틱 자세로 옮겨 두므로,
         //  틱이 그것을 덮기 전에 도는 질의는 클라에만 있는 자세를 보게 된다.
