@@ -23,6 +23,7 @@ namespace LOP
             MessageFactory.RegisterCreator(MessageIds.MatchStartToC, () => new MatchStartToC());
             MessageFactory.RegisterCreator(MessageIds.PanchigiStateToC, () => new PanchigiStateToC());
             MessageFactory.RegisterCreator(MessageIds.PanchigiStrikeToS, () => new PanchigiStrikeToS());
+            MessageFactory.RegisterCreator(MessageIds.PlayerPresenceToC, () => new PlayerPresenceToC());
             MessageFactory.RegisterCreator(MessageIds.StatAllocationToC, () => new StatAllocationToC());
             MessageFactory.RegisterCreator(MessageIds.StatAllocationToS, () => new StatAllocationToS());
             MessageFactory.RegisterCreator(MessageIds.UserEntitySnapToC, () => new UserEntitySnapToC());

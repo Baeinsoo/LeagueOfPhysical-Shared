@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+// 판 도중 끊겨 있는 사람 한 명. 클라는 남의 userId를 모르고 엔티티 id만 알아서 엔티티로 보낸다.
+message PresenceAwayWire
+{
+	string entity_id = 1;
+	// 매치 명단에서의 순번(1부터) — 화면에 "2P 선수"로 쓴다.
+	int32 slot = 2;
+}
+
+// 지금 끊겨 있는 사람 목록 전체(서버 → 클라). 바뀔 때만 reliable로 간다.
+// 상태로 보낸다 — 다시 들어온 사람도 받는 즉시 누가 끊겨 있는지 맞춰진다.
+// @auto_generate
+message PlayerPresenceToC
+{
+	// 받는 쪽은 자기가 가진 판본보다 작으면 버린다(늦게 도착한 낡은 소식).
+	int32 version = 1;
+	repeated PresenceAwayWire away = 2;
+}
