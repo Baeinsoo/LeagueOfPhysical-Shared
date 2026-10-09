@@ -184,13 +184,13 @@ namespace LOP
                 SettleGroundAndImpact(_divers[i], groundedOnBody.Contains(_divers[i].Id));
             }
 
-            //  올라탄 판이 바뀐 사람만 속도를 고친다(KCC 방식 — 사용자 10-09 선택). 내 속도는 "올라탄 판 기준"이라,
-            //  판이 바뀌면 (옛 판 속도 − 새 판 속도)를 더해 세계 기준 속도를 그대로 잇는다.
-            //  내려서면 옛 판 속도를 받고(빠른 모서리가 몸을 따라잡아 판 위로 도로 밀어 올리지 않게), 내려앉으면 새 판 속도를 뺀다
-            //  (안 빼면 판이 옮겨 주는 몫과 겹쳐 미끄러진다). 같은 판이면 아무것도 안 한다 — 한 틱 떴다 닿아도 걷던 속도 그대로.
+            //  판 기준으로 계산한 속도를 다시 세계 기준으로 돌린다(KCC의 "판 기준 속도 + 판 속도", 사용자 10-09 선택).
+            //  틱 밖에서 속도를 읽는 곳(화면 보정·스냅샷·애니)은 판을 모르므로 늘 세계 기준이어야 한다(리뷰 5차).
+            //  지금 판 위면 그 판 속도를, 이번 틱에 내려섰으면 옛 판 속도를 더한다 — 내려서면 판 속도를 이어받아
+            //  빠른 모서리가 몸을 따라잡아 판 위로 도로 밀어 올리지 않는다.
             for (int i = 0; i < _divers.Count; i++)
             {
-                ReattachPlatform(_divers[i], tick, deltaTime);
+                ToWorldVelocity(_divers[i], tick, deltaTime);
             }
 
             // 이동 뒤에 온다 — "발 딛고 있나"를 이동 커널이 방금 계산했기 때문이다.
@@ -258,6 +258,13 @@ namespace LOP
                     continue;
                 }
 
+                //  이번 틱 이동·걷기는 판 기준으로 계산한다 — 틱 끝에 판 속도를 다시 더한다(ToWorldVelocity).
+                var velocity = diver.Get<GameFramework.World.Velocity>();
+                if (velocity != null)
+                {
+                    velocity.Linear -= new System.Numerics.Vector3(platformVelocity.x, 0f, platformVelocity.z);
+                }
+
                 //  판이 옮겨 줄 자리와 몸 방향을 구하고, 자리는 벽에 막히는지 쓸어 보며 간다(KCC·언리얼처럼 — 순간이동하면 벽을 뚫는다).
                 PlatformCarry.Apply(transform, before, after);
                 transform.Position = feet.ToNumerics();
@@ -268,37 +275,30 @@ namespace LOP
             }
         }
 
-        /// <summary>올라탄 판이 이번 틱에 바뀌었으면 (옛 판 속도 − 새 판 속도)를 수평 속도에 더한다(KCC PreserveAttachedRigidbodyMomentum).</summary>
-        private void ReattachPlatform(GameFramework.World.Entity diver, long tick, float deltaTime)
+        /// <summary>
+        /// 틱 시작에 판 기준으로 바꿨던 사람만 세계 기준으로 되돌린다. 같은 판에 그대로 서 있으면 지금 자리의 판 속도를,
+        /// 내려섰거나 다른 판으로 옮겨 탔으면 옛 판 속도를 더한다(KCC: 판이 바뀌어도 세계 기준 속도는 이어진다).
+        /// 틱 시작에 공중이던 사람은 이미 세계 기준이라 그대로 둔다 — 내려앉아도 세계 속도는 이어지고, 다음 틱부터 판 기준으로 계산된다.
+        /// </summary>
+        private void ToWorldVelocity(GameFramework.World.Entity diver, long tick, float deltaTime)
         {
-            SpinnerVolume oldSpinner = null;
-            UnityEngine.Vector3 oldVelocity = UnityEngine.Vector3.zero;
-            if (_attached.TryGetValue(diver.Id, out var ride))
+            if (_attached.TryGetValue(diver.Id, out var ride) == false)
             {
-                oldSpinner = ride.spinner;
-                oldVelocity = ride.velocity;
+                return;
             }
-
-            SpinnerVolume newSpinner = null;
-            UnityEngine.Vector3 newVelocity = UnityEngine.Vector3.zero;
+            UnityEngine.Vector3 platformVelocity = ride.velocity;
             if ((diver.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false)
-                && TrySpinnerUnderFeet(diver, out newSpinner))
+                && TrySpinnerUnderFeet(diver, out SpinnerVolume spinner) && ReferenceEquals(spinner, ride.spinner))
             {
                 UnityEngine.Vector3 feet = GameFramework.World.EntityMotionExtensions.GetPosition(diver);
-                newVelocity = PlatformVelocity(newSpinner.WorldAt(tick - 1), newSpinner.WorldAt(tick), feet, deltaTime);
+                platformVelocity = PlatformVelocity(spinner.WorldAt(tick - 1), spinner.WorldAt(tick), feet, deltaTime);
             }
 
-            if (oldSpinner == newSpinner)
-            {
-                return;
-            }
             var velocity = diver.Get<GameFramework.World.Velocity>();
-            if (velocity == null)
+            if (velocity != null)
             {
-                return;
+                velocity.Linear += new System.Numerics.Vector3(platformVelocity.x, 0f, platformVelocity.z);
             }
-            UnityEngine.Vector3 change = oldVelocity - newVelocity;
-            velocity.Linear += new System.Numerics.Vector3(change.x, 0f, change.z);
         }
 
         /// <summary>판이 지난 틱 → 이번 틱에 그 점을 옮긴 속도(초당 m). 실어 나르기와 속도 보정이 같은 식을 쓴다.</summary>

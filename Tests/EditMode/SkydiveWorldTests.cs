@@ -1085,6 +1085,10 @@ namespace LOP.Tests
             UnityEngine.Transform plate = SpinningPlate(0.6f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles);
             var registry = new EntityRegistry();
             var diver = StandingDiver("a", new Vector3(29f, 0f, 0f), new InputCommand { Jump = true });
+            //  판과 같이 돌던 사람으로 시작한다(속도는 세계 기준 — 판 속도).
+            var spinner = plate.GetComponent<SpinnerVolume>();
+            Matrix4x4 firstStep = spinner.WorldAt(1) * spinner.WorldAt(0).inverse;
+            diver.Get<Velocity>().Linear = ((firstStep.MultiplyPoint3x4(new Vector3(29f, 0f, 0f)) - new Vector3(29f, 0f, 0f)) / 0.02f).ToNumerics();
             registry.Add(diver);
             var world = RealWorld(registry, obstacles);
 
@@ -1168,9 +1172,12 @@ namespace LOP.Tests
             //  클라는 서버 답이 오면 되감아 같은 틱들을 다시 돈다. 실어 나르기·이어받기·내려앉기가 숨은 상태를 남기면 라이브와 재생이 갈린다.
             //  재생 구간(11~120)에 점프 → 공중 → 내려앉기가 다 들어가게 한다(리뷰 2차).
             var obstacles = new ObstacleField();
-            SpinningPlate(0.6f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles);
+            var spinner = SpinningPlate(0.6f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles).GetComponent<SpinnerVolume>();
             var registry = new EntityRegistry();
             var diver = StandingDiver("a", new Vector3(20f, 0f, 0f), new InputCommand());
+            //  판과 같이 움직이던 사람으로 시작한다 — 속도 0이면 "도는 판 위에 세계 기준으로 멈춰 선 사람"이라 잠깐 미끄러진다.
+            Matrix4x4 firstStep = spinner.WorldAt(1) * spinner.WorldAt(0).inverse;
+            diver.Get<Velocity>().Linear = ((firstStep.MultiplyPoint3x4(new Vector3(20f, 0f, 0f)) - new Vector3(20f, 0f, 0f)) / 0.02f).ToNumerics();
             registry.Add(diver);
             var world = RealWorld(registry, obstacles);
 
@@ -1243,8 +1250,8 @@ namespace LOP.Tests
             Vector3 feet = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
             Matrix4x4 step = lower.WorldAt(landed) * lower.WorldAt(landed - 1).inverse;
             Vector3 plateVelocity = (step.MultiplyPoint3x4(feet) - feet) / 0.02f;
-            Vector3 relative = diver.Get<Velocity>().Linear.ToUnity();
-            Vector3 worldAfter = new Vector3(relative.x + plateVelocity.x, 0f, relative.z + plateVelocity.z);
+            Vector3 landedVelocity = diver.Get<Velocity>().Linear.ToUnity();   // 틱 경계의 속도는 늘 세계 기준(리뷰 5차)
+            Vector3 worldAfter = new Vector3(landedVelocity.x, 0f, landedVelocity.z);
             Vector3 worldBefore = new Vector3(airVelocity.x, 0f, airVelocity.z);
             Assert.Greater(worldBefore.magnitude, 5f, "위 판 속도를 이어받은 채 떨어졌어야 이 테스트가 잰다");
             Assert.Less(Vector3.Distance(worldBefore, worldAfter), 1f, $"내려앉으며 세계 기준 속도가 바뀌었다 — 전 {worldBefore} 후 {worldAfter}");
@@ -1256,7 +1263,7 @@ namespace LOP.Tests
             //  리뷰 3차: 같은 판에 다시 닿을 때 수평 속도를 0으로 버리면 걷기 몫까지 사라져 착지마다 멈칫했다.
             //  KCC 방식에선 같은 판이면 판 기준 속도를 건드리지 않는다(떠날 때 더한 판 속도를 닿을 때 다시 뺄 뿐).
             var obstacles = new ObstacleField();
-            SpinningPlate(0.6f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles);
+            var spinner = SpinningPlate(0.6f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles).GetComponent<SpinnerVolume>();
             var registry = new EntityRegistry();
             var diver = StandingDiver("a", new Vector3(20f, 0f, 0f), new InputCommand { Vertical = 1f });
             registry.Add(diver);
@@ -1276,8 +1283,11 @@ namespace LOP.Tests
 
             diver.Get<InputBuffer>().Current = new InputCommand { Vertical = 1f };
             world.Tick(landed + 1, 0.02f);
-            Vector3 v = diver.Get<Velocity>().Linear.ToUnity();
-            Assert.Greater(new Vector3(v.x, 0f, v.z).magnitude, Config().GroundMoveSpeed - 0.5f, $"착지하며 걷던 속도가 사라졌다 — {v}");
+            Vector3 feet = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Matrix4x4 step = spinner.WorldAt(landed + 1) * spinner.WorldAt(landed).inverse;
+            Vector3 plate = (step.MultiplyPoint3x4(feet) - feet) / 0.02f;
+            Vector3 v = diver.Get<Velocity>().Linear.ToUnity() - plate;   // 판 기준
+            Assert.Greater(new Vector3(v.x, 0f, v.z).magnitude, Config().GroundMoveSpeed - 0.5f, $"착지하며 걷던 속도가 사라졌다 — 판 기준 {v}");
         }
 
         [Test]
@@ -1347,6 +1357,28 @@ namespace LOP.Tests
 
             Vector3 replay = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
             Assert.Less(Vector3.Distance(pos[anchor + 10], replay), 1e-3f, $"재생이 라이브와 갈렸다 — 라이브 {pos[anchor + 10]} 재생 {replay}");
+        }
+
+        [Test]
+        public void 도는_판_위에_서_있으면_속도는_판과_같이_움직이는_세계_기준_속도다()
+        {
+            //  리뷰 5차: 속도를 판 기준으로 들고 있으면, 그 값을 세계 기준으로 읽는 곳(화면 보정·스냅샷·애니)이 판 속도만큼 틀린다.
+            //  KCC도 밖으로 내보이는 속도는 "판 기준 + 판 속도"다. 틱이 끝난 뒤의 Velocity는 세계 기준이어야 한다.
+            var obstacles = new ObstacleField();
+            var spinner = SpinningPlate(0.6f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles).GetComponent<SpinnerVolume>();
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(20f, 0f, 0f), new InputCommand());
+            registry.Add(diver);
+            var world = RealWorld(registry, obstacles);
+
+            for (int t = 1; t <= 10; t++) { world.Tick(t, 0.02f); }
+
+            Vector3 feet = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Matrix4x4 step = spinner.WorldAt(10) * spinner.WorldAt(9).inverse;
+            Vector3 plate = (step.MultiplyPoint3x4(feet) - feet) / 0.02f;   // 반지름 20에서 초속 약 10.5m
+            Vector3 v = diver.Get<Velocity>().Linear.ToUnity();
+            Assert.Greater(plate.magnitude, 10f);
+            Assert.Less(Vector3.Distance(new Vector3(v.x, 0f, v.z), new Vector3(plate.x, 0f, plate.z)), 0.5f, $"속도 {v} 판 {plate}");
         }
 
         [Test]
