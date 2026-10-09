@@ -32,7 +32,8 @@ namespace LOP.Tests
                                   BodyCollisionSystem bodyCollisionSystem = null,
                                   CatchTargetField catchTargets = null,
                                   ObstacleField obstacles = null,
-                                  GameFramework.World.IMotionBridge motionBridge = null)
+                                  GameFramework.World.IMotionBridge motionBridge = null,
+                                  int layerMask = ~0)
             => new SkydiveWorld(registry, new WorldEventBuffer(),
                                 new SkydiveMoveSystem(), new StaminaSystem(),
                                 new WindDriftSystem(),
@@ -44,7 +45,7 @@ namespace LOP.Tests
                                     Config().BodyRadius, Config().BodyHeight, Config().Restitution, Vector3.one),
                                 Config(),
                                 query ?? new HalfSpaceQuery(),
-                                motionBridge ?? new FlappyWorldFixture.NoopMotionBridge(), layerMask: ~0,
+                                motionBridge ?? new FlappyWorldFixture.NoopMotionBridge(), layerMask: layerMask,
                                 obstacles: obstacles, catchTargets: catchTargets);
 
         //  결승선은 "서서 접지한 다이버의 몸이 실제로 닿는 높이"에 둬야 한다 — 그래야 아래 세
@@ -915,6 +916,85 @@ namespace LOP.Tests
             Assert.IsTrue(diver.Get<GroundState>().IsGrounded, "판 위에 서 있어야 이 테스트가 잰다");
             Assert.AreEqual(10f, new Vector2(p.x, p.z).magnitude, 0.3f, "반지름이 유지된다");
             Assert.Less(Vector3.Angle(new Vector3(p.x, 0f, p.z), expected), 2f, $"판과 같이 돌아야 한다 — 지금 {p}");
+        }
+
+        [Test]
+        public void 도는_방향으로_걸어_틈으로_내려서도_모서리에_끼지_않고_떨어진다()
+        {
+            //  사용자 10-09: 시계 방향으로 도는 원판에서 시계 방향으로 걸어 내려서면 껴 버린다(반대로 걸으면 내려가진다).
+            //  내려선 몸이 원판 속도를 안 이어받아, 뒤따라 도는 모서리(반지름 15m에서 초속 7.9m)가 걷는 몸(초속 4m)을 덮쳤다.
+            var root = new GameObject("Spinner");
+            doorRoots.Add(root);
+            var spinner = root.AddComponent<SpinnerVolume>();
+            spinner.DegreesPerTick = 0.6f;   // 위에서 보면 시계 방향 — x>0 쪽 판은 -z로 간다
+            var plate = GameObject.CreatePrimitive(PrimitiveType.Cube);   // 절반짜리 판: z 0~20, 나머지 반은 틈
+            plate.transform.SetParent(root.transform, false);
+            plate.transform.localPosition = new Vector3(0f, -1.5f, 10f);   // 윗면 y 0, 두께 3
+            plate.transform.localScale = new Vector3(40f, 3f, 20f);
+            var obstacles = new ObstacleField();
+            obstacles.Add(spinner);
+
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            diver.Get<GameFramework.World.Transform>().Position = new Vector3(15f, 0f, 1f).ToNumerics();
+            diver.Get<GroundState>().IsGrounded = true;
+            diver.Get<MotionState>().Value = SkydiveMotionState.Walking;
+            diver.Get<InputBuffer>().Current = new InputCommand { Vertical = -1f };   // 판이 가는 쪽(-z)으로 걷는다
+            //  진짜 몸·진짜 밀어내기 — 모서리가 몸을 덮치면 밖으로 미는 단계까지 실제 게임과 같은 길로.
+            diver.Add(new GameFramework.World.CapsuleShape(Config().BodyRadius, Config().BodyHeight));
+            diver.Add(new GameFramework.World.PhysicsConfig(GameFramework.World.BodyKind.Kinematic, freezeRotation: true, isTrigger: false));
+            var bodyGo = new GameObject("DiverBody");
+            doorRoots.Add(bodyGo);
+            diver.Add<GameFramework.World.PhysicsBody>(PhysicsBodyFactory.Create(bodyGo, diver));
+            registry.Add(diver);
+            int env = LayerMask.GetMask("Default");
+            var world = World(registry, new GameFramework.Physics.UnityCollisionQuery(), obstacles: obstacles,
+                              motionBridge: new MotionBridge(env, LayerMask.GetMask("Character"), 1f), layerMask: env);
+            world.GameplayStartTick = 0;
+
+            for (int t = 1; t <= 150; t++) { world.Tick(t, 0.02f); }
+
+            Assert.Less(diver.Get<GameFramework.World.Transform>().Position.Y, -4f,
+                $"3초 뒤엔 판(두께 3) 아래로 빠져 있어야 한다 — 지금 {diver.Get<GameFramework.World.Transform>().Position}");
+        }
+
+        [Test]
+        public void 몸_가운데가_틈_위에_있고_가장자리만_판에_걸쳐도_같이_돌아_결국_떨어진다()
+        {
+            //  10-09 실측: 도는 방향으로 걸으면 몸 가운데는 틈 위·가장자리만 판 모서리에 걸친 채 접지가 유지됐다.
+            //  발밑 판을 가운데 레이로만 찾아 실어 나르기가 빠졌고, 모서리가 걷는 속도와 비슷하게 같이 돌아 영영 안 떨어졌다.
+            var root = new GameObject("Spinner");
+            doorRoots.Add(root);
+            var spinner = root.AddComponent<SpinnerVolume>();
+            spinner.DegreesPerTick = 0.458f;   // 반지름 10에서 초속 4m — 걷는 속도와 같다
+            var plate = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            plate.transform.SetParent(root.transform, false);
+            plate.transform.localPosition = new Vector3(0f, -1.5f, 10f);   // z 0~20, 윗면 y 0
+            plate.transform.localScale = new Vector3(40f, 3f, 20f);
+            var obstacles = new ObstacleField();
+            obstacles.Add(spinner);
+
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            diver.Get<GameFramework.World.Transform>().Position = new Vector3(10f, 0f, -0.2f).ToNumerics();   // 가운데는 틈, 가장자리(0.4)는 판
+            diver.Get<GroundState>().IsGrounded = true;
+            diver.Get<MotionState>().Value = SkydiveMotionState.Walking;
+            diver.Get<InputBuffer>().Current = new InputCommand { Vertical = -1f };
+            diver.Add(new GameFramework.World.CapsuleShape(Config().BodyRadius, Config().BodyHeight));
+            diver.Add(new GameFramework.World.PhysicsConfig(GameFramework.World.BodyKind.Kinematic, freezeRotation: true, isTrigger: false));
+            var bodyGo = new GameObject("DiverBody");
+            doorRoots.Add(bodyGo);
+            diver.Add<GameFramework.World.PhysicsBody>(PhysicsBodyFactory.Create(bodyGo, diver));
+            registry.Add(diver);
+            int env = LayerMask.GetMask("Default");
+            var world = World(registry, new GameFramework.Physics.UnityCollisionQuery(), obstacles: obstacles,
+                              motionBridge: new MotionBridge(env, LayerMask.GetMask("Character"), 1f), layerMask: env);
+            world.GameplayStartTick = 0;
+
+            for (int t = 1; t <= 150; t++) { world.Tick(t, 0.02f); }
+
+            Assert.Less(diver.Get<GameFramework.World.Transform>().Position.Y, -4f,
+                $"모서리에 걸친 채 버티면 안 된다 — 지금 {diver.Get<GameFramework.World.Transform>().Position}");
         }
 
         readonly List<GameObject> doorRoots = new List<GameObject>();
