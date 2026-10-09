@@ -20,7 +20,9 @@ namespace LOP
             float yaw = turn.eulerAngles.y;
             if (Mathf.Abs(Mathf.DeltaAngle(0f, yaw)) > 1e-4f)
             {
-                body.Rotation = (Quaternion.Euler(0f, yaw, 0f) * body.Rotation.ToUnity()).ToNumerics();
+                //  오래 서 있으면 곱셈 오차가 쌓여 길이가 1에서 벗어난다 — 매번 다시 맞춘다.
+                Quaternion turned = Quaternion.Euler(0f, yaw, 0f) * body.Rotation.ToUnity();
+                body.Rotation = Quaternion.Normalize(turned).ToNumerics();
             }
         }
     }

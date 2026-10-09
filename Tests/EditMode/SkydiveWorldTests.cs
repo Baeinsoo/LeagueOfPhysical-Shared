@@ -997,6 +997,448 @@ namespace LOP.Tests
                 $"모서리에 걸친 채 버티면 안 된다 — 지금 {diver.Get<GameFramework.World.Transform>().Position}");
         }
 
+        [TestCase(29f)]   // 실측 자리 — 모서리 초속 15m
+        [TestCase(55f)]   // 원판 가장자리 — 초속 29m, 가장 빠른 곳
+        public void 빠르게_도는_판_모서리에서_도는_방향으로_내려서도_판_위로_도로_밀려_올라가지_않는다(float radius)
+        {
+            //  10-09 실측: Disc_760(틱당 0.6도) 반지름 29m — 모서리가 초속 15m로 돈다. 걷는 몸(초속 4m)이 내려서면
+            //  뒤따라 온 모서리가 덮쳐 판 위로 도로 밀어 올려 영영 못 내려갔다.
+            var root = new GameObject("Spinner");
+            doorRoots.Add(root);
+            var spinner = root.AddComponent<SpinnerVolume>();
+            spinner.DegreesPerTick = 0.6f;
+            var plate = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            plate.transform.SetParent(root.transform, false);
+            plate.transform.localPosition = new Vector3(0f, -1.5f, 30f);   // z 0~60, 윗면 y 0, 두께 3
+            plate.transform.localScale = new Vector3(120f, 3f, 60f);
+            var obstacles = new ObstacleField();
+            obstacles.Add(spinner);
+
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            diver.Get<GameFramework.World.Transform>().Position = new Vector3(radius, 0f, 1f).ToNumerics();
+            diver.Get<GroundState>().IsGrounded = true;
+            diver.Get<MotionState>().Value = SkydiveMotionState.Walking;
+            diver.Get<InputBuffer>().Current = new InputCommand { Vertical = -1f };   // 판이 가는 쪽(-z)으로 걷는다
+            diver.Add(new GameFramework.World.CapsuleShape(Config().BodyRadius, Config().BodyHeight));
+            diver.Add(new GameFramework.World.PhysicsConfig(GameFramework.World.BodyKind.Kinematic, freezeRotation: true, isTrigger: false));
+            var bodyGo = new GameObject("DiverBody");
+            doorRoots.Add(bodyGo);
+            diver.Add<GameFramework.World.PhysicsBody>(PhysicsBodyFactory.Create(bodyGo, diver));
+            registry.Add(diver);
+            int env = LayerMask.GetMask("Default");
+            var world = World(registry, new GameFramework.Physics.UnityCollisionQuery(), obstacles: obstacles,
+                              motionBridge: new MotionBridge(env, LayerMask.GetMask("Character"), 1f), layerMask: env);
+            world.GameplayStartTick = 0;
+
+            for (int t = 1; t <= 150; t++) { world.Tick(t, 0.02f); }
+
+            Assert.Less(diver.Get<GameFramework.World.Transform>().Position.Y, -4f,
+                $"3초 걸었으면 판 아래로 빠져 있어야 한다 — 지금 {diver.Get<GameFramework.World.Transform>().Position}");
+        }
+
+        //  ---- 판 실어 나르기 공용 도우미: 진짜 콜라이더·진짜 몸·진짜 밀어내기 ----
+
+        UnityEngine.Transform SpinningPlate(float degreesPerTick, Vector3 plateCenter, Vector3 plateSize, ObstacleField obstacles)
+        {
+            var root = new GameObject("Spinner");
+            doorRoots.Add(root);
+            var spinner = root.AddComponent<SpinnerVolume>();
+            spinner.DegreesPerTick = degreesPerTick;
+            var plate = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            plate.transform.SetParent(root.transform, false);
+            plate.transform.localPosition = plateCenter;
+            plate.transform.localScale = plateSize;
+            obstacles.Add(spinner);
+            return root.transform;
+        }
+
+        Entity StandingDiver(string id, Vector3 position, InputCommand input)
+        {
+            var diver = Diver(id);
+            diver.Get<GameFramework.World.Transform>().Position = position.ToNumerics();
+            diver.Get<GroundState>().IsGrounded = true;
+            diver.Get<MotionState>().Value = SkydiveMotionState.Walking;
+            diver.Get<InputBuffer>().Current = input;
+            diver.Add(new GameFramework.World.CapsuleShape(Config().BodyRadius, Config().BodyHeight));
+            diver.Add(new GameFramework.World.PhysicsConfig(GameFramework.World.BodyKind.Kinematic, freezeRotation: true, isTrigger: false));
+            var bodyGo = new GameObject("DiverBody");
+            doorRoots.Add(bodyGo);
+            diver.Add<GameFramework.World.PhysicsBody>(PhysicsBodyFactory.Create(bodyGo, diver));
+            return diver;
+        }
+
+        SkydiveWorld RealWorld(EntityRegistry registry, ObstacleField obstacles, DoorField doors = null)
+        {
+            int env = LayerMask.GetMask("Default");
+            var world = World(registry, new GameFramework.Physics.UnityCollisionQuery(), doors: doors, obstacles: obstacles,
+                              motionBridge: new MotionBridge(env, LayerMask.GetMask("Character"), 1f), layerMask: env);
+            world.GameplayStartTick = 0;
+            return world;
+        }
+
+        [Test]
+        public void 도는_판에서_뛰었다가_같은_판에_내려앉아도_판_위에서_미끄러지지_않는다()
+        {
+            //  리뷰 1차 Critical: 뛰는 틱에 판 속도를 이어받고, 다시 내려앉으면 판이 또 옮겨 줘 판 속도가 두 번 들어갔다.
+            var obstacles = new ObstacleField();
+            UnityEngine.Transform plate = SpinningPlate(0.6f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles);
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(29f, 0f, 0f), new InputCommand { Jump = true });
+            //  판과 같이 돌던 사람으로 시작한다(속도는 세계 기준 — 판 속도).
+            var spinner = plate.GetComponent<SpinnerVolume>();
+            Matrix4x4 firstStep = spinner.WorldAt(1) * spinner.WorldAt(0).inverse;
+            diver.Get<Velocity>().Linear = ((firstStep.MultiplyPoint3x4(new Vector3(29f, 0f, 0f)) - new Vector3(29f, 0f, 0f)) / 0.02f).ToNumerics();
+            registry.Add(diver);
+            var world = RealWorld(registry, obstacles);
+
+            bool leftGround = false;
+            long landed = -1;
+            for (int t = 1; t <= 400 && landed < 0; t++)
+            {
+                world.Tick(t, 0.02f);
+                diver.Get<InputBuffer>().Current = new InputCommand();
+                bool grounded = diver.Get<GroundState>().IsGrounded;
+                if (grounded == false) { leftGround = true; }
+                else if (leftGround) { landed = t; }
+            }
+            Assert.IsTrue(landed > 0, "뛰었다가 다시 내려앉아야 이 테스트가 잰다");
+
+            Vector3 atLanding = plate.InverseTransformPoint(diver.Get<GameFramework.World.Transform>().Position.ToUnity());
+            for (long t = landed + 1; t <= landed + 10; t++) { world.Tick(t, 0.02f); }
+            Vector3 after = plate.InverseTransformPoint(diver.Get<GameFramework.World.Transform>().Position.ToUnity());
+
+            Assert.Less(Vector3.Distance(atLanding, after), 0.5f, $"판 기준으로 {Vector3.Distance(atLanding, after):F2}m 미끄러졌다");
+        }
+
+        [Test]
+        public void 미끄러지는_문_위에_선_사람은_실려_가지_않고_문이_열리면_떨어진다()
+        {
+            //  리뷰 1차 Important: 문·조리개는 "열리면 떨어지는 관문"이다. 실어 나르면 문 밖으로 실려 가 영영 안 떨어지고, 내려서면 초속 40m를 이어받는다.
+            var door = MakeDoor();
+            var panel = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            panel.transform.SetParent(door.PanelA, false);
+            panel.transform.localPosition = new Vector3(0f, -0.25f, 0f);   // 윗면 = 문 높이(0)
+            panel.transform.localScale = new Vector3(8f, 0.5f, 8f);
+            var doors = new DoorField();
+            doors.Add(door);
+            door.Pose(15);   // 닫힘
+            Vector3 start = door.PanelA.position;
+
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(start.x, 0f, start.z), new InputCommand());
+            registry.Add(diver);
+            var world = RealWorld(registry, new ObstacleField(), doors);
+
+            for (int t = 16; t <= 49; t++) { world.Tick(t, 0.02f); }   // 35~39에 열리고 49까지 열려 있다
+
+            Vector3 p = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Assert.AreEqual(start.x, p.x, 0.5f, "문과 같이 옆으로 실려 갔다");
+            Assert.IsFalse(diver.Get<GroundState>().IsGrounded, "문이 열렸으면 발밑이 비어야 한다");
+            Assert.Less(p.y, -0.5f, "문이 열렸으면 그 자리로 떨어지기 시작해야 한다");
+        }
+
+        [Test]
+        public void 도는_판에서_내려선_틱의_수평_속도는_판_속도에_걷기를_더한_것이다()
+        {
+            //  리뷰 1차: "떨어졌다"만 재면 이어받은 속도가 10배·엉뚱한 방향이어도 초록이다.
+            var obstacles = new ObstacleField();
+            SpinningPlate(0.6f, new Vector3(0f, -1.5f, 30f), new Vector3(120f, 3f, 60f), obstacles);   // z 0~60만 판
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(29f, 0f, 1f), new InputCommand { Vertical = -1f });
+            registry.Add(diver);
+            var world = RealWorld(registry, obstacles);
+
+            Vector3 h = Vector3.zero;
+            for (int t = 1; t <= 100; t++)
+            {
+                world.Tick(t, 0.02f);
+                if (diver.Get<GroundState>().IsGrounded == false)
+                {
+                    Vector3 v = diver.Get<Velocity>().Linear.ToUnity();
+                    h = new Vector3(v.x, 0f, v.z);
+                    break;
+                }
+            }
+            float plateSpeed = 0.6f * Mathf.Deg2Rad / 0.02f * 29f;   // 초속 약 15.2m, 이 자리에선 -z 방향
+            Assert.Greater(h.magnitude, plateSpeed + Config().GroundMoveSpeed - 1f, $"판 속도+걷기를 못 이어받았다 — {h}");
+            Assert.Less(h.magnitude, plateSpeed + Config().GroundMoveSpeed + 1f, $"판 속도가 넘치게 들어갔다 — {h}");
+            Assert.Greater(Vector3.Dot(h.normalized, Vector3.back), 0.9f, $"방향이 틀렸다 — {h}");
+        }
+
+        [Test]
+        public void 도는_판_위에서는_되감아_다시_돌려도_라이브와_같은_자리다()
+        {
+            //  클라는 서버 답이 오면 되감아 같은 틱들을 다시 돈다. 실어 나르기·이어받기·내려앉기가 숨은 상태를 남기면 라이브와 재생이 갈린다.
+            //  재생 구간(11~120)에 점프 → 공중 → 내려앉기가 다 들어가게 한다(리뷰 2차).
+            var obstacles = new ObstacleField();
+            var spinner = SpinningPlate(0.6f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles).GetComponent<SpinnerVolume>();
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(20f, 0f, 0f), new InputCommand());
+            //  판과 같이 움직이던 사람으로 시작한다 — 속도 0이면 "도는 판 위에 세계 기준으로 멈춰 선 사람"이라 잠깐 미끄러진다.
+            Matrix4x4 firstStep = spinner.WorldAt(1) * spinner.WorldAt(0).inverse;
+            diver.Get<Velocity>().Linear = ((firstStep.MultiplyPoint3x4(new Vector3(20f, 0f, 0f)) - new Vector3(20f, 0f, 0f)) / 0.02f).ToNumerics();
+            registry.Add(diver);
+            var world = RealWorld(registry, obstacles);
+
+            //  입력 없이 10틱 — 걷기 없이 판만으로 6도 돌아 있어야 한다(실어 나르기가 일어났다는 증거).
+            for (int t = 1; t <= 10; t++) { world.Tick(t, 0.02f); world.SaveState(t); }
+            Vector3 carried = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Vector3 expected = Quaternion.Euler(0f, 6f, 0f) * new Vector3(20f, 0f, 0f);
+            Assert.Less(Vector3.Distance(new Vector3(carried.x, 0f, carried.z), expected), 0.05f, $"판과 같이 6도 돌아야 한다 — {carried}");
+
+            InputCommand InputAt(long t) => t == 11 ? new InputCommand { Jump = true } : new InputCommand();
+            bool sawAir = false;
+            for (int t = 11; t <= 120; t++)
+            {
+                diver.Get<InputBuffer>().Current = InputAt(t);
+                world.Tick(t, 0.02f);
+                world.SaveState(t);
+                if (diver.Get<GroundState>().IsGrounded == false) { sawAir = true; }
+            }
+            Assert.IsTrue(sawAir && diver.Get<GroundState>().IsGrounded, "재생 구간에 뛰고 내려앉아야 이 테스트가 잰다");
+            Vector3 live = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Vector3 liveVel = diver.Get<Velocity>().Linear.ToUnity();
+            Quaternion liveRot = diver.Get<GameFramework.World.Transform>().Rotation.ToUnity();
+
+            Assert.IsTrue(world.LoadState(10));
+            for (int t = 11; t <= 120; t++)
+            {
+                diver.Get<InputBuffer>().Current = InputAt(t);
+                world.Tick(t, 0.02f);
+            }
+            Vector3 replay = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+
+            Assert.AreEqual(live.x, replay.x, 1e-4f);
+            Assert.AreEqual(live.y, replay.y, 1e-4f);
+            Assert.AreEqual(live.z, replay.z, 1e-4f);
+            Assert.Less(Vector3.Distance(liveVel, diver.Get<Velocity>().Linear.ToUnity()), 1e-4f);
+            Assert.Less(Quaternion.Angle(liveRot, diver.Get<GameFramework.World.Transform>().Rotation.ToUnity()), 0.01f);
+        }
+
+        [Test]
+        public void 거꾸로_도는_아래_판에_내려앉으면_세계_기준_속도가_그대로_이어진다()
+        {
+            //  KCC 방식(사용자 10-09 선택): 내 속도는 "올라탄 판 기준"이고, 판이 바뀌는 순간에만 (옛 판 속도 − 새 판 속도)로 바꾼다.
+            //  그래서 내려앉는 틱 앞뒤로 세계 기준 속도(내 속도 + 판 속도)는 그대로다. 거꾸로 도는 판이면 판 기준으로는 잠깐 미끄러진다(실제 물리).
+            var obstacles = new ObstacleField();
+            SpinningPlate(0.6f, new Vector3(0f, -1.5f, 30f), new Vector3(120f, 3f, 60f), obstacles);   // 위 판: z 0~60만
+            UnityEngine.Transform lowerRoot = SpinningPlate(-0.6f, new Vector3(0f, -21.5f, 0f), new Vector3(120f, 3f, 120f), obstacles);
+            var lower = lowerRoot.GetComponent<SpinnerVolume>();
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(29f, 0f, 1f), new InputCommand { Vertical = -1f });
+            registry.Add(diver);
+            var world = RealWorld(registry, obstacles);
+
+            bool leftGround = false;
+            long landed = -1;
+            Vector3 airVelocity = Vector3.zero;
+            for (int t = 1; t <= 600 && landed < 0; t++)
+            {
+                world.Tick(t, 0.02f);
+                bool grounded = diver.Get<GroundState>().IsGrounded;
+                if (grounded == false)
+                {
+                    leftGround = true;
+                    diver.Get<InputBuffer>().Current = new InputCommand();
+                    airVelocity = diver.Get<Velocity>().Linear.ToUnity();
+                }
+                else if (leftGround && diver.Get<GameFramework.World.Transform>().Position.Y < -15f) { landed = t; }
+            }
+            Assert.IsTrue(landed > 0, "아래 판에 내려앉아야 이 테스트가 잰다");
+
+            Vector3 feet = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Matrix4x4 step = lower.WorldAt(landed) * lower.WorldAt(landed - 1).inverse;
+            Vector3 plateVelocity = (step.MultiplyPoint3x4(feet) - feet) / 0.02f;
+            Vector3 landedVelocity = diver.Get<Velocity>().Linear.ToUnity();   // 틱 경계의 속도는 늘 세계 기준(리뷰 5차)
+            Vector3 worldAfter = new Vector3(landedVelocity.x, 0f, landedVelocity.z);
+            Vector3 worldBefore = new Vector3(airVelocity.x, 0f, airVelocity.z);
+            Assert.Greater(worldBefore.magnitude, 5f, "위 판 속도를 이어받은 채 떨어졌어야 이 테스트가 잰다");
+            Assert.Less(Vector3.Distance(worldBefore, worldAfter), 1f, $"내려앉으며 세계 기준 속도가 바뀌었다 — 전 {worldBefore} 후 {worldAfter}");
+        }
+
+        [Test]
+        public void 도는_판_위를_걷다_뛰었다_내려앉아도_걷던_속도가_남는다()
+        {
+            //  리뷰 3차: 같은 판에 다시 닿을 때 수평 속도를 0으로 버리면 걷기 몫까지 사라져 착지마다 멈칫했다.
+            //  KCC 방식에선 같은 판이면 판 기준 속도를 건드리지 않는다(떠날 때 더한 판 속도를 닿을 때 다시 뺄 뿐).
+            var obstacles = new ObstacleField();
+            var spinner = SpinningPlate(0.6f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles).GetComponent<SpinnerVolume>();
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(20f, 0f, 0f), new InputCommand { Vertical = 1f });
+            registry.Add(diver);
+            var world = RealWorld(registry, obstacles);
+
+            bool leftGround = false;
+            long landed = -1;
+            for (int t = 1; t <= 400 && landed < 0; t++)
+            {
+                diver.Get<InputBuffer>().Current = new InputCommand { Vertical = 1f, Jump = t == 20 };
+                world.Tick(t, 0.02f);
+                bool grounded = diver.Get<GroundState>().IsGrounded;
+                if (t > 20 && grounded == false) { leftGround = true; }
+                else if (leftGround && grounded) { landed = t; }
+            }
+            Assert.IsTrue(landed > 0, "뛰었다 내려앉아야 이 테스트가 잰다");
+
+            diver.Get<InputBuffer>().Current = new InputCommand { Vertical = 1f };
+            world.Tick(landed + 1, 0.02f);
+            Vector3 feet = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Matrix4x4 step = spinner.WorldAt(landed + 1) * spinner.WorldAt(landed).inverse;
+            Vector3 plate = (step.MultiplyPoint3x4(feet) - feet) / 0.02f;
+            Vector3 v = diver.Get<Velocity>().Linear.ToUnity() - plate;   // 판 기준
+            Assert.Greater(new Vector3(v.x, 0f, v.z).magnitude, Config().GroundMoveSpeed - 0.5f, $"착지하며 걷던 속도가 사라졌다 — 판 기준 {v}");
+        }
+
+        [Test]
+        public void 아주_느리게_도는_판도_같이_돈다()
+        {
+            //  느린 판도 "안 움직였다"로 건너뛰지 않는다. (근사 비교 == 와 정확 비교의 차이는 이 판 크기에선 한 틱 이동이
+            //  float 해상도 아래로 내려가서야 생겨 시험으로 가를 수 없다 — PR #1 리뷰 2차 답글. 회전 정규화는 PlatformCarryTests가 지킨다.)
+            var obstacles = new ObstacleField();
+            SpinningPlate(0.01f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles);   // 틱당 0.01도 — 맵에서 가장 느린 판(0.5도)의 1/50, 한 틱 3.5mm
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(20f, 0f, 0f), new InputCommand());
+            registry.Add(diver);
+            var world = RealWorld(registry, obstacles);
+
+            for (int t = 1; t <= 500; t++) { world.Tick(t, 0.02f); }
+
+            //  500틱에 5도 → 반지름 20m에서 약 1.75m.
+            Vector3 p = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            float moved = Vector3.Distance(new Vector3(p.x, 0f, p.z), new Vector3(20f, 0f, 0f));
+            Assert.AreEqual(2f * 20f * Mathf.Sin(2.5f * Mathf.Deg2Rad), moved, 0.05f, $"아주 느린 판을 못 따라갔다 — {moved}m");
+        }
+
+        [Test]
+        public void 되감을_때_서버의_접지값까지_덮으면_착지_틱이_어긋나도_라이브와_같아진다()
+        {
+            //  리뷰 4차: 속도가 "올라탄 판 기준"이라 접지가 곧 속도의 기준이다. 클라 Reconciler가 서버의 위치·속도만 덮고
+            //  접지는 예측값으로 두면, 착지 틱이 한 틱 어긋났을 때 판 속도가 두 번 빠지거나 안 빠진다.
+            //  이 테스트는 그 되감기 길을 흉내 낸다: 라이브 = 서버, 되감은 뒤 접지를 일부러 틀리게 두고 서버 값을 덮어 재생.
+            var obstacles = new ObstacleField();
+            SpinningPlate(0.6f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles);
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(29f, 0f, 0f), new InputCommand());
+            registry.Add(diver);
+            var world = RealWorld(registry, obstacles);
+
+            InputCommand InputAt(long t) => t == 5 ? new InputCommand { Jump = true } : new InputCommand();
+            var pos = new Dictionary<long, Vector3>();
+            var vel = new Dictionary<long, Vector3>();
+            var grounded = new Dictionary<long, bool>();
+            long landed = -1;
+            bool left = false;
+            for (int t = 1; t <= 200 && (landed < 0 || t <= landed + 10); t++)
+            {
+                diver.Get<InputBuffer>().Current = InputAt(t);
+                world.Tick(t, 0.02f);
+                world.SaveState(t);
+                pos[t] = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+                vel[t] = diver.Get<Velocity>().Linear.ToUnity();
+                grounded[t] = diver.Get<GroundState>().IsGrounded;
+                if (grounded[t] == false) { left = true; }
+                else if (left && landed < 0) { landed = t; }
+            }
+            Assert.IsTrue(landed > 0 && landed < 190, "뛰었다 내려앉아야 이 테스트가 잰다");
+
+            //  서버는 landed에 내려앉았는데 클라 예측은 아직 공중이라고 본 경우.
+            long anchor = landed;
+            Assert.IsTrue(world.LoadState(anchor));
+            diver.Get<GroundState>().IsGrounded = false;                       // 틀린 예측
+            diver.Get<GameFramework.World.Transform>().Position = pos[anchor].ToNumerics();   // 서버 위치
+            diver.Get<Velocity>().Linear = vel[anchor].ToNumerics();                            // 서버 속도
+            diver.Get<GroundState>().IsGrounded = grounded[anchor];                            // 서버 접지 — Reconciler가 해야 할 일
+            for (long t = anchor + 1; t <= anchor + 10; t++)
+            {
+                diver.Get<InputBuffer>().Current = InputAt(t);
+                world.Tick(t, 0.02f);
+            }
+
+            Vector3 replay = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Assert.Less(Vector3.Distance(pos[anchor + 10], replay), 1e-3f, $"재생이 라이브와 갈렸다 — 라이브 {pos[anchor + 10]} 재생 {replay}");
+        }
+
+        [Test]
+        public void 도는_판_위에_서_있으면_속도는_판과_같이_움직이는_세계_기준_속도다()
+        {
+            //  리뷰 5차: 속도를 판 기준으로 들고 있으면, 그 값을 세계 기준으로 읽는 곳(화면 보정·스냅샷·애니)이 판 속도만큼 틀린다.
+            //  KCC도 밖으로 내보이는 속도는 "판 기준 + 판 속도"다. 틱이 끝난 뒤의 Velocity는 세계 기준이어야 한다.
+            var obstacles = new ObstacleField();
+            var spinner = SpinningPlate(0.6f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles).GetComponent<SpinnerVolume>();
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(20f, 0f, 0f), new InputCommand());
+            registry.Add(diver);
+            var world = RealWorld(registry, obstacles);
+
+            for (int t = 1; t <= 10; t++) { world.Tick(t, 0.02f); }
+
+            Vector3 feet = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Matrix4x4 step = spinner.WorldAt(10) * spinner.WorldAt(9).inverse;
+            Vector3 plate = (step.MultiplyPoint3x4(feet) - feet) / 0.02f;   // 반지름 20에서 초속 약 10.5m
+            Vector3 v = diver.Get<Velocity>().Linear.ToUnity();
+            Assert.Greater(plate.magnitude, 10f);
+            Assert.Less(Vector3.Distance(new Vector3(v.x, 0f, v.z), new Vector3(plate.x, 0f, plate.z)), 0.5f, $"속도 {v} 판 {plate}");
+
+            //  리뷰 6차: 세계 기준 속도만 있으면 "땅에 대해 얼마나 움직이나"(달리기 애니)를 알 수 없다 — 발밑 땅 속도를 따로 둔다.
+            var groundUnder = diver.Get<MovementBase>();
+            Assert.IsNotNull(groundUnder, "발밑 땅 속도가 기록돼야 한다");
+            Vector3 relative = v - groundUnder.Velocity.ToUnity();
+            Assert.Less(new Vector3(relative.x, 0f, relative.z).magnitude, 0.1f, $"가만히 서 있는데 땅 기준으로 {relative} 움직인다");
+        }
+
+        [Test]
+        public void 공중의_사람과_판_위의_사람이_부딪혀도_같은_기준의_속도로_계산한다()
+        {
+            //  리뷰 6차: 틱 안에서 판 위 사람은 판 기준, 공중 사람은 세계 기준 속도다. 몸싸움이 그 둘을 그대로 비교하면
+            //  실제로는 같이 움직이던 둘이 판 속도만큼 부딪치는 것으로 계산된다.
+            var obstacles = new ObstacleField();
+            var spinner = SpinningPlate(0.6f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles).GetComponent<SpinnerVolume>();
+            var registry = new EntityRegistry();
+            Vector3 aPos = new Vector3(20f, 0f, 0f);
+            Matrix4x4 firstStep = spinner.WorldAt(1) * spinner.WorldAt(0).inverse;
+            Vector3 plate = (firstStep.MultiplyPoint3x4(aPos) - aPos) / 0.02f;   // 이 자리에선 -z 쪽
+            var a = StandingDiver("a", aPos, new InputCommand());
+            a.Get<Velocity>().Linear = plate.ToNumerics();
+            //  b는 a의 회전 방향 뒤(+z)에 붙어, 판 속도를 이어받은 채 공중에 막 뜬 사람이다 — 실제로 둘이 다가오는 속도는 0.
+            var b = StandingDiver("b", aPos + new Vector3(0f, 0.2f, 0.7f), new InputCommand());   // 몸끼리 0.1m 겹쳐 반드시 부딪힌다
+            b.Get<GroundState>().IsGrounded = false;
+            b.Get<MotionState>().Value = SkydiveMotionState.Falling;
+            b.Get<Velocity>().Linear = plate.ToNumerics();
+            registry.Add(a);
+            registry.Add(b);
+            var world = RealWorld(registry, obstacles);
+
+            world.Tick(1, 0.02f);
+
+            Vector3 va = a.Get<Velocity>().Linear.ToUnity();
+            Vector3 vb = b.Get<Velocity>().Linear.ToUnity();
+            Vector3 ha = new Vector3(va.x, 0f, va.z), hb = new Vector3(vb.x, 0f, vb.z), hp = new Vector3(plate.x, 0f, plate.z);
+            Assert.Less(Vector3.Distance(ha, hp), 1f, $"판 위 a가 튕겼다 — a {ha} 판 {hp}");
+            Assert.Less(Vector3.Distance(hb, hp), 1f, $"공중 b가 튕겼다 — b {hb} 판 {hp}");
+        }
+
+        [Test]
+        public void 멈춘_판_위에_오래_서_있어도_자리와_방향이_그대로다()
+        {
+            //  안 움직이는 판이면 실어 나르기가 아무 일도 안 해야 한다(행렬 오차로 자리·방향이 조금씩 새면 안 된다).
+            var obstacles = new ObstacleField();
+            SpinningPlate(0f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles);
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(20f, 0f, 7f), new InputCommand());
+            Quaternion startRot = Quaternion.Euler(0f, 37f, 0f);
+            diver.Get<GameFramework.World.Transform>().Rotation = startRot.ToNumerics();
+            registry.Add(diver);
+            var world = RealWorld(registry, obstacles);
+
+            for (int t = 1; t <= 500; t++) { world.Tick(t, 0.02f); }
+
+            Vector3 p = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Assert.AreEqual(20f, p.x, 1e-3f);
+            Assert.AreEqual(7f, p.z, 1e-3f);
+            Assert.Less(Quaternion.Angle(startRot, diver.Get<GameFramework.World.Transform>().Rotation.ToUnity()), 0.01f);
+        }
+
         readonly List<GameObject> doorRoots = new List<GameObject>();
 
         [TearDown]

@@ -77,6 +77,13 @@ namespace LOP
                 impact.DownwardSpeed = 0f;
             }
 
+            //  순간이동한 자리는 공중이다 — 서 있던 값이 남으면 다음 틱 판 실어 나르기가 새 자리 발밑을 "서 있던 판"으로 오해한다.
+            var ground = diver.Get<GameFramework.World.GroundState>();
+            if (ground != null)
+            {
+                ground.IsGrounded = false;
+            }
+
             var stamina = diver.Get<Stamina>();
             if (stamina != null)
             {
