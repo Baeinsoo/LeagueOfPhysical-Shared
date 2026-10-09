@@ -223,7 +223,10 @@ namespace LOP
                             continue;
                         }
                         UnityEngine.Vector3 feet = GameFramework.World.EntityMotionExtensions.GetPosition(diver);
-                        var hit = _collisionQuery.Raycast(feet + UnityEngine.Vector3.up * 0.3f, UnityEngine.Vector3.down, 0.6f, _layerMask);
+                        //  가운데 레이 한 줄이 아니라 몸 굵기로 찾는다 — 접지는 몸 가장자리로도 되는데(모서리에 걸침),
+                        //  가운데만 보면 그때 실어 나르기가 빠져 모서리가 걷는 몸과 같이 돌며 영영 안 떨어진다(10-09).
+                        UnityEngine.Vector3 ball = feet + UnityEngine.Vector3.up * (_config.BodyRadius + 0.3f);
+                        var hit = _collisionQuery.CapsuleCast(ball, ball, _config.BodyRadius, UnityEngine.Vector3.down, 0.6f, _layerMask);
                         if (hit.HasHit && hit.Collider != null)
                         {
                             _riders.Add((diver, hit.Collider.transform, hit.Collider.transform.localToWorldMatrix));
