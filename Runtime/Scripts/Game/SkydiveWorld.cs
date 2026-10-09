@@ -104,7 +104,7 @@ namespace LOP
             CollectDivers();
 
             //  움직이는 판 위에 선 사람은 판이 이번 틱에 움직인 만큼 같이 옮긴다(사용자 10-09). 판을 이 틱 자세로 세우는 일도 여기서 끝난다.
-            CarryOnPlatforms(tick);
+            CarryOnPlatforms(tick, deltaTime);
 
             if (HasStarted(tick) == false)
             {
@@ -186,6 +186,23 @@ namespace LOP
                 SettleGroundAndImpact(_divers[i], groundedOnBody.Contains(_divers[i].Id));
             }
 
+            //  이번 틱에 판에서 내려선 사람은 판이 움직이던 속도를 이어받는다(달리는 버스에서 내리는 것처럼).
+            //  안 그러면 빠르게 도는 판의 모서리가 걷는 몸을 따라잡아 판 위로 도로 밀어 올린다(10-09).
+            for (int i = 0; i < _divers.Count; i++)
+            {
+                var diver = _divers[i];
+                if (_carryVelocity.TryGetValue(diver.Id, out System.Numerics.Vector3 carried) == false
+                    || (diver.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false))
+                {
+                    continue;
+                }
+                var velocity = diver.Get<GameFramework.World.Velocity>();
+                if (velocity != null)
+                {
+                    velocity.Linear += carried;
+                }
+            }
+
             // 이동 뒤에 온다 — "발 딛고 있나"를 이동 커널이 방금 계산했기 때문이다.
             // 앞에 두면 한 틱 전 접지로 회복 여부를 정하게 된다.
             for (int i = 0; i < _divers.Count; i++)
@@ -201,9 +218,13 @@ namespace LOP
         //  "발밑이 어느 판인가"는 사람이 자기 발밑을 레이로 봐서 안다(판이 위를 감지하지 않는다 — 클·서가 같은 식).
         //  판을 지난 틱 자세로 세워 밟고 있는 판과 그 자세를 적고, 이 틱 자세로 세운 뒤 그 차이만큼 옮긴다.
         //  가만히 있는 땅이면 두 자세가 같아 아무 일도 없다.
-        private void CarryOnPlatforms(long tick)
+        private readonly System.Collections.Generic.Dictionary<string, System.Numerics.Vector3> _carryVelocity
+            = new System.Collections.Generic.Dictionary<string, System.Numerics.Vector3>();
+
+        private void CarryOnPlatforms(long tick, float deltaTime)
         {
             _riders.Clear();
+            _carryVelocity.Clear();
             bool anyMoving = _doorField.All.Count > 0 || (_obstacles?.All.Count ?? 0) > 0;
             if (anyMoving && HasStarted(tick))
             {
@@ -244,7 +265,13 @@ namespace LOP
                 var transform = diver.Get<GameFramework.World.Transform>();
                 if (transform != null && after != before)
                 {
+                    System.Numerics.Vector3 from = transform.Position;
                     PlatformCarry.Apply(transform, before, after);
+                    if (deltaTime > 0f)
+                    {
+                        System.Numerics.Vector3 moved = (transform.Position - from) / deltaTime;
+                        _carryVelocity[diver.Id] = new System.Numerics.Vector3(moved.X, 0f, moved.Z);
+                    }
                 }
             }
         }

@@ -997,6 +997,46 @@ namespace LOP.Tests
                 $"모서리에 걸친 채 버티면 안 된다 — 지금 {diver.Get<GameFramework.World.Transform>().Position}");
         }
 
+        [TestCase(29f)]   // 실측 자리 — 모서리 초속 15m
+        [TestCase(55f)]   // 원판 가장자리 — 초속 29m, 가장 빠른 곳
+        public void 빠르게_도는_판_모서리에서_도는_방향으로_내려서도_판_위로_도로_밀려_올라가지_않는다(float radius)
+        {
+            //  10-09 실측: Disc_760(틱당 0.6도) 반지름 29m — 모서리가 초속 15m로 돈다. 걷는 몸(초속 4m)이 내려서면
+            //  뒤따라 온 모서리가 덮쳐 판 위로 도로 밀어 올려 영영 못 내려갔다.
+            var root = new GameObject("Spinner");
+            doorRoots.Add(root);
+            var spinner = root.AddComponent<SpinnerVolume>();
+            spinner.DegreesPerTick = 0.6f;
+            var plate = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            plate.transform.SetParent(root.transform, false);
+            plate.transform.localPosition = new Vector3(0f, -1.5f, 30f);   // z 0~60, 윗면 y 0, 두께 3
+            plate.transform.localScale = new Vector3(120f, 3f, 60f);
+            var obstacles = new ObstacleField();
+            obstacles.Add(spinner);
+
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            diver.Get<GameFramework.World.Transform>().Position = new Vector3(radius, 0f, 1f).ToNumerics();
+            diver.Get<GroundState>().IsGrounded = true;
+            diver.Get<MotionState>().Value = SkydiveMotionState.Walking;
+            diver.Get<InputBuffer>().Current = new InputCommand { Vertical = -1f };   // 판이 가는 쪽(-z)으로 걷는다
+            diver.Add(new GameFramework.World.CapsuleShape(Config().BodyRadius, Config().BodyHeight));
+            diver.Add(new GameFramework.World.PhysicsConfig(GameFramework.World.BodyKind.Kinematic, freezeRotation: true, isTrigger: false));
+            var bodyGo = new GameObject("DiverBody");
+            doorRoots.Add(bodyGo);
+            diver.Add<GameFramework.World.PhysicsBody>(PhysicsBodyFactory.Create(bodyGo, diver));
+            registry.Add(diver);
+            int env = LayerMask.GetMask("Default");
+            var world = World(registry, new GameFramework.Physics.UnityCollisionQuery(), obstacles: obstacles,
+                              motionBridge: new MotionBridge(env, LayerMask.GetMask("Character"), 1f), layerMask: env);
+            world.GameplayStartTick = 0;
+
+            for (int t = 1; t <= 150; t++) { world.Tick(t, 0.02f); }
+
+            Assert.Less(diver.Get<GameFramework.World.Transform>().Position.Y, -4f,
+                $"3초 걸었으면 판 아래로 빠져 있어야 한다 — 지금 {diver.Get<GameFramework.World.Transform>().Position}");
+        }
+
         readonly List<GameObject> doorRoots = new List<GameObject>();
 
         [TearDown]
