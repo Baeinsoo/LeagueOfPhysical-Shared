@@ -1301,6 +1301,55 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 되감을_때_서버의_접지값까지_덮으면_착지_틱이_어긋나도_라이브와_같아진다()
+        {
+            //  리뷰 4차: 속도가 "올라탄 판 기준"이라 접지가 곧 속도의 기준이다. 클라 Reconciler가 서버의 위치·속도만 덮고
+            //  접지는 예측값으로 두면, 착지 틱이 한 틱 어긋났을 때 판 속도가 두 번 빠지거나 안 빠진다.
+            //  이 테스트는 그 되감기 길을 흉내 낸다: 라이브 = 서버, 되감은 뒤 접지를 일부러 틀리게 두고 서버 값을 덮어 재생.
+            var obstacles = new ObstacleField();
+            SpinningPlate(0.6f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles);
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(29f, 0f, 0f), new InputCommand());
+            registry.Add(diver);
+            var world = RealWorld(registry, obstacles);
+
+            InputCommand InputAt(long t) => t == 5 ? new InputCommand { Jump = true } : new InputCommand();
+            var pos = new Dictionary<long, Vector3>();
+            var vel = new Dictionary<long, Vector3>();
+            var grounded = new Dictionary<long, bool>();
+            long landed = -1;
+            bool left = false;
+            for (int t = 1; t <= 200 && (landed < 0 || t <= landed + 10); t++)
+            {
+                diver.Get<InputBuffer>().Current = InputAt(t);
+                world.Tick(t, 0.02f);
+                world.SaveState(t);
+                pos[t] = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+                vel[t] = diver.Get<Velocity>().Linear.ToUnity();
+                grounded[t] = diver.Get<GroundState>().IsGrounded;
+                if (grounded[t] == false) { left = true; }
+                else if (left && landed < 0) { landed = t; }
+            }
+            Assert.IsTrue(landed > 0 && landed < 190, "뛰었다 내려앉아야 이 테스트가 잰다");
+
+            //  서버는 landed에 내려앉았는데 클라 예측은 아직 공중이라고 본 경우.
+            long anchor = landed;
+            Assert.IsTrue(world.LoadState(anchor));
+            diver.Get<GroundState>().IsGrounded = false;                       // 틀린 예측
+            diver.Get<GameFramework.World.Transform>().Position = pos[anchor].ToNumerics();   // 서버 위치
+            diver.Get<Velocity>().Linear = vel[anchor].ToNumerics();                            // 서버 속도
+            diver.Get<GroundState>().IsGrounded = grounded[anchor];                            // 서버 접지 — Reconciler가 해야 할 일
+            for (long t = anchor + 1; t <= anchor + 10; t++)
+            {
+                diver.Get<InputBuffer>().Current = InputAt(t);
+                world.Tick(t, 0.02f);
+            }
+
+            Vector3 replay = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Assert.Less(Vector3.Distance(pos[anchor + 10], replay), 1e-3f, $"재생이 라이브와 갈렸다 — 라이브 {pos[anchor + 10]} 재생 {replay}");
+        }
+
+        [Test]
         public void 멈춘_판_위에_오래_서_있어도_자리와_방향이_그대로다()
         {
             //  안 움직이는 판이면 실어 나르기가 아무 일도 안 해야 한다(행렬 오차로 자리·방향이 조금씩 새면 안 된다).

@@ -328,7 +328,20 @@ namespace LOP
                 return false;
             }
             spinner = hit.Collider.GetComponentInParent<SpinnerVolume>();
-            return spinner != null;
+            //  이 판에 등록된(= 시뮬이 매 틱 세우는) 판만 — 등록이 빠진 판은 안 도는데 식으로는 속도가 나와 매 틱 속도가 샌다(리뷰 4차).
+            if (spinner == null || _obstacles == null)
+            {
+                return false;
+            }
+            for (int i = 0; i < _obstacles.All.Count; i++)
+            {
+                if (ReferenceEquals(_obstacles.All[i], spinner))
+                {
+                    return true;
+                }
+            }
+            spinner = null;
+            return false;
         }
 
         private void PoseDoors(long tick)
