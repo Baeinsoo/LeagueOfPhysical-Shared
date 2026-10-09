@@ -1157,7 +1157,7 @@ namespace LOP.Tests
                 }
             }
             float plateSpeed = 0.6f * Mathf.Deg2Rad / 0.02f * 29f;   // 초속 약 15.2m, 이 자리에선 -z 방향
-            Assert.Greater(h.magnitude, plateSpeed * 0.9f, $"판 속도를 못 이어받았다 — {h}");
+            Assert.Greater(h.magnitude, plateSpeed + Config().GroundMoveSpeed - 1f, $"판 속도+걷기를 못 이어받았다 — {h}");
             Assert.Less(h.magnitude, plateSpeed + Config().GroundMoveSpeed + 1f, $"판 속도가 넘치게 들어갔다 — {h}");
             Assert.Greater(Vector3.Dot(h.normalized, Vector3.back), 0.9f, $"방향이 틀렸다 — {h}");
         }
@@ -1165,27 +1165,99 @@ namespace LOP.Tests
         [Test]
         public void 도는_판_위에서는_되감아_다시_돌려도_라이브와_같은_자리다()
         {
-            //  클라는 서버 답이 오면 되감아 같은 틱들을 다시 돈다. 실어 나르기가 숨은 상태를 남기면 라이브와 재생이 갈린다.
+            //  클라는 서버 답이 오면 되감아 같은 틱들을 다시 돈다. 실어 나르기·이어받기·내려앉기가 숨은 상태를 남기면 라이브와 재생이 갈린다.
+            //  재생 구간(11~120)에 점프 → 공중 → 내려앉기가 다 들어가게 한다(리뷰 2차).
             var obstacles = new ObstacleField();
             SpinningPlate(0.6f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles);
             var registry = new EntityRegistry();
-            var diver = StandingDiver("a", new Vector3(20f, 0f, 0f), new InputCommand { Horizontal = 0.5f });
+            var diver = StandingDiver("a", new Vector3(20f, 0f, 0f), new InputCommand());
             registry.Add(diver);
             var world = RealWorld(registry, obstacles);
 
-            for (int t = 1; t <= 40; t++) { world.Tick(t, 0.02f); world.SaveState(t); }
+            //  입력 없이 10틱 — 걷기 없이 판만으로 6도 돌아 있어야 한다(실어 나르기가 일어났다는 증거).
+            for (int t = 1; t <= 10; t++) { world.Tick(t, 0.02f); world.SaveState(t); }
+            Vector3 carried = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Vector3 expected = Quaternion.Euler(0f, 6f, 0f) * new Vector3(20f, 0f, 0f);
+            Assert.Less(Vector3.Distance(new Vector3(carried.x, 0f, carried.z), expected), 0.05f, $"판과 같이 6도 돌아야 한다 — {carried}");
+
+            InputCommand InputAt(long t) => t == 11 ? new InputCommand { Jump = true } : new InputCommand();
+            bool sawAir = false;
+            for (int t = 11; t <= 120; t++)
+            {
+                diver.Get<InputBuffer>().Current = InputAt(t);
+                world.Tick(t, 0.02f);
+                world.SaveState(t);
+                if (diver.Get<GroundState>().IsGrounded == false) { sawAir = true; }
+            }
+            Assert.IsTrue(sawAir && diver.Get<GroundState>().IsGrounded, "재생 구간에 뛰고 내려앉아야 이 테스트가 잰다");
             Vector3 live = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Vector3 liveVel = diver.Get<Velocity>().Linear.ToUnity();
             Quaternion liveRot = diver.Get<GameFramework.World.Transform>().Rotation.ToUnity();
 
             Assert.IsTrue(world.LoadState(10));
-            for (int t = 11; t <= 40; t++) { world.Tick(t, 0.02f); }
+            for (int t = 11; t <= 120; t++)
+            {
+                diver.Get<InputBuffer>().Current = InputAt(t);
+                world.Tick(t, 0.02f);
+            }
             Vector3 replay = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
 
-            Assert.Greater(Vector3.Distance(live, new Vector3(20f, 0f, 0f)), 1f, "판과 같이 움직였어야 이 테스트가 잰다");
             Assert.AreEqual(live.x, replay.x, 1e-4f);
             Assert.AreEqual(live.y, replay.y, 1e-4f);
             Assert.AreEqual(live.z, replay.z, 1e-4f);
+            Assert.Less(Vector3.Distance(liveVel, diver.Get<Velocity>().Linear.ToUnity()), 1e-4f);
             Assert.Less(Quaternion.Angle(liveRot, diver.Get<GameFramework.World.Transform>().Rotation.ToUnity()), 0.01f);
+        }
+
+        [Test]
+        public void 거꾸로_도는_아래_판에_떨어져_내려앉아도_그_판_위에서_미끄러지지_않는다()
+        {
+            //  리뷰 2차: 맵의 기본 길은 시계 방향 Disc_760 틈 → 20m 아래 반시계 Disc_740이다. 위 판 속도를 이어받은 채 내려앉으면
+            //  아래 판 속도와 방향이 반대라 덜어낼 것이 없어, 아래 판 위에서 이어받은 속도만큼 미끄러졌다.
+            var obstacles = new ObstacleField();
+            SpinningPlate(0.6f, new Vector3(0f, -1.5f, 30f), new Vector3(120f, 3f, 60f), obstacles);   // 위 판: z 0~60만
+            UnityEngine.Transform lower = SpinningPlate(-0.6f, new Vector3(0f, -21.5f, 0f), new Vector3(120f, 3f, 120f), obstacles);
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(29f, 0f, 1f), new InputCommand { Vertical = -1f });
+            registry.Add(diver);
+            var world = RealWorld(registry, obstacles);
+
+            bool leftGround = false;
+            long landed = -1;
+            for (int t = 1; t <= 600 && landed < 0; t++)
+            {
+                world.Tick(t, 0.02f);
+                bool grounded = diver.Get<GroundState>().IsGrounded;
+                if (grounded == false) { leftGround = true; diver.Get<InputBuffer>().Current = new InputCommand(); }
+                else if (leftGround && diver.Get<GameFramework.World.Transform>().Position.Y < -15f) { landed = t; }
+            }
+            Assert.IsTrue(landed > 0 && diver.Get<GameFramework.World.Transform>().Position.Y < -15f, "아래 판에 내려앉아야 이 테스트가 잰다");
+
+            Vector3 atLanding = lower.InverseTransformPoint(diver.Get<GameFramework.World.Transform>().Position.ToUnity());
+            for (long t = landed + 1; t <= landed + 10; t++) { world.Tick(t, 0.02f); }
+            Vector3 after = lower.InverseTransformPoint(diver.Get<GameFramework.World.Transform>().Position.ToUnity());
+
+            Assert.Less(Vector3.Distance(atLanding, after), 0.5f, $"아래 판 기준으로 {Vector3.Distance(atLanding, after):F2}m 미끄러졌다");
+        }
+
+        [Test]
+        public void 아주_느리게_도는_판도_같이_돈다()
+        {
+            //  느린 판도 "안 움직였다"로 건너뛰지 않는다. (근사 비교 == 와 정확 비교의 차이는 이 판 크기에선 한 틱 이동이
+            //  float 해상도 아래로 내려가서야 생겨 시험으로 가를 수 없다 — PR #1 리뷰 2차 답글. 회전 정규화는 PlatformCarryTests가 지킨다.)
+            var obstacles = new ObstacleField();
+            SpinningPlate(1e-5f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles);   // 틱당 0.00001도 — 한 틱 이동 3.5e-6m
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(20f, 0f, 0f), new InputCommand());
+            registry.Add(diver);
+            var world = RealWorld(registry, obstacles);
+
+            for (int t = 1; t <= 5000; t++) { world.Tick(t, 0.02f); }
+
+            //  5000틱에 0.05도 → 원호로 약 1.7cm.
+            Vector3 p = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            float moved = Vector3.Distance(new Vector3(p.x, 0f, p.z), new Vector3(20f, 0f, 0f));
+            Assert.AreEqual(20f * 0.05f * Mathf.Deg2Rad, moved, 0.004f, $"아주 느린 판을 못 따라갔다 — {moved}m");
         }
 
         [Test]

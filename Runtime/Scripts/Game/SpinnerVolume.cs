@@ -25,21 +25,6 @@ namespace LOP
             return (float)a;
         }
 
-        /// <summary>
-        /// 판 위 한 점이 지금 움직이는 수평 속도(초당 m). 위에서 보면 DegreesPerTick가 양수일 때 시계 방향으로 돈다.
-        /// 각속도가 일정해서 틱이 필요 없다 — 되감기 재생에서도 같은 답.
-        /// </summary>
-        public static Vector3 PointVelocity(Vector3 axisPoint, float degreesPerTick, Vector3 point, float deltaTime)
-        {
-            if (deltaTime <= 0f)
-            {
-                return Vector3.zero;
-            }
-            float omega = degreesPerTick * Mathf.Deg2Rad / deltaTime;
-            Vector3 r = point - axisPoint;
-            return new Vector3(omega * r.z, 0f, -omega * r.x);
-        }
-
         public void Pose(double tick)
         {
             transform.localRotation = Quaternion.Euler(0f, AngleAt(StartDegrees, DegreesPerTick, tick), 0f);

@@ -201,9 +201,9 @@ namespace LOP
                 }
             }
 
-            //  이번 틱에 도는 판에 내려앉은 사람은 그 판 속도만큼을 덜어낸다 — 이제부터는 판이 옮겨 주니까.
-            //  안 덜면 뛰어서 이어받은 판 속도에 판이 또 옮겨 주는 몫이 겹쳐 판 위에서 미끄러진다(리뷰 1차 Critical).
-            //  판 속도 쪽 몫만, 판 속도 크기까지만 덜어 수직으로 떨어진 사람(판 속도 몫 없음)은 건드리지 않는다.
+            //  이번 틱에 도는 판에 내려앉은 사람은 수평 속도를 버리고 판에 붙는다 — 이제부터는 판이 옮겨 주니까.
+            //  남겨 두면 공중에서 갖고 온 속도(이어받은 판 속도 등)만큼 판 위에서 미끄러진다. 같은 판이든 거꾸로 도는
+            //  아래 판이든 똑같이(리뷰 1·2차). 붙은 뒤엔 걷기 입력으로만 움직인다.
             for (int i = 0; i < _divers.Count; i++)
             {
                 var diver = _divers[i];
@@ -213,21 +213,11 @@ namespace LOP
                     continue;
                 }
                 var velocity = diver.Get<GameFramework.World.Velocity>();
-                if (velocity == null || TrySpinnerUnderFeet(diver, out SpinnerVolume spinner, out _) == false)
+                if (velocity == null || TrySpinnerUnderFeet(diver, out _, out _) == false)
                 {
                     continue;
                 }
-                UnityEngine.Vector3 feet = GameFramework.World.EntityMotionExtensions.GetPosition(diver);
-                UnityEngine.Vector3 plate = SpinnerVolume.PointVelocity(spinner.transform.position, spinner.DegreesPerTick, feet, deltaTime);
-                float plateSpeed = plate.magnitude;
-                if (plateSpeed <= 1e-4f)
-                {
-                    continue;
-                }
-                UnityEngine.Vector3 dir = plate / plateSpeed;
-                UnityEngine.Vector3 v = velocity.Linear.ToUnity();
-                float along = UnityEngine.Mathf.Clamp(UnityEngine.Vector3.Dot(new UnityEngine.Vector3(v.x, 0f, v.z), dir), 0f, plateSpeed);
-                velocity.Linear = (v - dir * along).ToNumerics();
+                velocity.Linear = new System.Numerics.Vector3(0f, velocity.Linear.Y, 0f);
             }
 
             // 이동 뒤에 온다 — "발 딛고 있나"를 이동 커널이 방금 계산했기 때문이다.
