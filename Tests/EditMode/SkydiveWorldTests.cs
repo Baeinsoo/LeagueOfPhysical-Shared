@@ -1379,6 +1379,43 @@ namespace LOP.Tests
             Vector3 v = diver.Get<Velocity>().Linear.ToUnity();
             Assert.Greater(plate.magnitude, 10f);
             Assert.Less(Vector3.Distance(new Vector3(v.x, 0f, v.z), new Vector3(plate.x, 0f, plate.z)), 0.5f, $"속도 {v} 판 {plate}");
+
+            //  리뷰 6차: 세계 기준 속도만 있으면 "땅에 대해 얼마나 움직이나"(달리기 애니)를 알 수 없다 — 발밑 땅 속도를 따로 둔다.
+            var groundUnder = diver.Get<MovementBase>();
+            Assert.IsNotNull(groundUnder, "발밑 땅 속도가 기록돼야 한다");
+            Vector3 relative = v - groundUnder.Velocity.ToUnity();
+            Assert.Less(new Vector3(relative.x, 0f, relative.z).magnitude, 0.1f, $"가만히 서 있는데 땅 기준으로 {relative} 움직인다");
+        }
+
+        [Test]
+        public void 공중의_사람과_판_위의_사람이_부딪혀도_같은_기준의_속도로_계산한다()
+        {
+            //  리뷰 6차: 틱 안에서 판 위 사람은 판 기준, 공중 사람은 세계 기준 속도다. 몸싸움이 그 둘을 그대로 비교하면
+            //  실제로는 같이 움직이던 둘이 판 속도만큼 부딪치는 것으로 계산된다.
+            var obstacles = new ObstacleField();
+            var spinner = SpinningPlate(0.6f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles).GetComponent<SpinnerVolume>();
+            var registry = new EntityRegistry();
+            Vector3 aPos = new Vector3(20f, 0f, 0f);
+            Matrix4x4 firstStep = spinner.WorldAt(1) * spinner.WorldAt(0).inverse;
+            Vector3 plate = (firstStep.MultiplyPoint3x4(aPos) - aPos) / 0.02f;   // 이 자리에선 -z 쪽
+            var a = StandingDiver("a", aPos, new InputCommand());
+            a.Get<Velocity>().Linear = plate.ToNumerics();
+            //  b는 a의 회전 방향 뒤(+z)에 붙어, 판 속도를 이어받은 채 공중에 막 뜬 사람이다 — 실제로 둘이 다가오는 속도는 0.
+            var b = StandingDiver("b", aPos + new Vector3(0f, 0.2f, 0.7f), new InputCommand());   // 몸끼리 0.1m 겹쳐 반드시 부딪힌다
+            b.Get<GroundState>().IsGrounded = false;
+            b.Get<MotionState>().Value = SkydiveMotionState.Falling;
+            b.Get<Velocity>().Linear = plate.ToNumerics();
+            registry.Add(a);
+            registry.Add(b);
+            var world = RealWorld(registry, obstacles);
+
+            world.Tick(1, 0.02f);
+
+            Vector3 va = a.Get<Velocity>().Linear.ToUnity();
+            Vector3 vb = b.Get<Velocity>().Linear.ToUnity();
+            Vector3 ha = new Vector3(va.x, 0f, va.z), hb = new Vector3(vb.x, 0f, vb.z), hp = new Vector3(plate.x, 0f, plate.z);
+            Assert.Less(Vector3.Distance(ha, hp), 1f, $"판 위 a가 튕겼다 — a {ha} 판 {hp}");
+            Assert.Less(Vector3.Distance(hb, hp), 1f, $"공중 b가 튕겼다 — b {hb} 판 {hp}");
         }
 
         [Test]

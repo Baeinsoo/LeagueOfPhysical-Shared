@@ -176,8 +176,12 @@ namespace LOP
             //   것을 전제한다 — 우리 속도에서는 밀어내기가 겹침을 지워 충격이 아예 안 생긴다.)
             //  이동 전 자리를 함께 넘긴다 — 빠른 밟기는 틱이 끝난 모습만 보면 이미 깊이 파고든
             //  뒤라 접촉 방향이 옆으로 나온다(BodySweep 참고).
+            //  몸싸움은 모두 같은 기준(세계)으로 본다 — 판 위 사람은 지금 판 기준이라, 공중 사람과 그대로 비교하면
+            //  같이 움직이던 둘이 판 속도만큼 부딪치는 것으로 계산된다(리뷰 6차). 계산 동안만 세계 기준으로 돌렸다 되돌린다.
+            ShiftAttachedVelocity(+1f);
             System.Collections.Generic.HashSet<string> groundedOnBody =
                 _bodyCollisionSystem.Resolve(_divers, _beforePositionLookup);
+            ShiftAttachedVelocity(-1f);
 
             for (int i = 0; i < _divers.Count; i++)
             {
@@ -275,6 +279,23 @@ namespace LOP
             }
         }
 
+        private void ShiftAttachedVelocity(float sign)
+        {
+            for (int i = 0; i < _divers.Count; i++)
+            {
+                var diver = _divers[i];
+                if (_attached.TryGetValue(diver.Id, out var ride) == false)
+                {
+                    continue;
+                }
+                var velocity = diver.Get<GameFramework.World.Velocity>();
+                if (velocity != null)
+                {
+                    velocity.Linear += new System.Numerics.Vector3(ride.velocity.x, 0f, ride.velocity.z) * sign;
+                }
+            }
+        }
+
         /// <summary>
         /// 틱 시작에 판 기준으로 바꿨던 사람만 세계 기준으로 되돌린다. 같은 판에 그대로 서 있으면 지금 자리의 판 속도를,
         /// 내려섰거나 다른 판으로 옮겨 탔으면 옛 판 속도를 더한다(KCC: 판이 바뀌어도 세계 기준 속도는 이어진다).
@@ -282,18 +303,28 @@ namespace LOP
         /// </summary>
         private void ToWorldVelocity(GameFramework.World.Entity diver, long tick, float deltaTime)
         {
+            //  지금 발밑 땅의 속도 — 판 위면 그 자리 판 속도, 아니면 0. 달리기 애니 등 "땅에 대해" 묻는 곳이 쓴다(리뷰 6차).
+            UnityEngine.Vector3 under = UnityEngine.Vector3.zero;
+            SpinnerVolume underSpinner = null;
+            if ((diver.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false)
+                && TrySpinnerUnderFeet(diver, out underSpinner))
+            {
+                UnityEngine.Vector3 feet = GameFramework.World.EntityMotionExtensions.GetPosition(diver);
+                under = PlatformVelocity(underSpinner.WorldAt(tick - 1), underSpinner.WorldAt(tick), feet, deltaTime);
+            }
+            var movementBase = diver.Get<MovementBase>();
+            if (movementBase == null)
+            {
+                movementBase = new MovementBase();
+                diver.Add(movementBase);
+            }
+            movementBase.Velocity = new System.Numerics.Vector3(under.x, 0f, under.z);
+
             if (_attached.TryGetValue(diver.Id, out var ride) == false)
             {
                 return;
             }
-            UnityEngine.Vector3 platformVelocity = ride.velocity;
-            if ((diver.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false)
-                && TrySpinnerUnderFeet(diver, out SpinnerVolume spinner) && ReferenceEquals(spinner, ride.spinner))
-            {
-                UnityEngine.Vector3 feet = GameFramework.World.EntityMotionExtensions.GetPosition(diver);
-                platformVelocity = PlatformVelocity(spinner.WorldAt(tick - 1), spinner.WorldAt(tick), feet, deltaTime);
-            }
-
+            UnityEngine.Vector3 platformVelocity = ReferenceEquals(underSpinner, ride.spinner) ? under : ride.velocity;
             var velocity = diver.Get<GameFramework.World.Velocity>();
             if (velocity != null)
             {
