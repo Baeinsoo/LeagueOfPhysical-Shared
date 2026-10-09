@@ -30,7 +30,9 @@ namespace LOP.Tests
                                   DoorField doors = null,
                                   FinishLineBounds finish = null,
                                   BodyCollisionSystem bodyCollisionSystem = null,
-                                  CatchTargetField catchTargets = null)
+                                  CatchTargetField catchTargets = null,
+                                  ObstacleField obstacles = null,
+                                  GameFramework.World.IMotionBridge motionBridge = null)
             => new SkydiveWorld(registry, new WorldEventBuffer(),
                                 new SkydiveMoveSystem(), new StaminaSystem(),
                                 new WindDriftSystem(),
@@ -42,8 +44,8 @@ namespace LOP.Tests
                                     Config().BodyRadius, Config().BodyHeight, Config().Restitution, Vector3.one),
                                 Config(),
                                 query ?? new HalfSpaceQuery(),
-                                new FlappyWorldFixture.NoopMotionBridge(), layerMask: ~0,
-                                catchTargets: catchTargets);
+                                motionBridge ?? new FlappyWorldFixture.NoopMotionBridge(), layerMask: ~0,
+                                obstacles: obstacles, catchTargets: catchTargets);
 
         //  결승선은 "서서 접지한 다이버의 몸이 실제로 닿는 높이"에 둬야 한다 — 그래야 아래 세
         //  테스트가 서로 다른 결론(접지 전 통과 안 됨 / 치명 착지는 통과 안 됨 / 안전 착지는
@@ -870,6 +872,49 @@ namespace LOP.Tests
 
             door.Pose(12);
             Assert.AreEqual(door.PanelA.localPosition.x, posed, Tolerance);
+        }
+
+        //  엔진 겹침 질의가 방금 옮긴 트랜스폼을 보게 한다(실제 브리지가 하는 일만).
+        sealed class SyncingBridge : GameFramework.World.IMotionBridge
+        {
+            public void SyncTransforms() => Physics.SyncTransforms();
+            public System.Numerics.Vector3 Depenetrate(Entity entity) => System.Numerics.Vector3.Zero;
+            public void Separate(Entity entity) { }
+            public void PushMotion(Entity entity) { }
+        }
+
+        [Test]
+        public void 도는_원판_위에_서_있으면_원판과_같이_돈다()
+        {
+            //  사용자 10-09 — 발밑만 미끄러지면 얼음판처럼 보인다. 진짜 콜라이더·진짜 레이로 잰다.
+            var root = new GameObject("Spinner");
+            doorRoots.Add(root);
+            var spinner = root.AddComponent<SpinnerVolume>();
+            spinner.DegreesPerTick = 1f;
+            var plate = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            plate.transform.SetParent(root.transform, false);
+            plate.transform.localPosition = new Vector3(0f, -0.5f, 0f);   // 윗면 y 0
+            plate.transform.localScale = new Vector3(40f, 1f, 40f);
+            var obstacles = new ObstacleField();
+            obstacles.Add(spinner);
+
+            var registry = new EntityRegistry();
+            var diver = Diver("a");
+            diver.Get<GameFramework.World.Transform>().Position = new Vector3(10f, 0f, 0f).ToNumerics();
+            diver.Get<GroundState>().IsGrounded = true;
+            diver.Get<MotionState>().Value = SkydiveMotionState.Walking;
+            registry.Add(diver);
+            var world = World(registry, new GameFramework.Physics.UnityCollisionQuery(), obstacles: obstacles, motionBridge: new SyncingBridge());
+            world.GameplayStartTick = 0;
+
+            for (int t = 1; t <= 30; t++) { world.Tick(t, 0.02f); }
+
+            //  30틱에 30도. 판 중심에서 10m 떨어져 있었으니 같은 반지름으로 30도 돌아 있어야 한다.
+            Vector3 p = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Vector3 expected = Quaternion.Euler(0f, 30f, 0f) * new Vector3(10f, 0f, 0f);
+            Assert.IsTrue(diver.Get<GroundState>().IsGrounded, "판 위에 서 있어야 이 테스트가 잰다");
+            Assert.AreEqual(10f, new Vector2(p.x, p.z).magnitude, 0.3f, "반지름이 유지된다");
+            Assert.Less(Vector3.Angle(new Vector3(p.x, 0f, p.z), expected), 2f, $"판과 같이 돌아야 한다 — 지금 {p}");
         }
 
         readonly List<GameObject> doorRoots = new List<GameObject>();
