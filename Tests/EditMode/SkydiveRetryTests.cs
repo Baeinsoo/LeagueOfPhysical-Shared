@@ -54,5 +54,16 @@ namespace LOP.Tests
             Assert.AreEqual(300f, d.Get<Stamina>().Current);
             Assert.IsFalse(d.Get<Posture>().Gliding);
         }
+
+        [Test]
+        public void 다시_떨어지면_발밑이_비었다고_본다()
+        {
+            //  리뷰 3차: 서 있던 값이 남으면 다음 틱 판 실어 나르기가 순간이동한 자리 발밑을 "방금까지 서 있던 판"으로 오해한다.
+            var d = Diver(-20f);
+            d.Add(new GameFramework.World.GroundState { IsGrounded = true });
+            int order = 0;
+            SkydiveRespawn.ApplyAt(d, new Vector3(0f, 270f, 0f), 300f, ref order);
+            Assert.IsFalse(d.Get<GameFramework.World.GroundState>().IsGrounded);
+        }
     }
 }

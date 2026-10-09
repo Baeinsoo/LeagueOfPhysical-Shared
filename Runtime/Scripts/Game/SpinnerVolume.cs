@@ -25,6 +25,13 @@ namespace LOP
             return (float)a;
         }
 
+        /// <summary>그 틱 자세의 판 행렬(부모까지 포함). 트랜스폼을 옮기지 않고 식으로만 낸다 — 판 속도·실어 나르기가 같은 출처를 쓴다.</summary>
+        public Matrix4x4 WorldAt(double tick)
+        {
+            Matrix4x4 parent = transform.parent != null ? transform.parent.localToWorldMatrix : Matrix4x4.identity;
+            return parent * Matrix4x4.TRS(transform.localPosition, Quaternion.Euler(0f, AngleAt(StartDegrees, DegreesPerTick, tick), 0f), transform.localScale);
+        }
+
         public void Pose(double tick)
         {
             transform.localRotation = Quaternion.Euler(0f, AngleAt(StartDegrees, DegreesPerTick, tick), 0f);
