@@ -101,9 +101,10 @@ namespace LOP
             //  뒤로 물리면 그 앞의 질의(발밑 여유 레이)가 지난 틱 자세를 보게 되고, 되감기
             //  재생에서는 아예 아무 틱의 자세를 볼지 정해지지 않는다. 클라 뷰가 프레임마다
             //  패널을 옮기는 지금은 그 틈이 곧 예측 갈림이다.
-            PoseDoors(tick);
-
             CollectDivers();
+
+            //  움직이는 판 위에 선 사람은 판이 이번 틱에 움직인 만큼 같이 옮긴다(사용자 10-09). 판을 이 틱 자세로 세우는 일도 여기서 끝난다.
+            CarryOnPlatforms(tick);
 
             if (HasStarted(tick) == false)
             {
@@ -191,6 +192,57 @@ namespace LOP
             {
                 bool grounded = _divers[i].Get<GameFramework.World.GroundState>()?.IsGrounded ?? false;
                 _staminaSystem.Tick(_divers[i], deltaTime, _config, grounded);
+            }
+        }
+
+        private readonly System.Collections.Generic.List<(GameFramework.World.Entity diver, UnityEngine.Transform plate, UnityEngine.Matrix4x4 before)> _riders
+            = new System.Collections.Generic.List<(GameFramework.World.Entity, UnityEngine.Transform, UnityEngine.Matrix4x4)>();
+
+        //  "발밑이 어느 판인가"는 사람이 자기 발밑을 레이로 봐서 안다(판이 위를 감지하지 않는다 — 클·서가 같은 식).
+        //  판을 지난 틱 자세로 세워 밟고 있는 판과 그 자세를 적고, 이 틱 자세로 세운 뒤 그 차이만큼 옮긴다.
+        //  가만히 있는 땅이면 두 자세가 같아 아무 일도 없다.
+        private void CarryOnPlatforms(long tick)
+        {
+            _riders.Clear();
+            bool anyMoving = _doorField.All.Count > 0 || (_obstacles?.All.Count ?? 0) > 0;
+            if (anyMoving && HasStarted(tick))
+            {
+                bool anyGrounded = false;
+                for (int i = 0; i < _divers.Count && anyGrounded == false; i++)
+                {
+                    anyGrounded = _divers[i].Get<GameFramework.World.GroundState>()?.IsGrounded ?? false;
+                }
+                if (anyGrounded)
+                {
+                    PoseDoors(tick - 1);
+                    for (int i = 0; i < _divers.Count; i++)
+                    {
+                        var diver = _divers[i];
+                        if ((diver.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false) == false)
+                        {
+                            continue;
+                        }
+                        UnityEngine.Vector3 feet = GameFramework.World.EntityMotionExtensions.GetPosition(diver);
+                        var hit = _collisionQuery.Raycast(feet + UnityEngine.Vector3.up * 0.3f, UnityEngine.Vector3.down, 0.6f, _layerMask);
+                        if (hit.HasHit && hit.Collider != null)
+                        {
+                            _riders.Add((diver, hit.Collider.transform, hit.Collider.transform.localToWorldMatrix));
+                        }
+                    }
+                }
+            }
+
+            PoseDoors(tick);
+
+            for (int i = 0; i < _riders.Count; i++)
+            {
+                var (diver, plate, before) = _riders[i];
+                UnityEngine.Matrix4x4 after = plate.localToWorldMatrix;
+                var transform = diver.Get<GameFramework.World.Transform>();
+                if (transform != null && after != before)
+                {
+                    PlatformCarry.Apply(transform, before, after);
+                }
             }
         }
 
