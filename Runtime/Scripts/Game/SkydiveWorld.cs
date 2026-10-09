@@ -97,13 +97,11 @@ namespace LOP
 
         protected override void Mutation(long tick, float deltaTime)
         {
-            //  문을 이 틱 자세로 돌려놓고 엔진에 반영하는 것이 틱의 첫 줄이다(스펙 §5 ①).
-            //  뒤로 물리면 그 앞의 질의(발밑 여유 레이)가 지난 틱 자세를 보게 되고, 되감기
-            //  재생에서는 아예 아무 틱의 자세를 볼지 정해지지 않는다. 클라 뷰가 프레임마다
-            //  패널을 옮기는 지금은 그 틈이 곧 예측 갈림이다.
             CollectDivers();
 
-            //  움직이는 판 위에 선 사람은 판이 이번 틱에 움직인 만큼 같이 옮긴다(사용자 10-09). 판을 이 틱 자세로 세우는 일도 여기서 끝난다.
+            //  문·장애물을 이 틱 자세로 세우고 엔진에 반영하는 일이 어떤 질의보다 먼저다(스펙 §5 ①) — 그 안에서 한다.
+            //  뒤로 물리면 발밑 여유 레이가 지난 틱 자세를 보고, 클라 뷰가 프레임마다 옮겨 둔 소수 틱 자세가 판정에 샌다.
+            //  도는 판 위에 선 사람은 판이 이번 틱에 돈 만큼 같이 옮긴다(사용자 10-09).
             CarryOnPlatforms(tick, deltaTime);
 
             if (HasStarted(tick) == false)
@@ -203,6 +201,35 @@ namespace LOP
                 }
             }
 
+            //  이번 틱에 도는 판에 내려앉은 사람은 그 판 속도만큼을 덜어낸다 — 이제부터는 판이 옮겨 주니까.
+            //  안 덜면 뛰어서 이어받은 판 속도에 판이 또 옮겨 주는 몫이 겹쳐 판 위에서 미끄러진다(리뷰 1차 Critical).
+            //  판 속도 쪽 몫만, 판 속도 크기까지만 덜어 수직으로 떨어진 사람(판 속도 몫 없음)은 건드리지 않는다.
+            for (int i = 0; i < _divers.Count; i++)
+            {
+                var diver = _divers[i];
+                if (_beforeMove.TryGetValue(diver.Id, out var before) == false || before.grounded
+                    || (diver.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false) == false)
+                {
+                    continue;
+                }
+                var velocity = diver.Get<GameFramework.World.Velocity>();
+                if (velocity == null || TrySpinnerUnderFeet(diver, out SpinnerVolume spinner, out _) == false)
+                {
+                    continue;
+                }
+                UnityEngine.Vector3 feet = GameFramework.World.EntityMotionExtensions.GetPosition(diver);
+                UnityEngine.Vector3 plate = SpinnerVolume.PointVelocity(spinner.transform.position, spinner.DegreesPerTick, feet, deltaTime);
+                float plateSpeed = plate.magnitude;
+                if (plateSpeed <= 1e-4f)
+                {
+                    continue;
+                }
+                UnityEngine.Vector3 dir = plate / plateSpeed;
+                UnityEngine.Vector3 v = velocity.Linear.ToUnity();
+                float along = UnityEngine.Mathf.Clamp(UnityEngine.Vector3.Dot(new UnityEngine.Vector3(v.x, 0f, v.z), dir), 0f, plateSpeed);
+                velocity.Linear = (v - dir * along).ToNumerics();
+            }
+
             // 이동 뒤에 온다 — "발 딛고 있나"를 이동 커널이 방금 계산했기 때문이다.
             // 앞에 두면 한 틱 전 접지로 회복 여부를 정하게 된다.
             for (int i = 0; i < _divers.Count; i++)
@@ -243,14 +270,9 @@ namespace LOP
                         {
                             continue;
                         }
-                        UnityEngine.Vector3 feet = GameFramework.World.EntityMotionExtensions.GetPosition(diver);
-                        //  가운데 레이 한 줄이 아니라 몸 굵기로 찾는다 — 접지는 몸 가장자리로도 되는데(모서리에 걸침),
-                        //  가운데만 보면 그때 실어 나르기가 빠져 모서리가 걷는 몸과 같이 돌며 영영 안 떨어진다(10-09).
-                        UnityEngine.Vector3 ball = feet + UnityEngine.Vector3.up * (_config.BodyRadius + 0.3f);
-                        var hit = _collisionQuery.CapsuleCast(ball, ball, _config.BodyRadius, UnityEngine.Vector3.down, 0.6f, _layerMask);
-                        if (hit.HasHit && hit.Collider != null)
+                        if (TrySpinnerUnderFeet(diver, out _, out UnityEngine.Transform plate))
                         {
-                            _riders.Add((diver, hit.Collider.transform, hit.Collider.transform.localToWorldMatrix));
+                            _riders.Add((diver, plate, plate.localToWorldMatrix));
                         }
                     }
                 }
@@ -263,7 +285,8 @@ namespace LOP
                 var (diver, plate, before) = _riders[i];
                 UnityEngine.Matrix4x4 after = plate.localToWorldMatrix;
                 var transform = diver.Get<GameFramework.World.Transform>();
-                if (transform != null && after != before)
+                //  Unity의 == 는 근사 비교라 아주 느린 판을 "안 움직였다"로 본다 — 정확히 비교한다.
+                if (transform != null && after.Equals(before) == false)
                 {
                     System.Numerics.Vector3 from = transform.Position;
                     PlatformCarry.Apply(transform, before, after);
@@ -274,6 +297,30 @@ namespace LOP
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// 발밑의 도는 판(원판·풍차 날개)을 몸 굵기로 찾는다. 가운데 레이 한 줄이면 모서리에 걸쳐 섰을 때 못 찾는다(10-09).
+        /// 미끄러지는 문·조리개는 태우지 않는다 — "열리면 떨어지는 관문"이고, 초속 40~55m로 미끄러져 실어 나르면 벽까지 끌려간다(리뷰 1차).
+        /// </summary>
+        private bool TrySpinnerUnderFeet(GameFramework.World.Entity diver, out SpinnerVolume spinner, out UnityEngine.Transform plate)
+        {
+            spinner = null;
+            plate = null;
+            UnityEngine.Vector3 feet = GameFramework.World.EntityMotionExtensions.GetPosition(diver);
+            UnityEngine.Vector3 ball = feet + UnityEngine.Vector3.up * (_config.BodyRadius + 0.3f);
+            var hit = _collisionQuery.CapsuleCast(ball, ball, _config.BodyRadius, UnityEngine.Vector3.down, 0.6f, _layerMask);
+            if (hit.HasHit == false || hit.Collider == null)
+            {
+                return false;
+            }
+            spinner = hit.Collider.GetComponentInParent<SpinnerVolume>();
+            if (spinner == null)
+            {
+                return false;
+            }
+            plate = hit.Collider.transform;
+            return true;
         }
 
         private void PoseDoors(long tick)
