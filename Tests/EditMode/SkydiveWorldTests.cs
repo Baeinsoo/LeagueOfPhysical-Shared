@@ -1112,9 +1112,9 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 미끄러지는_문_위에_선_사람은_실려_가지_않고_문이_열리면_떨어진다()
+        public void 미끄러지는_문_위에_선_사람은_문과_같이_실려_간다()
         {
-            //  리뷰 1차 Important: 문·조리개는 "열리면 떨어지는 관문"이다. 실어 나르면 문 밖으로 실려 가 영영 안 떨어지고, 내려서면 초속 40m를 이어받는다.
+            //  업계 표준(UE·KCC·SM64): 움직이는 판이면 종류와 상관없이 위에 선 사람을 같이 옮긴다(사용자 10-10 선택 — 이전엔 문을 뺐다).
             var door = MakeDoor();
             var panel = GameObject.CreatePrimitive(PrimitiveType.Cube);
             panel.transform.SetParent(door.PanelA, false);
@@ -1130,12 +1130,59 @@ namespace LOP.Tests
             registry.Add(diver);
             var world = RealWorld(registry, new ObstacleField(), doors);
 
-            for (int t = 16; t <= 49; t++) { world.Tick(t, 0.02f); }   // 35~39에 열리고 49까지 열려 있다
+            //  17틱부터 — 16틱 이전엔 문이 닫히는 중이라(10~14), 그때부터 서 있던 사람이면 문 속도를 이미 갖고 있어야 한다.
+            for (int t = 17; t <= 40; t++) { world.Tick(t, 0.02f); }   // 35~39에 열린다 — 패널 A가 옆으로 8m 미끄러진다
 
             Vector3 p = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
-            Assert.AreEqual(start.x, p.x, 0.5f, "문과 같이 옆으로 실려 갔다");
-            Assert.IsFalse(diver.Get<GroundState>().IsGrounded, "문이 열렸으면 발밑이 비어야 한다");
-            Assert.Less(p.y, -0.5f, "문이 열렸으면 그 자리로 떨어지기 시작해야 한다");
+            Vector3 panelNow = door.PanelA.position;
+            Assert.Greater(Vector3.Distance(panelNow, start), 5f, "패널이 움직여야 이 테스트가 잰다");
+            Assert.IsTrue(diver.Get<GroundState>().IsGrounded, "패널 위에 그대로 서 있어야 한다");
+            Assert.AreEqual(panelNow.x, p.x, 0.5f, "패널과 같이 실려 가야 한다");
+            Assert.AreEqual(panelNow.z, p.z, 0.5f, "패널과 같이 실려 가야 한다");
+
+            //  문이 멈추면 그 위에 선 사람도 멈춘다 — 실려 가던 속도가 남아 미끄러지면 안 된다(판 가속이 판 기준 속도로 새지 않는다).
+            for (int t = 41; t <= 45; t++) { world.Tick(t, 0.02f); }
+            Vector3 v = diver.Get<Velocity>().Linear.ToUnity();
+            Assert.Less(new Vector3(v.x, 0f, v.z).magnitude, 0.5f, $"문이 멈췄는데 {v}로 움직인다");
+            Assert.AreEqual(door.PanelA.position.x, diver.Get<GameFramework.World.Transform>().Position.X, 0.5f);
+        }
+
+        [Test]
+        public void 조리개_날개_위에_선_사람은_날개와_같이_물러난다()
+        {
+            var root = new GameObject("Iris");
+            doorRoots.Add(root);
+            var iris = root.AddComponent<IrisVolume>();
+            iris.Travel = 10f; iris.Period = 40; iris.OpenTicks = 10; iris.MoveTicks = 5; iris.Phase = 0;
+            var blades = new UnityEngine.Transform[2];
+            for (int b = 0; b < 2; b++)
+            {
+                //  날개 둘: +x 반쪽, −x 반쪽. 피벗이 물러나는 방향이다.
+                var blade = new GameObject($"Blade_{b}").transform;
+                blade.SetParent(root.transform, false);
+                blade.localPosition = new Vector3(b == 0 ? 1f : -1f, 0f, 0f);
+                var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                box.transform.SetParent(blade, false);
+                box.transform.localPosition = new Vector3(b == 0 ? 9f : -9f, -0.25f, 0f);   // 날개 몸통 x ±1~±19, 윗면 y 0
+                box.transform.localScale = new Vector3(18f, 0.5f, 20f);
+                blades[b] = blade;
+            }
+            iris.Blades = blades;
+            iris.Capture();
+            var obstacles = new ObstacleField();
+            obstacles.Add(iris);
+            iris.Pose(15);   // 닫힘
+
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(8f, 0f, 0f), new InputCommand());   // +x 날개 위
+            registry.Add(diver);
+            var world = RealWorld(registry, obstacles);
+
+            for (int t = 17; t <= 40; t++) { world.Tick(t, 0.02f); }   // 35~39에 열려 +x 날개가 10m 물러난다(17틱부터 — 위 문 테스트와 같은 이유)
+
+            Vector3 p = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Assert.IsTrue(diver.Get<GroundState>().IsGrounded, "날개 위에 그대로 서 있어야 한다");
+            Assert.AreEqual(18f, p.x, 0.5f, "날개와 같이 10m 물러나야 한다");
         }
 
         [Test]

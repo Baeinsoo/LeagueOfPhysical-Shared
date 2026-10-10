@@ -208,15 +208,15 @@ namespace LOP
 
         //  틱 시작 때(= 지난 틱 끝) 올라타 있던 판과, 그 판이 이번 틱에 발밑을 옮긴 속도. KCC의 attached rigidbody.
         //  매 틱 다시 구한다 — 접지 여부와 자리는 저장 상태에 있고 판 자세는 틱의 식이라, 되감아 다시 돌려도 같은 값이 나온다.
-        private readonly System.Collections.Generic.Dictionary<string, (SpinnerVolume spinner, UnityEngine.Vector3 velocity)> _attached
-            = new System.Collections.Generic.Dictionary<string, (SpinnerVolume, UnityEngine.Vector3)>();
+        private readonly System.Collections.Generic.Dictionary<string, (IMovingPlatform platform, UnityEngine.Transform part, UnityEngine.Vector3 velocity)> _attached
+            = new System.Collections.Generic.Dictionary<string, (IMovingPlatform, UnityEngine.Transform, UnityEngine.Vector3)>();
 
         //  "발밑이 어느 판인가"는 사람이 자기 발밑을 몸 굵기로 훑어서 안다(판이 위를 감지하지 않는다 — 클·서가 같은 식).
         //  판을 지난 틱 자세로 세워 밟고 있던 판을 찾고, 이 틱 자세로 세운 뒤 그 판이 움직인 만큼 옮긴다.
         private void CarryOnPlatforms(long tick, float deltaTime)
         {
             _attached.Clear();
-            if ((_obstacles?.All.Count ?? 0) > 0 && HasStarted(tick))
+            if (((_obstacles?.All.Count ?? 0) > 0 || _doorField.All.Count > 0) && HasStarted(tick))
             {
                 bool anyGrounded = false;
                 for (int i = 0; i < _divers.Count && anyGrounded == false; i++)
@@ -230,9 +230,9 @@ namespace LOP
                     {
                         var diver = _divers[i];
                         if ((diver.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false)
-                            && TrySpinnerUnderFeet(diver, out SpinnerVolume spinner))
+                            && TryPlatformUnderFeet(diver, out IMovingPlatform platform, out UnityEngine.Transform part))
                         {
-                            _attached[diver.Id] = (spinner, UnityEngine.Vector3.zero);
+                            _attached[diver.Id] = (platform, part, UnityEngine.Vector3.zero);
                         }
                     }
                 }
@@ -252,30 +252,33 @@ namespace LOP
                 {
                     continue;
                 }
-                UnityEngine.Matrix4x4 before = ride.spinner.WorldAt(tick - 1);
-                UnityEngine.Matrix4x4 after = ride.spinner.WorldAt(tick);
+                UnityEngine.Matrix4x4 before = ride.platform.PartWorldAt(ride.part, tick - 1);
+                UnityEngine.Matrix4x4 after = ride.platform.PartWorldAt(ride.part, tick);
                 UnityEngine.Vector3 feet = transform.Position.ToUnity();
                 UnityEngine.Vector3 platformVelocity = PlatformVelocity(before, after, feet, deltaTime);
-                _attached[diver.Id] = (ride.spinner, platformVelocity);
-                if (platformVelocity.sqrMagnitude <= 0f)
-                {
-                    continue;
-                }
+                _attached[diver.Id] = (ride.platform, ride.part, platformVelocity);
 
                 //  이번 틱 이동·걷기는 판 기준으로 계산한다 — 틱 끝에 판 속도를 다시 더한다(ToWorldVelocity).
+                //  빼는 값은 *지난 틱 끝에 더했던* 판 속도(틱-2→틱-1)다. 이번 틱 판 속도를 빼면 판이 가속하는 틱(문이 열리기
+                //  시작하는 순간)에 그 가속이 몸의 판 기준 속도로 새어, 실린 만큼 도로 걸어 돌아간다. KCC는 판 기준 속도를 따로 들고 있어
+                //  판 가속과 무관하다 — 같은 값을 빼야 그와 같아진다.
+                UnityEngine.Vector3 previous = PlatformVelocity(ride.platform.PartWorldAt(ride.part, tick - 2), before, feet, deltaTime);
                 var velocity = diver.Get<GameFramework.World.Velocity>();
                 if (velocity != null)
                 {
-                    velocity.Linear -= new System.Numerics.Vector3(platformVelocity.x, 0f, platformVelocity.z);
+                    velocity.Linear -= new System.Numerics.Vector3(previous.x, 0f, previous.z);
                 }
 
                 //  판이 옮겨 줄 자리와 몸 방향을 구하고, 자리는 벽에 막히는지 쓸어 보며 간다(KCC·언리얼처럼 — 순간이동하면 벽을 뚫는다).
-                PlatformCarry.Apply(transform, before, after);
-                transform.Position = feet.ToNumerics();
-                var swept = KinematicMover.Move(new KinematicMoveInput(
-                    feet, platformVelocity, _config.BodyRadius, _config.BodyHeight, deltaTime,
-                    _layerMask, stepOffset: 0f), _collisionQuery);
-                transform.Position = swept.position.ToNumerics();
+                if (platformVelocity.sqrMagnitude > 0f)
+                {
+                    PlatformCarry.Apply(transform, before, after);
+                    transform.Position = feet.ToNumerics();
+                    var swept = KinematicMover.Move(new KinematicMoveInput(
+                        feet, platformVelocity, _config.BodyRadius, _config.BodyHeight, deltaTime,
+                        _layerMask, stepOffset: 0f), _collisionQuery);
+                    transform.Position = swept.position.ToNumerics();
+                }
             }
         }
 
@@ -305,12 +308,12 @@ namespace LOP
         {
             //  지금 발밑 땅의 속도 — 판 위면 그 자리 판 속도, 아니면 0. 달리기 애니 등 "땅에 대해" 묻는 곳이 쓴다(리뷰 6차).
             UnityEngine.Vector3 under = UnityEngine.Vector3.zero;
-            SpinnerVolume underSpinner = null;
+            UnityEngine.Transform underPart = null;
             if ((diver.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false)
-                && TrySpinnerUnderFeet(diver, out underSpinner))
+                && TryPlatformUnderFeet(diver, out IMovingPlatform underPlatform, out underPart))
             {
                 UnityEngine.Vector3 feet = GameFramework.World.EntityMotionExtensions.GetPosition(diver);
-                under = PlatformVelocity(underSpinner.WorldAt(tick - 1), underSpinner.WorldAt(tick), feet, deltaTime);
+                under = PlatformVelocity(underPlatform.PartWorldAt(underPart, tick - 1), underPlatform.PartWorldAt(underPart, tick), feet, deltaTime);
             }
             var movementBase = diver.Get<MovementBase>();
             if (movementBase == null)
@@ -324,7 +327,7 @@ namespace LOP
             {
                 return;
             }
-            UnityEngine.Vector3 platformVelocity = ReferenceEquals(underSpinner, ride.spinner) ? under : ride.velocity;
+            UnityEngine.Vector3 platformVelocity = ReferenceEquals(underPart, ride.part) ? under : ride.velocity;
             var velocity = diver.Get<GameFramework.World.Velocity>();
             if (velocity != null)
             {
@@ -345,12 +348,14 @@ namespace LOP
         }
 
         /// <summary>
-        /// 발밑의 도는 판(원판·풍차 날개)을 몸 굵기로 찾는다. 가운데 레이 한 줄이면 모서리에 걸쳐 섰을 때 못 찾는다(10-09).
-        /// 미끄러지는 문·조리개는 태우지 않는다 — "열리면 떨어지는 관문"이고, 초속 40~55m로 미끄러져 실어 나르면 벽까지 끌려간다(리뷰 1차).
+        /// 발밑의 움직이는 판(원판·풍차·문·조리개)을 몸 굵기로 찾는다. 가운데 레이 한 줄이면 모서리에 걸쳐 섰을 때 못 찾는다(10-09).
+        /// 이 판에 등록된(= 시뮬이 매 틱 세우는) 판만 — 등록이 빠진 판은 안 움직이는데 식으로는 속도가 나와 매 틱 속도가 샌다(리뷰 4차).
+        /// 문·조리개도 태운다 — 업계 표준(UE·KCC·SM64)은 움직이는 판이면 종류를 가리지 않는다(사용자 10-10 선택).
         /// </summary>
-        private bool TrySpinnerUnderFeet(GameFramework.World.Entity diver, out SpinnerVolume spinner)
+        private bool TryPlatformUnderFeet(GameFramework.World.Entity diver, out IMovingPlatform platform, out UnityEngine.Transform part)
         {
-            spinner = null;
+            platform = null;
+            part = null;
             UnityEngine.Vector3 feet = GameFramework.World.EntityMotionExtensions.GetPosition(diver);
             UnityEngine.Vector3 ball = feet + UnityEngine.Vector3.up * (_config.BodyRadius + 0.3f);
             var hit = _collisionQuery.CapsuleCast(ball, ball, _config.BodyRadius, UnityEngine.Vector3.down, 0.6f, _layerMask);
@@ -358,20 +363,38 @@ namespace LOP
             {
                 return false;
             }
-            spinner = hit.Collider.GetComponentInParent<SpinnerVolume>();
-            //  이 판에 등록된(= 시뮬이 매 틱 세우는) 판만 — 등록이 빠진 판은 안 도는데 식으로는 속도가 나와 매 틱 속도가 샌다(리뷰 4차).
-            if (spinner == null || _obstacles == null)
+            var found = hit.Collider.GetComponentInParent<IMovingPlatform>();
+            if (found == null || IsRegistered(found) == false)
             {
                 return false;
             }
-            for (int i = 0; i < _obstacles.All.Count; i++)
+            if (found.TryGetPart(hit.Collider, feet, out part) == false)
             {
-                if (ReferenceEquals(_obstacles.All[i], spinner))
+                return false;
+            }
+            platform = found;
+            return true;
+        }
+
+        private bool IsRegistered(IMovingPlatform platform)
+        {
+            if (_obstacles != null)
+            {
+                for (int i = 0; i < _obstacles.All.Count; i++)
+                {
+                    if (ReferenceEquals(_obstacles.All[i], platform))
+                    {
+                        return true;
+                    }
+                }
+            }
+            for (int i = 0; i < _doorField.All.Count; i++)
+            {
+                if (ReferenceEquals(_doorField.All[i], platform))
                 {
                     return true;
                 }
             }
-            spinner = null;
             return false;
         }
 
