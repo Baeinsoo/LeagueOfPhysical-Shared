@@ -1180,17 +1180,14 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 값이_없는_직렬화_데이터는_기본값을_받는다()
+        public void Rideable_초기값은_원판_켜짐_문_조리개_꺼짐이다()
         {
-            //  이미 구운 맵·번들엔 Rideable 키가 없다 — 그때 C# 초기값(원판 켜짐, 문·조리개 꺼짐)을 받아야 지금과 같다(리뷰 PR3 #7).
+            //  Unity는 키가 없는 직렬화 데이터(Rideable 이전에 구운 씬·번들)를 읽을 때 이 C# 초기값을 남긴다 — 초기값을 고정한다.
             var go = new GameObject("Defaults");
             doorRoots.Add(go);
             var spinner = go.AddComponent<SpinnerVolume>();
             var door = go.AddComponent<DoorVolume>();
             var iris = go.AddComponent<IrisVolume>();
-            JsonUtility.FromJsonOverwrite("{}", spinner);
-            JsonUtility.FromJsonOverwrite("{}", door);
-            JsonUtility.FromJsonOverwrite("{}", iris);
             Assert.IsTrue(spinner.Rideable);
             Assert.IsFalse(door.Rideable);
             Assert.IsFalse(iris.Rideable);
