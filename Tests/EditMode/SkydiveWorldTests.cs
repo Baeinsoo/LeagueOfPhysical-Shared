@@ -1115,10 +1115,9 @@ namespace LOP.Tests
         public void 미끄러지는_문_위에_선_사람은_실려_가지_않고_문이_열리면_떨어진다()
         {
             //  문은 판이 아니라 관문이다 — 열리면 발밑이 빠져 그 자리로 떨어진다(사용자 10-10, 엔진의 "탈 수 없는 바닥" 설정과 같은 선택).
-            //  문은 DoorField에만 등록돼 아래 동작 단정만으로는 "판이 아님"을 못 지킨다(리뷰 PR2-2차 #2) — 직접 단정한다.
-            Assert.IsFalse(typeof(IMovingPlatform).IsAssignableFrom(typeof(DoorVolume)), "문은 판이 아니어야 한다");
-            Assert.IsFalse(typeof(IMovingPlatform).IsAssignableFrom(typeof(IrisVolume)), "조리개는 판이 아니어야 한다");
             var door = MakeDoor();
+            //  장애물마다 "사람을 태움"(Rideable)을 고른다 — 문·조리개는 기본 꺼짐(사용자 10-10).
+            Assert.IsFalse(door.Rideable, "문은 기본으로 사람을 태우지 않는다");
             var panel = GameObject.CreatePrimitive(PrimitiveType.Cube);
             panel.transform.SetParent(door.PanelA, false);
             panel.transform.localPosition = new Vector3(0f, -0.25f, 0f);   // 윗면 = 문 높이(0)
@@ -1180,6 +1179,107 @@ namespace LOP.Tests
             Assert.Less(p.y, -0.5f);
         }
 
+        [Test]
+        public void Rideable_초기값은_원판_켜짐_문_조리개_꺼짐이다()
+        {
+            //  Unity는 키가 없는 직렬화 데이터(Rideable 이전에 구운 씬·번들)를 읽을 때 이 C# 초기값을 남긴다 — 초기값을 고정한다.
+            var go = new GameObject("Defaults");
+            doorRoots.Add(go);
+            var spinner = go.AddComponent<SpinnerVolume>();
+            var door = go.AddComponent<DoorVolume>();
+            var iris = go.AddComponent<IrisVolume>();
+            Assert.IsTrue(spinner.Rideable);
+            Assert.IsFalse(door.Rideable);
+            Assert.IsFalse(iris.Rideable);
+        }
+
+        [Test]
+        public void 문을_태움으로_켜면_문과_같이_실려_간다()
+        {
+            //  장애물마다 고른다(엔진의 "탈 수 있음" 설정처럼). 같은 문을 태움으로 켜면 표준대로 같이 실려 간다.
+            var door = MakeDoor();
+            door.Rideable = true;
+            var panel = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            panel.transform.SetParent(door.PanelA, false);
+            panel.transform.localPosition = new Vector3(0f, -0.25f, 0f);
+            panel.transform.localScale = new Vector3(8f, 0.5f, 8f);
+            var doors = new DoorField();
+            doors.Add(door);
+            door.Pose(15);
+            Vector3 start = door.PanelA.position;
+
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(start.x, 0f, start.z), new InputCommand());
+            registry.Add(diver);
+            var world = RealWorld(registry, new ObstacleField(), doors);
+
+            //  17틱부터 — 16틱 이전엔 문이 닫히는 중이라(10~14), 그때부터 서 있던 사람이면 문 속도를 이미 갖고 있어야 한다.
+            for (int t = 17; t <= 40; t++) { world.Tick(t, 0.02f); }
+
+            Vector3 p = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Vector3 panelNow = door.PanelA.position;
+            Assert.Greater(Vector3.Distance(panelNow, start), 5f, "패널이 움직여야 이 테스트가 잰다");
+            Assert.IsTrue(diver.Get<GroundState>().IsGrounded, "패널 위에 그대로 서 있어야 한다");
+            Assert.AreEqual(panelNow.x, p.x, 0.5f, "패널과 같이 실려 가야 한다");
+        }
+
+        [Test]
+        public void 조리개를_태움으로_켜면_날개와_같이_물러난다()
+        {
+            var root = new GameObject("Iris");
+            doorRoots.Add(root);
+            var iris = root.AddComponent<IrisVolume>();
+            iris.Rideable = true;
+            iris.Travel = 10f; iris.Period = 40; iris.OpenTicks = 10; iris.MoveTicks = 5; iris.Phase = 0;
+            var blades = new UnityEngine.Transform[2];
+            for (int b = 0; b < 2; b++)
+            {
+                var blade = new GameObject($"Blade_{b}").transform;
+                blade.SetParent(root.transform, false);
+                blade.localPosition = new Vector3(b == 0 ? 1f : -1f, 0f, 0f);
+                var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                box.transform.SetParent(blade, false);
+                box.transform.localPosition = new Vector3(b == 0 ? 9f : -9f, -0.25f, 0f);
+                box.transform.localScale = new Vector3(18f, 0.5f, 20f);
+                blades[b] = blade;
+            }
+            iris.Blades = blades;
+            iris.Capture();
+            var obstacles = new ObstacleField();
+            obstacles.Add(iris);
+            iris.Pose(15);
+
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(8f, 0f, 0f), new InputCommand());
+            registry.Add(diver);
+            var world = RealWorld(registry, obstacles);
+
+            for (int t = 17; t <= 40; t++) { world.Tick(t, 0.02f); }
+
+            Vector3 p = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Assert.IsTrue(diver.Get<GroundState>().IsGrounded, "날개 위에 그대로 서 있어야 한다");
+            Assert.AreEqual(18f, p.x, 0.5f, "날개와 같이 10m 물러나야 한다");
+        }
+
+        [Test]
+        public void 원판을_태움에서_끄면_발밑에서_판만_돈다()
+        {
+            var obstacles = new ObstacleField();
+            var spinner = SpinningPlate(0.6f, new Vector3(0f, -1.5f, 0f), new Vector3(120f, 3f, 120f), obstacles).GetComponent<SpinnerVolume>();
+            Assert.IsTrue(spinner.Rideable, "원판은 기본으로 사람을 태운다");
+            spinner.Rideable = false;
+            var registry = new EntityRegistry();
+            var diver = StandingDiver("a", new Vector3(20f, 0f, 0f), new InputCommand());
+            registry.Add(diver);
+            var world = RealWorld(registry, obstacles);
+
+            for (int t = 1; t <= 30; t++) { world.Tick(t, 0.02f); }
+
+            Vector3 p = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Assert.AreEqual(20f, p.x, 0.05f, "태우지 않는 판이면 그 자리에 서 있어야 한다");
+            Assert.AreEqual(0f, p.z, 0.05f);
+        }
+
         //  시험용 판: 20틱까지 멈춰 있다가 갑자기 +x로 초속 20m로 미끄러지고, 30틱에 갑자기 선다(가속·감속하는 판).
         sealed class StartingSlide : MonoBehaviour, IPosedObstacle, IMovingPlatform
         {
@@ -1197,6 +1297,8 @@ namespace LOP.Tests
 
             public Matrix4x4 PartWorldAt(UnityEngine.Transform part, double tick)
                 => Matrix4x4.TRS(Home + new Vector3(XAt(tick), 0f, 0f), transform.localRotation, transform.localScale);
+
+            public bool Rideable => true;
         }
 
         [Test]

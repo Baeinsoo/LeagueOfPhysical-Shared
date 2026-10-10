@@ -9,8 +9,13 @@ namespace LOP
     /// <para>날개마다 닫힌 자리(로컬)를 굽기 때 기억해 두고, 그 자리의 바깥 방향으로 <see cref="Travel"/>×열림만큼 민다.</para>
     /// </summary>
     [SceneInjectMonoBehaviour]
-    public class IrisVolume : MonoBehaviour, IPosedObstacle
+    public class IrisVolume : MonoBehaviour, IPosedObstacle, IMovingPlatform
     {
+        /// <summary>위에 선 사람을 날개와 같이 옮길지(PhysX "탈 수 있음" 플래그에 해당). 기본 꺼짐 — 조리개는 열리면 발밑이 빠져 떨어지는 관문이다(사용자 10-10).</summary>
+        //  켜면 빠른 판(초속 수십 m)에선 벽에 눌린 채 판 속도를 보고하고, 내릴 때 그 속도를 받는다 — 언리얼·고도의 기본 동작과 같다.
+        //  열리면 떨어져야 하는 관문이면 끈다. 맵은 표(SkydiveCylinderLayout)에서 굽는 산출물이라 값도 표에서 정한다.
+        public bool Rideable = false;
+
         /// <summary>활짝 열렸을 때 날개가 물러나는 거리.</summary>
         public float Travel = 20f;
 
@@ -33,6 +38,49 @@ namespace LOP
                 Home[i] = Blades[i].localPosition;
             }
         }
+
+        public bool TryGetPart(Collider hit, Vector3 feet, out Transform part)
+        {
+            //  날개 이음매에서도 클·서가 같은 날개를 고르게, 발 방향과 가장 가까운 날개(물러나는 방향 기준)를 고른다.
+            part = null;
+            if (Blades == null || Home == null)
+            {
+                return false;
+            }
+            Vector3 local = transform.InverseTransformPoint(feet);
+            var dir = new Vector3(local.x, 0f, local.z);
+            float best = float.NegativeInfinity;
+            for (int i = 0; i < Blades.Length && i < Home.Length; i++)
+            {
+                float d = Vector3.Dot(dir, Outward(i));
+                if (d > best)
+                {
+                    best = d;
+                    part = Blades[i];
+                }
+            }
+            return part != null;
+        }
+
+        public Matrix4x4 PartWorldAt(Transform part, double tick)
+        {
+            int i = System.Array.IndexOf(Blades, part);
+            if (i < 0 || i >= Home.Length)
+            {
+                return part.localToWorldMatrix;
+            }
+            float open = OpennessAt(Period, OpenTicks, MoveTicks, Phase, tick);
+            Vector3 local = Home[i] + Outward(i) * (Travel * open);
+            return transform.localToWorldMatrix * Matrix4x4.TRS(local, part.localRotation, part.localScale);
+        }
+
+        private Vector3 Outward(int i)
+        {
+            var outward = new Vector3(Home[i].x, 0f, Home[i].z);
+            return outward.sqrMagnitude > 1e-6f ? outward.normalized : Vector3.right;
+        }
+
+        bool IMovingPlatform.Rideable => Rideable;
 
         public void Pose(double tick)
         {

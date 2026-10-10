@@ -12,6 +12,9 @@ namespace LOP
     [SceneInjectMonoBehaviour]
     public class SpinnerVolume : MonoBehaviour, IPosedObstacle, IMovingPlatform
     {
+        /// <summary>위에 선 사람을 같이 돌릴지(PhysX의 "탈 수 있음" 플래그에 해당). 원판·풍차는 기본 켜짐.</summary>
+        public bool Rideable = true;
+
         public float StartDegrees;
 
         /// <summary>도 / 틱. 음수면 반대로 돈다.</summary>
@@ -40,6 +43,8 @@ namespace LOP
         }
 
         public Matrix4x4 PartWorldAt(Transform part, double tick) => WorldAt(tick);
+
+        bool IMovingPlatform.Rideable => Rideable;
 
         public void Pose(double tick)
         {
