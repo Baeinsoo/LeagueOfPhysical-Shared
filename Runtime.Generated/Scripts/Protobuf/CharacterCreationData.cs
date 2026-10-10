@@ -23,18 +23,21 @@ public static partial class CharacterCreationDataReflection {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
           "ChtDaGFyYWN0ZXJDcmVhdGlvbkRhdGEucHJvdG8aHEJhc2VFbnRpdHlDcmVh",
-          "dGlvbkRhdGEucHJvdG8itwIKFUNoYXJhY3RlckNyZWF0aW9uRGF0YRI6Chli",
+          "dGlvbkRhdGEucHJvdG8iwQMKFUNoYXJhY3RlckNyZWF0aW9uRGF0YRI6Chli",
           "YXNlX2VudGl0eV9jcmVhdGlvbl9kYXRhGAEgASgLMhcuQmFzZUVudGl0eUNy",
           "ZWF0aW9uRGF0YRIWCg5jaGFyYWN0ZXJfY29kZRgCIAEoCRIRCgl2aXN1YWxf",
           "aWQYAyABKAkSDgoGbWF4X0hQGAQgASgFEhIKCmN1cnJlbnRfSFAYBSABKAUS",
           "DgoGbWF4X01QGAYgASgFEhIKCmN1cnJlbnRfTVAYByABKAUSDQoFbGV2ZWwY",
           "CCABKAUSEwoLY3VycmVudF9leHAYCSABKAMSEAoIc3RyZW5ndGgYCiABKAUS",
           "EQoJZGV4dGVyaXR5GAsgASgFEhQKDGludGVsbGlnZW5jZRgMIAEoBRIQCgh2",
-          "aXRhbGl0eRgNIAEoBWIGcHJvdG8z"));
+          "aXRhbGl0eRgNIAEoBRIuCgRsb29rGA4gAygLMiAuQ2hhcmFjdGVyQ3JlYXRp",
+          "b25EYXRhLkxvb2tFbnRyeRIUCgxkaXNwbGF5X25hbWUYDyABKAkSFQoNYWNj",
+          "b3VudF9sZXZlbBgQIAEoBRorCglMb29rRW50cnkSCwoDa2V5GAEgASgJEg0K",
+          "BXZhbHVlGAIgASgJOgI4AWIGcHJvdG8z"));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::BaseEntityCreationDataReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::CharacterCreationData), global::CharacterCreationData.Parser, new[]{ "BaseEntityCreationData", "CharacterCode", "VisualId", "MaxHP", "CurrentHP", "MaxMP", "CurrentMP", "Level", "CurrentExp", "Strength", "Dexterity", "Intelligence", "Vitality" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::CharacterCreationData), global::CharacterCreationData.Parser, new[]{ "BaseEntityCreationData", "CharacterCode", "VisualId", "MaxHP", "CurrentHP", "MaxMP", "CurrentMP", "Level", "CurrentExp", "Strength", "Dexterity", "Intelligence", "Vitality", "Look", "DisplayName", "AccountLevel" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, })
         }));
   }
   #endregion
@@ -89,6 +92,9 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
     dexterity_ = other.dexterity_;
     intelligence_ = other.intelligence_;
     vitality_ = other.vitality_;
+    look_ = other.look_.Clone();
+    displayName_ = other.displayName_;
+    accountLevel_ = other.accountLevel_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -254,6 +260,41 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
     }
   }
 
+  /// <summary>Field number for the "look" field.</summary>
+  public const int LookFieldNumber = 14;
+  private static readonly pbc::MapField<string, string>.Codec _map_look_codec
+      = new pbc::MapField<string, string>.Codec(pb::FieldCodec.ForString(10, ""), pb::FieldCodec.ForString(18, ""), 114);
+  private readonly pbc::MapField<string, string> look_ = new pbc::MapField<string, string>();
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public pbc::MapField<string, string> Look {
+    get { return look_; }
+  }
+
+  /// <summary>Field number for the "display_name" field.</summary>
+  public const int DisplayNameFieldNumber = 15;
+  private string displayName_ = "";
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public string DisplayName {
+    get { return displayName_; }
+    set {
+      displayName_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+    }
+  }
+
+  /// <summary>Field number for the "account_level" field.</summary>
+  public const int AccountLevelFieldNumber = 16;
+  private int accountLevel_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int AccountLevel {
+    get { return accountLevel_; }
+    set {
+      accountLevel_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -282,6 +323,9 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
     if (Dexterity != other.Dexterity) return false;
     if (Intelligence != other.Intelligence) return false;
     if (Vitality != other.Vitality) return false;
+    if (!Look.Equals(other.Look)) return false;
+    if (DisplayName != other.DisplayName) return false;
+    if (AccountLevel != other.AccountLevel) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -302,6 +346,9 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
     if (Dexterity != 0) hash ^= Dexterity.GetHashCode();
     if (Intelligence != 0) hash ^= Intelligence.GetHashCode();
     if (Vitality != 0) hash ^= Vitality.GetHashCode();
+    hash ^= Look.GetHashCode();
+    if (DisplayName.Length != 0) hash ^= DisplayName.GetHashCode();
+    if (AccountLevel != 0) hash ^= AccountLevel.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -372,6 +419,15 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
       output.WriteRawTag(104);
       output.WriteInt32(Vitality);
     }
+    look_.WriteTo(output, _map_look_codec);
+    if (DisplayName.Length != 0) {
+      output.WriteRawTag(122);
+      output.WriteString(DisplayName);
+    }
+    if (AccountLevel != 0) {
+      output.WriteRawTag(128, 1);
+      output.WriteInt32(AccountLevel);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -434,6 +490,15 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
       output.WriteRawTag(104);
       output.WriteInt32(Vitality);
     }
+    look_.WriteTo(ref output, _map_look_codec);
+    if (DisplayName.Length != 0) {
+      output.WriteRawTag(122);
+      output.WriteString(DisplayName);
+    }
+    if (AccountLevel != 0) {
+      output.WriteRawTag(128, 1);
+      output.WriteInt32(AccountLevel);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -482,6 +547,13 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
     }
     if (Vitality != 0) {
       size += 1 + pb::CodedOutputStream.ComputeInt32Size(Vitality);
+    }
+    size += look_.CalculateSize(_map_look_codec);
+    if (DisplayName.Length != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeStringSize(DisplayName);
+    }
+    if (AccountLevel != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(AccountLevel);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -536,6 +608,13 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
     }
     if (other.Vitality != 0) {
       Vitality = other.Vitality;
+    }
+    look_.MergeFrom(other.look_);
+    if (other.DisplayName.Length != 0) {
+      DisplayName = other.DisplayName;
+    }
+    if (other.AccountLevel != 0) {
+      AccountLevel = other.AccountLevel;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -611,6 +690,18 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
           Vitality = input.ReadInt32();
           break;
         }
+        case 114: {
+          look_.AddEntriesFrom(input, _map_look_codec);
+          break;
+        }
+        case 122: {
+          DisplayName = input.ReadString();
+          break;
+        }
+        case 128: {
+          AccountLevel = input.ReadInt32();
+          break;
+        }
       }
     }
   #endif
@@ -683,6 +774,18 @@ public sealed partial class CharacterCreationData : pb::IMessage<CharacterCreati
         }
         case 104: {
           Vitality = input.ReadInt32();
+          break;
+        }
+        case 114: {
+          look_.AddEntriesFrom(ref input, _map_look_codec);
+          break;
+        }
+        case 122: {
+          DisplayName = input.ReadString();
+          break;
+        }
+        case 128: {
+          AccountLevel = input.ReadInt32();
           break;
         }
       }
