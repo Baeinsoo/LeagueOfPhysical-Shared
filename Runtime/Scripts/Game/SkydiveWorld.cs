@@ -216,7 +216,7 @@ namespace LOP
         private void CarryOnPlatforms(long tick, float deltaTime)
         {
             _attached.Clear();
-            if ((_obstacles?.All.Count ?? 0) > 0 && HasStarted(tick))
+            if (((_obstacles?.All.Count ?? 0) > 0 || _doorField.All.Count > 0) && HasStarted(tick))
             {
                 bool anyGrounded = false;
                 for (int i = 0; i < _divers.Count && anyGrounded == false; i++)
@@ -348,10 +348,9 @@ namespace LOP
         }
 
         /// <summary>
-        /// 발밑의 움직이는 판(<see cref="IMovingPlatform"/> — 지금은 원판·풍차)을 몸 굵기로 찾는다. 가운데 레이 한 줄이면 모서리에 걸쳐 섰을 때 못 찾는다(10-09).
+        /// 발밑의 움직이는 판(<see cref="IMovingPlatform"/>)을 몸 굵기로 찾는다. 가운데 레이 한 줄이면 모서리에 걸쳐 섰을 때 못 찾는다(10-09).
         /// 이 판에 등록된(= 시뮬이 매 틱 세우는) 판만 — 등록이 빠진 판은 안 움직이는데 식으로는 속도가 나와 매 틱 속도가 샌다(리뷰 4차).
-        /// 문·조리개는 판이 아니다 — 열리면 발밑이 빠져 떨어지는 관문이다(사용자 10-10). 엔진의 "탈 수 없는 바닥" 설정
-        /// (Godot platform_floor_layers, PhysX 탈 수 있음 플래그)과 같은 선택이라 <see cref="IMovingPlatform"/>을 구현하지 않는다.
+        /// 장애물의 <see cref="IMovingPlatform.Rideable"/>이 꺼져 있으면 판이 아닌 땅처럼 본다(문·조리개 기본 — 열리면 떨어지는 관문, 사용자 10-10).
         /// </summary>
         private bool TryPlatformUnderFeet(GameFramework.World.Entity diver, out IMovingPlatform platform, out UnityEngine.Transform part)
         {
@@ -365,7 +364,7 @@ namespace LOP
                 return false;
             }
             var found = hit.Collider.GetComponentInParent<IMovingPlatform>();
-            if (found == null || IsRegistered(found) == false)
+            if (found == null || found.Rideable == false || IsRegistered(found) == false)
             {
                 return false;
             }
@@ -387,6 +386,14 @@ namespace LOP
                     {
                         return true;
                     }
+                }
+            }
+            //  문은 ObstacleField가 아니라 DoorField에 들어온다.
+            for (int i = 0; i < _doorField.All.Count; i++)
+            {
+                if (ReferenceEquals(_doorField.All[i], platform))
+                {
+                    return true;
                 }
             }
             return false;
