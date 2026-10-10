@@ -10,7 +10,7 @@ namespace LOP
     /// 위에 서 있는 사람은 같이 돈다(<see cref="SkydiveWorld"/>의 실어 나르기, 사용자 10-09) — 틈까지 걸어가 빠진다.</para>
     /// </summary>
     [SceneInjectMonoBehaviour]
-    public class SpinnerVolume : MonoBehaviour, IPosedObstacle
+    public class SpinnerVolume : MonoBehaviour, IPosedObstacle, IMovingPlatform
     {
         public float StartDegrees;
 
@@ -31,6 +31,15 @@ namespace LOP
             Matrix4x4 parent = transform.parent != null ? transform.parent.localToWorldMatrix : Matrix4x4.identity;
             return parent * Matrix4x4.TRS(transform.localPosition, Quaternion.Euler(0f, AngleAt(StartDegrees, DegreesPerTick, tick), 0f), transform.localScale);
         }
+
+        public bool TryGetPart(Collider hit, Vector3 feet, out Transform part)
+        {
+            //  자식 콜라이더는 루트와 같이 돈다 — 조각은 루트 하나다.
+            part = transform;
+            return true;
+        }
+
+        public Matrix4x4 PartWorldAt(Transform part, double tick) => WorldAt(tick);
 
         public void Pose(double tick)
         {
