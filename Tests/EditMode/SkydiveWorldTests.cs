@@ -1115,6 +1115,9 @@ namespace LOP.Tests
         public void 미끄러지는_문_위에_선_사람은_실려_가지_않고_문이_열리면_떨어진다()
         {
             //  문은 판이 아니라 관문이다 — 열리면 발밑이 빠져 그 자리로 떨어진다(사용자 10-10, 엔진의 "탈 수 없는 바닥" 설정과 같은 선택).
+            //  문은 DoorField에만 등록돼 아래 동작 단정만으로는 "판이 아님"을 못 지킨다(리뷰 PR2-2차 #2) — 직접 단정한다.
+            Assert.IsFalse(typeof(IMovingPlatform).IsAssignableFrom(typeof(DoorVolume)), "문은 판이 아니어야 한다");
+            Assert.IsFalse(typeof(IMovingPlatform).IsAssignableFrom(typeof(IrisVolume)), "조리개는 판이 아니어야 한다");
             var door = MakeDoor();
             var panel = GameObject.CreatePrimitive(PrimitiveType.Cube);
             panel.transform.SetParent(door.PanelA, false);
@@ -1177,12 +1180,12 @@ namespace LOP.Tests
             Assert.Less(p.y, -0.5f);
         }
 
-        //  시험용 판: 20틱까지 멈춰 있다가 갑자기 +x로 초속 20m로 미끄러진다(가속하는 판).
+        //  시험용 판: 20틱까지 멈춰 있다가 갑자기 +x로 초속 20m로 미끄러지고, 30틱에 갑자기 선다(가속·감속하는 판).
         sealed class StartingSlide : MonoBehaviour, IPosedObstacle, IMovingPlatform
         {
             public Vector3 Home;
 
-            static float XAt(double tick) => tick <= 20 ? 0f : (float)(tick - 20) * 0.4f;
+            static float XAt(double tick) => tick <= 20 ? 0f : tick >= 30 ? 4f : (float)(tick - 20) * 0.4f;
 
             public void Pose(double tick) => transform.localPosition = Home + new Vector3(XAt(tick), 0f, 0f);
 
@@ -1222,6 +1225,14 @@ namespace LOP.Tests
             Vector3 p = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
             Assert.IsTrue(diver.Get<GroundState>().IsGrounded);
             Assert.AreEqual(4f, p.x, 0.3f, $"판과 같이 4m 가야 한다 — 지금 {p.x:F2}m");
+
+            //  판이 서면 위에 선 사람도 선다 — 실려 가던 속도가 판 기준 속도로 남아 미끄러지면 안 된다(리뷰 PR2-2차 #1).
+            for (int t = 31; t <= 40; t++) { world.Tick(t, 0.02f); }
+            Vector3 stopped = diver.Get<GameFramework.World.Transform>().Position.ToUnity();
+            Vector3 v = diver.Get<Velocity>().Linear.ToUnity();
+            Assert.IsTrue(diver.Get<GroundState>().IsGrounded);
+            Assert.AreEqual(4f, stopped.x, 0.3f, $"판이 섰는데 {stopped.x:F2}m까지 미끄러졌다");
+            Assert.Less(new Vector3(v.x, 0f, v.z).magnitude, 0.5f, $"판이 섰는데 {v}로 움직인다");
         }
 
         [Test]
