@@ -22,10 +22,12 @@ namespace LOP
     [SceneInjectMonoBehaviour]
     public class DoorVolume : MonoBehaviour, IMovingPlatform
     {
-        /// <summary>덮는 폭의 절반(=구멍 반폭). 패널 하나는 이 값의 절반 길이다.</summary>
-        /// <summary>위에 선 사람을 패널과 같이 옮길지. 기본 꺼짐 — 문은 열리면 발밑이 빠져 떨어지는 관문이다(사용자 10-10).</summary>
+        /// <summary>위에 선 사람을 패널과 같이 옮길지(PhysX "탈 수 있음" 플래그에 해당). 기본 꺼짐 — 문은 열리면 발밑이 빠져 떨어지는 관문이다(사용자 10-10).</summary>
+        //  켜면 빠른 판(초속 수십 m)에선 벽에 눌린 채 판 속도를 보고하고, 내릴 때 그 속도를 받는다 — 언리얼·고도의 기본 동작과 같다.
+        //  열리면 떨어져야 하는 관문이면 끈다. 맵은 표(SkydiveCylinderLayout)에서 굽는 산출물이라 값도 표에서 정한다.
         public bool Rideable = false;
 
+        /// <summary>덮는 폭의 절반(=구멍 반폭). 패널 하나는 이 값의 절반 길이다.</summary>
         public float HalfWidth = 5f;
 
         /// <summary>미끄러지는 방향과 직교하는 쪽 절반.</summary>
@@ -71,11 +73,6 @@ namespace LOP
             AxisAngleDegrees * Mathf.Deg2Rad,
             Period, OpenTicks, MoveTicks, Phase);
 
-        /// <summary>
-        /// 이 틱의 열림 정도로 두 패널의 로컬 위치를 세팅한다. <see cref="DoorGeometry.PanelCenter"/>가
-        /// 돌려주는 값은 <see cref="Door.Center"/>가 더해진 <b>월드</b> 좌표라서, 자식의 로컬 좌표엔
-        /// 그 중심을 뺀 오프셋만 넣는다.
-        /// </summary>
         public bool TryGetPart(Collider hit, Vector3 feet, out Transform part)
         {
             //  이음매에서 콜라이더가 어느 패널을 답하든, 발이 축의 어느 쪽인지로 고른다(클·서가 같은 패널).
@@ -101,6 +98,11 @@ namespace LOP
 
         bool IMovingPlatform.Rideable => Rideable;
 
+        /// <summary>
+        /// 이 틱의 열림 정도로 두 패널의 로컬 위치를 세팅한다. <see cref="DoorGeometry.PanelCenter"/>가
+        /// 돌려주는 값은 <see cref="Door.Center"/>가 더해진 <b>월드</b> 좌표라서, 자식의 로컬 좌표엔
+        /// 그 중심을 뺀 오프셋만 넣는다.
+        /// </summary>
         public void Pose(double tick)
         {
             Door door = ToDoor();

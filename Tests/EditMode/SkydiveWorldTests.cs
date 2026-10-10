@@ -1180,6 +1180,23 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 값이_없는_직렬화_데이터는_기본값을_받는다()
+        {
+            //  이미 구운 맵·번들엔 Rideable 키가 없다 — 그때 C# 초기값(원판 켜짐, 문·조리개 꺼짐)을 받아야 지금과 같다(리뷰 PR3 #7).
+            var go = new GameObject("Defaults");
+            doorRoots.Add(go);
+            var spinner = go.AddComponent<SpinnerVolume>();
+            var door = go.AddComponent<DoorVolume>();
+            var iris = go.AddComponent<IrisVolume>();
+            JsonUtility.FromJsonOverwrite("{}", spinner);
+            JsonUtility.FromJsonOverwrite("{}", door);
+            JsonUtility.FromJsonOverwrite("{}", iris);
+            Assert.IsTrue(spinner.Rideable);
+            Assert.IsFalse(door.Rideable);
+            Assert.IsFalse(iris.Rideable);
+        }
+
+        [Test]
         public void 문을_태움으로_켜면_문과_같이_실려_간다()
         {
             //  장애물마다 고른다(엔진의 "탈 수 있음" 설정처럼). 같은 문을 태움으로 켜면 표준대로 같이 실려 간다.
