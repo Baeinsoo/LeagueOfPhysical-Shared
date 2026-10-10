@@ -3,8 +3,9 @@ using UnityEngine;
 namespace LOP
 {
     /// <summary>
-    /// 위에 선 사람을 실어 나르는 움직이는 판(원판·풍차·문·조리개). 언리얼의 movement base, KCC의 PhysicsMover에 해당한다.
-    /// <para>판이 여러 조각(문 패널 둘, 조리개 날개 여럿)이면 사람이 어느 조각 위인지는 <b>발 위치로</b> 고른다 —
+    /// 위에 선 사람을 실어 나르는 움직이는 판(지금은 원판·풍차). 언리얼의 movement base, KCC의 PhysicsMover에 해당한다.
+    /// 문·조리개처럼 열리면 떨어져야 하는 바닥은 구현하지 않는다(엔진의 "탈 수 없는 바닥" 설정과 같은 선택).
+    /// <para>판이 여러 조각이면 사람이 어느 조각 위인지는 <b>발 위치로</b> 고른다 —
     /// 두 조각 이음매에서 물리 질의가 어느 쪽을 먼저 답하느냐에 맡기면 클·서가 다른 조각을 고를 수 있다.</para>
     /// </summary>
     public interface IMovingPlatform
