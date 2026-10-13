@@ -19,6 +19,9 @@ namespace LOP
         public float Period = 2.5f;
         /// <summary>0틱일 때 사인의 위상(도). 진자마다 달리 주면 동시에 닫히지 않는다.</summary>
         public float Phase = 0f;
+        /// <summary>진자에 매달려 흔들리는 수레(선택). 있으면 <see cref="FlappyPendulumField"/>가 매 틱 반대로
+        /// 돌려 레벨(수평)로 유지한다 — 사용자가 매단 카트는 흔들려도 수평을 바란다. 비어 있으면 예전과 똑같다.</summary>
+        public Transform Upright;
 
         private FlappyPendulumField field;
 
