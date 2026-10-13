@@ -36,6 +36,12 @@ namespace LOP
                 }
                 float angle = FlappyPendulumCurve.AngleAt(pendulum.Amplitude, pendulum.Period, pendulum.Phase, tick, tickSeconds);
                 pendulum.transform.localRotation = Quaternion.Euler(0f, 0f, angle);
+                if (pendulum.Upright != null)
+                {
+                    //  부모(진자)가 이미 angle만큼 돌았으니 반대로 되돌리면 전역 회전이 0으로 남는다
+                    //  — 수레는 흔들리는 자리(원 위)는 그대로 따라가면서도 바닥과 수평을 유지한다.
+                    pendulum.Upright.localRotation = Quaternion.Euler(0f, 0f, -angle);
+                }
                 posed = true;
             }
             if (posed)
