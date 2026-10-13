@@ -1,0 +1,38 @@
+namespace LOP
+{
+    /// <summary>
+    /// 낙석 바위가 이 틱에 떨어지는 중인가, 그렇다면 천장에서 얼마나 내려왔나. 주기·속도·위상과 틱만 보고 답한다 — 누적하지 않는다.
+    /// 한 주기: 천장에서 곧게 떨어져 바닥 밑까지(<paramref name="dropDistance"/>) → 남은 시간은 천장 속에 숨는다. 예고는 없다(10-13 사용자).
+    /// <see cref="FlappyShutterCurve"/>와 같은 이유로 순수 함수다.
+    /// </summary>
+    public static class FlappyRockfallCurve
+    {
+        public static bool FallingAt(float periodSeconds, float fallSpeed, float dropDistance, float phaseDegrees,
+                                     long tick, float tickSeconds, out float fallen)
+        {
+            fallen = 0f;
+            if (periodSeconds <= 0f || fallSpeed <= 0f)
+            {
+                return false;
+            }
+            //  double로 주기 수를 세고 소수부만 남긴다. 큰 틱에서 float 시간은 0.02초도 못 담는다.
+            double cycles = (double)tick * tickSeconds / periodSeconds + phaseDegrees / 360.0;
+            double fraction = cycles - System.Math.Floor(cycles);
+            //  tickSeconds(float)가 정확한 0.02가 아니라서 주기 경계(틱 100 등)에서 소수부가 1보다 살짝
+            //  작게 나온다 — "막 끝난 주기"로 읽혀 떨어짐이 끝까지 간 것처럼 보인다. 아주 가까우면 다음 주기의
+            //  시작(0)으로 눌러준다. 큰 틱에서 생기는 진짜 표류는 이 작은 경계값보다 훨씬 크므로 안 건드린다.
+            if (fraction > 1.0 - 1e-6)
+            {
+                fraction = 0.0;
+            }
+            double seconds = fraction * periodSeconds;
+            double fall = seconds * fallSpeed;
+            if (fall > dropDistance)
+            {
+                return false;
+            }
+            fallen = (float)fall;
+            return true;
+        }
+    }
+}
