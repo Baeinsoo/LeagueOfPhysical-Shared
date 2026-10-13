@@ -66,13 +66,22 @@ namespace LOP.Tests
         [Test]
         public void 아주_큰_틱에서도_오차가_쌓이지_않는다()
         {
-            for (long t = 100_000_000L; t < 100_000_100L; t += 3)
+            //  정수 틱 나눗셈이라 큰 틱에서도 소수부 오차가 없다 — 공식을 다시 계산해 맞춰보는(동어반복) 오라클 대신
+            //  "주기 배수에서는 늘 천장에서 시작", "같은 주기 내 위치면 작은 틱과 완전히 같은 값"을 독립적으로 확인한다.
+            const long ticksPerPeriod = 100; // 주기 2초 / 틱 0.02초
+            long hugeMultiple = ticksPerPeriod * 500_000_000L; // 5억 번째 주기 시작 — 정확히 주기 배수
+            Assert.IsTrue(Falls(hugeMultiple, out float fallenAtStart));
+            Assert.AreEqual(0f, fallenAtStart, 0f);
+
+            long hugeBase = 123_456_789_017L; // 주기 배수가 아닌 임의의 큰 틱
+            for (long k = 0; k < 7; k++)
             {
-                double cycles = t * (double)Dt / 2.0;
-                double u = (cycles - System.Math.Floor(cycles)) * 2.0;
-                bool expect = 9.0 * u <= 15.76;
-                Assert.AreEqual(expect, Falls(t, out float fallen), $"tick {t}");
-                if (expect) { Assert.AreEqual(9.0 * u, fallen, 1e-3, $"tick {t}"); }
+                long bigTick = hugeBase + k;
+                long samePositionSmallTick = ((bigTick % ticksPerPeriod) + ticksPerPeriod) % ticksPerPeriod;
+                bool bigFalls = Falls(bigTick, out float bigFallen);
+                bool smallFalls = Falls(samePositionSmallTick, out float smallFallen);
+                Assert.AreEqual(smallFalls, bigFalls, $"tick {bigTick}");
+                Assert.AreEqual(smallFallen, bigFallen, 0f, $"tick {bigTick}");
             }
         }
     }

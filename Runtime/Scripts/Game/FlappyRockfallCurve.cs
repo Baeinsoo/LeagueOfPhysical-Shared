@@ -11,23 +11,19 @@ namespace LOP
                                      long tick, float tickSeconds, out float fallen)
         {
             fallen = 0f;
-            if (periodSeconds <= 0f || fallSpeed <= 0f)
+            if (periodSeconds <= 0f || fallSpeed <= 0f || tickSeconds <= 0f)
             {
                 return false;
             }
-            //  double로 주기 수를 세고 소수부만 남긴다. 큰 틱에서 float 시간은 0.02초도 못 담는다.
-            double cycles = (double)tick * tickSeconds / periodSeconds + phaseDegrees / 360.0;
-            double fraction = cycles - System.Math.Floor(cycles);
-            //  tickSeconds(float)가 정확한 0.02가 아니라서 주기 경계(틱 100 등)에서 소수부가 1보다 살짝
-            //  작게 나온다 — "막 끝난 주기"로 읽혀 떨어짐이 끝까지 간 것처럼 보인다. 아주 가까우면 다음 주기의
-            //  시작(0)으로 눌러준다. 큰 틱에서 생기는 진짜 표류는 이 작은 경계값보다 훨씬 크므로 안 건드린다.
-            if (fraction > 1.0 - 1e-6)
-            {
-                fraction = 0.0;
-            }
-            double seconds = fraction * periodSeconds;
-            double fall = seconds * fallSpeed;
-            if (fall > dropDistance)
+            //  틱 안에서의 위치를 정수로 구한다 — float 소수부(cycles - floor(cycles))는 tickSeconds가
+            //  정확한 0.02가 아니라서(float) 주기 경계(틱 100 등)에서 1보다 살짝 작게 나와, "막 끝난 주기"로
+            //  읽히는 바람에 다 떨어진 뒤로 오판정됐다. 정수 틱 나눗셈은 그 경계에서도 항상 정확히 0이다.
+            long ticksPerPeriod = System.Math.Max(1L, (long)System.Math.Round(periodSeconds / (double)tickSeconds));
+            long phaseTicks = (long)System.Math.Round(phaseDegrees / 360.0 * ticksPerPeriod);
+            long u = ((tick + phaseTicks) % ticksPerPeriod + ticksPerPeriod) % ticksPerPeriod;
+            double elapsed = (double)u * tickSeconds;
+            double fall = elapsed * fallSpeed;
+            if (fall >= dropDistance)
             {
                 return false;
             }

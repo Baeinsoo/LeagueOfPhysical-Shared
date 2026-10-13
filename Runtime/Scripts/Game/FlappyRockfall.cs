@@ -18,7 +18,8 @@ namespace LOP
         public float Period = 2f;
         /// <summary>떨어지는 빠르기(m/s). 곧게 일정하게 떨어진다.</summary>
         public float Speed = 9f;
-        /// <summary>바위 윗면이 천장에서 내려가는 거리(m) — 통로 높이 + 바위 크기면 바닥 밑까지 다 빠진다.</summary>
+        /// <summary>바위 윗면이 천장에서 내려가는 거리(m) — 통로 높이 + 바위 크기면 바닥 밑까지 다 빠진다.
+        /// Speed·Period는 Drop보다 여유 있게 커야 한다 — 다 떨어진 뒤 다음 주기가 오기 전까지 숨을 시간이 있어야 한다.</summary>
         public float Drop = 15.76f;
         /// <summary>바위 한 변(m).</summary>
         public float Size = 1.2f;
