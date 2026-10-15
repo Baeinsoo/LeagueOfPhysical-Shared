@@ -22,13 +22,15 @@ public static partial class ArcheryHitToCReflection {
   static ArcheryHitToCReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChNBcmNoZXJ5SGl0VG9DLnByb3RvIkYKDUFyY2hlcnlIaXRUb0MSEgoKc2hv",
-          "b3Rlcl9pZBgBIAEoCRIRCglmaXJlX3RpY2sYAiABKAMSDgoGcG9pbnRzGAMg",
-          "ASgFYgZwcm90bzM="));
+          "ChNBcmNoZXJ5SGl0VG9DLnByb3RvIpkBCg1BcmNoZXJ5SGl0VG9DEhIKCnNo",
+          "b290ZXJfaWQYASABKAkSEQoJZmlyZV90aWNrGAIgASgDEg4KBnBvaW50cxgD",
+          "IAEoBRISCgp3YXZlX2luZGV4GAQgASgFEhIKCnNsb3RfaW5kZXgYBSABKAUS",
+          "EAoIaGl0X3RpY2sYBiABKAMSFwoPc3R1bl91bnRpbF90aWNrGAcgASgDYgZw",
+          "cm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::ArcheryHitToC), global::ArcheryHitToC.Parser, new[]{ "ShooterId", "FireTick", "Points" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::ArcheryHitToC), global::ArcheryHitToC.Parser, new[]{ "ShooterId", "FireTick", "Points", "WaveIndex", "SlotIndex", "HitTick", "StunUntilTick" }, null, null, null, null)
         }));
   }
   #endregion
@@ -76,6 +78,10 @@ public sealed partial class ArcheryHitToC : pb::IMessage<ArcheryHitToC>
     shooterId_ = other.shooterId_;
     fireTick_ = other.fireTick_;
     points_ = other.points_;
+    waveIndex_ = other.waveIndex_;
+    slotIndex_ = other.slotIndex_;
+    hitTick_ = other.hitTick_;
+    stunUntilTick_ = other.stunUntilTick_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -127,6 +133,66 @@ public sealed partial class ArcheryHitToC : pb::IMessage<ArcheryHitToC>
     }
   }
 
+  /// <summary>Field number for the "wave_index" field.</summary>
+  public const int WaveIndexFieldNumber = 4;
+  private int waveIndex_;
+  /// <summary>
+  ///  아래 넷은 연출과 사격 금지용이다. 과녁이 *사라지는* 것은 여전히 ArcheryStateToC(상태)가 말한다.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int WaveIndex {
+    get { return waveIndex_; }
+    set {
+      waveIndex_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "slot_index" field.</summary>
+  public const int SlotIndexFieldNumber = 5;
+  private int slotIndex_;
+  /// <summary>
+  /// 그 무리의 몇 번째 표적
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int SlotIndex {
+    get { return slotIndex_; }
+    set {
+      slotIndex_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "hit_tick" field.</summary>
+  public const int HitTickFieldNumber = 6;
+  private long hitTick_;
+  /// <summary>
+  /// 서버가 맞았다고 본 틱
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long HitTick {
+    get { return hitTick_; }
+    set {
+      hitTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "stun_until_tick" field.</summary>
+  public const int StunUntilTickFieldNumber = 7;
+  private long stunUntilTick_;
+  /// <summary>
+  /// 0이 아니면 쏜 사람은 이 틱까지 활을 못 든다(쏘면 안 되는 것)
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long StunUntilTick {
+    get { return stunUntilTick_; }
+    set {
+      stunUntilTick_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -145,6 +211,10 @@ public sealed partial class ArcheryHitToC : pb::IMessage<ArcheryHitToC>
     if (ShooterId != other.ShooterId) return false;
     if (FireTick != other.FireTick) return false;
     if (Points != other.Points) return false;
+    if (WaveIndex != other.WaveIndex) return false;
+    if (SlotIndex != other.SlotIndex) return false;
+    if (HitTick != other.HitTick) return false;
+    if (StunUntilTick != other.StunUntilTick) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -155,6 +225,10 @@ public sealed partial class ArcheryHitToC : pb::IMessage<ArcheryHitToC>
     if (ShooterId.Length != 0) hash ^= ShooterId.GetHashCode();
     if (FireTick != 0L) hash ^= FireTick.GetHashCode();
     if (Points != 0) hash ^= Points.GetHashCode();
+    if (WaveIndex != 0) hash ^= WaveIndex.GetHashCode();
+    if (SlotIndex != 0) hash ^= SlotIndex.GetHashCode();
+    if (HitTick != 0L) hash ^= HitTick.GetHashCode();
+    if (StunUntilTick != 0L) hash ^= StunUntilTick.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -185,6 +259,22 @@ public sealed partial class ArcheryHitToC : pb::IMessage<ArcheryHitToC>
       output.WriteRawTag(24);
       output.WriteInt32(Points);
     }
+    if (WaveIndex != 0) {
+      output.WriteRawTag(32);
+      output.WriteInt32(WaveIndex);
+    }
+    if (SlotIndex != 0) {
+      output.WriteRawTag(40);
+      output.WriteInt32(SlotIndex);
+    }
+    if (HitTick != 0L) {
+      output.WriteRawTag(48);
+      output.WriteInt64(HitTick);
+    }
+    if (StunUntilTick != 0L) {
+      output.WriteRawTag(56);
+      output.WriteInt64(StunUntilTick);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -207,6 +297,22 @@ public sealed partial class ArcheryHitToC : pb::IMessage<ArcheryHitToC>
       output.WriteRawTag(24);
       output.WriteInt32(Points);
     }
+    if (WaveIndex != 0) {
+      output.WriteRawTag(32);
+      output.WriteInt32(WaveIndex);
+    }
+    if (SlotIndex != 0) {
+      output.WriteRawTag(40);
+      output.WriteInt32(SlotIndex);
+    }
+    if (HitTick != 0L) {
+      output.WriteRawTag(48);
+      output.WriteInt64(HitTick);
+    }
+    if (StunUntilTick != 0L) {
+      output.WriteRawTag(56);
+      output.WriteInt64(StunUntilTick);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -225,6 +331,18 @@ public sealed partial class ArcheryHitToC : pb::IMessage<ArcheryHitToC>
     }
     if (Points != 0) {
       size += 1 + pb::CodedOutputStream.ComputeInt32Size(Points);
+    }
+    if (WaveIndex != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(WaveIndex);
+    }
+    if (SlotIndex != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(SlotIndex);
+    }
+    if (HitTick != 0L) {
+      size += 1 + pb::CodedOutputStream.ComputeInt64Size(HitTick);
+    }
+    if (StunUntilTick != 0L) {
+      size += 1 + pb::CodedOutputStream.ComputeInt64Size(StunUntilTick);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -246,6 +364,18 @@ public sealed partial class ArcheryHitToC : pb::IMessage<ArcheryHitToC>
     }
     if (other.Points != 0) {
       Points = other.Points;
+    }
+    if (other.WaveIndex != 0) {
+      WaveIndex = other.WaveIndex;
+    }
+    if (other.SlotIndex != 0) {
+      SlotIndex = other.SlotIndex;
+    }
+    if (other.HitTick != 0L) {
+      HitTick = other.HitTick;
+    }
+    if (other.StunUntilTick != 0L) {
+      StunUntilTick = other.StunUntilTick;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -278,6 +408,22 @@ public sealed partial class ArcheryHitToC : pb::IMessage<ArcheryHitToC>
           Points = input.ReadInt32();
           break;
         }
+        case 32: {
+          WaveIndex = input.ReadInt32();
+          break;
+        }
+        case 40: {
+          SlotIndex = input.ReadInt32();
+          break;
+        }
+        case 48: {
+          HitTick = input.ReadInt64();
+          break;
+        }
+        case 56: {
+          StunUntilTick = input.ReadInt64();
+          break;
+        }
       }
     }
   #endif
@@ -307,6 +453,22 @@ public sealed partial class ArcheryHitToC : pb::IMessage<ArcheryHitToC>
         }
         case 24: {
           Points = input.ReadInt32();
+          break;
+        }
+        case 32: {
+          WaveIndex = input.ReadInt32();
+          break;
+        }
+        case 40: {
+          SlotIndex = input.ReadInt32();
+          break;
+        }
+        case 48: {
+          HitTick = input.ReadInt64();
+          break;
+        }
+        case 56: {
+          StunUntilTick = input.ReadInt64();
           break;
         }
       }

@@ -55,9 +55,13 @@ namespace LOP
                     {
                         ArcheryHit = new ArcheryHitToC
                         {
-                            ShooterId = h.shooterId,
-                            FireTick  = h.fireTick,
-                            Points    = h.points,
+                            ShooterId     = h.shooterId,
+                            FireTick      = h.fireTick,
+                            Points        = h.points,
+                            WaveIndex     = h.waveIndex,
+                            SlotIndex     = h.slotIndex,
+                            HitTick       = h.hitTick,
+                            StunUntilTick = h.stunUntilTick,
                         }
                     };
                 case ArcheryRoundResultEvent r:
@@ -103,9 +107,13 @@ namespace LOP
                         velocity:  new Vector3(rec.ArcheryShot.Velocity.X, rec.ArcheryShot.Velocity.Y, rec.ArcheryShot.Velocity.Z));
                 case WorldEventToC.EventOneofCase.ArcheryHit:
                     return new ArcheryTargetHitEvent(
-                        shooterId: rec.ArcheryHit.ShooterId,
-                        fireTick:  rec.ArcheryHit.FireTick,
-                        points:    rec.ArcheryHit.Points);
+                        shooterId:     rec.ArcheryHit.ShooterId,
+                        fireTick:      rec.ArcheryHit.FireTick,
+                        points:        rec.ArcheryHit.Points,
+                        waveIndex:     rec.ArcheryHit.WaveIndex,
+                        slotIndex:     rec.ArcheryHit.SlotIndex,
+                        hitTick:       rec.ArcheryHit.HitTick,
+                        stunUntilTick: rec.ArcheryHit.StunUntilTick);
                 case WorldEventToC.EventOneofCase.ArcheryRoundResult:
                 {
                     var list = new System.Collections.Generic.List<ArcheryRoundPlacement>();
