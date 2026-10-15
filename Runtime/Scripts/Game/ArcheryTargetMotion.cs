@@ -13,6 +13,8 @@ namespace LOP
     /// 화살이 과녁에 닿기까지 걸리는 시간(사거리가 멀수록 길다)만큼 과녁이 미리 가 있을 자리를
     /// 읽어야 맞힐 수 있게 만든 것이다. 흔드는 움직임이라 폭을 벗어나지 않고, 씨앗 없이 시각만으로
     /// 계산되므로(=예측 가능) "운"이 아니라 "읽는 연습"이 된다.</para>
+    ///
+    /// <para><b>투석기 표적은 옆으로 쭉 난다</b>(<see cref="ArcheryTarget.Drift"/>) — 한 틱에 0.2 m(성배 10 m/s)라 판정의 "한 틱 동안 멈춘 것으로 본다" 전제(반지름 0.5 m)를 지킨다.</para>
     /// </summary>
     public static class ArcheryTargetMotion
     {
@@ -76,7 +78,16 @@ namespace LOP
                 lateral = LateralAxis(target.Facing) * offset;
             }
 
-            return new Vector3(target.Origin.x, target.Origin.y + y, target.Origin.z) + lateral;
+            //  투석기 표적: 수명 동안 위로 한 번 호를 그린다. 0~1로 자른 s에서 4h·s(1−s)는
+            //  가운데(s=0.5)에서 h, 양 끝에서 0이다. 중력 포물선을 안 쓰는 이유 — 수명(2.6초)에
+            //  맞추면 정점이 8 m로 고정돼 높이를 고를 수 없다.
+            if (target.ArcHeight > 0f && target.LifetimeSeconds > 0f)
+            {
+                float s = Mathf.Clamp01(t / target.LifetimeSeconds);
+                y += 4f * target.ArcHeight * s * (1f - s);
+            }
+
+            return new Vector3(target.Origin.x, target.Origin.y + y, target.Origin.z) + lateral + target.Drift * t;
         }
 
         /// <summary>

@@ -74,11 +74,30 @@ namespace LOP
         /// </summary>
         public readonly bool IsShared;
 
+        /// <summary>
+        /// 옆으로 나는 속도(m/s, 세계 좌표). <b>0이면 옆으로 안 간다</b> — 웨이브·사거리·한 발 승부 과녁의 기본값이다.
+        /// 투석기 표적만 쓴다. 좌우로 흔드는 <see cref="LateralSpan"/>과는 다른 움직임이다(한쪽으로 쭉 간다).
+        /// </summary>
+        public readonly Vector3 Drift;
+
+        /// <summary>
+        /// 수명 동안 위로 그리는 호의 높이(m). 수명 가운데에서 이만큼 솟고 끝에서 제 높이로 돌아온다.
+        /// 0이면 호가 없다. 투석기 표적만 쓴다.
+        /// </summary>
+        public readonly float ArcHeight;
+
+        /// <summary>맞히면 이 틱 수만큼 활을 못 든다(쏘면 안 되는 것). 0이면 사격 금지가 없다.</summary>
+        public readonly int StunTicks;
+
+        /// <summary>마스터데이터 종류 id(<c>TbArcheryTarget.id</c>). 화면이 생김새를 고르는 데만 쓴다. 0 = 모름.</summary>
+        public readonly int KindId;
+
         public ArcheryTarget(int waveIndex, int slotIndex, Vector3 origin, float riseSpeed, long spawnTick,
                              float radius, int points, bool isTrap,
                              ArcheryTargetShape shape, IReadOnlyList<ArcheryRingBand> bands, Vector3 facing,
                              float lifetimeSeconds, string ownerUserId,
-                             float lateralSpan, float lateralPeriod, bool isShared = false)
+                             float lateralSpan, float lateralPeriod, bool isShared = false,
+                             Vector3 drift = default, float arcHeight = 0f, int stunTicks = 0, int kindId = 0)
         {
             WaveIndex = waveIndex;
             SlotIndex = slotIndex;
@@ -96,6 +115,10 @@ namespace LOP
             LateralSpan = lateralSpan;
             LateralPeriod = lateralPeriod;
             IsShared = isShared;
+            Drift = drift;
+            ArcHeight = arcHeight;
+            StunTicks = stunTicks;
+            KindId = kindId;
         }
     }
 }
