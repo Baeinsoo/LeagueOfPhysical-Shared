@@ -24,5 +24,13 @@ namespace LOP
         /// <see cref="ArcheryAimSystem.DrawThreshold"/>를 못 넘고 떼면 안 쏘고 취소된다.
         /// </summary>
         public float DrawRatio;
+
+        /// <summary>
+        /// 이 틱까지(포함) 활을 못 든다 — 쏘면 안 되는 것을 맞힌 벌. 기본값은 "금지 없음".
+        /// <para><b>서버가 정하는 값</b>이고 클라는 적중 사건으로 받아 같은 값을 넣는다. 그래서
+        /// <see cref="ArcheryWorld"/>의 되감기 저장·복원에 넣지 않는다 — 되감으면 확정된 벌이 사라진다.</para>
+        /// <para>끝 틱만 두는 것은 적중 틱보다 앞으로 되감는 일이 없다는 전제 때문이다 — 그런 되감기가 생기면 시작 틱도 둬야 한다.</para>
+        /// </summary>
+        public long StunnedUntilTick = long.MinValue;
     }
 }

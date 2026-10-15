@@ -82,6 +82,14 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 사격_금지가_없는_함정은_벌점만_준다()
+        {
+            var trap = new ArcheryTarget(0, 0, Vector3.zero, 0f, 0, 0.5f, -5, true, ArcheryTargetShape.Sphere,
+                                         null, Vector3.zero, 1f, string.Empty, 0f, 0f);
+            Assert.AreEqual(0, ArcheryHitRules.Resolve(trap, 0f).StunTicks);
+        }
+
+        [Test]
         public void 함정_점수가_0이면_아무_일도_안_일어난다()
         {
             var outcome = ArcheryHitRules.Resolve(Target(points: 0, isTrap: true), 0f);

@@ -13,17 +13,20 @@ namespace LOP
         /// 줄어드는 것으로만 드러난다.</summary>
         public int Delta => Gained - Lost;
 
-        public ArcheryHitOutcome(int gained, int lost)
+        /// <summary>맞힌 사람이 이 틱 수만큼 활을 못 든다(쏘면 안 되는 것). 0이면 없다.</summary>
+        public readonly int StunTicks;
+
+        public ArcheryHitOutcome(int gained, int lost, int stunTicks = 0)
         {
             Gained = gained;
             Lost = lost;
+            StunTicks = stunTicks;
         }
     }
 
     /// <summary>
     /// <b>과녁을 맞혔을 때 무슨 일이 일어나는가.</b> 이 게임에서 그것을 정하는 곳은 여기 하나뿐이다 —
-    /// 나중에 벌칙을 "점수 차감" 말고 다른 것(예: 몇 초간 활을 못 당김)으로 바꾸고 싶어지면
-    /// 이 함수만 고치면 된다.
+    /// 벌칙은 벌점과 사격 금지(<see cref="ArcheryTarget.StunTicks"/>) 둘이다 — 바꾸고 싶어지면 이 함수만 고치면 된다.
     ///
     /// <para>일반화된 효과 시스템을 짓지 않는다. 지금 효과가 둘뿐이라 그건 낭비다.</para>
     /// </summary>
@@ -77,7 +80,7 @@ namespace LOP
             {
                 //  데이터에 -3으로 적든 3으로 적든 같은 벌점이 되게 한다. 적는 사람이 부호를
                 //  어느 쪽으로 쓸지 헷갈려도 값이 두 배로 틀리지 않는다.
-                return new ArcheryHitOutcome(0, Mathf.Abs(points));
+                return new ArcheryHitOutcome(0, Mathf.Abs(points), target.StunTicks);
             }
 
             //  성한 과녁에 음수가 적혀 있으면 점수를 몰래 깎는 대신 아무것도 주지 않는다.

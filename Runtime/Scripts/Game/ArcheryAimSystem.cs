@@ -131,11 +131,16 @@ namespace LOP
             //  여기서 먼저 붙들어 둔다. 안 그러면 놓을 때마다 힘이 조금씩 모자란다.
             float drawAtRelease = aim.DrawRatio;
 
+            //  사격 금지 동안에는 누르고 있어도 안 당긴 것으로 본다 — 시위는 아래에서 평소처럼 0으로 풀린다.
+            //  금지가 풀린 틱에도 누르고 있으면 그 틱부터 새 당김이 0에서 시작한다(아래 "새로 찍는다"가 그 일을 한다).
+            bool stunned = tick <= aim.StunnedUntilTick;
+            bool drawing = command.Drawing && stunned == false;
+
             //  당기기 시작한 틱은 "안 당기다가 당기기 시작한" 그 틱에만 새로 찍는다.
             //  새 당김은 반드시 0부터 시작해야 한다 — 그래야 압축된 당김 같은 이어붙은 탭도
             //  각자 정해진 세기로 출발한다. 이 0 리셋은 **시위 램프보다 먼저** 일어나야 하므로
             //  (그렇지 않으면 이 틱의 위 한 틱분 상승이 버려진다) 여기에 위치한다.
-            if (command.Drawing && aim.Drawing == false)
+            if (drawing && aim.Drawing == false)
             {
                 aim.DrawStartTick = tick;
                 aim.DrawRatio = 0f;
@@ -145,14 +150,20 @@ namespace LOP
             //  당길 때는 목표(1)를 향해 빠르게, 뗀 뒤에는 0을 향해 느리게 간다.
             //  클라가 보낸 크기는 그대로 믿지 않는다 — 수정된 클라가 50 같은 값을 실어도
             //  0~1로 잘라야 힘이 여전히 "몇 틱을 당겼나"로만 정해진다(서버가 신뢰하는 건 시간뿐).
-            float drawTarget = command.Drawing ? Mathf.Clamp01(command.DrawRatio) : 0f;
+            float drawTarget = drawing ? Mathf.Clamp01(command.DrawRatio) : 0f;
             float drawSpeed = drawTarget > aim.DrawRatio ? DrawRisePerSecond : DrawFallPerSecond;
             aim.DrawRatio = Mathf.MoveTowards(
                 aim.DrawRatio, drawTarget, drawSpeed * tickInterval);
 
+            if (stunned)
+            {
+                aim.Drawing = false;
+                return null;   // 떼도 안 나간다
+            }
+
             if (command.Release == false)
             {
-                aim.Drawing = command.Drawing;
+                aim.Drawing = drawing;
                 return null;
             }
 
