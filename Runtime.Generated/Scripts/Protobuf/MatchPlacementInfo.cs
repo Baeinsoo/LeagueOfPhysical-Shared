@@ -22,15 +22,18 @@ public static partial class MatchPlacementInfoReflection {
   static MatchPlacementInfoReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChhNYXRjaFBsYWNlbWVudEluZm8ucHJvdG8ilQEKEk1hdGNoUGxhY2VtZW50",
+          "ChhNYXRjaFBsYWNlbWVudEluZm8ucHJvdG8inAIKEk1hdGNoUGxhY2VtZW50",
           "SW5mbxIPCgd1c2VyX2lkGAEgASgJEhEKCXBsYWNlbWVudBgCIAEoBRItCgVz",
-          "dGF0cxgDIAMoCzIeLk1hdGNoUGxhY2VtZW50SW5mby5TdGF0c0VudHJ5GiwK",
-          "ClN0YXRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4AWIG",
+          "dGF0cxgDIAMoCzIeLk1hdGNoUGxhY2VtZW50SW5mby5TdGF0c0VudHJ5EisK",
+          "BGxvb2sYBCADKAsyHS5NYXRjaFBsYWNlbWVudEluZm8uTG9va0VudHJ5EhQK",
+          "DGRpc3BsYXlfbmFtZRgFIAEoCRIVCg1hY2NvdW50X2xldmVsGAYgASgFGiwK",
+          "ClN0YXRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4ARor",
+          "CglMb29rRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AWIG",
           "cHJvdG8z"));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::MatchPlacementInfo), global::MatchPlacementInfo.Parser, new[]{ "UserId", "Placement", "Stats" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, })
+          new pbr::GeneratedClrTypeInfo(typeof(global::MatchPlacementInfo), global::MatchPlacementInfo.Parser, new[]{ "UserId", "Placement", "Stats", "Look", "DisplayName", "AccountLevel" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, null, })
         }));
   }
   #endregion
@@ -75,6 +78,9 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
     userId_ = other.userId_;
     placement_ = other.placement_;
     stats_ = other.stats_.Clone();
+    look_ = other.look_.Clone();
+    displayName_ = other.displayName_;
+    accountLevel_ = other.accountLevel_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -124,6 +130,45 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
     get { return stats_; }
   }
 
+  /// <summary>Field number for the "look" field.</summary>
+  public const int LookFieldNumber = 4;
+  private static readonly pbc::MapField<string, string>.Codec _map_look_codec
+      = new pbc::MapField<string, string>.Codec(pb::FieldCodec.ForString(10, ""), pb::FieldCodec.ForString(18, ""), 34);
+  private readonly pbc::MapField<string, string> look_ = new pbc::MapField<string, string>();
+  /// <summary>
+  ///  이 선수의 그 판 룩(장착 슬롯 → 아이템 코드)·표시 이름·레벨. 클라는 남의 userId↔캐릭터를 몰라
+  ///  결과 단계 시상대에 제 모습으로 세우려면 결과와 함께 받아야 한다. 옛 서버는 비워 보낸다.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public pbc::MapField<string, string> Look {
+    get { return look_; }
+  }
+
+  /// <summary>Field number for the "display_name" field.</summary>
+  public const int DisplayNameFieldNumber = 5;
+  private string displayName_ = "";
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public string DisplayName {
+    get { return displayName_; }
+    set {
+      displayName_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+    }
+  }
+
+  /// <summary>Field number for the "account_level" field.</summary>
+  public const int AccountLevelFieldNumber = 6;
+  private int accountLevel_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int AccountLevel {
+    get { return accountLevel_; }
+    set {
+      accountLevel_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -142,6 +187,9 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
     if (UserId != other.UserId) return false;
     if (Placement != other.Placement) return false;
     if (!Stats.Equals(other.Stats)) return false;
+    if (!Look.Equals(other.Look)) return false;
+    if (DisplayName != other.DisplayName) return false;
+    if (AccountLevel != other.AccountLevel) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -152,6 +200,9 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
     if (UserId.Length != 0) hash ^= UserId.GetHashCode();
     if (Placement != 0) hash ^= Placement.GetHashCode();
     hash ^= Stats.GetHashCode();
+    hash ^= Look.GetHashCode();
+    if (DisplayName.Length != 0) hash ^= DisplayName.GetHashCode();
+    if (AccountLevel != 0) hash ^= AccountLevel.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -179,6 +230,15 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
       output.WriteInt32(Placement);
     }
     stats_.WriteTo(output, _map_stats_codec);
+    look_.WriteTo(output, _map_look_codec);
+    if (DisplayName.Length != 0) {
+      output.WriteRawTag(42);
+      output.WriteString(DisplayName);
+    }
+    if (AccountLevel != 0) {
+      output.WriteRawTag(48);
+      output.WriteInt32(AccountLevel);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -198,6 +258,15 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
       output.WriteInt32(Placement);
     }
     stats_.WriteTo(ref output, _map_stats_codec);
+    look_.WriteTo(ref output, _map_look_codec);
+    if (DisplayName.Length != 0) {
+      output.WriteRawTag(42);
+      output.WriteString(DisplayName);
+    }
+    if (AccountLevel != 0) {
+      output.WriteRawTag(48);
+      output.WriteInt32(AccountLevel);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -215,6 +284,13 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
       size += 1 + pb::CodedOutputStream.ComputeInt32Size(Placement);
     }
     size += stats_.CalculateSize(_map_stats_codec);
+    size += look_.CalculateSize(_map_look_codec);
+    if (DisplayName.Length != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeStringSize(DisplayName);
+    }
+    if (AccountLevel != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(AccountLevel);
+    }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
     }
@@ -234,6 +310,13 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
       Placement = other.Placement;
     }
     stats_.MergeFrom(other.stats_);
+    look_.MergeFrom(other.look_);
+    if (other.DisplayName.Length != 0) {
+      DisplayName = other.DisplayName;
+    }
+    if (other.AccountLevel != 0) {
+      AccountLevel = other.AccountLevel;
+    }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
 
@@ -265,6 +348,18 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
           stats_.AddEntriesFrom(input, _map_stats_codec);
           break;
         }
+        case 34: {
+          look_.AddEntriesFrom(input, _map_look_codec);
+          break;
+        }
+        case 42: {
+          DisplayName = input.ReadString();
+          break;
+        }
+        case 48: {
+          AccountLevel = input.ReadInt32();
+          break;
+        }
       }
     }
   #endif
@@ -294,6 +389,18 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
         }
         case 26: {
           stats_.AddEntriesFrom(ref input, _map_stats_codec);
+          break;
+        }
+        case 34: {
+          look_.AddEntriesFrom(ref input, _map_look_codec);
+          break;
+        }
+        case 42: {
+          DisplayName = input.ReadString();
+          break;
+        }
+        case 48: {
+          AccountLevel = input.ReadInt32();
           break;
         }
       }

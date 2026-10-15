@@ -8,4 +8,9 @@ message MatchPlacementInfo
 	//  공통부(등수·mmr)와 달리 여기 무엇이 들어가는지는 읽는 쪽이 모드를 보고 안다 —
 	//  Bungie PGCR의 values 사전과 같은 자리다. 모드가 늘어도 스키마가 안 바뀐다.
 	map<string, int32> stats = 3;
+	//  이 선수의 그 판 룩(장착 슬롯 → 아이템 코드)·표시 이름·레벨. 클라는 남의 userId↔캐릭터를 몰라
+	//  결과 단계 시상대에 제 모습으로 세우려면 결과와 함께 받아야 한다. 옛 서버는 비워 보낸다.
+	map<string, string> look = 4;
+	string display_name = 5;
+	int32 account_level = 6;
 }
