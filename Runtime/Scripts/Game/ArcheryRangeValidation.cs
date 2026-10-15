@@ -23,6 +23,14 @@ namespace LOP
                 return "맵에 ArcheryLane이 하나도 없다 — 사거리 맵인데 레인을 안 찍었거나 맵 씬이 안 떴다";
             }
 
+            //  투석기는 레인 0 사대 하나에 모두 나란히 선다 — 자리 줄·레인 수는 상관없고 사람 수만 본다.
+            if (courseKind == ArcheryCourseKind.Catapult)
+            {
+                return archerCount > ArcheryCatapultSeats.MaxSeats
+                    ? $"사수가 {archerCount}명인데 사대 한 줄의 자리는 {ArcheryCatapultSeats.MaxSeats}개다"
+                    : null;
+            }
+
             if (shootOff == false && layout.Lanes.Count < archerCount)
             {
                 return $"레인이 {layout.Lanes.Count}개인데 사수는 {archerCount}명이다 — "

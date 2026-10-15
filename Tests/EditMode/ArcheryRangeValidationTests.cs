@@ -124,5 +124,26 @@ namespace LOP.Tests
             var range = new ArcheryRangeSettings(default, new[] { new ArcheryRangeStand(5, 10f, 250, 0f, 0f) }, 200);
             Assert.IsNotNull(ArcheryRangeValidation.Check(layout, range, 4, ArcheryCourseKind.ShootOff));
         }
+
+        [Test]
+        public void 투석기는_레인_하나와_8명이면_통과다()
+        {
+            Assert.IsNull(ArcheryRangeValidation.Check(Layout(4, 30f), ArcheryRangeSettings.None, 8,
+                                                       ArcheryCourseKind.Catapult));
+        }
+
+        [Test]
+        public void 투석기는_9명이면_자리가_모자라다고_말한다()
+        {
+            StringAssert.Contains("자리", ArcheryRangeValidation.Check(Layout(4, 30f), ArcheryRangeSettings.None, 9,
+                                                                    ArcheryCourseKind.Catapult));
+        }
+
+        [Test]
+        public void 투석기도_레인이_없으면_말한다()
+        {
+            Assert.IsNotNull(ArcheryRangeValidation.Check(ArcheryRangeLayout.From(new ArcheryLane[0]),
+                                                          ArcheryRangeSettings.None, 2, ArcheryCourseKind.Catapult));
+        }
     }
 }
