@@ -76,6 +76,22 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 적중_사건의_표적_자리와_사격_금지가_와이어를_왕복한다()
+        {
+            var sent = new ArcheryTargetHitEvent("e7", 1200, -3, waveIndex: 5, slotIndex: 2, hitTick: 1234, stunUntilTick: 1309);
+            var back = (ArcheryTargetHitEvent)WorldEventWire.FromWire(WorldEventWire.ToWire(sent));
+            Assert.AreEqual(sent, back);   // record라 값으로 비교된다
+        }
+
+        [Test]
+        public void 적중_사건의_기본값도_와이어를_왕복한다()
+        {
+            var sent = new ArcheryTargetHitEvent("e1", 10, 2);
+            var back = (ArcheryTargetHitEvent)WorldEventWire.FromWire(WorldEventWire.ToWire(sent));
+            Assert.AreEqual(sent, back);
+        }
+
+        [Test]
         public void 라운드_결과는_와이어를_왕복해도_같다()
         {
             var placements = new List<ArcheryRoundPlacement>

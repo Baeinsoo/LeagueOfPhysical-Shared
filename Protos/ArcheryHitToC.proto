@@ -3,9 +3,12 @@ syntax = "proto3";
 // 폴리모픽 래퍼 안에 담기는 payload — top-level 패킷 아님(@auto_generate 없음).
 message ArcheryHitToC
 {
-	string shooter_id = 1;
-	int64  fire_tick  = 2;   // shooter_id와 짝이 되어 "어느 화살"인지를 가리킨다
-	int32  points     = 3;   // 연출용. 점수의 진실원본은 EntitySnap.score다
-	//  "어느 과녁"은 싣지 않는다 — 그건 ArcheryStateToC(상태)가 말한다. 나중에 "+N"을 과녁
-	//  자리에 띄우고 싶어지면 그때 필드를 더한다(proto 필드 추가는 뒤에 붙이면 되므로 싸다).
+	string shooter_id      = 1;
+	int64  fire_tick       = 2;   // shooter_id와 짝이 되어 "어느 화살"인지를 가리킨다
+	int32  points          = 3;   // 연출용. 점수의 진실원본은 EntitySnap.score다
+	//  아래 넷은 연출과 사격 금지용이다. 과녁이 *사라지는* 것은 여전히 ArcheryStateToC(상태)가 말한다.
+	int32  wave_index      = 4;   // 어느 무리의 — 화면이 "OO +3"을 표적 자리에 띄운다
+	int32  slot_index      = 5;   // 그 무리의 몇 번째 표적
+	int64  hit_tick        = 6;   // 서버가 맞았다고 본 틱
+	int64  stun_until_tick = 7;   // 0이 아니면 쏜 사람은 이 틱까지 활을 못 든다(쏘면 안 되는 것)
 }

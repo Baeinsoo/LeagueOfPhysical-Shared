@@ -18,6 +18,10 @@ namespace LOP
         private readonly GameFramework.World.IMotionBridge motionBridge;
         private readonly List<ArcheryShot> shots = new List<ArcheryShot>();
 
+        //  서버가 "그 사이엔 활을 못 들었다"고 확정해 지운 내 화살. 되감기 저장본에는 남아 있으므로
+        //  복원할 때 다시 걸러야 한다. 서버 확정 사실이라 되감기 밖에 둔다(ArcheryConsumed와 같은 이유).
+        private readonly HashSet<(string shooterId, long fireTick)> cancelled = new HashSet<(string, long)>();
+
         // 되감기용 보관. 틱마다 그 시점의 조준 상태와 화살 목록을 통째로 둔다.
         // 링버퍼(SaveCapacity)로 둔다 — 베이스도 최근 SaveCapacity틱보다 오래된 프레임은
         // LoadState에서 아예 못 찾아 여기까지 오지 않으므로, 그보다 오래된 항목은 영원히 안 쓰이는
@@ -49,6 +53,23 @@ namespace LOP
         public void IngestRemoteShot(in ArcheryShot shot)
         {
             shots.Add(shot);
+        }
+
+        /// <summary>
+        /// 그 사람이 (<paramref name="afterTick"/>, <paramref name="upToTick"/>] 구간에 쏜 화살을 지운다.
+        /// 클라가 예측으로 쏜 화살 중 서버에는 없는 것(사격 금지 중이었다)을 화면에서 치우는 데 쓴다.
+        /// </summary>
+        public void CancelShots(string shooterId, long afterTick, long upToTick)
+        {
+            for (int i = shots.Count - 1; i >= 0; i--)
+            {
+                var shot = shots[i];
+                if (shot.ShooterId == shooterId && shot.FireTick > afterTick && shot.FireTick <= upToTick)
+                {
+                    cancelled.Add((shot.ShooterId, shot.FireTick));
+                    shots.RemoveAt(i);
+                }
+            }
         }
 
         public ArcheryWorld(GameFramework.World.EntityRegistry entityRegistry,
@@ -105,14 +126,14 @@ namespace LOP
         private readonly List<GameFramework.World.Entity> seated = new List<GameFramework.World.Entity>();
 
         /// <summary>
-        /// 한 발 승부: 사수를 이번 라운드 자리에 세운다(<see cref="ArcheryShootOffSeats"/>). 틱에서 바로
+        /// 한 발 승부·투석기: 사수를 이번 라운드 자리에 세운다(<see cref="ArcheryShootOffSeats"/>). 틱에서 바로
         /// 계산하므로 클·서가 따로 돌려도 같은 자리가 나오고, 되감아 다시 돌려도 같다. 조준(화살이 떠나는
         /// 자리)보다 먼저 해야 쏜 자리가 실제로 서 있던 자리가 된다. 명단은 사대를 가진 몸의 id 순서다.
         /// 회전은 건드리지 않는다 — 몸의 방향은 조준이 정한다.
         /// </summary>
         private void Seat(long tick)
         {
-            if (course.IsShootOff == false)
+            if (course.UsesSharedLane == false)
             {
                 return;
             }
@@ -139,7 +160,6 @@ namespace LOP
             }
             seated.Sort((x, y) => string.CompareOrdinal(x.Id, y.Id));
 
-            int round = course.SeatRoundAt(tick, GameplayStartTick);
             Vector3 right = ArcheryTargetMotion.ShooterRightAxis(-lane.Value.Forward);
             for (int i = 0; i < seated.Count; i++)
             {
@@ -149,7 +169,7 @@ namespace LOP
                 {
                     continue;
                 }
-                int slot = ArcheryShootOffSeats.SlotOf(i, round, seated.Count);
+                int slot = course.SeatSlotAt(i, seated.Count, tick, GameplayStartTick);
                 Vector3 at = lane.Value.ShooterPosition + right * ArcheryShootOffSeats.LateralOffset(slot, seated.Count);
                 transform.Position = at.ToNumerics();
             }
@@ -265,6 +285,7 @@ namespace LOP
                     shots.RemoveAt(i);
                 }
             }
+            cancelled.RemoveWhere(c => tick - c.fireTick > lifetimeTicks);
         }
 
         protected override void SaveGameState(long tick)
@@ -310,6 +331,7 @@ namespace LOP
 
             shots.Clear();
             shots.AddRange(state.Shots);
+            shots.RemoveAll(s => cancelled.Contains((s.ShooterId, s.FireTick)));
 
             foreach (var pair in state.Aims)
             {

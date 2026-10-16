@@ -26,8 +26,24 @@ namespace LOP
         /// </summary>
         public readonly IReadOnlyList<ArcheryRingBand> Bands;
 
+        /// <summary>마스터데이터 id. 화면이 생김새를 고르는 데 쓴다.</summary>
+        public readonly int Id;
+
+        /// <summary>투석기 사냥: 이 종류가 뜨는 거리대(m, 사대에서 앞으로). 둘 다 0이면 투석기에 안 나온다.</summary>
+        public readonly float DistanceMinM;
+        public readonly float DistanceMaxM;
+
+        /// <summary>투석기 사냥: 옆으로 나는 속도대(m/s).</summary>
+        public readonly float DriftMinMps;
+        public readonly float DriftMaxMps;
+
+        /// <summary>맞히면 활을 못 드는 틱 수(쏘면 안 되는 것만). 0이면 없다.</summary>
+        public readonly int StunTicks;
+
         public ArcheryTargetKind(float radius, int points, int weight, bool isTrap,
-                                 ArcheryTargetShape shape, IReadOnlyList<ArcheryRingBand> bands)
+                                 ArcheryTargetShape shape, IReadOnlyList<ArcheryRingBand> bands,
+                                 int id = 0, float distanceMinM = 0f, float distanceMaxM = 0f,
+                                 float driftMinMps = 0f, float driftMaxMps = 0f, int stunTicks = 0)
         {
             Radius = radius;
             Points = points;
@@ -35,6 +51,12 @@ namespace LOP
             IsTrap = isTrap;
             Shape = shape;
             Bands = bands;
+            Id = id;
+            DistanceMinM = distanceMinM;
+            DistanceMaxM = distanceMaxM;
+            DriftMinMps = driftMinMps;
+            DriftMaxMps = driftMaxMps;
+            StunTicks = stunTicks;
         }
     }
 }

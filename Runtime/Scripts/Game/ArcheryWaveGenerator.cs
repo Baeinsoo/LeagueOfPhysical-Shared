@@ -121,8 +121,9 @@ namespace LOP
             }
         }
 
-        private static ArcheryTargetKind PickKind(IReadOnlyList<ArcheryTargetKind> kinds,
-                                                  ref GameFramework.Rng.DeterministicRandom rng)
+        /// <summary>가중치 비율로 하나 고른다. 투석기 생성기도 같은 것을 쓴다(뽑기 한 번).</summary>
+        internal static ArcheryTargetKind PickKind(IReadOnlyList<ArcheryTargetKind> kinds,
+                                                   ref GameFramework.Rng.DeterministicRandom rng)
         {
             int total = 0;
             for (int i = 0; i < kinds.Count; i++)

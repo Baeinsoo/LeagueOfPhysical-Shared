@@ -14,5 +14,11 @@ namespace LOP
 
         /// <summary>한 발 승부. 모두 레인 0에서 공유 과녁 하나에 라운드마다 한 발. 순서는 데이터 그대로.</summary>
         ShootOff = 2,
+
+        /// <summary>
+        /// 투석기 사냥. 모두 레인 0 사대에 나란히 서고, 3.2초마다 날아오르는 표적을 먼저 맞힌 사람이 가져간다.
+        /// 무리마다 씨앗으로 표적을 뽑는다(<see cref="ArcheryCatapultGenerator"/>).
+        /// </summary>
+        Catapult = 3,
     }
 }

@@ -121,6 +121,9 @@ namespace LOP
         /// <summary>사거리 코스에만 쓰이는 값들. 웨이브 맵에서는 <see cref="ArcheryRangeSettings.None"/>이다.</summary>
         public ArcheryRangeSettings Range { get; }
 
+        /// <summary>투석기 사냥에만 쓰이는 값들. 다른 코스에서는 <see cref="ArcheryCatapultSettings.None"/>이다.</summary>
+        public ArcheryCatapultSettings Catapult { get; }
+
         /// <summary>
         /// 살짝 당겨 쐈을 때의 화살 속도(m/s). 맵이 안 정하면(0) <see cref="ArcheryAimSystem.MinSpeed"/>.
         /// </summary>
@@ -149,7 +152,8 @@ namespace LOP
                              //  자라는 예전 모양)을 받으므로 그대로 컴파일된다.
                              float shakeBaseRatio = 0f,
                              float arrowMinSpeedMps = 0f,
-                             float arrowMaxSpeedMps = 0f)
+                             float arrowMaxSpeedMps = 0f,
+                             ArcheryCatapultSettings catapult = null)
         {
             WavePeriodTicks = wavePeriodTicks;
             MinTargets = minTargets;
@@ -207,6 +211,7 @@ namespace LOP
             Range = range ?? ArcheryRangeSettings.None;
             ArrowMinSpeed = arrowMinSpeedMps > 0f ? arrowMinSpeedMps : ArcheryAimSystem.MinSpeed;
             ArrowMaxSpeed = arrowMaxSpeedMps > 0f ? arrowMaxSpeedMps : ArcheryAimSystem.MaxSpeed;
+            Catapult = catapult ?? ArcheryCatapultSettings.None;
         }
     }
 }

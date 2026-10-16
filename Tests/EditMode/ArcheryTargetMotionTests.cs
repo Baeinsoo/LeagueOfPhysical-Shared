@@ -226,5 +226,68 @@ namespace LOP.Tests
 
             Assert.Less(low.LifetimeSeconds, high.LifetimeSeconds);
         }
+
+        //  투석기 표적: 2.6초 수명, 가로 4 m/s, 호 1 m. 0.02초 틱.
+        private static ArcheryTarget Thrown(float arcHeight = 1f)
+        {
+            return new ArcheryTarget(0, 0, new Vector3(-5f, 6f, 40f), 0f, 100,
+                                     0.6f, 3, false, ArcheryTargetShape.Sphere, null, Vector3.back,
+                                     2.6f, string.Empty, 0f, 0f, isShared: false,
+                                     drift: new Vector3(4f, 0f, 0f), arcHeight: arcHeight, stunTicks: 0, kindId: 10);
+        }
+
+        [Test]
+        public void 던진_표적은_가로_속도만큼_옆으로_간다()
+        {
+            var target = Thrown(arcHeight: 0f);
+            //  100틱 출발, 50틱 뒤 = 1초 → x가 4 m 갔다. 높이·깊이는 그대로.
+            Vector3 p = ArcheryTargetMotion.PositionAt(target, 150, 0.02f);
+            Assert.AreEqual(-1f, p.x, 1e-4f);
+            Assert.AreEqual(6f, p.y, 1e-4f);
+            Assert.AreEqual(40f, p.z, 1e-4f);
+        }
+
+        [Test]
+        public void 던진_표적은_수명_가운데에서_호의_높이만큼_솟고_끝에서_제_높이로_온다()
+        {
+            var target = Thrown(arcHeight: 1f);
+            double mid = 100 + 1.3 / 0.02;   // 65틱 뒤 = 수명의 절반
+            double end = 100 + 2.6 / 0.02;
+            Assert.AreEqual(7f, ArcheryTargetMotion.PositionAt(target, mid, 0.02f).y, 1e-3f);
+            Assert.AreEqual(6f, ArcheryTargetMotion.PositionAt(target, end, 0.02f).y, 1e-3f);
+        }
+
+        [Test]
+        public void 던지기_전에는_출발점에_가만히_있다()
+        {
+            var target = Thrown();
+            Assert.AreEqual(target.Origin, ArcheryTargetMotion.PositionAt(target, 99, 0.02f));
+        }
+
+        [Test]
+        public void 가로_속도가_없는_옛_과녁은_예전과_같은_자리다()
+        {
+            //  웨이브 과녁(솟기만) — 새 칸이 기본값이면 식이 안 바뀌어야 한다.
+            var old = new ArcheryTarget(0, 0, Vector3.zero, 5f, 0, 0.3f, 1, false,
+                                        ArcheryTargetShape.Sphere, null, Vector3.zero,
+                                        ArcheryTargetMotion.LifetimeFor(5f), string.Empty, 0f, 0f);
+            float t = 0.4f;
+            float expectedY = 5f * t - 0.5f * ArcheryTargetMotion.Gravity * t * t;
+            Assert.AreEqual(expectedY, ArcheryTargetMotion.PositionAt(old, t / 0.02f, 0.02f).y, 1e-4f);
+        }
+
+        [Test]
+        public void 종류는_거리대와_가로_속도대와_사격_금지를_들고_있다()
+        {
+            var kind = new ArcheryTargetKind(0.85f, -3, 1, true, ArcheryTargetShape.Sphere, null,
+                                             id: 12, distanceMinM: 32f, distanceMaxM: 50f,
+                                             driftMinMps: 3f, driftMaxMps: 5f, stunTicks: 75);
+            Assert.AreEqual(12, kind.Id);
+            Assert.AreEqual(32f, kind.DistanceMinM);
+            Assert.AreEqual(50f, kind.DistanceMaxM);
+            Assert.AreEqual(3f, kind.DriftMinMps);
+            Assert.AreEqual(5f, kind.DriftMaxMps);
+            Assert.AreEqual(75, kind.StunTicks);
+        }
     }
 }

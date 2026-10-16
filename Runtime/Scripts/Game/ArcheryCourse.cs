@@ -51,8 +51,14 @@ namespace LOP
 
         public bool IsShootOff => config.CourseKind == ArcheryCourseKind.ShootOff;
 
-        /// <summary>레인 코스의 단계 수. 웨이브 맵은 끝이 없으므로 0이다.</summary>
-        public int StepCount => IsLaned ? config.Range.Stands.Count : 0;
+        /// <summary>투석기 사냥인가.</summary>
+        public bool IsCatapult => config.CourseKind == ArcheryCourseKind.Catapult;
+
+        /// <summary>모두가 레인 0 사대에 나란히 서는 코스인가(한 발 승부·투석기). 자리·카메라·치비가 이 값을 본다.</summary>
+        public bool UsesSharedLane => IsShootOff || IsCatapult;
+
+        /// <summary>단계 수. 레인형은 자리 줄 수, 투석기는 무리 수, 웨이브는 끝이 없으므로 0.</summary>
+        public int StepCount => IsLaned ? config.Range.Stands.Count : (IsCatapult ? config.Catapult.VolleyCount : 0);
 
         /// <summary>
         /// <b>자리 하나마다</b> 주어지는 화살 수. <b>0이면 무제한</b>(웨이브 맵).
@@ -63,20 +69,22 @@ namespace LOP
         /// <para>데이터가 0이면 <b>최소 1</b>로 본다 — 0은 "한 발도 못 쏜다"가 아니라
         /// <b>무제한</b>으로 뒤집히기 때문이다. 한 칸 실수가 판을 통째로 망가뜨리지 않게 막는다.</para>
         /// </summary>
-        public int ArrowsPerStand => StepCount == 0 ? 0 : (IsShootOff ? 1 : Mathf.Max(1, config.Range.ArrowsPerStand));
+        //  투석기는 화살통이 없다(spec §2.5) — StepCount가 0이 아니어도 무제한이어야 한다.
+        public int ArrowsPerStand => IsCatapult || StepCount == 0 ? 0 : (IsShootOff ? 1 : Mathf.Max(1, config.Range.ArrowsPerStand));
 
         /// <summary>
         /// 사수가 좌우로 움직일 수 있는 거리(m). <b>사거리 맵에서만</b> 0이 아니다.
         /// </summary>
-        public float ShootingBoxHalfWidth => StepCount == 0 || IsShootOff ? 0f : config.Range.BoxHalfWidthM;
+        //  사대 상자·걷기는 사거리 맵 것이다. "레인형이 아니면 0"으로 적어 투석기가 저절로 빠지게 한다.
+        public float ShootingBoxHalfWidth => IsLaned == false || IsShootOff ? 0f : config.Range.BoxHalfWidthM;
 
         /// <summary>사수가 앞뒤로 움직일 수 있는 거리(m). <b>사거리 맵에서만</b> 0이 아니다.</summary>
-        public float ShootingBoxHalfDepth => StepCount == 0 || IsShootOff ? 0f : config.Range.BoxHalfDepthM;
+        public float ShootingBoxHalfDepth => IsLaned == false || IsShootOff ? 0f : config.Range.BoxHalfDepthM;
 
         /// <summary>
         /// 사수의 걷는 속도(m/s). <b>0이면 이동이 아예 안 돈다</b> — 웨이브 맵(원형)이 여기다.
         /// </summary>
-        public float MoveSpeed => StepCount == 0 || IsShootOff ? 0f : config.Range.MoveSpeedMps;
+        public float MoveSpeed => IsLaned == false || IsShootOff ? 0f : config.Range.MoveSpeedMps;
 
         /// <summary>
         /// 이 판의 길이(틱). 사거리는 <b>노출과 간격의 합</b>이라 순서와 무관하다 — 그래서 씨앗이
@@ -86,6 +94,7 @@ namespace LOP
         {
             get
             {
+                if (IsCatapult) { return config.Catapult.MatchTicks; }
                 if (IsLaned == false)
                 {
                     return config.MatchDurationTicks;
@@ -105,9 +114,12 @@ namespace LOP
         /// 사거리에서 순서가 끝난 뒤면 <see cref="StepCount"/> 이상이다.
         /// <para>맵 씬이 아직 안 떠 레인을 못 찾은 틱도 −1이다 — 실제로 서 있는 단계가 없으니
         /// 같은 답이고, 씬이 뜨면 그 다음 틱부터 정상 번호가 나온다.</para>
+        /// <para>투석기는 무리 번호다 — "준비"가 아니라 발사 틱에서 넘어가야 지난 무리가 수명을 다 채운다
+        /// (<see cref="ArcheryCatapultSchedule.LiveVolleyAt"/>).</para>
         /// </summary>
         public int IndexAt(long tick, long gameplayStartTick)
         {
+            if (IsCatapult) { return ArcheryCatapultSchedule.LiveVolleyAt(config.Catapult, tick, gameplayStartTick); }
             if (IsLaned == false)
             {
                 return ArcheryWaveGenerator.WaveIndexAt(tick, gameplayStartTick, config);
@@ -144,6 +156,18 @@ namespace LOP
         /// <summary>그 단계의 과녁을 채운다(먼저 비운다).</summary>
         public void Fill(List<ArcheryTarget> into, int index, long gameplayStartTick)
         {
+            if (IsCatapult)
+            {
+                into.Clear();
+                if (TryEnsureBuilt() == false)
+                {
+                    return;   // 맵 씬이 아직 안 떴다
+                }
+                var lane = layout.Lanes[0];
+                ArcheryCatapultGenerator.Fill(into, matchSeed.Value, index, config,
+                                              lane.ShooterPosition, lane.Forward, gameplayStartTick, tickInterval);
+                return;
+            }
             if (IsLaned == false)
             {
                 ArcheryWaveGenerator.Fill(into, matchSeed.Value, index, config, gameplayStartTick);
@@ -278,8 +302,22 @@ namespace LOP
             return round;
         }
 
+        /// <summary>
+        /// 명단 순번 <paramref name="rosterIndex"/>인 사람이 이 틱에 설 자리(왼쪽부터 0).
+        /// 한 발 승부는 결과 화면이 닫힐 때 한 칸씩 돌고, 투석기는 라운드마다 씨앗으로 섞는다(첫 라운드는 입장 순서).
+        /// </summary>
+        public int SeatSlotAt(int rosterIndex, int count, long tick, long gameplayStartTick)
+        {
+            if (IsCatapult)
+            {
+                ArcheryCatapultSchedule.PhaseAt(config.Catapult, tick, gameplayStartTick, out int round);
+                return ArcheryCatapultSeats.SlotOf(rosterIndex, Mathf.Max(round, 0), count, matchSeed.Value);
+            }
+            return ArcheryShootOffSeats.SlotOf(rosterIndex, SeatRoundAt(tick, gameplayStartTick), count);
+        }
+
         public ArcheryRangeLayout.Lane? SharedLane
-            => IsShootOff && TryEnsureBuilt() ? layout.Lanes[0] : (ArcheryRangeLayout.Lane?)null;
+            => UsesSharedLane && TryEnsureBuilt() ? layout.Lanes[0] : (ArcheryRangeLayout.Lane?)null;
 
         /// <summary>
         /// 그 틱에 쏜 화살을 미는 바람. 한 발 승부가 아니거나, 라운드 밖이거나, 맵 씬이 아직
