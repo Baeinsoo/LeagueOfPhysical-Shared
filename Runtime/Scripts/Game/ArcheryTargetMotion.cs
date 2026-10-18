@@ -15,6 +15,8 @@ namespace LOP
     /// 계산되므로(=예측 가능) "운"이 아니라 "읽는 연습"이 된다.</para>
     ///
     /// <para><b>투석기 표적은 옆으로 쭉 난다</b>(<see cref="ArcheryTarget.Drift"/>) — 한 틱에 0.2 m(성배 10 m/s)라 판정의 "한 틱 동안 멈춘 것으로 본다" 전제(반지름 0.5 m)를 지킨다.</para>
+    ///
+    /// <para><b>2차 표적은 출렁·솟음·회전을 더한다</b> — 모두 시간의 순수 함수라 클·서가 같은 답을 낸다. 도는 접시의 판정 크기는 <see cref="RadiusAt"/>.</para>
     /// </summary>
     public static class ArcheryTargetMotion
     {
@@ -87,6 +89,20 @@ namespace LOP
                 y += 4f * target.ArcHeight * s * (1f - s);
             }
 
+            //  출렁(물풍선·종·피냐타): sin에서 시작 위상의 값을 빼 발사 순간 제자리에서 시작한다 —
+            //  안 빼면 투석기 바구니가 놓은 자리에서 최대 진폭만큼 순간이동한다. 위아래 폭(2A)은 그대로다.
+            if (target.BobAmplitude > 0f && target.BobHz > 0f)
+            {
+                float phase = 2f * Mathf.PI * target.MotionPhase;
+                y += target.BobAmplitude * (Mathf.Sin(2f * Mathf.PI * target.BobHz * t + phase) - Mathf.Sin(phase));
+            }
+
+            //  솟음(폭죽 로켓): 중력 없이 곧게 오른다. 수명(2.6초) 끝까지 올라가는 것이 "먼 데다 계속 도망간다"는 어려움이다.
+            if (target.Climb > 0f)
+            {
+                y += target.Climb * t;
+            }
+
             return new Vector3(target.Origin.x, target.Origin.y + y, target.Origin.z) + lateral + target.Drift * t;
         }
 
@@ -133,6 +149,38 @@ namespace LOP
             Vector3 axis = Vector3.Cross(Vector3.up, -facing);
             float sqr = axis.sqrMagnitude;
             return sqr < 1e-8f ? Vector3.right : axis / Mathf.Sqrt(sqr);
+        }
+
+        /// <summary>도는 접시가 옆으로 누워도 이 비율 밑으로는 안 작아진다(spec 2차 §2 — 완전히 0이면 아예 못 맞힌다).</summary>
+        public const float MinSpinRadiusRatio = 0.2f;
+
+        /// <summary>
+        /// 그 시각의 회전각(라디안). 0이면 앞면이 사수를 본다. 축은 사수 기준 가로축이다 — 화면이 이 각으로 그림을 돌린다.
+        /// 발사 전에는 시작 위상의 각에 머문다. 안 도는 표적은 0.
+        /// </summary>
+        public static float SpinAngleAt(in ArcheryTarget target, double tick, float tickInterval)
+        {
+            if (target.SpinHz <= 0f)
+            {
+                return 0f;
+            }
+            float t = Mathf.Max(0f, (float)((tick - target.SpawnTick) * tickInterval));
+            return 2f * Mathf.PI * (target.MotionPhase + target.SpinHz * t);
+        }
+
+        /// <summary>
+        /// 그 시각의 판정 반지름(m). 도는 접시는 옆으로 누울수록 작아진다 — r·max(0.2, |cos θ|).
+        /// <b>서버 판정·클라 꽂힘·화면 회전이 모두 이 함수와 <see cref="SpinAngleAt"/>을 같은 시각으로 부른다</b> —
+        /// 한 곳만 옛 반지름을 쓰면 "꽂혔는데 점수가 없다"가 된다.
+        /// </summary>
+        public static float RadiusAt(in ArcheryTarget target, double tick, float tickInterval)
+        {
+            if (target.SpinHz <= 0f)
+            {
+                return target.Radius;
+            }
+            float cos = Mathf.Abs(Mathf.Cos(SpinAngleAt(target, tick, tickInterval)));
+            return target.Radius * Mathf.Max(MinSpinRadiusRatio, cos);
         }
 
         /// <summary>아직 공중에 있나. 솟기 전과 떨어진 뒤에는 거짓이다.</summary>
