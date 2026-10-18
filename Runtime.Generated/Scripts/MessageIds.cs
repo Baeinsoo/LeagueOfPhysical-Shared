@@ -24,5 +24,7 @@ namespace LOP
         public const ushort ArcheryStateToC                = 19;
         public const ushort DodgeStateToC                  = 20;
         public const ushort PlayerPresenceToC              = 21;
+        public const ushort LeaveMatchToC                  = 22;
+        public const ushort LeaveMatchToS                  = 23;
     }
 }
