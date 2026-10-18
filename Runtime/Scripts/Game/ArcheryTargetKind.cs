@@ -40,10 +40,17 @@ namespace LOP
         /// <summary>맞히면 활을 못 드는 틱 수(쏘면 안 되는 것만). 0이면 없다.</summary>
         public readonly int StunTicks;
 
+        /// <summary>대박(황금 종·피냐타)인가. 무리마다 일반과 따로, 확률로 하나 낀다. 금지물이면 늘 거짓이다.</summary>
+        public readonly bool IsJackpot;
+
+        /// <summary>투석기 사냥의 움직임 값. 다른 코스에서는 기본값(전부 0)이다.</summary>
+        public readonly ArcheryCatapultMotion Motion;
+
         public ArcheryTargetKind(float radius, int points, int weight, bool isTrap,
                                  ArcheryTargetShape shape, IReadOnlyList<ArcheryRingBand> bands,
                                  int id = 0, float distanceMinM = 0f, float distanceMaxM = 0f,
-                                 float driftMinMps = 0f, float driftMaxMps = 0f, int stunTicks = 0)
+                                 float driftMinMps = 0f, float driftMaxMps = 0f, int stunTicks = 0,
+                                 bool isJackpot = false, ArcheryCatapultMotion motion = default)
         {
             Radius = radius;
             Points = points;
@@ -57,6 +64,8 @@ namespace LOP
             DriftMinMps = driftMinMps;
             DriftMaxMps = driftMaxMps;
             StunTicks = stunTicks;
+            IsJackpot = isJackpot;
+            Motion = motion;
         }
     }
 }

@@ -26,6 +26,9 @@ namespace LOP
         /// <summary>표적의 길이 머무는 가로 범위(m, 레인 중심에서 한쪽).</summary>
         public float LateralHalfRangeM { get; }
 
+        /// <summary>한 무리에 대박(황금 종·피냐타)이 낄 확률(0~1). 금지물과 따로 뽑는다.</summary>
+        public float JackpotChance { get; }
+
         public int RoundTicks => IntroTicks + HuntTicks + ResultTicks;
 
         /// <summary>
@@ -44,7 +47,7 @@ namespace LOP
 
         public ArcheryCatapultSettings(int roundCount, int introTicks, int huntTicks, int resultTicks,
                                        int volleyPeriodTicks, int cueTicks, int quietTicks, int targetLifeTicks,
-                                       float trapChance, float lateralHalfRangeM)
+                                       float trapChance, float lateralHalfRangeM, float jackpotChance = 0f)
         {
             RoundCount = roundCount;
             IntroTicks = introTicks;
@@ -56,6 +59,7 @@ namespace LOP
             TargetLifeTicks = targetLifeTicks;
             TrapChance = trapChance;
             LateralHalfRangeM = lateralHalfRangeM;
+            JackpotChance = jackpotChance;
         }
     }
 }

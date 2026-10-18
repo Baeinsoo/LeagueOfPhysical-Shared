@@ -92,12 +92,32 @@ namespace LOP
         /// <summary>마스터데이터 종류 id(<c>TbArcheryTarget.id</c>). 화면이 생김새를 고르는 데만 쓴다. 0 = 모름.</summary>
         public readonly int KindId;
 
+        /// <summary>대박인가. 화면이 큰 팝업과 느린 연출을 고르는 데만 쓴다(점수는 <see cref="Points"/>).</summary>
+        public readonly bool IsJackpot;
+
+        /// <summary>위아래 출렁 폭(m, 한쪽). 0이면 안 출렁인다 — <see cref="ArcheryTargetMotion.PositionAt"/>.</summary>
+        public readonly float BobAmplitude;
+
+        /// <summary>출렁 횟수(초당).</summary>
+        public readonly float BobHz;
+
+        /// <summary>빙글 도는 빠르기(초당 바퀴). 0보다 크면 판정 반지름이 회전각을 따른다 — <see cref="ArcheryTargetMotion.RadiusAt"/>.</summary>
+        public readonly float SpinHz;
+
+        /// <summary>위로 계속 솟는 속도(m/s). 중력 없는 곧은 솟음이다(<see cref="RiseSpeed"/>는 중력 포물선이라 다르다).</summary>
+        public readonly float Climb;
+
+        /// <summary>출렁·회전의 시작 위상(0~1, 한 바퀴 기준). 표적마다 뽑아서 같은 무리라도 박자가 다르다.</summary>
+        public readonly float MotionPhase;
+
         public ArcheryTarget(int waveIndex, int slotIndex, Vector3 origin, float riseSpeed, long spawnTick,
                              float radius, int points, bool isTrap,
                              ArcheryTargetShape shape, IReadOnlyList<ArcheryRingBand> bands, Vector3 facing,
                              float lifetimeSeconds, string ownerUserId,
                              float lateralSpan, float lateralPeriod, bool isShared = false,
-                             Vector3 drift = default, float arcHeight = 0f, int stunTicks = 0, int kindId = 0)
+                             Vector3 drift = default, float arcHeight = 0f, int stunTicks = 0, int kindId = 0,
+                             bool isJackpot = false, float bobAmplitude = 0f, float bobHz = 0f, float spinHz = 0f,
+                             float climbMps = 0f, float motionPhase = 0f)
         {
             WaveIndex = waveIndex;
             SlotIndex = slotIndex;
@@ -119,6 +139,12 @@ namespace LOP
             ArcHeight = arcHeight;
             StunTicks = stunTicks;
             KindId = kindId;
+            IsJackpot = isJackpot;
+            BobAmplitude = bobAmplitude;
+            BobHz = bobHz;
+            SpinHz = spinHz;
+            Climb = climbMps;
+            MotionPhase = motionPhase;
         }
     }
 }

@@ -112,6 +112,12 @@ namespace LOP
         /// <summary>함정 종류만. 비어 있으면 함정이 안 뜬다(비율을 아무리 올려도).</summary>
         public IReadOnlyList<ArcheryTargetKind> TrapKinds { get; }
 
+        /// <summary>투석기 사냥: 성하고 대박이 아닌 종류(무리의 짝). 웨이브 생성기는 이것을 안 쓴다(<see cref="CleanKinds"/>).</summary>
+        public IReadOnlyList<ArcheryTargetKind> NormalKinds { get; }
+
+        /// <summary>투석기 사냥: 대박 종류. 비어 있으면 대박이 안 낀다(확률을 아무리 올려도).</summary>
+        public IReadOnlyList<ArcheryTargetKind> JackpotKinds { get; }
+
         /// <summary>이 맵의 과녁이 뜨는 방식. 안 적으면 웨이브다 — 원형 맵이 기본값 자리다.</summary>
         public ArcheryCourseKind CourseKind { get; }
 
@@ -184,6 +190,8 @@ namespace LOP
             float largest = 0f;
             var clean = new List<ArcheryTargetKind>();
             var traps = new List<ArcheryTargetKind>();
+            var normals = new List<ArcheryTargetKind>();
+            var jackpots = new List<ArcheryTargetKind>();
             if (kinds != null)
             {
                 for (int i = 0; i < kinds.Count; i++)
@@ -199,12 +207,15 @@ namespace LOP
                     else
                     {
                         clean.Add(kinds[i]);
+                        (kinds[i].IsJackpot ? jackpots : normals).Add(kinds[i]);
                     }
                 }
             }
             MaxTargetRadius = largest;
             CleanKinds = clean;
             TrapKinds = traps;
+            NormalKinds = normals;
+            JackpotKinds = jackpots;
 
             CourseKind = courseKind;
             MatchDurationTicks = matchDurationTicks;
