@@ -126,11 +126,5 @@ namespace LOP
             }
             return true;
         }
-
-        //  옮기는 동안만 남긴다 — 서버·클라가 반지름 판으로 옮기면 지운다(이 판은 도는 접시를 늘 다 큰 것으로 본다).
-        public static bool SegmentHitsTarget(Vector3 from, Vector3 to, Vector3 center,
-                                             in ArcheryTarget target,
-                                             out float t, out float normalizedOffset)
-            => SegmentHitsTarget(from, to, center, target, target.Radius, out t, out normalizedOffset);
     }
 }
