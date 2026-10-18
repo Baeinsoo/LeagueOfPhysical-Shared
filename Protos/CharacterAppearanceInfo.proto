@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+// 캐릭터 외형(피부·머리) — 값은 마스터데이터 TbAppearanceColor의 번호. 0이면 모름(클라가 기본값으로 그린다).
+message CharacterAppearanceInfo
+{
+	int32 skin_color_id = 1;
+	int32 hair_color_id = 2;
+}
