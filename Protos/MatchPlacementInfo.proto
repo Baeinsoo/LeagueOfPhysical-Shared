@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "CharacterAppearanceInfo.proto";
+
 message MatchPlacementInfo
 {
 	string user_id  = 1;
@@ -13,4 +15,5 @@ message MatchPlacementInfo
 	map<string, string> look = 4;
 	string display_name = 5;
 	int32 account_level = 6;
+	CharacterAppearanceInfo character_appearance = 7;
 }

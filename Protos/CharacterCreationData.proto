@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "BaseEntityCreationData.proto";
+import "CharacterAppearanceInfo.proto";
 
 message CharacterCreationData
 {
@@ -22,4 +23,5 @@ message CharacterCreationData
 	map<string, string> look = 14;
 	string display_name = 15;
 	int32 account_level = 16;
+	CharacterAppearanceInfo character_appearance = 17;
 }

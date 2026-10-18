@@ -22,18 +22,20 @@ public static partial class MatchPlacementInfoReflection {
   static MatchPlacementInfoReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChhNYXRjaFBsYWNlbWVudEluZm8ucHJvdG8inAIKEk1hdGNoUGxhY2VtZW50",
-          "SW5mbxIPCgd1c2VyX2lkGAEgASgJEhEKCXBsYWNlbWVudBgCIAEoBRItCgVz",
-          "dGF0cxgDIAMoCzIeLk1hdGNoUGxhY2VtZW50SW5mby5TdGF0c0VudHJ5EisK",
-          "BGxvb2sYBCADKAsyHS5NYXRjaFBsYWNlbWVudEluZm8uTG9va0VudHJ5EhQK",
-          "DGRpc3BsYXlfbmFtZRgFIAEoCRIVCg1hY2NvdW50X2xldmVsGAYgASgFGiwK",
-          "ClN0YXRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4ARor",
-          "CglMb29rRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AWIG",
-          "cHJvdG8z"));
+          "ChhNYXRjaFBsYWNlbWVudEluZm8ucHJvdG8aHUNoYXJhY3RlckFwcGVhcmFu",
+          "Y2VJbmZvLnByb3RvItQCChJNYXRjaFBsYWNlbWVudEluZm8SDwoHdXNlcl9p",
+          "ZBgBIAEoCRIRCglwbGFjZW1lbnQYAiABKAUSLQoFc3RhdHMYAyADKAsyHi5N",
+          "YXRjaFBsYWNlbWVudEluZm8uU3RhdHNFbnRyeRIrCgRsb29rGAQgAygLMh0u",
+          "TWF0Y2hQbGFjZW1lbnRJbmZvLkxvb2tFbnRyeRIUCgxkaXNwbGF5X25hbWUY",
+          "BSABKAkSFQoNYWNjb3VudF9sZXZlbBgGIAEoBRI2ChRjaGFyYWN0ZXJfYXBw",
+          "ZWFyYW5jZRgHIAEoCzIYLkNoYXJhY3RlckFwcGVhcmFuY2VJbmZvGiwKClN0",
+          "YXRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4ARorCglM",
+          "b29rRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AWIGcHJv",
+          "dG8z"));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-        new pbr::FileDescriptor[] { },
+        new pbr::FileDescriptor[] { global::CharacterAppearanceInfoReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::MatchPlacementInfo), global::MatchPlacementInfo.Parser, new[]{ "UserId", "Placement", "Stats", "Look", "DisplayName", "AccountLevel" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, null, })
+          new pbr::GeneratedClrTypeInfo(typeof(global::MatchPlacementInfo), global::MatchPlacementInfo.Parser, new[]{ "UserId", "Placement", "Stats", "Look", "DisplayName", "AccountLevel", "CharacterAppearance" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, null, })
         }));
   }
   #endregion
@@ -81,6 +83,7 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
     look_ = other.look_.Clone();
     displayName_ = other.displayName_;
     accountLevel_ = other.accountLevel_;
+    characterAppearance_ = other.characterAppearance_ != null ? other.characterAppearance_.Clone() : null;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -169,6 +172,18 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
     }
   }
 
+  /// <summary>Field number for the "character_appearance" field.</summary>
+  public const int CharacterAppearanceFieldNumber = 7;
+  private global::CharacterAppearanceInfo characterAppearance_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public global::CharacterAppearanceInfo CharacterAppearance {
+    get { return characterAppearance_; }
+    set {
+      characterAppearance_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -190,6 +205,7 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
     if (!Look.Equals(other.Look)) return false;
     if (DisplayName != other.DisplayName) return false;
     if (AccountLevel != other.AccountLevel) return false;
+    if (!object.Equals(CharacterAppearance, other.CharacterAppearance)) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -203,6 +219,7 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
     hash ^= Look.GetHashCode();
     if (DisplayName.Length != 0) hash ^= DisplayName.GetHashCode();
     if (AccountLevel != 0) hash ^= AccountLevel.GetHashCode();
+    if (characterAppearance_ != null) hash ^= CharacterAppearance.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -239,6 +256,10 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
       output.WriteRawTag(48);
       output.WriteInt32(AccountLevel);
     }
+    if (characterAppearance_ != null) {
+      output.WriteRawTag(58);
+      output.WriteMessage(CharacterAppearance);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -267,6 +288,10 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
       output.WriteRawTag(48);
       output.WriteInt32(AccountLevel);
     }
+    if (characterAppearance_ != null) {
+      output.WriteRawTag(58);
+      output.WriteMessage(CharacterAppearance);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -290,6 +315,9 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
     }
     if (AccountLevel != 0) {
       size += 1 + pb::CodedOutputStream.ComputeInt32Size(AccountLevel);
+    }
+    if (characterAppearance_ != null) {
+      size += 1 + pb::CodedOutputStream.ComputeMessageSize(CharacterAppearance);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -316,6 +344,12 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
     }
     if (other.AccountLevel != 0) {
       AccountLevel = other.AccountLevel;
+    }
+    if (other.characterAppearance_ != null) {
+      if (characterAppearance_ == null) {
+        CharacterAppearance = new global::CharacterAppearanceInfo();
+      }
+      CharacterAppearance.MergeFrom(other.CharacterAppearance);
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -360,6 +394,13 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
           AccountLevel = input.ReadInt32();
           break;
         }
+        case 58: {
+          if (characterAppearance_ == null) {
+            CharacterAppearance = new global::CharacterAppearanceInfo();
+          }
+          input.ReadMessage(CharacterAppearance);
+          break;
+        }
       }
     }
   #endif
@@ -401,6 +442,13 @@ public sealed partial class MatchPlacementInfo : pb::IMessage<MatchPlacementInfo
         }
         case 48: {
           AccountLevel = input.ReadInt32();
+          break;
+        }
+        case 58: {
+          if (characterAppearance_ == null) {
+            CharacterAppearance = new global::CharacterAppearanceInfo();
+          }
+          input.ReadMessage(CharacterAppearance);
           break;
         }
       }
