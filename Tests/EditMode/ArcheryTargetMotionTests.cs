@@ -289,5 +289,88 @@ namespace LOP.Tests
             Assert.AreEqual(5f, kind.DriftMaxMps);
             Assert.AreEqual(75, kind.StunTicks);
         }
+
+        //  2차 표적: 깊이 40 m, 높이 6 m, 100틱 발사, 2.6초 수명. 0.02초 틱.
+        private static ArcheryTarget Moving(float bobA = 0f, float bobHz = 0f, float spinHz = 0f,
+                                            float climb = 0f, float phase = 0f, float radius = 0.85f)
+            => new ArcheryTarget(0, 0, new Vector3(0f, 6f, 40f), 0f, 100, radius, 2, false,
+                                 ArcheryTargetShape.Sphere, null, Vector3.back, 2.6f, string.Empty, 0f, 0f,
+                                 isShared: false, bobAmplitude: bobA, bobHz: bobHz, spinHz: spinHz,
+                                 climbMps: climb, motionPhase: phase);
+
+        [Test]
+        public void 출렁임은_발사_순간_제자리에서_시작해_한_주기에_돌아온다()
+        {
+            //  0.5 Hz = 2초 = 100틱 주기. 위상이 0이 아니어도 발사 순간엔 제자리다(바구니가 놓는 자리).
+            var t = Moving(bobA: 0.6f, bobHz: 0.5f, phase: 0.3f);
+            Assert.AreEqual(6f, ArcheryTargetMotion.PositionAt(t, 100.0001, 0.02f).y, 1e-3f);
+            Assert.AreEqual(6f, ArcheryTargetMotion.PositionAt(t, 200, 0.02f).y, 1e-3f);
+            Assert.AreNotEqual(6f, ArcheryTargetMotion.PositionAt(t, 125, 0.02f).y, "출렁임이 죽었다");
+        }
+
+        [Test]
+        public void 출렁임의_위아래_폭은_진폭의_두_배다()
+        {
+            var t = Moving(bobA: 0.6f, bobHz: 0.48f, phase: 0.7f);
+            float lo = float.MaxValue, hi = float.MinValue;
+            for (int k = 0; k <= 130; k++)
+            {
+                float y = ArcheryTargetMotion.PositionAt(t, 100 + k, 0.02f).y;
+                lo = Mathf.Min(lo, y);
+                hi = Mathf.Max(hi, y);
+            }
+            //  2.6초 안에 한 주기(2.08초)가 다 들어간다 — 끝에서 끝이 1.2 m.
+            Assert.AreEqual(1.2f, hi - lo, 0.02f);
+        }
+
+        [Test]
+        public void 솟는_표적은_초당_속도만큼_곧게_오른다()
+        {
+            var t = Moving(climb: 4f);
+            Assert.AreEqual(10f, ArcheryTargetMotion.PositionAt(t, 150, 0.02f).y, 1e-3f);   // 1초 뒤 +4 m
+            Assert.AreEqual(6f + 4f * 2.6f, ArcheryTargetMotion.PositionAt(t, 230, 0.02f).y, 1e-3f);
+        }
+
+        [Test]
+        public void 회전하지_않는_표적은_판정_반지름이_그대로다()
+        {
+            var t = Moving(bobA: 0.6f, bobHz: 0.48f);
+            for (int k = 0; k < 130; k += 7)
+            {
+                Assert.AreEqual(0.85f, ArcheryTargetMotion.RadiusAt(t, 100 + k, 0.02f));
+            }
+            Assert.AreEqual(0f, ArcheryTargetMotion.SpinAngleAt(t, 150, 0.02f));
+        }
+
+        [Test]
+        public void 도는_접시는_정면에서_다_크고_옆으로_누우면_오분의_일까지_작아진다()
+        {
+            //  1바퀴/초, 위상 0: 발사 순간 정면(|cos| = 1), 4분의 1바퀴(12.5틱) 뒤 옆(0 → 0.2로 막힘), 8분의 1바퀴엔 cos 45°.
+            var t = Moving(spinHz: 1f);
+            Assert.AreEqual(0.85f, ArcheryTargetMotion.RadiusAt(t, 100, 0.02f), 1e-4f);
+            Assert.AreEqual(0.85f * 0.2f, ArcheryTargetMotion.RadiusAt(t, 112.5, 0.02f), 1e-4f);
+            Assert.AreEqual(0.85f * Mathf.Cos(Mathf.PI / 4f), ArcheryTargetMotion.RadiusAt(t, 106.25, 0.02f), 1e-4f);
+            Assert.AreEqual(0.85f, ArcheryTargetMotion.RadiusAt(t, 125, 0.02f), 1e-4f);   // 반 바퀴 = 뒷면 정면
+        }
+
+        [Test]
+        public void 회전각은_한_바퀴에_2파이고_위상만큼_앞서_시작한다()
+        {
+            var t = Moving(spinHz: 1.1f, phase: 0.25f);
+            Assert.AreEqual(2f * Mathf.PI * 0.25f, ArcheryTargetMotion.SpinAngleAt(t, 90, 0.02f), 1e-5f);    // 발사 전 = 시작 위상
+            Assert.AreEqual(2f * Mathf.PI * (0.25f + 1.1f), ArcheryTargetMotion.SpinAngleAt(t, 150, 0.02f), 1e-4f);
+        }
+
+        [Test]
+        public void 화살_판정은_넘겨준_반지름을_쓴다()
+        {
+            //  가운데에서 0.5 m 위를 지나는 화살 — 다 큰 접시(0.85)는 맞고, 옆으로 누운 접시(0.17)는 빗나간다.
+            var t = Moving();
+            Vector3 center = t.Origin;
+            Vector3 from = center + new Vector3(0f, 0.5f, -1f);
+            Vector3 to = center + new Vector3(0f, 0.5f, 1f);
+            Assert.IsTrue(ArcheryHitTest.SegmentHitsTarget(from, to, center, t, 0.85f, out _, out _));
+            Assert.IsFalse(ArcheryHitTest.SegmentHitsTarget(from, to, center, t, 0.17f, out _, out _));
+        }
     }
 }

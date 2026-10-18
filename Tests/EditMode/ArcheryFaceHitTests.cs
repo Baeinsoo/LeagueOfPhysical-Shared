@@ -77,7 +77,7 @@ namespace LOP.Tests
             var target = Face();
 
             ArcheryHitTest.SegmentHitsTarget(
-                new Vector3(0.2f, 0f, -1f), new Vector3(0.2f, 0f, 1f), Center, target,
+                new Vector3(0.2f, 0f, -1f), new Vector3(0.2f, 0f, 1f), Center, target, target.Radius,
                 out _, out float offset);
 
             //  0.2m 벗어났고 반지름이 0.4m이므로 절반이다.
@@ -90,7 +90,7 @@ namespace LOP.Tests
             var target = Face();
 
             ArcheryHitTest.SegmentHitsTarget(
-                new Vector3(0f, 0f, -1f), new Vector3(0f, 0f, 1f), Center, target,
+                new Vector3(0f, 0f, -1f), new Vector3(0f, 0f, 1f), Center, target, target.Radius,
                 out _, out float offset);
 
             Assert.AreEqual(0f, offset, 1e-4f);
@@ -109,7 +109,7 @@ namespace LOP.Tests
                 lateralSpan: 0f, lateralPeriod: 0f);
 
             bool hit = ArcheryHitTest.SegmentHitsTarget(
-                new Vector3(-1f, 0f, 0f), new Vector3(1f, 0f, 0f), Center, sphere, out _, out _);
+                new Vector3(-1f, 0f, 0f), new Vector3(1f, 0f, 0f), Center, sphere, sphere.Radius, out _, out _);
 
             Assert.IsTrue(hit);
         }

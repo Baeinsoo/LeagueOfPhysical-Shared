@@ -99,30 +99,30 @@ namespace LOP
         }
 
         /// <summary>
-        /// 과녁 모양에 맞는 판정을 고른다. <b>소비처는 이 함수만 부른다</b> — 모양이 늘어도
-        /// 부르는 쪽은 안 바뀐다.
-        /// <paramref name="normalizedOffset"/>은 맞은 자리가 중심에서 얼마나 벗어났는지를
-        /// 반지름으로 나눈 값이다(0이 정중앙, 1이 가장자리). 채점이 이 값으로 띠를 찾는다.
+        /// 과녁 모양에 맞는 판정을 고른다. <b>소비처는 이 함수만 부른다</b> — 모양이 늘어도 부르는 쪽은 안 바뀐다.
+        /// <paramref name="radius"/>는 <b>그 시각의</b> 판정 반지름이다(<see cref="ArcheryTargetMotion.RadiusAt"/> —
+        /// 도는 접시는 옆으로 누우면 작아진다). <paramref name="normalizedOffset"/>은 맞은 자리가 중심에서 얼마나
+        /// 벗어났는지를 그 반지름으로 나눈 값이다(0이 정중앙, 1이 가장자리). 채점이 이 값으로 띠를 찾는다.
         /// </summary>
         public static bool SegmentHitsTarget(Vector3 from, Vector3 to, Vector3 center,
-                                             in ArcheryTarget target,
+                                             in ArcheryTarget target, float radius,
                                              out float t, out float normalizedOffset)
         {
             normalizedOffset = 0f;
 
             bool hit = target.Shape == ArcheryTargetShape.Face
-                ? SegmentHitsFace(from, to, center, target.Facing, target.Radius, out t)
-                : SegmentHitsSphere(from, to, center, target.Radius, out t);
+                ? SegmentHitsFace(from, to, center, target.Facing, radius, out t)
+                : SegmentHitsSphere(from, to, center, radius, out t);
 
             if (hit == false)
             {
                 return false;
             }
 
-            if (target.Radius > 1e-6f)
+            if (radius > 1e-6f)
             {
                 Vector3 impact = from + (to - from) * t;
-                normalizedOffset = Mathf.Clamp01((impact - center).magnitude / target.Radius);
+                normalizedOffset = Mathf.Clamp01((impact - center).magnitude / radius);
             }
             return true;
         }

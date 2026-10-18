@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using GameFramework.Rng;
 using NUnit.Framework;
 using UnityEngine;
@@ -8,17 +9,18 @@ namespace LOP.Tests
 {
     public class ArcheryCatapultGeneratorTests
     {
-        private static List<ArcheryTarget> Fill(ulong seed, int volley, ArcheryConfig config = null)
+        private static List<ArcheryTarget> Fill(ulong seed, int volley, int players = 2, ArcheryConfig config = null)
         {
             var list = new List<ArcheryTarget>();
-            ArcheryCatapultGenerator.Fill(list, seed, volley, config ?? Config(), LaneOrigin, Forward, StartTick, Dt);
+            ArcheryCatapultGenerator.Fill(list, seed, volley, config ?? Config(), players, LaneOrigin, Forward, StartTick, Dt);
             return list;
         }
 
         private static float Lateral(Vector3 p) => Vector3.Dot(p - LaneOrigin, Right);
         private static float Depth(Vector3 p) => Vector3.Dot(p - LaneOrigin, Forward);
+        private static bool IsNormal(in ArcheryTarget t) => t.IsTrap == false && t.IsJackpot == false;
 
-        //  시험 쪽에서 가중치 뽑기를 따로 적는다 — 생성기와 같은 코드를 부르면 순서 계약을 못 잰다.
+        //  시험 쪽에서 뽑기를 따로 적는다 — 생성기와 같은 코드를 부르면 순서 계약을 못 잰다.
         private static ArcheryTargetKind ExpectedPick(IReadOnlyList<ArcheryTargetKind> pool, ref DeterministicRandom rng)
         {
             int total = 0;
@@ -32,107 +34,294 @@ namespace LOP.Tests
             return pool[pool.Count - 1];
         }
 
-        [Test]
-        public void 난수를_꺼내는_순서가_계약대로다()
+        private struct Drawn
         {
-            var config = Config();
-            const ulong seed = 0xC0FFEEUL;
-            const int volley = 3;
-            var rng = new DeterministicRandom(Hashing.Combine(Hashing.Combine(seed, ArcheryCatapultGenerator.Salt), (ulong)volley));
+            public ArcheryTargetKind Kind;
+            public float Distance, Height, Lateral, Direction, Speed, Arc, Climb, Phase;
+        }
 
-            bool trap = rng.NextFloat01() < config.Catapult.TrapChance;
-            var kind = ExpectedPick(config.CleanKinds, ref rng);
-            float distance = rng.Range(kind.DistanceMinM, kind.DistanceMaxM);
-            float height = rng.Range(config.SpawnMinY, config.SpawnMaxY);
-            float lateral = rng.Range(-1f, 1f);
-            float direction = rng.NextFloat01() < 0.5f ? -1f : 1f;
-            float speed = rng.Range(kind.DriftMinMps, kind.DriftMaxMps);
-            float arc = rng.Range(config.RiseHeightMin, config.RiseHeightMax);
+        //  계약: 종류 → 거리 → 시작 높이 → 가로 위치 → 방향 → 가로 속도 → 호 → 솟음 → 위상(늘 아홉 번).
+        private static Drawn ExpectedDraw(IReadOnlyList<ArcheryTargetKind> pool, ref DeterministicRandom rng)
+        {
+            var d = new Drawn { Kind = ExpectedPick(pool, ref rng) };
+            var m = d.Kind.Motion;
+            d.Distance = rng.Range(d.Kind.DistanceMinM, d.Kind.DistanceMaxM);
+            d.Height = rng.Range(m.HeightMinM, m.HeightMaxM);
+            d.Lateral = rng.Range(-1f, 1f);
+            d.Direction = rng.NextFloat01() < 0.5f ? -1f : 1f;
+            d.Speed = rng.Range(d.Kind.DriftMinMps, d.Kind.DriftMaxMps);
+            d.Arc = rng.Range(m.ArcMinM, m.ArcMaxM);
+            d.Climb = rng.Range(m.ClimbMinMps, m.ClimbMaxMps);
+            d.Phase = rng.NextFloat01();
+            return d;
+        }
 
-            var targets = Fill(seed, volley, config);
-            var a = targets[0];
-            Assert.AreEqual(kind.Id, a.KindId);
-            Assert.AreEqual(distance, Depth(a.Origin), 1e-4f);
-            Assert.AreEqual(height, a.Origin.y, 1e-4f);
-            Assert.AreEqual(direction * speed, Vector3.Dot(a.Drift, Right), 1e-4f);
-            Assert.AreEqual(arc, a.ArcHeight, 1e-5f);
-            //  가로 위치 u는 길의 가운데를 정한다 — 출발점 = u·(16 − 이동/2) − 방향·이동/2.
-            float travel = speed * config.Catapult.TargetLifeTicks * Dt;
-            float start = lateral * Mathf.Max(0f, 16f - travel * 0.5f) - direction * travel * 0.5f;
-            Assert.AreEqual(start, Lateral(a.Origin), 1e-3f);
-            Assert.AreEqual(trap ? 3 : 2, targets.Count);
+        //  거울 +1 쪽(짝 A·외톨이·대박·금지물)과 맞는지. half = 그 종류의 가로 범위.
+        private static void AssertMatches(in Drawn d, in ArcheryTarget t, float half, string label)
+        {
+            Assert.AreEqual(d.Kind.Id, t.KindId, label);
+            Assert.AreEqual(d.Distance, Depth(t.Origin), 1e-4f, label);
+            Assert.AreEqual(d.Height, t.Origin.y, 1e-4f, label);
+            Assert.AreEqual(d.Direction * d.Speed, Vector3.Dot(t.Drift, Right), 1e-4f, label);
+            Assert.AreEqual(d.Arc, t.ArcHeight, 1e-5f, label);
+            Assert.AreEqual(d.Climb, t.Climb, 1e-5f, label);
+            Assert.AreEqual(d.Phase, t.MotionPhase, 1e-6f, label);
+            float travel = d.Speed * Settings().TargetLifeTicks * Dt;
+            float start = d.Lateral * Mathf.Max(0f, half - travel * 0.5f) - d.Direction * travel * 0.5f;
+            Assert.AreEqual(start, Lateral(t.Origin), 1e-3f, label);
         }
 
         [Test]
-        public void 같은_씨앗이면_같은_목록이다()
+        public void 난수를_꺼내는_순서가_계약대로다()
         {
-            //  클·서가 각자 부르는 상황 — 새 목록, 같은 입력.
+            //  다섯 명 = 일반 셋(짝 하나 + 외톨이 하나). 대박·금지물이 둘 다 낀 무리까지 끝까지 잰다.
+            var config = Config();
+            var s = config.Catapult;
+            const int players = 5;
+            const int volley = 3;
+            int full = 0;
+            for (ulong seed = 1; seed <= 60; seed++)
+            {
+                var rng = new DeterministicRandom(Hashing.Combine(Hashing.Combine(seed, ArcheryCatapultGenerator.Salt), (ulong)volley));
+                bool trap = rng.NextFloat01() < s.TrapChance;
+                bool jackpot = rng.NextFloat01() < s.JackpotChance;
+                var pair = ExpectedDraw(config.NormalKinds, ref rng);
+                var lone = ExpectedDraw(config.NormalKinds, ref rng);
+
+                var targets = Fill(seed, volley, players, config);
+                AssertMatches(pair, targets[0], 16f, $"씨앗 {seed} 짝 A");
+                Assert.AreEqual(1, targets[1].SlotIndex);
+                AssertMatches(lone, targets[2], 16f, $"씨앗 {seed} 외톨이");
+                int at = 3;
+                if (jackpot)
+                {
+                    var j = ExpectedDraw(config.JackpotKinds, ref rng);
+                    Assert.AreEqual(ArcheryCatapultGenerator.JackpotSlot, targets[at].SlotIndex);
+                    AssertMatches(j, targets[at], 8f, $"씨앗 {seed} 대박");
+                    at++;
+                }
+                if (trap)
+                {
+                    var x = ExpectedDraw(config.TrapKinds, ref rng);
+                    Assert.AreEqual(ArcheryCatapultGenerator.TrapSlot, targets[at].SlotIndex);
+                    AssertMatches(x, targets[at], 10f, $"씨앗 {seed} 금지물");
+                    at++;
+                }
+                Assert.AreEqual(at, targets.Count, $"씨앗 {seed}");
+                if (trap && jackpot) { full++; }
+            }
+            Assert.Greater(full, 0, "대박·금지물이 함께 낀 무리를 하나도 못 쟀다 — 씨앗 범위를 늘릴 것");
+        }
+
+        [TestCase(0, 2)]
+        [TestCase(1, 2)]
+        [TestCase(2, 2)]
+        [TestCase(3, 2)]
+        [TestCase(4, 2)]
+        [TestCase(5, 3)]
+        [TestCase(6, 3)]
+        [TestCase(7, 4)]
+        [TestCase(8, 4)]
+        [TestCase(12, 6)]
+        [TestCase(13, 6)]
+        [TestCase(20, 6)]
+        public void 일반_표적_수는_두_명에_하나_꼴이고_둘보다_적지_않다(int players, int expected)
+        {
+            Assert.AreEqual(expected, ArcheryCatapultGenerator.NormalCountFor(players));
             for (int v = 0; v < 21; v++)
             {
-                var x = Fill(77UL, v);
-                var y = Fill(77UL, v);
+                Assert.AreEqual(expected, Fill(4UL, v, players).Count(t => IsNormal(t)), $"무리 {v}");
+            }
+        }
+
+        [Test]
+        public void 짝은_거울이고_홀수면_마지막_하나만_뜬다()
+        {
+            for (ulong seed = 1; seed <= 20; seed++)
+            {
+                for (int v = 0; v < 21; v++)
+                {
+                    var normals = Fill(seed, v, players: 7).Where(t => IsNormal(t)).ToList();   // 일반 넷
+                    CollectionAssert.AreEqual(new[] { 0, 1, 2, 3 }, normals.Select(t => t.SlotIndex).ToArray());
+                    for (int k = 0; k < 4; k += 2)
+                    {
+                        var a = normals[k];
+                        var b = normals[k + 1];
+                        Assert.AreEqual(a.KindId, b.KindId);
+                        Assert.AreEqual(a.MotionPhase, b.MotionPhase);
+                        Assert.AreEqual(a.ArcHeight, b.ArcHeight);
+                        Assert.AreEqual(a.Climb, b.Climb);
+                        Assert.AreEqual(-Lateral(a.Origin), Lateral(b.Origin), 1e-4f, $"씨앗 {seed} 무리 {v} 짝 {k / 2}");
+                        Assert.AreEqual(Depth(a.Origin), Depth(b.Origin), 1e-4f);
+                        Assert.AreEqual(a.Origin.y, b.Origin.y, 1e-4f);
+                        //  날아가는 내내(출렁·솟음·회전까지) 거울이다.
+                        double mid = a.SpawnTick + 65;
+                        Vector3 pa = ArcheryTargetMotion.PositionAt(a, mid, Dt), pb = ArcheryTargetMotion.PositionAt(b, mid, Dt);
+                        Assert.AreEqual(-Lateral(pa), Lateral(pb), 1e-3f);
+                        Assert.AreEqual(pa.y, pb.y, 1e-4f);
+                        Assert.AreEqual(ArcheryTargetMotion.RadiusAt(a, mid, Dt), ArcheryTargetMotion.RadiusAt(b, mid, Dt));
+                    }
+                    var odd = Fill(seed, v, players: 5).Where(t => IsNormal(t)).ToList();       // 일반 셋
+                    CollectionAssert.AreEqual(new[] { 0, 1, 2 }, odd.Select(t => t.SlotIndex).ToArray());
+                }
+            }
+        }
+
+        [Test]
+        public void 같은_씨앗_같은_인원이면_같은_목록이다()
+        {
+            for (int v = 0; v < 21; v++)
+            {
+                var x = Fill(77UL, v, 8);
+                var y = Fill(77UL, v, 8);
                 Assert.AreEqual(x.Count, y.Count, $"무리 {v}");
                 for (int i = 0; i < x.Count; i++)
                 {
+                    Assert.AreEqual(x[i].SlotIndex, y[i].SlotIndex);
                     Assert.AreEqual(x[i].Origin, y[i].Origin);
                     Assert.AreEqual(x[i].Drift, y[i].Drift);
                     Assert.AreEqual(x[i].KindId, y[i].KindId);
                     Assert.AreEqual(x[i].ArcHeight, y[i].ArcHeight);
+                    Assert.AreEqual(x[i].Climb, y[i].Climb);
+                    Assert.AreEqual(x[i].MotionPhase, y[i].MotionPhase);
                     Assert.AreEqual(x[i].SpawnTick, y[i].SpawnTick);
                 }
             }
         }
 
         [Test]
-        public void 다른_씨앗이면_목록이_달라진다()
+        public void 인원이_달라도_앞쪽_짝은_같다()
         {
-            int differ = 0;
+            //  여부 둘을 맨 앞에 뽑으므로 짝 0은 인원과 상관없다 — 계약의 이유를 지킨다.
             for (int v = 0; v < 21; v++)
             {
-                if (Fill(1UL, v)[0].Origin != Fill(2UL, v)[0].Origin) { differ++; }
+                var two = Fill(9UL, v, 2);
+                var eight = Fill(9UL, v, 8);
+                Assert.AreEqual(two[0].Origin, eight[0].Origin, $"무리 {v}");
+                Assert.AreEqual(two[1].Drift, eight[1].Drift, $"무리 {v}");
             }
-            Assert.Greater(differ, 15);
         }
 
         [Test]
-        public void 성한_짝은_레인_중심을_두고_정확히_거울이다()
+        public void 대박은_무리의_약_28퍼센트이고_종과_피냐타가_둘_다_나온다()
         {
+            int volleys = 0, jackpots = 0;
+            var kinds = new HashSet<int>();
             for (ulong seed = 1; seed <= 20; seed++)
+            {
+                for (int v = 0; v < 21; v++, volleys++)
+                {
+                    var j = Fill(seed, v).Where(t => t.IsJackpot).ToList();
+                    Assert.LessOrEqual(j.Count, 1);
+                    if (j.Count == 0) { continue; }
+                    jackpots++;
+                    kinds.Add(j[0].KindId);
+                    Assert.AreEqual(ArcheryCatapultGenerator.JackpotSlot, j[0].SlotIndex);
+                    Assert.AreEqual(5, j[0].Points);
+                    Assert.IsFalse(j[0].IsTrap);
+                }
+            }
+            Assert.That(jackpots / (float)volleys, Is.InRange(0.22f, 0.34f));   // 420무리, 기대 0.28
+            CollectionAssert.AreEquivalent(new[] { 18, 19 }, kinds);
+        }
+
+        [Test]
+        public void 금지물은_무리의_약_35퍼센트이고_셋_모두_사격_금지를_달고_나온다()
+        {
+            int volleys = 0, traps = 0;
+            var kinds = new HashSet<int>();
+            for (ulong seed = 1; seed <= 20; seed++)
+            {
+                for (int v = 0; v < 21; v++, volleys++)
+                {
+                    var x = Fill(seed, v).Where(t => t.IsTrap).ToList();
+                    Assert.LessOrEqual(x.Count, 1);
+                    if (x.Count == 0) { continue; }
+                    traps++;
+                    kinds.Add(x[0].KindId);
+                    Assert.AreEqual(ArcheryCatapultGenerator.TrapSlot, x[0].SlotIndex);
+                    Assert.AreEqual(75, x[0].StunTicks);
+                    Assert.That(Depth(x[0].Origin), Is.InRange(32f, 48f));
+                }
+            }
+            Assert.That(traps / (float)volleys, Is.InRange(0.29f, 0.41f));
+            CollectionAssert.AreEquivalent(new[] { 20, 21, 22 }, kinds);
+        }
+
+        [Test]
+        public void 종류의_움직임이_표적에_옮겨진다()
+        {
+            var seen = new HashSet<int>();
+            for (ulong seed = 1; seed <= 10; seed++)
             {
                 for (int v = 0; v < 21; v++)
                 {
-                    var t = Fill(seed, v);
-                    var a = t[ArcheryCatapultGenerator.PairSlotA];
-                    var b = t[ArcheryCatapultGenerator.PairSlotB];
-                    Assert.AreEqual(a.KindId, b.KindId);
-                    Assert.AreEqual(a.SpawnTick, b.SpawnTick);
-                    Assert.AreEqual(a.ArcHeight, b.ArcHeight);
-                    Assert.AreEqual(-Lateral(a.Origin), Lateral(b.Origin), 1e-4f, $"씨앗 {seed} 무리 {v}");
-                    Assert.AreEqual(Depth(a.Origin), Depth(b.Origin), 1e-4f);
-                    Assert.AreEqual(a.Origin.y, b.Origin.y, 1e-4f);
-                    Assert.AreEqual(-Vector3.Dot(a.Drift, Right), Vector3.Dot(b.Drift, Right), 1e-4f);
-                    //  날아가는 내내 거울이다.
-                    double mid = a.SpawnTick + 65;
-                    Assert.AreEqual(-Lateral(ArcheryTargetMotion.PositionAt(a, mid, Dt)),
-                                    Lateral(ArcheryTargetMotion.PositionAt(b, mid, Dt)), 1e-3f);
+                    foreach (var t in Fill(seed, v, 8))
+                    {
+                        seen.Add(t.KindId);
+                        string k = $"종류 {t.KindId}";
+                        switch (t.KindId)
+                        {
+                            case 14:   // 물풍선 — 출렁
+                                Assert.AreEqual(0.6f, t.BobAmplitude, k); Assert.AreEqual(0.48f, t.BobHz, k);
+                                Assert.AreEqual(0f, t.ArcHeight, k); Assert.AreEqual(0f, t.Climb, k); Assert.AreEqual(0f, t.SpinHz, k);
+                                break;
+                            case 15:   // 수박 — 높은 포물선
+                                Assert.That(t.ArcHeight, Is.InRange(3f, 4.5f), k); Assert.That(t.Origin.y, Is.InRange(2.5f, 5f), k);
+                                Assert.AreEqual(0f, t.BobAmplitude, k);
+                                break;
+                            case 16:   // 접시 — 회전
+                                Assert.AreEqual(1.1f, t.SpinHz, k); Assert.AreEqual(0f, t.ArcHeight, k);
+                                break;
+                            case 17:   // 로켓 — 솟음
+                                Assert.That(t.Climb, Is.InRange(3.5f, 5f), k); Assert.That(t.Origin.y, Is.InRange(1f, 3f), k);
+                                break;
+                            case 18:
+                            case 19:   // 대박 — 느린 출렁
+                                Assert.AreEqual(0.3f, t.BobAmplitude, k); Assert.AreEqual(0.32f, t.BobHz, k); Assert.IsTrue(t.IsJackpot, k);
+                                break;
+                            default:   // 금지물 — 옆으로만
+                                Assert.IsTrue(t.IsTrap, k); Assert.AreEqual(0f, t.BobAmplitude + t.Climb + t.SpinHz + t.ArcHeight, k);
+                                break;
+                        }
+                    }
                 }
             }
+            Assert.AreEqual(9, seen.Count, "열 씨앗 동안 아홉 종류가 다 나와야 한다");
         }
 
         [Test]
-        public void 표적의_길_전체가_가로_16미터_안이고_30미터보다_멀다()
+        public void 표적의_길_전체가_자기_가로_범위_안이고_30미터보다_멀다()
         {
             for (ulong seed = 1; seed <= 30; seed++)
             {
                 for (int v = 0; v < 21; v++)
                 {
-                    foreach (var t in Fill(seed, v))
+                    foreach (var t in Fill(seed, v, 8))
                     {
+                        float half = t.IsJackpot ? 8f : t.IsTrap ? 10f : 16f;
                         double end = t.SpawnTick + t.LifetimeSeconds / Dt;
-                        Assert.LessOrEqual(Mathf.Abs(Lateral(t.Origin)), 16f + 1e-3f);
-                        Assert.LessOrEqual(Mathf.Abs(Lateral(ArcheryTargetMotion.PositionAt(t, end, Dt))), 16f + 1e-3f);
+                        Assert.LessOrEqual(Mathf.Abs(Lateral(t.Origin)), half + 1e-3f);
+                        Assert.LessOrEqual(Mathf.Abs(Lateral(ArcheryTargetMotion.PositionAt(t, end, Dt))), half + 1e-3f);
                         Assert.GreaterOrEqual(Depth(t.Origin), 30f);
                     }
+                }
+            }
+        }
+
+        [Test]
+        public void 대박과_금지물_데이터가_없어도_일반_표적은_그대로다()
+        {
+            //  일반 뽑기가 대박·금지물 뽑기보다 앞이므로 그 데이터가 바뀌어도 짝은 안 흔들린다.
+            for (int v = 0; v < 21; v++)
+            {
+                var with = Fill(11UL, v, 6, Config());
+                var without = Fill(11UL, v, 6, Config(withTraps: false, withJackpots: false));
+                Assert.AreEqual(3, without.Count);
+                for (int i = 0; i < 3; i++)
+                {
+                    Assert.AreEqual(with[i].Origin, without[i].Origin);
+                    Assert.AreEqual(with[i].Drift, without[i].Drift);
                 }
             }
         }
@@ -145,56 +334,8 @@ namespace LOP.Tests
             Assert.AreEqual(2.6f, t.LifetimeSeconds, 1e-4f);
             Assert.AreEqual(string.Empty, t.OwnerUserId);
             Assert.IsFalse(t.IsShared);
-            Assert.IsTrue(ArcheryHitRules.ConsumedOnHit(t));   // 먼저 맞힌 사람이 먹고 사라진다
+            Assert.IsTrue(ArcheryHitRules.ConsumedOnHit(t));
             Assert.AreEqual(-Forward, t.Facing);
-
-            //  판정·화면은 LiveVolleyAt으로 목록을 고른다 — 뜨는 틱부터 수명 마지막 틱까지 같은 무리를 가리켜야
-            //  표적이 끝까지 살아 있다(준비 기준 VolleyIndexAt을 쓰면 마지막 5틱이 잘린다).
-            var s = Settings();
-            for (int v = 0; v < s.VolleyCount; v++)
-            {
-                var first = Fill(5UL, v)[0];
-                long lastAlive = first.SpawnTick + s.TargetLifeTicks - 1;
-                Assert.AreEqual(v, ArcheryCatapultSchedule.LiveVolleyAt(s, first.SpawnTick, StartTick), $"무리 {v} 뜨는 틱");
-                Assert.AreEqual(v, ArcheryCatapultSchedule.LiveVolleyAt(s, lastAlive, StartTick), $"무리 {v} 마지막 틱");
-            }
-        }
-
-        [Test]
-        public void 쏘면_안_되는_것은_세_번째_자리에_사격_금지를_달고_뜬다()
-        {
-            int found = 0;
-            for (int v = 0; v < 21; v++)
-            {
-                var t = Fill(9UL, v);
-                Assert.IsFalse(t[0].IsTrap);
-                Assert.IsFalse(t[1].IsTrap);
-                if (t.Count == 3)
-                {
-                    found++;
-                    Assert.AreEqual(ArcheryCatapultGenerator.TrapSlot, t[2].SlotIndex);
-                    Assert.IsTrue(t[2].IsTrap);
-                    Assert.AreEqual(75, t[2].StunTicks);
-                    Assert.That(Depth(t[2].Origin), Is.InRange(32f, 50f));
-                }
-            }
-            //  35%라 21무리에 대략 7번 — 하나도 없으면 확률 뽑기가 죽은 것이다.
-            Assert.Greater(found, 0);
-            Assert.Less(found, 21);
-        }
-
-        [Test]
-        public void 쏘면_안_되는_종류가_없어도_짝은_그대로다()
-        {
-            //  함정 뽑기가 짝 뒤에 있으므로 함정 데이터가 달라도 짝은 안 흔들린다.
-            for (int v = 0; v < 21; v++)
-            {
-                var with = Fill(11UL, v, Config(withTraps: true));
-                var without = Fill(11UL, v, Config(withTraps: false));
-                Assert.AreEqual(2, without.Count);
-                Assert.AreEqual(with[0].Origin, without[0].Origin);
-                Assert.AreEqual(with[1].Drift, without[1].Drift);
-            }
         }
 
         [Test]
@@ -204,13 +345,11 @@ namespace LOP.Tests
             Assert.AreEqual(0, Fill(1UL, 21).Count);
         }
 
-        //  ---- 공정성 (spec §3.3) ----
+        //  ---- 공정성 (1차 spec §3.3) ----
 
-        //  자리별 평균 거리를 판 하나(21무리) 단위로 잰다. 수명 동안 5번 재서 평균 — 옆으로 나는 동안 거리가 바뀐다.
-        //  쏘면 안 되는 것은 노릴 표적이 아니라 빼고 잰다.
-        private static float WorstSeatGap(int seats, float spacing, ulong seed)
+        //  자리별 평균 거리를 판 하나(21무리) 단위로 잰다. 수명 동안 5번 재서 평균. 금지물은 노릴 표적이 아니라 뺀다.
+        private static float WorstSeatGap(int seats, float spacing, ulong seed, ArcheryConfig config)
         {
-            var config = Config();
             var at = new Vector3[seats];
             for (int i = 0; i < seats; i++)
             {
@@ -221,7 +360,7 @@ namespace LOP.Tests
             var list = new List<ArcheryTarget>();
             for (int v = 0; v < config.Catapult.VolleyCount; v++)
             {
-                ArcheryCatapultGenerator.Fill(list, seed, v, config, LaneOrigin, Forward, StartTick, Dt);
+                ArcheryCatapultGenerator.Fill(list, seed, v, config, seats, LaneOrigin, Forward, StartTick, Dt);
                 foreach (var t in list)
                 {
                     if (t.IsTrap) { continue; }
@@ -245,25 +384,30 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 여덟_자리의_표적_평균_거리_차가_반_미터_안이다()
+        public void 두_명에서_여덟_명까지_자리별_평균_거리_차가_반_미터_안이다()
         {
-            for (ulong seed = 1; seed <= 50; seed++)
+            var config = Config();
+            for (int seats = 2; seats <= 8; seats++)
             {
-                Assert.Less(WorstSeatGap(8, ArcheryShootOffSeats.SpacingMeters, seed), 0.5f, $"씨앗 {seed}");
+                for (ulong seed = 1; seed <= 50; seed++)
+                {
+                    Assert.Less(WorstSeatGap(seats, ArcheryShootOffSeats.SpacingMeters, seed, config), 0.5f, $"{seats}명 씨앗 {seed}");
+                }
             }
         }
 
         [Test]
         public void 간격을_3미터로_벌리면_같은_재기가_반_미터를_넘는다()
         {
-            //  양성 대조 — 재는 방법이 실제로 불공정을 잡는지. (계산상 약 1.2 m)
-            Assert.Greater(WorstSeatGap(8, 3f, 1UL), 0.5f);
+            //  양성 대조 — 재는 방법이 실제로 불공정을 잡는지. (계산상 약 1.25 m)
+            Assert.Greater(WorstSeatGap(8, 3f, 1UL, Config()), 0.5f);
         }
 
         [Test]
-        public void 두_자리는_거울_짝이라_평균_거리가_똑같다()
+        public void 대박이_없으면_두_자리는_거울_짝이라_평균_거리가_똑같다()
         {
-            Assert.Less(WorstSeatGap(2, ArcheryShootOffSeats.SpacingMeters, 3UL), 1e-3f);
+            //  대박은 짝이 없어 두 자리 사이에 아주 작은 차를 만든다(계산상 0.02 m) — 그것을 빼면 정확히 같아야 한다.
+            Assert.Less(WorstSeatGap(2, ArcheryShootOffSeats.SpacingMeters, 3UL, Config(withJackpots: false)), 1e-3f);
         }
     }
 }
