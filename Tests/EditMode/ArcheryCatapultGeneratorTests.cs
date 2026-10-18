@@ -122,6 +122,9 @@ namespace LOP.Tests
         [TestCase(6, 3)]
         [TestCase(7, 4)]
         [TestCase(8, 4)]
+        [TestCase(12, 6)]
+        [TestCase(13, 6)]
+        [TestCase(20, 6)]
         public void 일반_표적_수는_두_명에_하나_꼴이고_둘보다_적지_않다(int players, int expected)
         {
             Assert.AreEqual(expected, ArcheryCatapultGenerator.NormalCountFor(players));

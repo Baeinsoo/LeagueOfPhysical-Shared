@@ -12,8 +12,10 @@ namespace LOP
     /// 방향 → 가로 속도 → 호 → 솟음 → 위상(종류가 그 움직임을 안 써도 늘 아홉 번). 끼워 넣으면 그 뒤가 전부 밀려
     /// 클·서가 다른 표적을 본다. 새 뽑기는 맨 끝에만 붙인다.</para>
     ///
-    /// <para><b>일반 표적 수 = max(2, ⌈인원 ÷ 2⌉)</b> — 표적 하나를 두 명 안팎이 노리게 해서 4인이든 8인이든
-    /// 경쟁 강도가 비슷하다. 짝은 한 번 뽑아 거울로 둘(x ↔ −x, 방향 반대), 홀수면 마지막 짝은 한쪽만.</para>
+    /// <para><b>일반 표적 수 = min(6, max(2, ⌈인원 ÷ 2⌉))</b> — 표적 하나를 두 명 안팎이 노리게 해서 4인이든 8인이든
+    /// 경쟁 강도가 비슷하다. 자리가 6개뿐이라(<see cref="MaxNormalSlots"/>) 인원이 많아도 여섯에서 멈춘다 —
+    /// 대박 자리(<see cref="JackpotSlot"/> = 6)를 침범하지 않는다. 짝은 한 번 뽑아 거울로 둘(x ↔ −x, 방향 반대),
+    /// 홀수면 마지막 짝은 한쪽만.</para>
     /// </summary>
     public static class ArcheryCatapultGenerator
     {
@@ -29,7 +31,8 @@ namespace LOP
         public const int MinNormalCount = 2;
         public const int PlayersPerTarget = 2;
 
-        /// <summary>그 인원에 띄울 일반 표적 수. 인원 = 매치 시작 명단 수(중간에 나간 사람도 센다 — 클·서가 같은 수를 본다).</summary>
+        /// <summary>그 인원에 띄울 일반 표적 수. 인원 = 매치 시작 명단 수(중간에 나간 사람도 센다 — 클·서가 같은 수를 본다).
+        /// 최대 <see cref="MaxNormalSlots"/>(6)에서 멈춘다 — 그래야 자리 번호 6번(<see cref="JackpotSlot"/>)에 안 닿는다.</summary>
         public static int NormalCountFor(int players)
             => Mathf.Min(MaxNormalSlots, Mathf.Max(MinNormalCount, (players + PlayersPerTarget - 1) / PlayersPerTarget));
 
