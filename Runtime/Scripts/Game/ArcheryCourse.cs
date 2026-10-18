@@ -164,7 +164,8 @@ namespace LOP
                     return;   // 맵 씬이 아직 안 떴다
                 }
                 var lane = layout.Lanes[0];
-                ArcheryCatapultGenerator.Fill(into, matchSeed.Value, index, config,
+                //  명단 수가 일반 표적 수를 정한다 — 클·서가 같은 매치 시작 명단으로 이 코스를 만든다(ArcheryLifetimeScope).
+                ArcheryCatapultGenerator.Fill(into, matchSeed.Value, index, config, owners.Count,
                                               lane.ShooterPosition, lane.Forward, gameplayStartTick, tickInterval);
                 return;
             }

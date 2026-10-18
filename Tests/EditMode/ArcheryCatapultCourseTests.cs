@@ -107,11 +107,26 @@ namespace LOP.Tests
             var fromCourse = new List<ArcheryTarget>();
             var direct = new List<ArcheryTarget>();
             course.Fill(fromCourse, 4, StartTick);
-            ArcheryCatapultGenerator.Fill(direct, 42UL, 4, Config(), Vector3.zero, Vector3.forward, StartTick, Dt);
+            ArcheryCatapultGenerator.Fill(direct, 42UL, 4, Config(), 2, Vector3.zero, Vector3.forward, StartTick, Dt);
             Assert.AreEqual(direct.Count, fromCourse.Count);
             for (int i = 0; i < direct.Count; i++)
             {
                 Assert.AreEqual(direct[i].Origin, fromCourse[i].Origin);
+            }
+        }
+
+        [Test]
+        public void 채우기는_명단_수만큼_일반_표적을_낸다()
+        {
+            var roster = new[] { "u1", "u2", "u3", "u4", "u5", "u6", "u7", "u8" };
+            var course = Course(seed: 42UL, roster: roster);
+            var list = new List<ArcheryTarget>();
+            for (int v = 0; v < 21; v++)
+            {
+                course.Fill(list, v, StartTick);
+                int normals = 0;
+                foreach (var t in list) { if (t.IsTrap == false && t.IsJackpot == false) { normals++; } }
+                Assert.AreEqual(4, normals, $"무리 {v}");
             }
         }
 

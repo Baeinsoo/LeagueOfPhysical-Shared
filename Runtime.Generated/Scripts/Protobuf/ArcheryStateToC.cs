@@ -106,7 +106,7 @@ public sealed partial class ArcheryStateToC : pb::IMessage<ArcheryStateToC>
   public const int ConsumedMaskFieldNumber = 2;
   private int consumedMask_;
   /// <summary>
-  /// 먹힌 슬롯의 비트마스크 — 슬롯 0이 1비트. 한 웨이브에 과녁이 최대 3개라 세 비트면 족하다.
+  /// 먹힌 슬롯의 비트마스크 — 슬롯 0이 1비트. 투석기는 슬롯 0~7(일반 0~5·대박 6·금지물 7)이라 여덟 비트를 쓴다.
   /// </summary>
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
