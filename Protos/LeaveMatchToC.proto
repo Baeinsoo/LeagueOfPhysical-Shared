@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+// LeaveMatchToS의 답(보낸 사람에게만). 클라는 이 답을 기다렸다가 로비로 간다 — 먼저 가면 로비가
+// 아직 비워지지 않은 위치를 보고 같은 방으로 다시 들어간다.
+// @auto_generate
+message LeaveMatchToC
+{
+	// 서버가 로비 위치를 비웠다. false여도 클라는 로비로 간다(나가겠다는 뜻은 막지 않는다).
+	bool accepted = 1;
+}
