@@ -128,7 +128,7 @@ namespace LOP.Tests
         public void 일반_표적_수는_두_명에_하나_꼴이고_둘보다_적지_않다(int players, int expected)
         {
             Assert.AreEqual(expected, ArcheryCatapultGenerator.NormalCountFor(players));
-            for (int v = 0; v < 21; v++)
+            for (int v = 0; v < Settings().VolleyCount; v++)
             {
                 Assert.AreEqual(expected, Fill(4UL, v, players).Count(t => IsNormal(t)), $"무리 {v}");
             }
@@ -139,7 +139,7 @@ namespace LOP.Tests
         {
             for (ulong seed = 1; seed <= 20; seed++)
             {
-                for (int v = 0; v < 21; v++)
+                for (int v = 0; v < Settings().VolleyCount; v++)
                 {
                     var normals = Fill(seed, v, players: 7).Where(t => IsNormal(t)).ToList();   // 일반 넷
                     CollectionAssert.AreEqual(new[] { 0, 1, 2, 3 }, normals.Select(t => t.SlotIndex).ToArray());
@@ -155,7 +155,7 @@ namespace LOP.Tests
                         Assert.AreEqual(Depth(a.Origin), Depth(b.Origin), 1e-4f);
                         Assert.AreEqual(a.Origin.y, b.Origin.y, 1e-4f);
                         //  날아가는 내내(출렁·솟음·회전까지) 거울이다.
-                        double mid = a.SpawnTick + 65;
+                        double mid = a.SpawnTick + Settings().TargetLifeTicks / 2;
                         Vector3 pa = ArcheryTargetMotion.PositionAt(a, mid, Dt), pb = ArcheryTargetMotion.PositionAt(b, mid, Dt);
                         Assert.AreEqual(-Lateral(pa), Lateral(pb), 1e-3f);
                         Assert.AreEqual(pa.y, pb.y, 1e-4f);
@@ -170,7 +170,7 @@ namespace LOP.Tests
         [Test]
         public void 같은_씨앗_같은_인원이면_같은_목록이다()
         {
-            for (int v = 0; v < 21; v++)
+            for (int v = 0; v < Settings().VolleyCount; v++)
             {
                 var x = Fill(77UL, v, 8);
                 var y = Fill(77UL, v, 8);
@@ -193,7 +193,7 @@ namespace LOP.Tests
         public void 인원이_달라도_앞쪽_짝은_같다()
         {
             //  여부 둘을 맨 앞에 뽑으므로 짝 0은 인원과 상관없다 — 계약의 이유를 지킨다.
-            for (int v = 0; v < 21; v++)
+            for (int v = 0; v < Settings().VolleyCount; v++)
             {
                 var two = Fill(9UL, v, 2);
                 var eight = Fill(9UL, v, 8);
@@ -209,7 +209,7 @@ namespace LOP.Tests
             var kinds = new HashSet<int>();
             for (ulong seed = 1; seed <= 20; seed++)
             {
-                for (int v = 0; v < 21; v++, volleys++)
+                for (int v = 0; v < Settings().VolleyCount; v++, volleys++)
                 {
                     var j = Fill(seed, v).Where(t => t.IsJackpot).ToList();
                     Assert.LessOrEqual(j.Count, 1);
@@ -221,7 +221,7 @@ namespace LOP.Tests
                     Assert.IsFalse(j[0].IsTrap);
                 }
             }
-            Assert.That(jackpots / (float)volleys, Is.InRange(0.22f, 0.34f));   // 420무리, 기대 0.28
+            Assert.That(jackpots / (float)volleys, Is.InRange(0.22f, 0.34f));   // 360무리, 기대 0.28
             CollectionAssert.AreEquivalent(new[] { 18, 19 }, kinds);
         }
 
@@ -232,7 +232,7 @@ namespace LOP.Tests
             var kinds = new HashSet<int>();
             for (ulong seed = 1; seed <= 20; seed++)
             {
-                for (int v = 0; v < 21; v++, volleys++)
+                for (int v = 0; v < Settings().VolleyCount; v++, volleys++)
                 {
                     var x = Fill(seed, v).Where(t => t.IsTrap).ToList();
                     Assert.LessOrEqual(x.Count, 1);
@@ -254,7 +254,7 @@ namespace LOP.Tests
             var seen = new HashSet<int>();
             for (ulong seed = 1; seed <= 10; seed++)
             {
-                for (int v = 0; v < 21; v++)
+                for (int v = 0; v < Settings().VolleyCount; v++)
                 {
                     foreach (var t in Fill(seed, v, 8))
                     {
@@ -295,7 +295,7 @@ namespace LOP.Tests
         {
             for (ulong seed = 1; seed <= 30; seed++)
             {
-                for (int v = 0; v < 21; v++)
+                for (int v = 0; v < Settings().VolleyCount; v++)
                 {
                     foreach (var t in Fill(seed, v, 8))
                     {
@@ -313,7 +313,7 @@ namespace LOP.Tests
         public void 대박과_금지물_데이터가_없어도_일반_표적은_그대로다()
         {
             //  일반 뽑기가 대박·금지물 뽑기보다 앞이므로 그 데이터가 바뀌어도 짝은 안 흔들린다.
-            for (int v = 0; v < 21; v++)
+            for (int v = 0; v < Settings().VolleyCount; v++)
             {
                 var with = Fill(11UL, v, 6, Config());
                 var without = Fill(11UL, v, 6, Config(withTraps: false, withJackpots: false));
@@ -327,11 +327,11 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 표적은_발사_틱에_떠서_2점6초_살고_주인이_없다()
+        public void 표적은_발사_틱에_떠서_3점6초_살고_주인이_없다()
         {
             var t = Fill(5UL, 0)[0];
             Assert.AreEqual(1115L, t.SpawnTick);
-            Assert.AreEqual(2.6f, t.LifetimeSeconds, 1e-4f);
+            Assert.AreEqual(3.6f, t.LifetimeSeconds, 1e-4f);
             Assert.AreEqual(string.Empty, t.OwnerUserId);
             Assert.IsFalse(t.IsShared);
             Assert.IsTrue(ArcheryHitRules.ConsumedOnHit(t));
@@ -342,12 +342,12 @@ namespace LOP.Tests
         public void 무리_번호가_범위_밖이면_비어_있다()
         {
             Assert.AreEqual(0, Fill(1UL, -1).Count);
-            Assert.AreEqual(0, Fill(1UL, 21).Count);
+            Assert.AreEqual(0, Fill(1UL, Settings().VolleyCount).Count);
         }
 
         //  ---- 공정성 (1차 spec §3.3) ----
 
-        //  자리별 평균 거리를 판 하나(21무리) 단위로 잰다. 수명 동안 5번 재서 평균. 금지물은 노릴 표적이 아니라 뺀다.
+        //  자리별 평균 거리를 판 하나(18무리) 단위로 잰다. 수명 동안 5번 재서 평균. 금지물은 노릴 표적이 아니라 뺀다.
         private static float WorstSeatGap(int seats, float spacing, ulong seed, ArcheryConfig config)
         {
             var at = new Vector3[seats];

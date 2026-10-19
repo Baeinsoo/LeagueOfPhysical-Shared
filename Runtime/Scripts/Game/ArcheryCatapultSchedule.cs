@@ -88,9 +88,9 @@ namespace LOP
         /// <summary>
         /// 이 틱에 "살아 있는" 무리 — 판정·화면이 쓴다(<c>ArcheryCourse.IndexAt</c>).
         /// <see cref="VolleyIndexAt"/>과 달리 "준비"가 아니라 <b>발사 틱</b>을 기준으로 넘어간다 —
-        /// 그래야 무리가 <see cref="ArcheryCatapultSettings.TargetLifeTicks"/>(수명 2.6초)를
-        /// 다 채울 때까지 같은 번호를 가리킨다. 발사 간격(3.2초)이 수명보다 길어 둘 사이에 빈
-        /// 틈이 생기는데, 그 틈에서도 다음 무리가 뜨기 전까지는 직전 번호를 그대로 돌려준다 —
+        /// 그래야 무리가 <see cref="ArcheryCatapultSettings.TargetLifeTicks"/>(수명 3.6초)를
+        /// 다 채울 때까지 같은 번호를 가리킨다. 발사 간격(3.6초)이 수명보다 짧지 않아 두 무리가 겹치지 않는다.
+        /// 간격이 수명보다 길어 빈 틈이 생겨도 다음 무리가 뜨기 전까지는 직전 번호를 그대로 돌려준다 —
         /// 이미 수명이 다한 표적은 어차피 목록에서 빠져 있어 해가 없다.
         /// 첫 발사 전이면 −1, 판이 끝났으면 <c>VolleyCount</c>.
         /// </summary>
