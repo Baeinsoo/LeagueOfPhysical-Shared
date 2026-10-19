@@ -110,6 +110,15 @@ namespace LOP
         /// <summary>출렁·회전의 시작 위상(0~1, 한 바퀴 기준). 표적마다 뽑아서 같은 무리라도 박자가 다르다.</summary>
         public readonly float MotionPhase;
 
+        /// <summary>
+        /// 그네(피냐타)의 가로 변위 벡터(세계 좌표, 크기 = A, 방향 = 건너가는 쪽). 0이면 그네가 없다.
+        /// 수명 동안 출발점에서 2·<see cref="Swing"/>만큼 건너간다 — <see cref="ArcheryTargetMotion.PositionAt"/>.
+        /// </summary>
+        public readonly Vector3 Swing;
+
+        /// <summary>그네가 가운데를 지날 때 낮아지는 깊이(m). 0이면 안 낮아진다.</summary>
+        public readonly float SwingDip;
+
         public ArcheryTarget(int waveIndex, int slotIndex, Vector3 origin, float riseSpeed, long spawnTick,
                              float radius, int points, bool isTrap,
                              ArcheryTargetShape shape, IReadOnlyList<ArcheryRingBand> bands, Vector3 facing,
@@ -117,7 +126,8 @@ namespace LOP
                              float lateralSpan, float lateralPeriod, bool isShared = false,
                              Vector3 drift = default, float arcHeight = 0f, int stunTicks = 0, int kindId = 0,
                              bool isJackpot = false, float bobAmplitude = 0f, float bobHz = 0f, float spinHz = 0f,
-                             float climbMps = 0f, float motionPhase = 0f)
+                             float climbMps = 0f, float motionPhase = 0f,
+                             Vector3 swing = default, float swingDip = 0f)
         {
             WaveIndex = waveIndex;
             SlotIndex = slotIndex;
@@ -145,6 +155,8 @@ namespace LOP
             SpinHz = spinHz;
             Climb = climbMps;
             MotionPhase = motionPhase;
+            Swing = swing;
+            SwingDip = swingDip;
         }
     }
 }

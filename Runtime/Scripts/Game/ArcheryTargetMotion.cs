@@ -14,9 +14,11 @@ namespace LOP
     /// 읽어야 맞힐 수 있게 만든 것이다. 흔드는 움직임이라 폭을 벗어나지 않고, 씨앗 없이 시각만으로
     /// 계산되므로(=예측 가능) "운"이 아니라 "읽는 연습"이 된다.</para>
     ///
-    /// <para><b>투석기 표적은 옆으로 쭉 난다</b>(<see cref="ArcheryTarget.Drift"/>) — 가장 빠른 수박도 한 틱에 약 0.155 m라, 가장 작은 판정 반지름(누운 접시 0.17 m)보다 적게 간다 — 판정의 "한 틱 동안 멈춘 것으로 본다" 전제를 지킨다(MasterData 시험 <c>한_틱에_가장_작아진_판정_반지름보다_적게_간다</c>가 지킨다).</para>
+    /// <para><b>투석기 표적은 옆으로 쭉 난다</b>(<see cref="ArcheryTarget.Drift"/>) — 가장 빠른 접시도 한 틱에 0.14 m라, 가장 작은 판정 반지름(누운 접시 0.17 m)보다 적게 간다(3차: 종 0.116 m, 피냐타 그네 최대 0.094 m) — 판정의 "한 틱 동안 멈춘 것으로 본다" 전제를 지킨다(MasterData 시험 <c>한_틱에_가장_작아진_판정_반지름보다_적게_간다</c>가 지킨다).</para>
     ///
     /// <para><b>2차 표적은 출렁·솟음·회전을 더한다</b> — 모두 시간의 순수 함수라 클·서가 같은 답을 낸다. 도는 접시의 판정 크기는 <see cref="RadiusAt"/>.</para>
+    ///
+    /// <para><b>3차 그네(피냐타)</b> — 수명 동안 한 번 건너가며 가운데서 낮아진다(<see cref="ArcheryTarget.Swing"/>). 역시 시간의 순수 함수다.</para>
     /// </summary>
     public static class ArcheryTargetMotion
     {
@@ -90,7 +92,7 @@ namespace LOP
             }
 
             //  출렁(물풍선·종·피냐타): sin에서 시작 위상의 값을 빼 발사 순간 제자리에서 시작한다 —
-            //  안 빼면 투석기 바구니가 놓은 자리에서 최대 진폭만큼 순간이동한다. 위아래 폭(2A)은 그대로다.
+            //  안 빼면 표적이 튀어나온 출발점에서 최대 진폭만큼 순간이동한다. 위아래 폭(2A)은 그대로다.
             if (target.BobAmplitude > 0f && target.BobHz > 0f)
             {
                 float phase = 2f * Mathf.PI * target.MotionPhase;
@@ -103,7 +105,18 @@ namespace LOP
                 y += target.Climb * t;
             }
 
-            return new Vector3(target.Origin.x, target.Origin.y + y, target.Origin.z) + lateral + target.Drift * t;
+            //  그네(피냐타, 3차): 수명 L 동안 한 번 건너간다. s = u/L, 가로 = Swing·(1 − cos πs) — 끝(s = 0·1)에서 느리고
+            //  가운데에서 가장 빠르다. 세로 = −D·sin²(πs) — 가운데에서 D만큼 낮다. 발사 순간 제자리에서 시작하고(1 − cos 0 = 0)
+            //  끝에서 2·Swing만큼 가 있다. sin² = 1 − cos²라 cos 하나로 둘 다 낸다.
+            Vector3 swing = Vector3.zero;
+            if ((target.SwingDip > 0f || target.Swing.sqrMagnitude > 0f) && target.LifetimeSeconds > 0f)
+            {
+                float c = Mathf.Cos(Mathf.PI * Mathf.Clamp01(t / target.LifetimeSeconds));
+                swing = target.Swing * (1f - c);
+                y -= target.SwingDip * (1f - c * c);
+            }
+
+            return new Vector3(target.Origin.x, target.Origin.y + y, target.Origin.z) + lateral + swing + target.Drift * t;
         }
 
         /// <summary>
