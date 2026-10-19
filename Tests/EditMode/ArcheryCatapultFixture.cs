@@ -12,10 +12,10 @@ namespace LOP.Tests
         //  사수 기준 오른쪽 — ArcheryTargetMotion.ShooterRightAxis(-Forward)와 같다.
         public static readonly Vector3 Right = Vector3.right;
 
-        //  소개 1.6초(80) · 사냥 25초(1250) · 결과 2.2초(110), 3라운드. 3.2초(160)마다, 준비 0.7초(35),
-        //  마지막 3초(150)는 새 무리 없음, 수명 2.6초(130), 금지물 35%, 가로 ±16 m, 대박 28%.
+        //  소개 1.6초(80) · 사냥 25초(1250) · 결과 2.2초(110), 3라운드. 3.6초(180)마다, 준비 0.7초(35),
+        //  마지막 4.3초(215 = 준비 + 수명)는 새 무리 없음, 수명 3.6초(180), 금지물 35%, 가로 ±16 m, 대박 28%.
         public static ArcheryCatapultSettings Settings()
-            => new ArcheryCatapultSettings(3, 80, 1250, 110, 160, 35, 150, 130, 0.35f, 16f, jackpotChance: 0.28f);
+            => new ArcheryCatapultSettings(3, 80, 1250, 110, 180, 35, 215, 180, 0.35f, 16f, jackpotChance: 0.28f);
 
         //  2차 spec §2 표 그대로(데이터 #ArcheryTarget 14~22와 같다). 시작 높이를 spec이 안 적은 것은 시안의 4~10 m.
         public static ArcheryTargetKind[] Kinds(bool withTraps = true, bool withJackpots = true)
@@ -56,7 +56,7 @@ namespace LOP.Tests
                 shakeFreeSeconds: 0f, shakeRampSeconds: 2.5f, shakeMaxDegrees: 0f,
                 riseHeightMin: 0.5f, riseHeightMax: 1.5f, staggerTicks: 0, restTicks: 0,
                 kinds: Kinds(withTraps, withJackpots), courseKind: ArcheryCourseKind.Catapult,
-                arrowMinSpeedMps: 50f, arrowMaxSpeedMps: 100f, catapult: Settings());
+                arrowMinSpeedMps: 90f, arrowMaxSpeedMps: 180f, catapult: Settings());
 
         private static ArcheryTargetKind Kind(int id, float radius, int points, int weight, bool trap, bool jackpot,
                                               float dMin, float dMax, float vMin, float vMax, int stun,

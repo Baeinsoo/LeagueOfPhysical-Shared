@@ -81,8 +81,8 @@ namespace LOP
             }
 
             //  투석기 표적: 수명 동안 위로 한 번 호를 그린다. 0~1로 자른 s에서 4h·s(1−s)는
-            //  가운데(s=0.5)에서 h, 양 끝에서 0이다. 중력 포물선을 안 쓰는 이유 — 수명(2.6초)에
-            //  맞추면 정점이 8 m로 고정돼 높이를 고를 수 없다.
+            //  가운데(s=0.5)에서 h, 양 끝에서 0이다. 중력 포물선을 안 쓰는 이유 — 수명(3.6초)에
+            //  맞추면 정점이 약 16 m로 고정돼 높이를 고를 수 없다.
             if (target.ArcHeight > 0f && target.LifetimeSeconds > 0f)
             {
                 float s = Mathf.Clamp01(t / target.LifetimeSeconds);
@@ -97,7 +97,7 @@ namespace LOP
                 y += target.BobAmplitude * (Mathf.Sin(2f * Mathf.PI * target.BobHz * t + phase) - Mathf.Sin(phase));
             }
 
-            //  솟음(폭죽 로켓): 중력 없이 곧게 오른다. 수명(2.6초) 끝까지 올라가는 것이 "먼 데다 계속 도망간다"는 어려움이다.
+            //  솟음(폭죽 로켓): 중력 없이 곧게 오른다. 수명(3.6초) 끝까지 올라가는 것이 "먼 데다 계속 도망간다"는 어려움이다.
             if (target.Climb > 0f)
             {
                 y += target.Climb * t;

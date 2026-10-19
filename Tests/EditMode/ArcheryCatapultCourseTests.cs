@@ -64,7 +64,7 @@ namespace LOP.Tests
         public void 단계_수는_무리_수고_판_길이는_라운드_합이다()
         {
             var course = Course();
-            Assert.AreEqual(21, course.StepCount);
+            Assert.AreEqual(18, course.StepCount);
             Assert.AreEqual(4320L, course.MatchDurationTicks);
         }
 
@@ -84,7 +84,7 @@ namespace LOP.Tests
             var course = Course();
             Assert.AreEqual(-1, course.IndexAt(1114, StartTick));
             Assert.AreEqual(0, course.IndexAt(1115, StartTick));
-            Assert.AreEqual(21, course.IndexAt(5320, StartTick));
+            Assert.AreEqual(18, course.IndexAt(5320, StartTick));
         }
 
         [Test]
@@ -121,7 +121,7 @@ namespace LOP.Tests
             var roster = new[] { "u1", "u2", "u3", "u4", "u5", "u6", "u7", "u8" };
             var course = Course(seed: 42UL, roster: roster);
             var list = new List<ArcheryTarget>();
-            for (int v = 0; v < 21; v++)
+            for (int v = 0; v < Settings().VolleyCount; v++)
             {
                 course.Fill(list, v, StartTick);
                 int normals = 0;

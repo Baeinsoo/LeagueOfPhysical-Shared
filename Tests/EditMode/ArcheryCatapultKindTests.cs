@@ -57,9 +57,9 @@ namespace LOP.Tests
         [Test]
         public void 대박_확률은_설정에_있고_안_적으면_0이다()
         {
-            var s = new ArcheryCatapultSettings(3, 80, 1250, 110, 160, 35, 150, 130, 0.35f, 16f, jackpotChance: 0.28f);
+            var s = new ArcheryCatapultSettings(3, 80, 1250, 110, 180, 35, 215, 180, 0.35f, 16f, jackpotChance: 0.28f);
             Assert.AreEqual(0.28f, s.JackpotChance);
-            Assert.AreEqual(0f, new ArcheryCatapultSettings(3, 80, 1250, 110, 160, 35, 150, 130, 0.35f, 16f).JackpotChance);
+            Assert.AreEqual(0f, new ArcheryCatapultSettings(3, 80, 1250, 110, 180, 35, 215, 180, 0.35f, 16f).JackpotChance);
             Assert.AreEqual(0f, ArcheryCatapultSettings.None.JackpotChance);
         }
 
