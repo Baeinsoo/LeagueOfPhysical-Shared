@@ -301,7 +301,7 @@ namespace LOP.Tests
         [Test]
         public void 출렁임은_발사_순간_제자리에서_시작해_한_주기에_돌아온다()
         {
-            //  0.5 Hz = 2초 = 100틱 주기. 위상이 0이 아니어도 발사 순간엔 제자리다(바구니가 놓는 자리).
+            //  0.5 Hz = 2초 = 100틱 주기. 위상이 0이 아니어도 발사 순간엔 제자리다(표적이 나오는 출발점).
             var t = Moving(bobA: 0.6f, bobHz: 0.5f, phase: 0.3f);
             Assert.AreEqual(6f, ArcheryTargetMotion.PositionAt(t, 100.0001, 0.02f).y, 1e-3f);
             Assert.AreEqual(6f, ArcheryTargetMotion.PositionAt(t, 200, 0.02f).y, 1e-3f);
