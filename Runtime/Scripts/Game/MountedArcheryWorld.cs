@@ -15,6 +15,11 @@ namespace LOP
         private readonly float tickInterval;
         private readonly ArcheryShotBook shotBook = new ArcheryShotBook();
 
+        //  서버가 확정한 남의 화살. 늦게 도착하므로 그보다 앞서 저장된 되감기 저장본에는 없다 —
+        //  되감으면 지워지고, 남의 몸은 재생에서 안 굴리므로 다시 생기지도 않는다. 서버 사실이라 되감기 밖에 두고
+        //  복원 뒤에 다시 합친다. (ArcheryWorld는 남도 다시 굴려서 재생이 화살을 다시 쏘므로 이 목록이 필요 없다.)
+        private readonly List<ArcheryShot> confirmedRemoteShots = new List<ArcheryShot>();
+
         // 되감기용 보관. 베이스가 SaveCapacity틱보다 오래된 프레임은 못 찾으므로 링버퍼로 충분하다.
         private readonly GameFramework.Netcode.SequenceBuffer<SavedState> saved
             = new GameFramework.Netcode.SequenceBuffer<SavedState>(SaveCapacity);
@@ -52,13 +57,21 @@ namespace LOP
         /// <summary>서버가 확정한 남의 발사를 받는다. 내 발사는 예측으로 이미 있으므로 부르는 쪽이 거른다.</summary>
         public void IngestRemoteShot(in ArcheryShot shot)
         {
-            shotBook.Add(shot);
+            if (IndexOf(confirmedRemoteShots, shot.ShooterId, shot.FireTick) < 0)
+            {
+                confirmedRemoteShots.Add(shot);
+            }
+            if (IndexOf(shotBook.Shots, shot.ShooterId, shot.FireTick) < 0)
+            {
+                shotBook.Add(shot);
+            }
         }
 
         /// <summary>그 사람이 (afterTick, upToTick] 구간에 쏜 화살을 지운다. 서버가 안 받아 준 예측 화살 정리용.</summary>
         public void CancelShots(string shooterId, long afterTick, long upToTick)
         {
             shotBook.Cancel(shooterId, afterTick, upToTick);
+            confirmedRemoteShots.RemoveAll(s => s.ShooterId == shooterId && s.FireTick > afterTick && s.FireTick <= upToTick);
         }
 
         protected override void Mutation(long tick, float deltaTime)
@@ -105,6 +118,8 @@ namespace LOP
             }
 
             shotBook.RemoveExpired(tick, tickInterval);
+            float lifetimeTicks = ArcheryTrajectory.LifetimeSeconds / tickInterval;
+            confirmedRemoteShots.RemoveAll(s => tick - s.FireTick > lifetimeTicks);
         }
 
         protected override void SaveGameState(long tick)
@@ -120,8 +135,27 @@ namespace LOP
             }
 
             shotBook.Restore(state.Shots);
+            foreach (var shot in confirmedRemoteShots)
+            {
+                if (IndexOf(shotBook.Shots, shot.ShooterId, shot.FireTick) < 0)
+                {
+                    shotBook.Add(shot);
+                }
+            }
             ArcheryAimSnapshot.Restore(EntityRegistry, state.Aims);
             return true;
+        }
+
+        private static int IndexOf(IReadOnlyList<ArcheryShot> shots, string shooterId, long fireTick)
+        {
+            for (int i = 0; i < shots.Count; i++)
+            {
+                if (shots[i].ShooterId == shooterId && shots[i].FireTick == fireTick)
+                {
+                    return i;
+                }
+            }
+            return -1;
         }
     }
 }
