@@ -209,5 +209,85 @@ namespace LOP.Tests
 
             Assert.AreEqual(0, world.Shots.Count);
         }
+
+        static ArcheryShot RemoteShot(long fireTick)
+            => new ArcheryShot("rider-9", fireTick, Vector3.zero, new Vector3(0f, 0f, 30f));
+
+        static int CountShots(MountedArcheryWorld world, string shooterId, long fireTick)
+        {
+            int n = 0;
+            foreach (var s in world.Shots)
+            {
+                if (s.ShooterId == shooterId && s.FireTick == fireTick) { n++; }
+            }
+            return n;
+        }
+
+        // 남의 화살은 저장본보다 늦게 도착한다 — 그 저장본으로 되감아도 서버가 확정한 화살은 남아야 한다.
+        [Test]
+        public void 되감아도_서버가_확정한_남의_화살은_남는다()
+        {
+            var (world, rider) = Make();
+            for (long t = 1; t <= 10; t++)
+            {
+                Feed(rider, 0f, 0f, false, false);
+                world.Tick(t, Dt);
+            }
+            world.SaveState(10);
+
+            world.IngestRemoteShot(RemoteShot(8));
+            world.LoadState(10);
+
+            Assert.AreEqual(1, CountShots(world, "rider-9", 8));
+        }
+
+        [Test]
+        public void 확정된_남의_화살도_수명이_지나면_사라진다()
+        {
+            var (world, rider) = Make();
+            world.SaveState(0);
+            world.IngestRemoteShot(RemoteShot(1));
+
+            long lifetimeTicks = (long)(ArcheryTrajectory.LifetimeSeconds / Dt) + 2;
+            for (long t = 1; t <= lifetimeTicks; t++)
+            {
+                Feed(rider, 0f, 0f, false, false);
+                world.Tick(t, Dt);
+            }
+            Assert.AreEqual(0, CountShots(world, "rider-9", 1), "수명이 지나면 목록에서 빠진다");
+
+            world.SaveState(lifetimeTicks);
+            world.LoadState(lifetimeTicks);
+            Assert.AreEqual(0, CountShots(world, "rider-9", 1), "수명이 지난 화살을 되감기가 되살리면 안 된다");
+        }
+
+        [Test]
+        public void 같은_남의_화살을_두_번_받아도_하나다()
+        {
+            var (world, rider) = Make();
+            world.SaveState(0);
+
+            world.IngestRemoteShot(RemoteShot(1));
+            world.IngestRemoteShot(RemoteShot(1));
+            Assert.AreEqual(1, CountShots(world, "rider-9", 1));
+
+            // 되감기가 다시 넣은 뒤 또 받아도 늘지 않는다.
+            world.LoadState(0);
+            world.IngestRemoteShot(RemoteShot(1));
+            Assert.AreEqual(1, CountShots(world, "rider-9", 1));
+        }
+
+        [Test]
+        public void 취소한_남의_화살은_되감아도_안_돌아온다()
+        {
+            var (world, _) = Make();
+            world.SaveState(0);
+
+            world.IngestRemoteShot(RemoteShot(5));
+            world.CancelShots("rider-9", 4, 5);
+            world.LoadState(0);
+
+            Assert.AreEqual(0, CountShots(world, "rider-9", 5));
+        }
     }
 }
