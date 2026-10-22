@@ -16,11 +16,7 @@ namespace LOP
         private readonly MovementSystem movementSystem;
         private readonly KinematicMoveSystem kinematicMoveSystem;
         private readonly GameFramework.World.IMotionBridge motionBridge;
-        private readonly List<ArcheryShot> shots = new List<ArcheryShot>();
-
-        //  서버가 "그 사이엔 활을 못 들었다"고 확정해 지운 내 화살. 되감기 저장본에는 남아 있으므로
-        //  복원할 때 다시 걸러야 한다. 서버 확정 사실이라 되감기 밖에 둔다(ArcheryConsumed와 같은 이유).
-        private readonly HashSet<(string shooterId, long fireTick)> cancelled = new HashSet<(string, long)>();
+        private readonly ArcheryShotBook shotBook = new ArcheryShotBook();
 
         // 되감기용 보관. 틱마다 그 시점의 조준 상태와 화살 목록을 통째로 둔다.
         // 링버퍼(SaveCapacity)로 둔다 — 베이스도 최근 SaveCapacity틱보다 오래된 프레임은
@@ -44,7 +40,7 @@ namespace LOP
             }
         }
 
-        public IReadOnlyList<ArcheryShot> Shots => shots;
+        public IReadOnlyList<ArcheryShot> Shots => shotBook.Shots;
 
         /// <summary>
         /// 서버가 확정한 남의 발사를 받아들인다. 내 발사는 예측으로 이미 목록에 있으므로
@@ -52,7 +48,7 @@ namespace LOP
         /// </summary>
         public void IngestRemoteShot(in ArcheryShot shot)
         {
-            shots.Add(shot);
+            shotBook.Add(shot);
         }
 
         /// <summary>
@@ -61,15 +57,7 @@ namespace LOP
         /// </summary>
         public void CancelShots(string shooterId, long afterTick, long upToTick)
         {
-            for (int i = shots.Count - 1; i >= 0; i--)
-            {
-                var shot = shots[i];
-                if (shot.ShooterId == shooterId && shot.FireTick > afterTick && shot.FireTick <= upToTick)
-                {
-                    cancelled.Add((shot.ShooterId, shot.FireTick));
-                    shots.RemoveAt(i);
-                }
-            }
+            shotBook.Cancel(shooterId, afterTick, upToTick);
         }
 
         public ArcheryWorld(GameFramework.World.EntityRegistry entityRegistry,
@@ -111,7 +99,7 @@ namespace LOP
                 if (shot.HasValue)
                 {
                     var fired = shot.Value.WithWind(course.WindAt(tick, GameplayStartTick));
-                    shots.Add(fired);
+                    shotBook.Add(fired);
 
                     // 남은 이 사건으로만 내 발사를 안다 — 입력 메아리는 늦게 와서 안 읽힌다.
                     // 바람은 싣지 않는다 — 받는 쪽이 발사 틱으로 다시 계산한다.
@@ -120,7 +108,7 @@ namespace LOP
                 }
             }
 
-            RemoveExpired(tick);
+            shotBook.RemoveExpired(tick, tickInterval);
         }
 
         private readonly List<GameFramework.World.Entity> seated = new List<GameFramework.World.Entity>();
@@ -274,42 +262,14 @@ namespace LOP
             quiver.RefilledWave = wave;
         }
 
-        // 화면 밖으로 나간 화살을 계속 들고 있으면 목록이 한 판 내내 자란다.
-        private void RemoveExpired(long tick)
-        {
-            float lifetimeTicks = ArcheryTrajectory.LifetimeSeconds / tickInterval;
-            for (int i = shots.Count - 1; i >= 0; i--)
-            {
-                if (tick - shots[i].FireTick > lifetimeTicks)
-                {
-                    shots.RemoveAt(i);
-                }
-            }
-            cancelled.RemoveWhere(c => tick - c.fireTick > lifetimeTicks);
-        }
-
         protected override void SaveGameState(long tick)
         {
-            var aims = new Dictionary<string, ArcheryAim>();
             var quivers = new Dictionary<string, (int Remaining, int RefilledWave)>();
             foreach (var entity in EntityRegistry.All)
             {
-                // 원격(비-Simulated) 몸은 베이스가 되감지 않는 대상이다 — 여기서 같이 저장했다가
-                // 되돌리면, 되감는 사이 네트워크로 도착한 남의 새 조준값을 옛 값으로 덮어쓴다.
                 if (entity.Has<GameFramework.World.Simulated>() == false)
                 {
                     continue;
-                }
-
-                var aim = entity.Get<ArcheryAim>();
-                if (aim != null)
-                {
-                    aims[entity.Id] = new ArcheryAim
-                    {
-                        Yaw = aim.Yaw, Pitch = aim.Pitch,
-                        Drawing = aim.Drawing, DrawStartTick = aim.DrawStartTick,
-                        DrawRatio = aim.DrawRatio,
-                    };
                 }
 
                 var quiver = entity.Get<ArcheryQuiver>();
@@ -318,7 +278,7 @@ namespace LOP
                     quivers[entity.Id] = (quiver.Remaining, quiver.RefilledWave);
                 }
             }
-            saved.Record(tick, new SavedState(new List<ArcheryShot>(shots), aims, quivers));
+            saved.Record(tick, new SavedState(shotBook.Capture(), ArcheryAimSnapshot.Capture(EntityRegistry), quivers));
         }
 
         // 베이스가 bool을 요구한다 — 그 틱 기록이 없으면 false다.
@@ -329,23 +289,8 @@ namespace LOP
                 return false;
             }
 
-            shots.Clear();
-            shots.AddRange(state.Shots);
-            shots.RemoveAll(s => cancelled.Contains((s.ShooterId, s.FireTick)));
-
-            foreach (var pair in state.Aims)
-            {
-                var aim = EntityRegistry.Get(pair.Key)?.Get<ArcheryAim>();
-                if (aim == null)
-                {
-                    continue;
-                }
-                aim.Yaw = pair.Value.Yaw;
-                aim.Pitch = pair.Value.Pitch;
-                aim.Drawing = pair.Value.Drawing;
-                aim.DrawStartTick = pair.Value.DrawStartTick;
-                aim.DrawRatio = pair.Value.DrawRatio;
-            }
+            shotBook.Restore(state.Shots);
+            ArcheryAimSnapshot.Restore(EntityRegistry, state.Aims);
 
             foreach (var pair in state.Quivers)
             {
