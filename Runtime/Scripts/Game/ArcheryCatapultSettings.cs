@@ -23,7 +23,7 @@ namespace LOP
         public int TargetLifeTicks { get; }
         /// <summary>한 무리에 쏘면 안 되는 것이 낄 확률(0~1).</summary>
         public float TrapChance { get; }
-        /// <summary>표적의 길이 머무는 가로 범위(m, 레인 중심에서 한쪽).</summary>
+        /// <summary>표적이 나오는 가로 범위(m, 레인 중심에서 한쪽). 나온 뒤의 길은 이 범위를 벗어나도 된다.</summary>
         public float LateralHalfRangeM { get; }
 
         /// <summary>한 무리에 대박(황금 종·피냐타)이 낄 확률(0~1). 금지물과 따로 뽑는다.</summary>

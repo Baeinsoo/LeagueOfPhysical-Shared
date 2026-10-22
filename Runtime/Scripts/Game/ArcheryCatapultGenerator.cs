@@ -7,10 +7,15 @@ namespace LOP
     /// 투석기 사냥의 한 무리(볼리)를 채운다. 상태 없는 순수 계산이라 클·서가 같은 씨앗·같은 무리 번호·
     /// 같은 레인·<b>같은 명단 수</b>를 넣으면 같은 목록이 나온다 — <b>그래서 표적을 통신하지 않는다</b>.
     ///
-    /// <para><b>난수를 꺼내는 순서가 곧 계약이다</b>(2차) — 금지물 여부 → 대박 여부 → (짝마다) 일반 뽑기 →
+    /// <para><b>난수를 꺼내는 순서가 곧 계약이다</b>(2차, 3차도 그대로) — 금지물 여부 → 대박 여부 → (짝마다) 일반 뽑기 →
     /// (대박이 끼면) 대박 뽑기 → (금지물이 끼면) 금지물 뽑기. 뽑기 한 번 = 종류 → 거리 → 시작 높이 → 가로 위치 →
     /// 방향 → 가로 속도 → 호 → 솟음 → 위상(종류가 그 움직임을 안 써도 늘 아홉 번). 끼워 넣으면 그 뒤가 전부 밀려
     /// 클·서가 다른 표적을 본다. 새 뽑기는 맨 끝에만 붙인다.</para>
+    ///
+    /// <para><b>나오는 자리(3차 spec §1)</b> — 투석기 없이 표적마다 궤적에 맞는 자리에서 나온다. 같은 아홉 번의 값을
+    /// 종류의 데이터가 다르게 읽을 뿐이라 뽑는 횟수는 그대로다: 바깥 띠(<see cref="ArcheryCatapultMotion.SpawnSideMaxM"/>)가
+    /// 있으면 가로 위치의 부호가 쪽, 크기가 띠 안 자리이고 방향은 늘 가운데 쪽(뽑은 방향은 버린다). 없으면
+    /// 가로 위치 × 나오는 범위가 출발점이고 방향은 뽑은 대로다.</para>
     ///
     /// <para><b>일반 표적 수 = min(6, max(2, ⌈인원 ÷ 2⌉))</b> — 표적 하나를 두 명 안팎이 노리게 해서 4인이든 8인이든
     /// 경쟁 강도가 비슷하다. 자리가 6개뿐이라(<see cref="MaxNormalSlots"/>) 인원이 많아도 여섯에서 멈춘다 —
@@ -41,8 +46,8 @@ namespace LOP
             public readonly ArcheryTargetKind Kind;
             public readonly float Distance;
             public readonly float Height;
-            public readonly float Lateral;     // −1~1, 길의 가운데
-            public readonly float Direction;   // −1 또는 +1 (사수 기준 왼쪽/오른쪽으로 난다)
+            public readonly float Lateral;     // −1~1 — 바깥 띠 종류는 부호 = 쪽, 크기 = 띠 안 자리
+            public readonly float Direction;   // −1 또는 +1 (사수 기준 왼쪽/오른쪽으로 난다). 바깥 띠 종류는 안 쓴다
             public readonly float Speed;
             public readonly float Arc;
             public readonly float Climb;
@@ -76,17 +81,16 @@ namespace LOP
 
             Vector3 right = ArcheryTargetMotion.ShooterRightAxis(-laneForward);
             long launchTick = ArcheryCatapultSchedule.LaunchTick(s, volleyIndex, gameplayStartTick);
-            float life = s.TargetLifeTicks * tickInterval;
 
             //  3) 일반 — 한 번 뽑아 거울로 둘. 홀수면 마지막 짝은 A(+1) 하나만.
             int normals = NormalCountFor(rosterCount);
             for (int slot = 0; slot < normals; slot += 2)
             {
                 var pair = Draw(config.NormalKinds, ref rng);
-                into.Add(Make(volleyIndex, slot, pair, +1f, laneOrigin, laneForward, right, launchTick, life, s));
+                into.Add(Make(volleyIndex, slot, pair, +1f, laneOrigin, laneForward, right, launchTick, tickInterval, s));
                 if (slot + 1 < normals)
                 {
-                    into.Add(Make(volleyIndex, slot + 1, pair, -1f, laneOrigin, laneForward, right, launchTick, life, s));
+                    into.Add(Make(volleyIndex, slot + 1, pair, -1f, laneOrigin, laneForward, right, launchTick, tickInterval, s));
                 }
             }
 
@@ -94,12 +98,12 @@ namespace LOP
             if (withJackpot && config.JackpotKinds.Count > 0)
             {
                 into.Add(Make(volleyIndex, JackpotSlot, Draw(config.JackpotKinds, ref rng), +1f,
-                              laneOrigin, laneForward, right, launchTick, life, s));
+                              laneOrigin, laneForward, right, launchTick, tickInterval, s));
             }
             if (withTrap && config.TrapKinds.Count > 0)
             {
                 into.Add(Make(volleyIndex, TrapSlot, Draw(config.TrapKinds, ref rng), +1f,
-                              laneOrigin, laneForward, right, launchTick, life, s));
+                              laneOrigin, laneForward, right, launchTick, tickInterval, s));
             }
         }
 
@@ -118,29 +122,44 @@ namespace LOP
             return new Throw(kind, distance, height, lateral, direction, speed, arc, climb, phase);
         }
 
-        //  가로 위치 u는 출발점이 아니라 <b>길의 가운데</b>다(1차 규칙) — 빠른 접시는 3.6초에 25 m를 가므로 출발점만
-        //  범위 안에 두면 화면 밖으로 날아간다. 가운데가 움직일 폭 = 범위 − 이동/2(음수면 0, 가운데 고정).
-        //  범위는 종류가 정하고(대박 ±8·금지물 ±10), 안 적었으면 설정 값(±16)이다.
+        //  출발점(3차) — 길의 가운데가 아니라 <b>나오는 자리</b>다. 빨리 나는 표적이 범위(±16 m) 밖으로 날아가도 된다:
+        //  바깥에서 들어와 가운데를 지나므로 화면 안에 있는 시간은 충분하다(3차 spec §1).
         //  mirror(+1/−1)를 가로 성분에만 곱해 짝이 정확히 거울이 되게 한다(부호 뒤집기는 float에서 오차가 없다).
         private static ArcheryTarget Make(int volley, int slot, in Throw t, float mirror,
                                           Vector3 laneOrigin, Vector3 forward, Vector3 right,
-                                          long launchTick, float life, ArcheryCatapultSettings s)
+                                          long launchTick, float tickInterval, ArcheryCatapultSettings s)
         {
             var kind = t.Kind;
-            float half = kind.Motion.LateralHalfM > 0f ? kind.Motion.LateralHalfM : s.LateralHalfRangeM;
-            float travel = t.Speed * life;
-            float centerLimit = Mathf.Max(0f, half - travel * 0.5f);
-            float startX = (t.Lateral * centerLimit - t.Direction * travel * 0.5f) * mirror;
-            float vx = t.Direction * t.Speed * mirror;
+            var m = kind.Motion;
+            float startX, direction;
+            if (m.SpawnSideMaxM > 0f)
+            {
+                //  접시·종·피냐타: 좌우 바깥 띠에서 나와 가운데 쪽으로 — 길 끝에서 나와 밖으로 사라지는 일이 없다.
+                float side = t.Lateral < 0f ? -1f : 1f;
+                startX = side * (m.SpawnSideMinM + (m.SpawnSideMaxM - m.SpawnSideMinM) * Mathf.Abs(t.Lateral));
+                direction = -side;
+            }
+            else
+            {
+                float half = m.LateralHalfM > 0f ? m.LateralHalfM : s.LateralHalfRangeM;
+                startX = t.Lateral * half;
+                direction = t.Direction;
+            }
+            startX *= mirror;
+            direction *= mirror;
+
+            //  수명은 종류가 정할 수 있다 — 대박은 2초로 짧다(3차 spec §2). 0이면 무리 공통 수명.
+            float life = (m.LifeTicks > 0 ? m.LifeTicks : s.TargetLifeTicks) * tickInterval;
 
             Vector3 origin = laneOrigin + right * startX + Vector3.up * t.Height + forward * t.Distance;
             return new ArcheryTarget(volley, slot, origin, 0f, launchTick,
                                      kind.Radius, kind.Points, kind.IsTrap, kind.Shape, kind.Bands,
                                      -forward, life, string.Empty, 0f, 0f, isShared: false,
-                                     drift: right * vx, arcHeight: t.Arc, stunTicks: kind.StunTicks, kindId: kind.Id,
-                                     isJackpot: kind.IsJackpot, bobAmplitude: kind.Motion.BobAmplitudeM,
-                                     bobHz: kind.Motion.BobHz, spinHz: kind.Motion.SpinHz,
-                                     climbMps: t.Climb, motionPhase: t.Phase);
+                                     drift: right * (direction * t.Speed), arcHeight: t.Arc, stunTicks: kind.StunTicks, kindId: kind.Id,
+                                     isJackpot: kind.IsJackpot, bobAmplitude: m.BobAmplitudeM,
+                                     bobHz: m.BobHz, spinHz: m.SpinHz,
+                                     climbMps: t.Climb, motionPhase: t.Phase,
+                                     swing: right * (direction * m.SwingAmplitudeM), swingDip: m.SwingDipM);
         }
     }
 }

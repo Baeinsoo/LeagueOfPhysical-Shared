@@ -301,7 +301,7 @@ namespace LOP.Tests
         [Test]
         public void 출렁임은_발사_순간_제자리에서_시작해_한_주기에_돌아온다()
         {
-            //  0.5 Hz = 2초 = 100틱 주기. 위상이 0이 아니어도 발사 순간엔 제자리다(바구니가 놓는 자리).
+            //  0.5 Hz = 2초 = 100틱 주기. 위상이 0이 아니어도 발사 순간엔 제자리다(표적이 나오는 출발점).
             var t = Moving(bobA: 0.6f, bobHz: 0.5f, phase: 0.3f);
             Assert.AreEqual(6f, ArcheryTargetMotion.PositionAt(t, 100.0001, 0.02f).y, 1e-3f);
             Assert.AreEqual(6f, ArcheryTargetMotion.PositionAt(t, 200, 0.02f).y, 1e-3f);
@@ -371,6 +371,44 @@ namespace LOP.Tests
             Vector3 to = center + new Vector3(0f, 0.5f, 1f);
             Assert.IsTrue(ArcheryHitTest.SegmentHitsTarget(from, to, center, t, 0.85f, out _, out _));
             Assert.IsFalse(ArcheryHitTest.SegmentHitsTarget(from, to, center, t, 0.17f, out _, out _));
+        }
+
+        //  3차 그네(피냐타): 깊이 48 m, 높이 6 m, 출발 x −4, 100틱 발사, 2초 수명, 오른쪽(+x)으로 A = 3 m, D = 1.6 m.
+        private static ArcheryTarget Swinging()
+            => new ArcheryTarget(0, 6, new Vector3(-4f, 6f, 48f), 0f, 100, 0.95f, 5, false,
+                                 ArcheryTargetShape.Sphere, null, Vector3.back, 2f, string.Empty, 0f, 0f,
+                                 isShared: false, isJackpot: true, swing: new Vector3(3f, 0f, 0f), swingDip: 1.6f);
+
+        [Test]
+        public void 그네는_제자리에서_시작해_가운데서_낮고_끝에서_두_배_폭만큼_건너가_있다()
+        {
+            var t = Swinging();
+            //  발사 직후(반 틱 뒤)도 출발점 바로 옆이다(튀지 않는다 — 뿅으로 커진 자리에서 그대로 출발한다).
+            //  발사 틱 자체는 식을 안 타고 출발점을 돌려주므로, 식이 도는 첫 순간을 잰다.
+            Assert.Less(Vector3.Distance(t.Origin, ArcheryTargetMotion.PositionAt(t, 100.5, 0.02f)), 0.01f);
+            //  수명 가운데(1초 = 50틱): 가로 A = 3 m, 세로 −D = −1.6 m.
+            Vector3 mid = ArcheryTargetMotion.PositionAt(t, 150, 0.02f);
+            Assert.AreEqual(-1f, mid.x, 1e-3f);
+            Assert.AreEqual(4.4f, mid.y, 1e-3f);
+            Assert.AreEqual(48f, mid.z, 1e-4f);
+            //  수명 끝(2초 = 100틱): 가로 2A = 6 m, 높이는 제자리.
+            Vector3 end = ArcheryTargetMotion.PositionAt(t, 200, 0.02f);
+            Assert.AreEqual(2f, end.x, 1e-3f);
+            Assert.AreEqual(6f, end.y, 1e-3f);
+        }
+
+        [Test]
+        public void 그네는_끝에서_느리고_가운데에서_가장_빠르다()
+        {
+            //  "끝에서 기다렸다 쏠까, 가운데서 리드를 줄까"가 갈리는 이유 — 한 틱 이동을 처음·가운데·끝에서 잰다.
+            var t = Swinging();
+            float Step(double tick) => Vector3.Distance(ArcheryTargetMotion.PositionAt(t, tick, 0.02f),
+                                                        ArcheryTargetMotion.PositionAt(t, tick + 1, 0.02f));
+            float start = Step(100), middle = Step(149.5), end = Step(199);
+            Assert.Greater(middle, 4f * start);
+            Assert.Greater(middle, 4f * end);
+            //  가운데 가로 빠르기 = π·A/L = 4.71 m/s → 한 틱 0.094 m(가운데에서 세로 빠르기는 0).
+            Assert.AreEqual(Mathf.PI * 3f / 2f * 0.02f, middle, 2e-3f);
         }
     }
 }

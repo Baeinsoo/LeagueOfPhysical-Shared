@@ -18,7 +18,9 @@ namespace LOP.Tests
         {
             var motion = new ArcheryCatapultMotion(heightMinM: 2.5f, heightMaxM: 5f, arcMinM: 3f, arcMaxM: 4.5f,
                                                    climbMinMps: 3.5f, climbMaxMps: 5f, bobAmplitudeM: 0.6f, bobHz: 0.48f,
-                                                   spinHz: 1.1f, lateralHalfM: 8f);
+                                                   spinHz: 1.1f, lateralHalfM: 8f,
+                                                   spawnSideMinM: 3f, spawnSideMaxM: 7f, lifeTicks: 100,
+                                                   swingAmplitudeM: 2.5f, swingDipM: 1.6f);
             var kind = Kind(18, jackpot: true, motion: motion);
             Assert.IsTrue(kind.IsJackpot);
             Assert.AreEqual(2.5f, kind.Motion.HeightMinM);
@@ -31,6 +33,12 @@ namespace LOP.Tests
             Assert.AreEqual(0.48f, kind.Motion.BobHz);
             Assert.AreEqual(1.1f, kind.Motion.SpinHz);
             Assert.AreEqual(8f, kind.Motion.LateralHalfM);
+            //  3차 — 값이 서로 다르게 넣어 칸을 바꿔 적으면 걸리게 한다.
+            Assert.AreEqual(3f, kind.Motion.SpawnSideMinM);
+            Assert.AreEqual(7f, kind.Motion.SpawnSideMaxM);
+            Assert.AreEqual(100, kind.Motion.LifeTicks);
+            Assert.AreEqual(2.5f, kind.Motion.SwingAmplitudeM);
+            Assert.AreEqual(1.6f, kind.Motion.SwingDipM);
         }
 
         [Test]
@@ -68,13 +76,21 @@ namespace LOP.Tests
         {
             var t = new ArcheryTarget(1, 6, Vector3.zero, 0f, 100, 0.8f, 5, false, ArcheryTargetShape.Sphere, null,
                                       Vector3.back, 2.6f, string.Empty, 0f, 0f,
-                                      isJackpot: true, bobAmplitude: 0.3f, bobHz: 0.32f, spinHz: 1.1f, climbMps: 4f, motionPhase: 0.25f);
+                                      isJackpot: true, bobAmplitude: 0.3f, bobHz: 0.32f, spinHz: 1.1f, climbMps: 4f, motionPhase: 0.25f,
+                                      swing: new Vector3(-3f, 0f, 0f), swingDip: 1.6f);
             Assert.IsTrue(t.IsJackpot);
             Assert.AreEqual(0.3f, t.BobAmplitude);
             Assert.AreEqual(0.32f, t.BobHz);
             Assert.AreEqual(1.1f, t.SpinHz);
             Assert.AreEqual(4f, t.Climb);
             Assert.AreEqual(0.25f, t.MotionPhase);
+            Assert.AreEqual(new Vector3(-3f, 0f, 0f), t.Swing);
+            Assert.AreEqual(1.6f, t.SwingDip);
+            //  옛 호출부(그네 인수 없음)는 그네가 없다.
+            var old = new ArcheryTarget(1, 0, Vector3.zero, 0f, 100, 0.8f, 1, false, ArcheryTargetShape.Sphere, null,
+                                        Vector3.back, 2.6f, string.Empty, 0f, 0f);
+            Assert.AreEqual(Vector3.zero, old.Swing);
+            Assert.AreEqual(0f, old.SwingDip);
         }
     }
 }
