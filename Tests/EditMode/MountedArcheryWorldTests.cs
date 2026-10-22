@@ -26,7 +26,10 @@ namespace LOP.Tests
                 new MountSystem(Config.Mount),
                 new KinematicMoveSystem(new FlappyWorldFixture.NeverHit(), 0),
                 new FlappyWorldFixture.NoopMotionBridge(),
-                Dt);
+                Dt)
+            {
+                GameplayStartTick = 0,   // 기본값이 long.MaxValue라 안 세우면 "아직 출발 전"이다
+            };
         }
 
         public static Entity Rider(EntityRegistry registry, float yawDeg = 0f)
@@ -288,6 +291,26 @@ namespace LOP.Tests
             world.LoadState(0);
 
             Assert.AreEqual(0, CountShots(world, "rider-9", 5));
+        }
+
+        [Test]
+        public void 출발_전에는_몰아도_안_가고_떼도_안_쏜다()
+        {
+            var registry = new EntityRegistry();
+            var rider = MountedArcheryWorldFixture.Rider(registry);
+            var world = MountedArcheryWorldFixture.Make(registry);
+            world.GameplayStartTick = 100;
+
+            for (long t = 1; t <= HoldTicks; t++)
+            {
+                Feed(rider, 0f, 1f, drawing: true, release: false);
+                world.Tick(t, Dt);
+            }
+            Feed(rider, 0f, 1f, drawing: false, release: true);
+            world.Tick(HoldTicks + 1, Dt);
+
+            Assert.AreEqual(0f, rider.Get<GameFramework.World.Transform>().Position.Z, 1e-5f);
+            Assert.AreEqual(0, world.Shots.Count);
         }
     }
 }
