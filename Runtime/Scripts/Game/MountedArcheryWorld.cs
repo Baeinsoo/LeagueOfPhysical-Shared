@@ -76,6 +76,20 @@ namespace LOP
 
         protected override void Mutation(long tick, float deltaTime)
         {
+            if (HasStarted(tick) == false)
+            {
+                //  출발 전 대기. 속도를 0으로 적어 두는 건 스냅샷과 물리 팔로워가 이 값을 읽기 때문이다(FlappyWorld와 같다).
+                foreach (var entity in EntityRegistry.All)
+                {
+                    var velocity = entity.Get<GameFramework.World.Velocity>();
+                    if (velocity != null && entity.Has<GameFramework.World.Simulated>())
+                    {
+                        velocity.Linear = System.Numerics.Vector3.Zero;
+                    }
+                }
+                return;
+            }
+
             //  머리·속도를 먼저 정한다. 모두의 속도가 정해진 뒤에 움직여야 서로 미는 판정이 순서를 안 탄다.
             foreach (var entity in EntityRegistry.All)
             {
