@@ -174,6 +174,46 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 몸을_돌리지_않게_만들면_회전을_건드리지_않는다()
+        {
+            var archer = Archer(Vector3.zero);
+            archer.Get<GameFramework.World.Transform>().Rotation = Quaternion.Euler(0f, 30f, 0f).ToNumerics();
+            var system = new ArcheryAimSystem(NoSwayConfig(), 1.4f, turnBodyToAim: false);
+
+            Feed(archer, 90f, 0f, drawing: false, release: false);
+            system.Tick(archer, 100, TickInterval);
+
+            float yaw = archer.Get<GameFramework.World.Transform>().Rotation.ToUnity().eulerAngles.y;
+            Assert.AreEqual(30f, yaw, 0.01f);
+
+            //  양성 대조 — 기존 생성자는 같은 입력에서 몸을 90도로 돌린다.
+            var other = Archer(Vector3.zero);
+            other.Get<GameFramework.World.Transform>().Rotation = Quaternion.Euler(0f, 30f, 0f).ToNumerics();
+            Feed(other, 90f, 0f, drawing: false, release: false);
+            new ArcheryAimSystem(NoSwayConfig()).Tick(other, 100, TickInterval);
+            float otherYaw = other.Get<GameFramework.World.Transform>().Rotation.ToUnity().eulerAngles.y;
+            Assert.AreEqual(90f, otherYaw, 0.01f);
+        }
+
+        [Test]
+        public void 눈높이를_바꾸면_화살이_그_높이에서_나간다()
+        {
+            var archer = Archer(Vector3.zero);
+            var system = new ArcheryAimSystem(NoSwayConfig(), 2.5f, turnBodyToAim: true);
+
+            for (long t = 100; t < 140; t++)
+            {
+                Feed(archer, 0f, 0f, drawing: true, release: false);
+                system.Tick(archer, t, TickInterval);
+            }
+            Feed(archer, 0f, 0f, drawing: false, release: true);
+            var shot = system.Tick(archer, 140, TickInterval);
+
+            Assert.IsTrue(shot.HasValue);
+            Assert.AreEqual(2.5f, shot.Value.Origin.y, 1e-4f);
+        }
+
+        [Test]
         public void 화살은_눈높이에서_조준_방향으로_떠난다()
         {
             var archer = Archer(new Vector3(5f, 0f, -3f));
