@@ -1,6 +1,7 @@
 using GameFramework.Physics;
 using GameFramework.World;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace LOP.Tests
 {
@@ -235,23 +236,28 @@ namespace LOP.Tests
             Assert.AreEqual(0f, bird.Get<FlappyDash>().Charge);
         }
 
-        //  움직이는 무더기(승강기 위): 진폭 1 m, 주기 2초, 위상 90° — 틱 0에서 +1 m, 1초(50틱)마다 반대.
+        //  움직이는 무더기(승강기 위): 진폭 5 m, 주기 2초, 위상 90° — 틱 0에서 +5 m, 1초(50틱)마다 반대.
+        //  진폭을 크게 잡아 틱이 조금만 어긋나도(±12틱이면 오프셋 3.65) 손 닿는 거리(0.95)를 벗어나게 했다.
+        const float MoveAmp = 5f;
+        const float CenterAfterTick = 0.422f;   // 발밑 0에서 한 틱 떨어진 뒤 몸 중심 높이(대략)
+
         static FlappyMoteField MovingMote(float x, float baseY)
         {
             var field = new FlappyMoteField();
             field.Add(new FlappyMoteSet(new[] { x }, new[] { baseY }, big: false,
-                                        moveAmplitude: 1f, movePeriod: 2f, movePhase: 90f));
+                                        moveAmplitude: MoveAmp, movePeriod: 2f, movePhase: 90f));
             return field;
         }
 
         [Test]
         public void 움직이는_알갱이는_그_틱의_높이로_판정한다()
         {
-            //  새 몸 중심 ≈ 0.42(발밑 0). 알갱이 원래 높이 -0.55: 오프셋 +1이면 0.45(닿음), -1이면 -1.55(안 닿음).
+            //  원래 높이 = 몸 중심 - 5. 오프셋 +5(틱 100)면 몸 중심과 같은 높이 → 먹는다.
+            //  오프셋을 무시하면 5 m 아래라 못 먹고, 틱이 어긋나도 못 먹는다.
             var registry = new EntityRegistry();
             var bird = Bird(registry);
-            var world = World(registry, MovingMote(0.1f, -0.55f), Rules());
-            world.Tick(100, Dt);   // 100틱 = 2초 = 한 주기 → 오프셋 +1
+            var world = World(registry, MovingMote(0.1f, CenterAfterTick - MoveAmp), Rules());
+            world.Tick(100, Dt);
 
             Assert.AreEqual(FlappyMapRulesField.DefaultMoteValue, bird.Get<FlappyDash>().Charge, 1e-6f);
         }
@@ -259,12 +265,71 @@ namespace LOP.Tests
         [Test]
         public void 움직이는_알갱이가_반대편에_있으면_안_먹는다()
         {
+            //  원래 높이 = 몸 중심. 오프셋 -5(틱 50)면 5 m 아래 → 못 먹는다. 오프셋을 무시하면 먹어 버린다.
             var registry = new EntityRegistry();
             var bird = Bird(registry);
-            var world = World(registry, MovingMote(0.1f, -0.55f), Rules());
-            world.Tick(50, Dt);    // 50틱 = 1초 = 반 주기 → 오프셋 -1
+            var world = World(registry, MovingMote(0.1f, CenterAfterTick), Rules());
+            world.Tick(50, Dt);
 
             Assert.AreEqual(0f, bird.Get<FlappyDash>().Charge, 1e-6f);
+        }
+
+        [Test]
+        public void 무더기_마커는_케이지_자식이면_승강기_움직임을_싣고_원점에서_케이지_오프셋을_뺀다()
+        {
+            var liftGo = new GameObject("Lift");
+            try
+            {
+                var lift = liftGo.AddComponent<FlappyLift>();
+                lift.Amplitude = 1.8f; lift.Period = 3.5f; lift.Phase = 90f;
+                var cage = new GameObject("Cage").transform;
+                cage.SetParent(liftGo.transform, false);
+                cage.localPosition = new Vector3(0f, 1.5f, 0f);   // 올라올 때 이미 1.5 m 올라가 있다
+                lift.Cage = cage;
+                var clusterGo = new GameObject("MoteCluster");
+                clusterGo.transform.SetParent(cage, false);
+                clusterGo.transform.position = new Vector3(10f, 2.5f, 0f);   // 원래 자리 1.0 + 케이지 1.5
+                var cluster = clusterGo.AddComponent<FlappyMoteCluster>();
+                cluster.Points = new[] { new Vector2(0f, -0.4f) };
+                var field = new FlappyMoteField();
+
+                cluster.Construct(field);
+
+                var set = field.Sets[0];
+                Assert.IsTrue(set.Moving);
+                Assert.AreEqual(1.8f, set.MoveAmplitude);
+                Assert.AreEqual(3.5f, set.MovePeriod);
+                Assert.AreEqual(90f, set.MovePhase);
+                Assert.AreEqual(1.0f, set.OriginY, 1e-5f, "원점은 케이지 오프셋을 뺀 원래 자리");
+                Assert.AreEqual(0.6f, set.Ys[0], 1e-5f);
+                Assert.AreEqual(1.5f, set.CurrentVisualOffset, 1e-5f, "그림 오프셋은 케이지의 지금 높이");
+            }
+            finally
+            {
+                Object.DestroyImmediate(liftGo);
+            }
+        }
+
+        [Test]
+        public void 케이지_밖_무더기는_고정이다()
+        {
+            var go = new GameObject("MoteCluster");
+            try
+            {
+                go.transform.position = new Vector3(3f, 1f, 0f);
+                var cluster = go.AddComponent<FlappyMoteCluster>();
+                cluster.Points = new[] { new Vector2(0f, 0.2f) };
+                var field = new FlappyMoteField();
+
+                cluster.Construct(field);
+
+                Assert.IsFalse(field.Sets[0].Moving);
+                Assert.AreEqual(1.2f, field.Sets[0].Ys[0], 1e-5f);
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
         }
 
         [Test]

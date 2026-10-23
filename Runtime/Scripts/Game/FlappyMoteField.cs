@@ -107,6 +107,10 @@ namespace LOP
         /// (x0, y0) → (x1, y1)로 움직이는 동안 세로줄을 지난 알갱이 중, 그 순간 새 중심과의 높이 차가
         /// <paramref name="reachY"/> 이하인 것의 수. <paramref name="hits"/>를 주면 먹은 알갱이 자리를 담는다.
         /// </summary>
+        /// <summary>
+        /// 틱 없는 판: <b>움직이는 무더기도 원래 높이(오프셋 0)로 본다.</b> 고정 무더기만 다루는 도구·테스트용이다 —
+        /// 시뮬은 틱 판(<see cref="CountCrossed(float,float,float,float,float,long,float,List{ValueTuple{float,float}})"/>), 화면은 <see cref="CountCrossedVisual"/>를 쓴다.
+        /// </summary>
         public int CountCrossed(float x0, float y0, float x1, float y1, float reachY, List<(float x, float y)> hits = null)
             => CountWith(x0, y0, x1, y1, reachY, hits, set => 0f);
 
