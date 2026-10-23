@@ -19,15 +19,19 @@ namespace LOP
             return stun != null && stun.StunRemaining > 0f;
         }
 
-        /// <summary>맵에 닿았을 때. 이미 스턴 중이거나 무적이면 아무 일도 없다.</summary>
-        public void Enter(GameFramework.World.Entity entity)
+        /// <summary>
+        /// 맵에 닿았을 때. 이미 스턴 중이거나 무적이면 아무 일도 없다.
+        /// 이번에 새로 스턴을 걸었으면 true — 박았을 때의 페널티(게이지 잃기)는 이때만 준다.
+        /// </summary>
+        public bool Enter(GameFramework.World.Entity entity)
         {
             var stun = entity.Get<FlappyStun>();
             if (stun == null || stun.StunRemaining > 0f || stun.InvulnRemaining > 0f)
             {
-                return;
+                return false;
             }
             stun.StunRemaining = config.StunTime;
+            return true;
         }
 
         public void Tick(GameFramework.World.Entity entity, float deltaTime)

@@ -66,6 +66,50 @@ namespace LOP
             dash.DashRemaining = System.Math.Max(dash.DashRemaining, duration);
         }
 
+        /// <summary>이 맵이 대시 게이지를 빛 알갱이로 채우나(<see cref="FlappyMapRulesField.MoteCharge"/>).</summary>
+        public bool MoteCharge => rules != null && rules.MoteCharge;
+
+        /// <summary>몸 표면에서 이만큼 안의 알갱이를 먹는다(m).</summary>
+        public float MoteReach => rules?.MoteReach ?? FlappyMapRulesField.DefaultMoteReach;
+
+        /// <summary>알갱이 <paramref name="count"/>개를 먹었다. 알갱이 맵이 아니면 아무 일도 없다.</summary>
+        public void AddMotes(GameFramework.World.Entity entity, int count)
+        {
+            var dash = entity.Get<FlappyDash>();
+            if (dash == null || count <= 0 || MoteCharge == false)
+            {
+                return;
+            }
+            dash.Charge = System.Math.Min(FlappyDash.MaxCharge, dash.Charge + count * rules.MoteValue);
+        }
+
+        /// <summary>
+        /// 스턴이 실제로 걸렸을 때. 알갱이 맵이면 게이지를 절반 잃는다 — 다 잃으면 아껴 둔 게 바보가 되고,
+        /// 안 잃으면 벽에 붙는 위험이 사라진다. 다이브 맵은 예전처럼 안 잃는다.
+        /// </summary>
+        public void LoseOnStun(GameFramework.World.Entity entity)
+        {
+            var dash = entity.Get<FlappyDash>();
+            if (dash != null && MoteCharge)
+            {
+                dash.Charge *= 0.5f;
+            }
+        }
+
+        /// <summary>
+        /// 출발선에서 기다리는 동안. 알갱이 맵이면 게이지를 0으로 둔다 — 처음부터 차 있으면 첫 무더기의
+        /// 맛이 줄어든다. 새를 만들 때가 아니라 여기서 하는 이유: 새를 만드는 순간엔 맵 규칙이 아직 안
+        /// 올라왔을 수 있고, 시뮬 안에서 하면 클·서가 같은 틱에 같은 값을 갖는다.
+        /// </summary>
+        public void ResetForStart(GameFramework.World.Entity entity)
+        {
+            var dash = entity.Get<FlappyDash>();
+            if (dash != null && MoteCharge)
+            {
+                dash.Charge = 0f;
+            }
+        }
+
         /// <summary>
         /// 대시를 그 자리에서 끝낸다. 스턴에 들어갈 때 부른다 — 멈춰 있는 동안 타이머만 계속 흐르면
         /// 스턴이 풀렸을 때 남은 대시가 되살아나 "맞고 나서 갑자기 튀어나가는" 그림이 된다.
@@ -99,7 +143,8 @@ namespace LOP
             //  맵이 수동 대시를 꺼 두면(FlappyMapRules.ManualDash == false) 다이브로는 한 칸도
             //  못 채운다 — 대시는 부스트 패드(Boost)로만 받는다. 마커가 없는 맵도 같다(필드 기본값이 꺼짐).
             //  rules == null은 규칙 없이 만든 테스트·도구뿐이고, 그때만 예전처럼 채운다.
-            if (rules != null && rules.ManualDash == false)
+            //  알갱이 맵이면 다이브도 쉰다 — 채우는 길이 둘이면 "붙을까 말까"의 무게가 흐려진다.
+            if (rules != null && (rules.ManualDash == false || rules.MoteCharge))
             {
                 return;
             }

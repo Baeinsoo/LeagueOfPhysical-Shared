@@ -51,5 +51,23 @@ namespace LOP.Tests
             Assert.IsFalse(field.Chaser);
             Assert.IsFalse(field.ManualDash);
         }
+
+        [Test]
+        public void 알갱이_충전은_기본_꺼짐이고_Clear하면_값도_기본으로_돌아간다()
+        {
+            var field = new FlappyMapRulesField();
+            Assert.IsFalse(field.MoteCharge);
+
+            field.Set(chaser: false, manualDash: true, moteCharge: true, moteValue: 0.5f, moteReach: 2f);
+            Assert.IsTrue(field.MoteCharge);
+            Assert.AreEqual(0.5f, field.MoteValue);
+            Assert.AreEqual(2f, field.MoteReach);
+
+            field.Clear();
+
+            Assert.IsFalse(field.MoteCharge);
+            Assert.AreEqual(FlappyMapRulesField.DefaultMoteValue, field.MoteValue);
+            Assert.AreEqual(FlappyMapRulesField.DefaultMoteReach, field.MoteReach);
+        }
     }
 }

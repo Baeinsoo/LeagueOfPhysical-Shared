@@ -27,13 +27,22 @@ namespace LOP
         /// <summary>다이브로 대시 게이지를 직접 채우나. 꺼져 있으면 부스트 패드로만 대시를 받는다.</summary>
         public bool ManualDash;
 
+        /// <summary>대시 게이지를 빛 알갱이(<see cref="FlappyMoteCluster"/>)로 채우나. 켜면 다이브 충전은 쉰다.</summary>
+        public bool MoteCharge;
+
+        /// <summary>알갱이 하나가 채우는 게이지(칸).</summary>
+        public float MoteValue = FlappyMapRulesField.DefaultMoteValue;
+
+        /// <summary>몸 표면에서 이만큼 안의 알갱이를 먹는다(m).</summary>
+        public float MoteReach = FlappyMapRulesField.DefaultMoteReach;
+
         private FlappyMapRulesField field;
 
         [Inject]
         public void Construct(FlappyMapRulesField field)
         {
             this.field = field;
-            field.Set(Chaser, ManualDash);
+            field.Set(Chaser, ManualDash, MoteCharge, MoteValue, MoteReach);
         }
 
         private void OnDestroy()

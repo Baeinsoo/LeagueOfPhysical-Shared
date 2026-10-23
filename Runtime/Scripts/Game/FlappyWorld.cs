@@ -38,6 +38,7 @@ namespace LOP
         private readonly FlappyLiftField _liftField;
         private readonly FlappyRockfallField _rockfallField;
         private readonly FlappyBoostPadField _boostPadField;
+        private readonly FlappyMoteField _moteField;
         private readonly ICollisionQuery _collisionQuery;
         private readonly GameFramework.World.IMotionBridge _motionBridge;
         private readonly int _layerMask;
@@ -77,7 +78,8 @@ namespace LOP
             FlappyPendulumField pendulumField = null,
             FlappyShutterField shutterField = null,
             FlappyLiftField liftField = null,
-            FlappyRockfallField rockfallField = null)
+            FlappyRockfallField rockfallField = null,
+            FlappyMoteField moteField = null)
             : base(entityRegistry, eventBuffer)
         {
             _moveSystem = moveSystem;
@@ -93,6 +95,7 @@ namespace LOP
             _shutterField = shutterField;
             _liftField = liftField;
             _rockfallField = rockfallField;
+            _moteField = moteField;
 
             int hologramLayer = LayerMask.NameToLayer(FlappyHologram.LayerName);
             _hologramMask = hologramLayer >= 0 ? 1 << hologramLayer : 0;
@@ -117,6 +120,7 @@ namespace LOP
                 for (int i = 0; i < _birds.Count; i++)
                 {
                     _birds[i].Get<GameFramework.World.Velocity>().Linear = System.Numerics.Vector3.Zero;
+                    _dashSystem.ResetForStart(_birds[i]);
                 }
                 return;
             }
@@ -140,7 +144,10 @@ namespace LOP
                 {
                     if (StruckByMover(_birds[i]))
                     {
-                        _stunSystem.Enter(_birds[i]);   // 이미 기절·무적이면 Enter가 무시한다
+                        if (_stunSystem.Enter(_birds[i]))   // 이미 기절·무적이면 Enter가 무시한다
+                        {
+                            _dashSystem.LoseOnStun(_birds[i]);
+                        }
                         _dashSystem.Cancel(_birds[i]);
                     }
                 }
@@ -187,8 +194,32 @@ namespace LOP
 
             for (int i = 0; i < _birds.Count; i++)
             {
+                var transform = _birds[i].Get<GameFramework.World.Transform>();
+                var before = transform != null ? transform.Position : default;
                 MoveBlockedByMap(_birds[i], deltaTime);
+                if (transform != null)
+                {
+                    CollectMotes(_birds[i], before, transform.Position);
+                }
             }
+        }
+
+        //  이번 틱에 지나간 구간에서 빛 알갱이를 먹는다. 이동이 다 끝난 자리로 보는 이유는 벽에 막혀
+        //  못 간 만큼은 지나간 게 아니기 때문이다. 스턴 중엔 전진이 0이라 저절로 아무것도 안 먹는다.
+        private void CollectMotes(GameFramework.World.Entity bird, System.Numerics.Vector3 before, System.Numerics.Vector3 after)
+        {
+            if (_moteField == null || _dashSystem.MoteCharge == false)
+            {
+                return;
+            }
+            var body = bird.Get<GameFramework.World.CapsuleShape>();
+            float radius = body?.Radius ?? 0f;
+            //  위치는 발밑이다 — 몸 중심으로 올려서 잰다(누운 몸은 반지름만큼, 선 몸은 키의 절반만큼. CapsuleEnds와 같은 식).
+            float lift = body == null ? 0f
+                : body.Axis == GameFramework.World.CapsuleAxis.X ? body.Radius : body.Height * 0.5f;
+            int count = _moteField.CountCrossed(before.X, before.Y + lift, after.X, after.Y + lift,
+                                                radius + _dashSystem.MoteReach);
+            _dashSystem.AddMotes(bird, count);
         }
 
         //  이동이 다 끝난 자리에서 본다. Mutation 안에 두면 한 틱 전 자리를 보고 통과를 한 틱
@@ -348,7 +379,10 @@ namespace LOP
             if (_hitTracker.SawHit)
             {
                 // 무적 중이면 Enter가 알아서 무시한다 — 여기선 "닿았다"만 알리면 된다.
-                _stunSystem.Enter(entity);
+                if (_stunSystem.Enter(entity))
+                {
+                    _dashSystem.LoseOnStun(entity);
+                }
                 // 대시는 무적 여부와 무관하게 끝난다 — 벽에 막힌 순간 수평 직선은 이미 깨졌다.
                 _dashSystem.Cancel(entity);
             }
