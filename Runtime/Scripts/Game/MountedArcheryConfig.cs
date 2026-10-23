@@ -13,15 +13,22 @@ namespace LOP
         public float ArrowMaxSpeed { get; }
         public float RiderEyeHeight { get; }
         public MountSettings Mount { get; }
+        public int MaxHp { get; }
+        public int ArrowDamage { get; }
+        public float LagCompMaxSeconds { get; }
 
         public MountedArcheryConfig(float matchDurationSeconds, float arrowMinSpeed, float arrowMaxSpeed,
-                                    float riderEyeHeight, MountSettings mount)
+                                    float riderEyeHeight, MountSettings mount,
+                                    int maxHp, int arrowDamage, float lagCompMaxSeconds)
         {
             MatchDurationSeconds = matchDurationSeconds;
             ArrowMinSpeed = arrowMinSpeed;
             ArrowMaxSpeed = arrowMaxSpeed;
             RiderEyeHeight = riderEyeHeight;
             Mount = mount;
+            MaxHp = maxHp;
+            ArrowDamage = arrowDamage;
+            LagCompMaxSeconds = lagCompMaxSeconds;
         }
 
         /// <summary>조준 시스템이 요구하는 큰 설정에서 활 값만 채운 것. 웨이브·흔들림 값은 쓰이지 않는다.</summary>
@@ -33,6 +40,10 @@ namespace LOP
             riseHeightMin: 0.1f, riseHeightMax: 0.1f, staggerTicks: 1, restTicks: 1,
             kinds: null,
             arrowMinSpeedMps: ArrowMinSpeed, arrowMaxSpeedMps: ArrowMaxSpeed);
+
+        /// <summary>되감기 상한(초)을 틱 수로. 이만큼보다 오래 전 모습으로는 판정하지 않는다.</summary>
+        public int LagCompMaxTicks(float tickInterval)
+            => (int)Math.Round(LagCompMaxSeconds / tickInterval);
 
         public long MatchDurationTicks(float tickInterval)
             => (long)Math.Round(MatchDurationSeconds / tickInterval);

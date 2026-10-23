@@ -16,7 +16,7 @@ namespace LOP.Tests
             sharpTurnDeg: 100f, sharpTurnSpeedFactor: 0.35f, drawSpeedFactor: 0.5f);
 
         public static readonly MountedArcheryConfig Config
-            = new MountedArcheryConfig(150f, 40f, 80f, EyeHeight, Settings);
+            = new MountedArcheryConfig(150f, 40f, 80f, EyeHeight, Settings, 100, 34, 0.5f);
 
         public static MountedArcheryWorld Make(EntityRegistry registry, bool turnBodyToAim = false,
                                                WorldEventBuffer eventBuffer = null)
@@ -54,6 +54,15 @@ namespace LOP.Tests
     {
         const float Dt = MountedArcheryWorldFixture.Dt;
         const long HoldTicks = 10;
+
+        [Test]
+        public void 설정이_되감기_상한을_틱으로_바꾼다()
+        {
+            var cfg = MountedArcheryWorldFixture.Config;
+            Assert.AreEqual(25, cfg.LagCompMaxTicks(0.02f));
+            Assert.AreEqual(100, cfg.MaxHp);
+            Assert.AreEqual(34, cfg.ArrowDamage);
+        }
 
         static (MountedArcheryWorld world, Entity rider) Make(bool turnBodyToAim = false, float yawDeg = 0f)
         {
