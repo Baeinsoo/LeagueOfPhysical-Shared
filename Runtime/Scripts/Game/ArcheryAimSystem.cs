@@ -11,9 +11,20 @@ namespace LOP
     {
         private readonly ArcheryConfig config;
 
-        public ArcheryAimSystem(ArcheryConfig config)
+        private readonly float eyeHeight;
+        private readonly bool turnBodyToAim;
+
+        public ArcheryAimSystem(ArcheryConfig config) : this(config, EyeHeight, true)
+        {
+        }
+
+        /// <param name="eyeHeight">화살이 떠나는 높이. 탈것 위 사수는 더 높다.</param>
+        /// <param name="turnBodyToAim">거짓이면 몸 회전을 건드리지 않는다 — 탈것이 몸의 방향을 정할 때.</param>
+        public ArcheryAimSystem(ArcheryConfig config, float eyeHeight, bool turnBodyToAim)
         {
             this.config = config;
+            this.eyeHeight = eyeHeight;
+            this.turnBodyToAim = turnBodyToAim;
         }
 
         /// <summary>살짝 당겼을 때의 화살 속도(m/s). 느리고 크게 휜다.</summary>
@@ -123,7 +134,7 @@ namespace LOP
             //
             //  고개 각도(Pitch)는 빼고 좌우(Yaw)만 쓴다 — 몸이 위아래로 눕지 않게.
             var transform = entity.Get<GameFramework.World.Transform>();
-            if (transform != null)
+            if (turnBodyToAim && transform != null)
             {
                 transform.Rotation = Quaternion.Euler(0f, aim.Yaw, 0f).ToNumerics();
             }
@@ -190,7 +201,7 @@ namespace LOP
 
             float speed = SpeedFor(drawAtRelease, config.ArrowMinSpeed, config.ArrowMaxSpeed);
             Vector3 origin = entity.Get<GameFramework.World.Transform>().Position.ToUnity()
-                           + new Vector3(0f, EyeHeight, 0f);
+                           + new Vector3(0f, eyeHeight, 0f);
 
             //  오래 당기고 있을수록, 많이 당길수록 손이 떨려 조준이 흔들린다 — 그 대가가 이
             //  발의 방향에 실제로 실려야 "오래·세게 버티면 위험하다"가 된다. drawAtRelease를
