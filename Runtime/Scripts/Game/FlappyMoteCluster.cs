@@ -25,6 +25,9 @@ namespace LOP
         /// <summary>금빛 큰 무더기(벽에 바짝 몰린 것)인가. 그림만 다르다.</summary>
         public bool Big;
 
+        /// <summary>붙은 관문 틈의 반 높이(m). 마커 자리가 틈 중심이다. 그림(빛 띠)만 쓴다 — 0이면 띠를 안 그린다.</summary>
+        public float GapHalf;
+
         private FlappyMoteField field;
         private FlappyMoteSet set;
 
@@ -40,7 +43,7 @@ namespace LOP
                 xs[i] = origin.x + Points[i].x;
                 ys[i] = origin.y + Points[i].y;
             }
-            set = new FlappyMoteSet(xs, ys, Big);
+            set = new FlappyMoteSet(xs, ys, Big, origin.x, origin.y, GapHalf);
             field.Add(set);
         }
 
