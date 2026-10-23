@@ -69,30 +69,48 @@ namespace LOP
         /// <summary>이 맵이 대시 게이지를 빛 알갱이로 채우나(<see cref="FlappyMapRulesField.MoteCharge"/>).</summary>
         public bool MoteCharge => rules != null && rules.MoteCharge;
 
+        /// <summary>이 맵이 새 다이브 충전을 쓰나(<see cref="FlappyMapRulesField.DiveCharge"/>).</summary>
+        public bool DiveCharge => rules != null && rules.DiveCharge;
+
+        //  새 게이지 규칙(알갱이·새 다이브)을 쓰는 맵: 출발 0, 박으면 채우던 칸만 잃는다. 클래식 맵은 예전대로.
+        private bool EarnedGauge => MoteCharge || DiveCharge;
+
         /// <summary>몸 표면에서 이만큼 안의 알갱이를 먹는다(m).</summary>
         public float MoteReach => rules?.MoteReach ?? FlappyMapRulesField.DefaultMoteReach;
 
-        /// <summary>알갱이 <paramref name="count"/>개를 먹었다. 알갱이 맵이 아니면 아무 일도 없다.</summary>
+        /// <summary>알갱이 <paramref name="count"/>개를 먹었다. 알갱이 맵이 아니면 아무 일도 없다.
+        /// 다이브 맵이 알갱이도 켜 두면(마커 조합 실수) 다이브가 이긴다 — 채우는 길이 둘이면 판단이 흐려진다.</summary>
         public void AddMotes(GameFramework.World.Entity entity, int count)
         {
             var dash = entity.Get<FlappyDash>();
-            if (dash == null || count <= 0 || MoteCharge == false)
+            if (dash == null || count <= 0 || MoteCharge == false || DiveCharge)
             {
                 return;
             }
-            dash.Charge = System.Math.Min(FlappyDash.MaxCharge, dash.Charge + count * rules.MoteValue);
+            AddCharge(dash, count * rules.MoteValue);
+        }
+
+        //  게이지를 더하고 상한에서 멈춘다. 1/24처럼 2진수로 안 떨어지는 값을 나눠 더하면 칸 경계 바로 아래(1.9999998)에
+        //  멈춘다 — 그러면 찬 칸이 내림으로 사라지고, 한 칸이 덜 보이고, 버튼이 안 나간다. 경계에 아주 가까우면 정확히 그 칸으로
+        //  맞춘다. 클·서가 같은 식이라 결과도 같다.
+        private static void AddCharge(FlappyDash dash, float amount)
+        {
+            float charge = System.Math.Min(FlappyDash.MaxCharge, dash.Charge + amount);
+            float slot = (float)System.Math.Round(charge);
+            dash.Charge = System.Math.Abs(charge - slot) < 1e-4f ? slot : charge;
         }
 
         /// <summary>
-        /// 스턴이 실제로 걸렸을 때. 알갱이 맵이면 게이지를 절반 잃는다 — 다 잃으면 아껴 둔 게 바보가 되고,
-        /// 안 잃으면 벽에 붙는 위험이 사라진다. 다이브 맵은 예전처럼 안 잃는다.
+        /// 스턴이 실제로 걸렸을 때. 알갱이 맵이면 <b>채우던 칸만</b> 잃고 이미 찬 칸은 지킨다. 다이브 맵은 예전처럼 안 잃는다.
+        /// <para>10-23 사람 판: 전체 절반을 잃게 했더니 도전적으로 붙을수록 자주 박아 게이지가 한 번도 안 찼다.
+        /// 모은 칸을 지키면 "칸이 찼으니 쓸까, 아껴서 하나 더 모을까"가 살아난다.</para>
         /// </summary>
         public void LoseOnStun(GameFramework.World.Entity entity)
         {
             var dash = entity.Get<FlappyDash>();
-            if (dash != null && MoteCharge)
+            if (dash != null && EarnedGauge)
             {
-                dash.Charge *= 0.5f;
+                dash.Charge = (float)System.Math.Floor(dash.Charge);
             }
         }
 
@@ -104,7 +122,7 @@ namespace LOP
         public void ResetForStart(GameFramework.World.Entity entity)
         {
             var dash = entity.Get<FlappyDash>();
-            if (dash != null && MoteCharge)
+            if (dash != null && EarnedGauge)
             {
                 dash.Charge = 0f;
             }
@@ -143,6 +161,24 @@ namespace LOP
             //  맵이 수동 대시를 꺼 두면(FlappyMapRules.ManualDash == false) 다이브로는 한 칸도
             //  못 채운다 — 대시는 부스트 패드(Boost)로만 받는다. 마커가 없는 맵도 같다(필드 기본값이 꺼짐).
             //  rules == null은 규칙 없이 만든 테스트·도구뿐이고, 그때만 예전처럼 채운다.
+            //  새 다이브 충전(spec 2026-10-23-flappy-dive-charge): 문턱 = 최고 낙하 × 비율 — 옛 문턱(MasterData 23.2)은
+            //  원조 물리의 최고 낙하(11.25)로 넘을 수 없어 광산에선 영영 안 찼다. 대시 중이면 안 찬다(수평 직선이라 어차피 0).
+            if (DiveCharge)
+            {
+                //  버튼이 숨겨진 맵(수동 대시 끔)에선 쓸 수 없는 게이지라 안 채운다. 스턴 중이면 안 채운다 — 박은 다음 틱엔
+                //  월드가 속도를 0으로 지우기 전에 이 틱이 지난 속도를 읽어, "채우던 칸만 잃는다"가 한 틱 만에 깨졌다(재리뷰 10-23).
+                bool stunned = (entity.Get<FlappyStun>()?.StunRemaining ?? 0f) > 0f;
+                float fall = -(entity.Get<GameFramework.World.Velocity>()?.Linear.Y ?? 0f);
+                float min = config.MaxFallSpeed * rules.DiveMinFallRatio;
+                if (rules.ManualDash == false || stunned || dash.DashRemaining > 0f || fall < min || config.MaxFallSpeed <= min)
+                {
+                    return;
+                }
+                float k = System.Math.Min(1f, (fall - min) / (config.MaxFallSpeed - min));
+                AddCharge(dash, rules.DiveRate * (0.4f + 0.6f * k) * deltaTime);
+                return;
+            }
+
             //  알갱이 맵이면 다이브도 쉰다 — 채우는 길이 둘이면 "붙을까 말까"의 무게가 흐려진다.
             if (rules != null && (rules.ManualDash == false || rules.MoteCharge))
             {
