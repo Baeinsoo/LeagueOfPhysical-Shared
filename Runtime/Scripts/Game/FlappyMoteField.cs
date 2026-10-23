@@ -14,11 +14,20 @@ namespace LOP
         /// <summary>금빛 큰 무더기인가. 판정에는 안 쓰고 그림만 다르게 그린다.</summary>
         public readonly bool Big;
 
-        public FlappyMoteSet(float[] xs, float[] ys, bool big)
+        /// <summary>
+        /// 붙은 관문의 틈 중심(x, y)과 틈의 반 높이. 그림만 쓴다 — 알갱이가 어느 끝(위·아래)에 붙었는지와
+        /// 그 끝의 높이를 알아야 빛 띠를 벽에 붙여 그릴 수 있다. 반 높이 0이면 모름(띠를 안 그린다).
+        /// </summary>
+        public readonly float OriginX, OriginY, GapHalf;
+
+        public FlappyMoteSet(float[] xs, float[] ys, bool big, float originX = 0f, float originY = 0f, float gapHalf = 0f)
         {
             Xs = xs;
             Ys = ys;
             Big = big;
+            OriginX = originX;
+            OriginY = originY;
+            GapHalf = gapHalf;
         }
 
         public int Count => Xs.Length;
