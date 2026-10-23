@@ -22,17 +22,17 @@ public static partial class InputCommandReflection {
   static InputCommandReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChJJbnB1dENvbW1hbmQucHJvdG8ihwIKDElucHV0Q29tbWFuZBIXCg9zZXF1",
+          "ChJJbnB1dENvbW1hbmQucHJvdG8imgIKDElucHV0Q29tbWFuZBIXCg9zZXF1",
           "ZW5jZV9udW1iZXIYASABKAMSEgoKaG9yaXpvbnRhbBgCIAEoAhIQCgh2ZXJ0",
           "aWNhbBgDIAEoAhIMCgRqdW1wGAQgASgIEhIKCmFiaWxpdHlfaWQYBiABKAUS",
           "DwoHcG9zdHVyZRgHIAEoAhINCgVnbGlkZRgIIAEoCBIOCgZwb3NpbmcYCSAB",
           "KAgSDAoEZGFzaBgKIAEoCBIPCgdhaW1feWF3GAsgASgCEhEKCWFpbV9waXRj",
           "aBgMIAEoAhIPCgdkcmF3aW5nGA0gASgIEg8KB3JlbGVhc2UYDiABKAgSEgoK",
-          "ZHJhd19yYXRpbxgPIAEoAmIGcHJvdG8z"));
+          "ZHJhd19yYXRpbxgPIAEoAhIRCgl2aWV3X3RpY2sYECABKANiBnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::InputCommand), global::InputCommand.Parser, new[]{ "SequenceNumber", "Horizontal", "Vertical", "Jump", "AbilityId", "Posture", "Glide", "Posing", "Dash", "AimYaw", "AimPitch", "Drawing", "Release", "DrawRatio" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::InputCommand), global::InputCommand.Parser, new[]{ "SequenceNumber", "Horizontal", "Vertical", "Jump", "AbilityId", "Posture", "Glide", "Posing", "Dash", "AimYaw", "AimPitch", "Drawing", "Release", "DrawRatio", "ViewTick" }, null, null, null, null)
         }));
   }
   #endregion
@@ -88,6 +88,7 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     drawing_ = other.drawing_;
     release_ = other.release_;
     drawRatio_ = other.drawRatio_;
+    viewTick_ = other.viewTick_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -296,6 +297,22 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     }
   }
 
+  /// <summary>Field number for the "view_tick" field.</summary>
+  public const int ViewTickFieldNumber = 16;
+  private long viewTick_;
+  /// <summary>
+  /// MountedArchery: 이 입력을 만든 순간 쏜 사람 화면이 보던 틱(소수 버림). 서버가 래그 보상 폭을
+  /// 정하는 데 쓴다. 0이면 알 수 없음(되감지 않는다).
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long ViewTick {
+    get { return viewTick_; }
+    set {
+      viewTick_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -325,6 +342,7 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     if (Drawing != other.Drawing) return false;
     if (Release != other.Release) return false;
     if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(DrawRatio, other.DrawRatio)) return false;
+    if (ViewTick != other.ViewTick) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -346,6 +364,7 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     if (Drawing != false) hash ^= Drawing.GetHashCode();
     if (Release != false) hash ^= Release.GetHashCode();
     if (DrawRatio != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(DrawRatio);
+    if (ViewTick != 0L) hash ^= ViewTick.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -420,6 +439,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
       output.WriteRawTag(125);
       output.WriteFloat(DrawRatio);
     }
+    if (ViewTick != 0L) {
+      output.WriteRawTag(128, 1);
+      output.WriteInt64(ViewTick);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -486,6 +509,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
       output.WriteRawTag(125);
       output.WriteFloat(DrawRatio);
     }
+    if (ViewTick != 0L) {
+      output.WriteRawTag(128, 1);
+      output.WriteInt64(ViewTick);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -537,6 +564,9 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     }
     if (DrawRatio != 0F) {
       size += 1 + 4;
+    }
+    if (ViewTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(ViewTick);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -591,6 +621,9 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     }
     if (other.DrawRatio != 0F) {
       DrawRatio = other.DrawRatio;
+    }
+    if (other.ViewTick != 0L) {
+      ViewTick = other.ViewTick;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -667,6 +700,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
           DrawRatio = input.ReadFloat();
           break;
         }
+        case 128: {
+          ViewTick = input.ReadInt64();
+          break;
+        }
       }
     }
   #endif
@@ -740,6 +777,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
         }
         case 125: {
           DrawRatio = input.ReadFloat();
+          break;
+        }
+        case 128: {
+          ViewTick = input.ReadInt64();
           break;
         }
       }

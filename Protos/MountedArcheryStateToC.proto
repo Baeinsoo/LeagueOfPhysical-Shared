@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+// 활쏘기(말 타기) 판의 플레이어 한 명 상태.
+message MountedArcheryPlayerWire
+{
+	string entity_id = 1;
+	// 탈락 안 했으면 -1
+	int64 eliminated_tick = 2;
+	// 처치자 엔티티. 원 밖 피해 등 처치자가 없으면 빈 문자열
+	string killer_entity_id = 3;
+	// 킬 피드용 — 몸이 디스폰돼도 이름이 남게 싣는다
+	string display_name = 4;
+}
+
+// 말 타고 활쏘기 판 상태 전체(서버 → 클라). 사건이 아니라 상태로 보낸다 — 끊겼다 돌아온 사람도 받는 즉시 맞춰진다.
+// @auto_generate
+message MountedArcheryStateToC
+{
+	// 받는 쪽은 자기가 가진 판본보다 작으면 버린다(늦게 도착한 낡은 소식).
+	int32 version = 1;
+	repeated MountedArcheryPlayerWire players = 2;
+}
