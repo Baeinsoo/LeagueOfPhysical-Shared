@@ -235,6 +235,38 @@ namespace LOP.Tests
             Assert.AreEqual(0f, bird.Get<FlappyDash>().Charge);
         }
 
+        //  움직이는 무더기(승강기 위): 진폭 1 m, 주기 2초, 위상 90° — 틱 0에서 +1 m, 1초(50틱)마다 반대.
+        static FlappyMoteField MovingMote(float x, float baseY)
+        {
+            var field = new FlappyMoteField();
+            field.Add(new FlappyMoteSet(new[] { x }, new[] { baseY }, big: false,
+                                        moveAmplitude: 1f, movePeriod: 2f, movePhase: 90f));
+            return field;
+        }
+
+        [Test]
+        public void 움직이는_알갱이는_그_틱의_높이로_판정한다()
+        {
+            //  새 몸 중심 ≈ 0.42(발밑 0). 알갱이 원래 높이 -0.55: 오프셋 +1이면 0.45(닿음), -1이면 -1.55(안 닿음).
+            var registry = new EntityRegistry();
+            var bird = Bird(registry);
+            var world = World(registry, MovingMote(0.1f, -0.55f), Rules());
+            world.Tick(100, Dt);   // 100틱 = 2초 = 한 주기 → 오프셋 +1
+
+            Assert.AreEqual(FlappyMapRulesField.DefaultMoteValue, bird.Get<FlappyDash>().Charge, 1e-6f);
+        }
+
+        [Test]
+        public void 움직이는_알갱이가_반대편에_있으면_안_먹는다()
+        {
+            var registry = new EntityRegistry();
+            var bird = Bird(registry);
+            var world = World(registry, MovingMote(0.1f, -0.55f), Rules());
+            world.Tick(50, Dt);    // 50틱 = 1초 = 반 주기 → 오프셋 -1
+
+            Assert.AreEqual(0f, bird.Get<FlappyDash>().Charge, 1e-6f);
+        }
+
         [Test]
         public void 알갱이_맵이_아니면_출발_게이지는_그대로다()
         {
