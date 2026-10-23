@@ -80,7 +80,12 @@ namespace LOP
             {
                 return;
             }
-            dash.Charge = System.Math.Min(FlappyDash.MaxCharge, dash.Charge + count * rules.MoteValue);
+            float charge = System.Math.Min(FlappyDash.MaxCharge, dash.Charge + count * rules.MoteValue);
+            //  1/24처럼 2진수로 안 떨어지는 값을 나눠 더하면 칸 경계 바로 아래(1.9999998)에 멈춘다 — 그러면 찬 칸이
+            //  내림으로 사라지고, 한 칸이 덜 보이고, 버튼이 안 나간다. 경계에 아주 가까우면 정확히 그 칸으로 맞춘다.
+            //  클·서가 같은 식이라 결과도 같다.
+            float slot = (float)System.Math.Round(charge);
+            dash.Charge = System.Math.Abs(charge - slot) < 1e-4f ? slot : charge;
         }
 
         /// <summary>
