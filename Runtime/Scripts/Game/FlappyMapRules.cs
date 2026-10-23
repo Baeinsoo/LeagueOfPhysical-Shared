@@ -36,13 +36,22 @@ namespace LOP
         /// <summary>몸 표면에서 이만큼 안의 알갱이를 먹는다(m).</summary>
         public float MoteReach = FlappyMapRulesField.DefaultMoteReach;
 
+        /// <summary>날갯짓을 참고 빠르게 떨어지는 동안 대시 게이지가 차나(새 다이브 충전).</summary>
+        public bool DiveCharge;
+
+        /// <summary>다이브 충전 문턱 = 최고 낙하 × 이 비율.</summary>
+        public float DiveMinFallRatio = FlappyMapRulesField.DefaultDiveMinFallRatio;
+
+        /// <summary>최고 낙하로 떨어질 때 초당 차는 칸.</summary>
+        public float DiveRate = FlappyMapRulesField.DefaultDiveRate;
+
         private FlappyMapRulesField field;
 
         [Inject]
         public void Construct(FlappyMapRulesField field)
         {
             this.field = field;
-            field.Set(Chaser, ManualDash, MoteCharge, MoteValue, MoteReach);
+            field.Set(Chaser, ManualDash, MoteCharge, MoteValue, MoteReach, DiveCharge, DiveMinFallRatio, DiveRate);
         }
 
         private void OnDestroy()

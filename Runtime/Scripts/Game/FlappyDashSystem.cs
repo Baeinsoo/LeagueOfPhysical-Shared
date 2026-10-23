@@ -69,6 +69,12 @@ namespace LOP
         /// <summary>이 맵이 대시 게이지를 빛 알갱이로 채우나(<see cref="FlappyMapRulesField.MoteCharge"/>).</summary>
         public bool MoteCharge => rules != null && rules.MoteCharge;
 
+        /// <summary>이 맵이 새 다이브 충전을 쓰나(<see cref="FlappyMapRulesField.DiveCharge"/>).</summary>
+        public bool DiveCharge => rules != null && rules.DiveCharge;
+
+        //  새 게이지 규칙(알갱이·새 다이브)을 쓰는 맵: 출발 0, 박으면 채우던 칸만 잃는다. 클래식 맵은 예전대로.
+        private bool EarnedGauge => MoteCharge || DiveCharge;
+
         /// <summary>몸 표면에서 이만큼 안의 알갱이를 먹는다(m).</summary>
         public float MoteReach => rules?.MoteReach ?? FlappyMapRulesField.DefaultMoteReach;
 
@@ -80,10 +86,15 @@ namespace LOP
             {
                 return;
             }
-            float charge = System.Math.Min(FlappyDash.MaxCharge, dash.Charge + count * rules.MoteValue);
-            //  1/24처럼 2진수로 안 떨어지는 값을 나눠 더하면 칸 경계 바로 아래(1.9999998)에 멈춘다 — 그러면 찬 칸이
-            //  내림으로 사라지고, 한 칸이 덜 보이고, 버튼이 안 나간다. 경계에 아주 가까우면 정확히 그 칸으로 맞춘다.
-            //  클·서가 같은 식이라 결과도 같다.
+            AddCharge(dash, count * rules.MoteValue);
+        }
+
+        //  게이지를 더하고 상한에서 멈춘다. 1/24처럼 2진수로 안 떨어지는 값을 나눠 더하면 칸 경계 바로 아래(1.9999998)에
+        //  멈춘다 — 그러면 찬 칸이 내림으로 사라지고, 한 칸이 덜 보이고, 버튼이 안 나간다. 경계에 아주 가까우면 정확히 그 칸으로
+        //  맞춘다. 클·서가 같은 식이라 결과도 같다.
+        private static void AddCharge(FlappyDash dash, float amount)
+        {
+            float charge = System.Math.Min(FlappyDash.MaxCharge, dash.Charge + amount);
             float slot = (float)System.Math.Round(charge);
             dash.Charge = System.Math.Abs(charge - slot) < 1e-4f ? slot : charge;
         }
@@ -96,7 +107,7 @@ namespace LOP
         public void LoseOnStun(GameFramework.World.Entity entity)
         {
             var dash = entity.Get<FlappyDash>();
-            if (dash != null && MoteCharge)
+            if (dash != null && EarnedGauge)
             {
                 dash.Charge = (float)System.Math.Floor(dash.Charge);
             }
@@ -110,7 +121,7 @@ namespace LOP
         public void ResetForStart(GameFramework.World.Entity entity)
         {
             var dash = entity.Get<FlappyDash>();
-            if (dash != null && MoteCharge)
+            if (dash != null && EarnedGauge)
             {
                 dash.Charge = 0f;
             }
@@ -149,6 +160,21 @@ namespace LOP
             //  맵이 수동 대시를 꺼 두면(FlappyMapRules.ManualDash == false) 다이브로는 한 칸도
             //  못 채운다 — 대시는 부스트 패드(Boost)로만 받는다. 마커가 없는 맵도 같다(필드 기본값이 꺼짐).
             //  rules == null은 규칙 없이 만든 테스트·도구뿐이고, 그때만 예전처럼 채운다.
+            //  새 다이브 충전(spec 2026-10-23-flappy-dive-charge): 문턱 = 최고 낙하 × 비율 — 옛 문턱(MasterData 23.2)은
+            //  원조 물리의 최고 낙하(11.25)로 넘을 수 없어 광산에선 영영 안 찼다. 대시 중이면 안 찬다(수평 직선이라 어차피 0).
+            if (DiveCharge)
+            {
+                float fall = -(entity.Get<GameFramework.World.Velocity>()?.Linear.Y ?? 0f);
+                float min = config.MaxFallSpeed * rules.DiveMinFallRatio;
+                if (dash.DashRemaining > 0f || fall < min || config.MaxFallSpeed <= min)
+                {
+                    return;
+                }
+                float k = System.Math.Min(1f, (fall - min) / (config.MaxFallSpeed - min));
+                AddCharge(dash, rules.DiveRate * (0.4f + 0.6f * k) * deltaTime);
+                return;
+            }
+
             //  알갱이 맵이면 다이브도 쉰다 — 채우는 길이 둘이면 "붙을까 말까"의 무게가 흐려진다.
             if (rules != null && (rules.ManualDash == false || rules.MoteCharge))
             {
