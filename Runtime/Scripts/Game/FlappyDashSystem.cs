@@ -84,15 +84,16 @@ namespace LOP
         }
 
         /// <summary>
-        /// 스턴이 실제로 걸렸을 때. 알갱이 맵이면 게이지를 절반 잃는다 — 다 잃으면 아껴 둔 게 바보가 되고,
-        /// 안 잃으면 벽에 붙는 위험이 사라진다. 다이브 맵은 예전처럼 안 잃는다.
+        /// 스턴이 실제로 걸렸을 때. 알갱이 맵이면 <b>채우던 칸만</b> 잃고 이미 찬 칸은 지킨다. 다이브 맵은 예전처럼 안 잃는다.
+        /// <para>10-23 사람 판: 전체 절반을 잃게 했더니 도전적으로 붙을수록 자주 박아 게이지가 한 번도 안 찼다.
+        /// 모은 칸을 지키면 "칸이 찼으니 쓸까, 아껴서 하나 더 모을까"가 살아난다.</para>
         /// </summary>
         public void LoseOnStun(GameFramework.World.Entity entity)
         {
             var dash = entity.Get<FlappyDash>();
             if (dash != null && MoteCharge)
             {
-                dash.Charge *= 0.5f;
+                dash.Charge = (float)System.Math.Floor(dash.Charge);
             }
         }
 

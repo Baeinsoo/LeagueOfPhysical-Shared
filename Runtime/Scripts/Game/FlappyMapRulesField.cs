@@ -9,8 +9,8 @@ namespace LOP
     /// </summary>
     public class FlappyMapRulesField
     {
-        /// <summary>알갱이 하나가 채우는 게이지(칸). 32알 = 1칸 — 웹 시제품에서 정한 값.</summary>
-        public const float DefaultMoteValue = 1f / 32f;
+        /// <summary>알갱이 하나가 채우는 게이지(칸). 24알 = 1칸 — 웹 시제품은 32였고, 10-23 사람 판("게이지가 한 번도 안 찼다")으로 올렸다.</summary>
+        public const float DefaultMoteValue = 1f / 24f;
 
         /// <summary>몸 표면에서 이만큼 안의 알갱이를 먹는다(m). 웹 시제품에서 정한 값.</summary>
         public const float DefaultMoteReach = 0.5f;
@@ -21,7 +21,7 @@ namespace LOP
 
         /// <summary>
         /// 대시 게이지를 다이브 대신 빛 알갱이(<see cref="FlappyMoteField"/>)로 채우나.
-        /// 켜지면 다이브 충전은 쉬고, 출발 게이지는 0, 박으면 게이지를 절반 잃는다.
+        /// 켜지면 다이브 충전은 쉬고, 출발 게이지는 0, 박으면 채우던 칸만 잃는다(찬 칸은 지킨다).
         /// </summary>
         public bool MoteCharge { get; private set; }
 
