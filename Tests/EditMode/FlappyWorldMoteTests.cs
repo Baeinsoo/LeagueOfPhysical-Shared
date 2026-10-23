@@ -199,6 +199,29 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 알갱이를_여러_틱에_나눠_모아도_칸_경계에_정확히_닿는다()
+        {
+            //  1/24는 2진수로 딱 떨어지지 않는다 — 나눠 더하면 2.0이 아니라 1.9999991에 멈춰, 찬 칸을 잃고(내림)
+            //  HUD엔 한 칸이 덜 보이고 버튼이 안 나간다(리뷰 10-23). 실제 경로(AddMotes)로 쪼개 더한다.
+            var dash = new FlappyDashSystem(FlappyWorldFixture.Config(), Rules());
+            var bird = FlappyWorldFixture.Bird("bird-1");
+            bird.Get<FlappyDash>().Charge = 0f;
+            int[] chunks = { 3, 5, 1, 4, 2, 5, 3, 1 };   // 24알
+            foreach (int n in chunks) { dash.AddMotes(bird, n); }
+            Assert.AreEqual(1f, bird.Get<FlappyDash>().Charge, 0f, "24알 = 정확히 1칸");
+            Assert.IsTrue(dash.TryActivate(bird), "한 칸이면 대시가 나가야 한다");
+
+            bird.Get<FlappyDash>().Charge = 0f;
+            bird.Get<FlappyDash>().DashRemaining = 0f;
+            //  float32로 계산해 보면 이 순서로 48알을 모을 때 1.9999998에 멈춘다(고치기 전).
+            int[] chunks48 = { 2, 5, 1, 3, 1, 4, 4, 4, 4, 2, 1, 4, 1, 4, 4, 4 };
+            foreach (int n in chunks48) { dash.AddMotes(bird, n); }
+            Assert.AreEqual(2f, bird.Get<FlappyDash>().Charge, 0f, "48알 = 정확히 2칸");
+            dash.LoseOnStun(bird);
+            Assert.AreEqual(2f, bird.Get<FlappyDash>().Charge, 0f, "찬 칸은 지킨다");
+        }
+
+        [Test]
         public void 칸을_못_채운_채_박으면_0이_되고_두_칸이면_그대로다()
         {
             foreach (var (before, after) in new[] { (0.7f, 0f), (2f, 2f) })
