@@ -78,11 +78,12 @@ namespace LOP
         /// <summary>몸 표면에서 이만큼 안의 알갱이를 먹는다(m).</summary>
         public float MoteReach => rules?.MoteReach ?? FlappyMapRulesField.DefaultMoteReach;
 
-        /// <summary>알갱이 <paramref name="count"/>개를 먹었다. 알갱이 맵이 아니면 아무 일도 없다.</summary>
+        /// <summary>알갱이 <paramref name="count"/>개를 먹었다. 알갱이 맵이 아니면 아무 일도 없다.
+        /// 다이브 맵이 알갱이도 켜 두면(마커 조합 실수) 다이브가 이긴다 — 채우는 길이 둘이면 판단이 흐려진다.</summary>
         public void AddMotes(GameFramework.World.Entity entity, int count)
         {
             var dash = entity.Get<FlappyDash>();
-            if (dash == null || count <= 0 || MoteCharge == false)
+            if (dash == null || count <= 0 || MoteCharge == false || DiveCharge)
             {
                 return;
             }
@@ -164,9 +165,12 @@ namespace LOP
             //  원조 물리의 최고 낙하(11.25)로 넘을 수 없어 광산에선 영영 안 찼다. 대시 중이면 안 찬다(수평 직선이라 어차피 0).
             if (DiveCharge)
             {
+                //  버튼이 숨겨진 맵(수동 대시 끔)에선 쓸 수 없는 게이지라 안 채운다. 스턴 중이면 안 채운다 — 박은 다음 틱엔
+                //  월드가 속도를 0으로 지우기 전에 이 틱이 지난 속도를 읽어, "채우던 칸만 잃는다"가 한 틱 만에 깨졌다(재리뷰 10-23).
+                bool stunned = (entity.Get<FlappyStun>()?.StunRemaining ?? 0f) > 0f;
                 float fall = -(entity.Get<GameFramework.World.Velocity>()?.Linear.Y ?? 0f);
                 float min = config.MaxFallSpeed * rules.DiveMinFallRatio;
-                if (dash.DashRemaining > 0f || fall < min || config.MaxFallSpeed <= min)
+                if (rules.ManualDash == false || stunned || dash.DashRemaining > 0f || fall < min || config.MaxFallSpeed <= min)
                 {
                     return;
                 }
