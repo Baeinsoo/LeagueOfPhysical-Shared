@@ -36,6 +36,14 @@ namespace LOP
         {
             this.field = field;
             Vector3 origin = transform.position;
+            //  승강기 케이지 자식이면 케이지와 같이 움직인다. 원래 자리는 케이지의 지금 오프셋을 빼고 잡는다
+            //  (올라올 때 케이지가 이미 세워져 있어도 같은 원점이 되게).
+            var lift = GetComponentInParent<FlappyLift>();
+            bool moving = lift != null && lift.Cage != null && transform.IsChildOf(lift.Cage);
+            if (moving)
+            {
+                origin.y -= lift.Cage.localPosition.y;
+            }
             var xs = new float[Points.Length];
             var ys = new float[Points.Length];
             for (int i = 0; i < Points.Length; i++)
@@ -43,7 +51,14 @@ namespace LOP
                 xs[i] = origin.x + Points[i].x;
                 ys[i] = origin.y + Points[i].y;
             }
-            set = new FlappyMoteSet(xs, ys, Big, origin.x, origin.y, GapHalf);
+            set = moving
+                ? new FlappyMoteSet(xs, ys, Big, origin.x, origin.y, GapHalf, lift.Amplitude, lift.Period, lift.Phase)
+                : new FlappyMoteSet(xs, ys, Big, origin.x, origin.y, GapHalf);
+            if (moving)
+            {
+                var cage = lift.Cage;
+                set.VisualOffset = () => cage != null ? cage.localPosition.y : 0f;
+            }
             field.Add(set);
         }
 

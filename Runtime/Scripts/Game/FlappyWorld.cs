@@ -199,14 +199,15 @@ namespace LOP
                 MoveBlockedByMap(_birds[i], deltaTime);
                 if (transform != null)
                 {
-                    CollectMotes(_birds[i], before, transform.Position);
+                    CollectMotes(_birds[i], before, transform.Position, tick, deltaTime);
                 }
             }
         }
 
         //  이번 틱에 지나간 구간에서 빛 알갱이를 먹는다. 이동이 다 끝난 자리로 보는 이유는 벽에 막혀
         //  못 간 만큼은 지나간 게 아니기 때문이다. 스턴 중엔 전진이 0이라 저절로 아무것도 안 먹는다.
-        private void CollectMotes(GameFramework.World.Entity bird, System.Numerics.Vector3 before, System.Numerics.Vector3 after)
+        private void CollectMotes(GameFramework.World.Entity bird, System.Numerics.Vector3 before, System.Numerics.Vector3 after,
+                                  long tick, float deltaTime)
         {
             if (_moteField == null || _dashSystem.MoteCharge == false)
             {
@@ -217,8 +218,9 @@ namespace LOP
             //  위치는 발밑이다 — 몸 중심으로 올려서 잰다(누운 몸은 반지름만큼, 선 몸은 키의 절반만큼. CapsuleEnds와 같은 식).
             float lift = body == null ? 0f
                 : body.Axis == GameFramework.World.CapsuleAxis.X ? body.Radius : body.Height * 0.5f;
+            //  움직이는 무더기(승강기 위)는 이번 틱의 높이로 — 승강기가 이번 틱에 서 있는 그 자리다.
             int count = _moteField.CountCrossed(before.X, before.Y + lift, after.X, after.Y + lift,
-                                                radius + _dashSystem.MoteReach);
+                                                radius + _dashSystem.MoteReach, tick, deltaTime);
             _dashSystem.AddMotes(bird, count);
         }
 
