@@ -183,18 +183,31 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 박아서_스턴이_걸리면_게이지_절반을_잃는다()
+        public void 박아서_스턴이_걸리면_채우던_칸만_잃고_찬_칸은_지킨다()
         {
+            //  10-23 사람 판: 전체 절반을 잃으니 도전적으로 붙을수록 게이지가 한 번도 안 찼다 → 모은 칸은 지킨다.
             var registry = new EntityRegistry();
-            var bird = Bird(registry, charge: 1.2f);
+            var bird = Bird(registry, charge: 1.7f);
             var world = World(registry, new FlappyMoteField(), Rules(), new FlappyWorldFixture.AlwaysHit());
 
             world.Tick(1, Dt);
             Assert.Greater(bird.Get<FlappyStun>().StunRemaining, 0f, "전제: 스턴이 걸렸다");
-            Assert.AreEqual(0.6f, bird.Get<FlappyDash>().Charge, 1e-6f);
+            Assert.AreEqual(1f, bird.Get<FlappyDash>().Charge, 1e-6f);
 
             world.Tick(2, Dt);   // 이미 스턴 중 — 또 닿아도 다시 잃지 않는다
-            Assert.AreEqual(0.6f, bird.Get<FlappyDash>().Charge, 1e-6f);
+            Assert.AreEqual(1f, bird.Get<FlappyDash>().Charge, 1e-6f);
+        }
+
+        [Test]
+        public void 칸을_못_채운_채_박으면_0이_되고_두_칸이면_그대로다()
+        {
+            foreach (var (before, after) in new[] { (0.7f, 0f), (2f, 2f) })
+            {
+                var registry = new EntityRegistry();
+                var bird = Bird(registry, charge: before);
+                World(registry, new FlappyMoteField(), Rules(), new FlappyWorldFixture.AlwaysHit()).Tick(1, Dt);
+                Assert.AreEqual(after, bird.Get<FlappyDash>().Charge, 1e-6f, $"{before}에서 박음");
+            }
         }
 
         [Test]

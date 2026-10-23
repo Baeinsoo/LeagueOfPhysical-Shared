@@ -57,6 +57,7 @@ namespace LOP.Tests
         {
             var field = new FlappyMapRulesField();
             Assert.IsFalse(field.MoteCharge);
+            Assert.AreEqual(1f / 24f, FlappyMapRulesField.DefaultMoteValue, 1e-7f, "10-23 사람 판: 24알 = 1칸");
 
             field.Set(chaser: false, manualDash: true, moteCharge: true, moteValue: 0.5f, moteReach: 2f);
             Assert.IsTrue(field.MoteCharge);
