@@ -79,13 +79,33 @@ namespace LOP.Tests
         [Test]
         public void 칸_경계_바로_아래에_멈추지_않는다()
         {
-            //  최고 낙하로 한 칸을 채울 때 틱마다 더한 값이 0.99999…에 멈추면 버튼이 안 나간다.
+            //  한 틱 더하면 0.99995가 되는 자리에서 시작 — 맞추지 않으면 1에 못 미쳐 버튼이 안 나간다.
             var system = new FlappyDashSystem(Config(), DiveRules());
-            var bird = Bird(11.25f);
-            int ticks = 0;
-            while (bird.Get<FlappyDash>().Charge < 1f && ticks < 1000) { system.Tick(bird, Dt); ticks++; }
-            Assert.GreaterOrEqual(bird.Get<FlappyDash>().Charge, 1f, "결국 한 칸이 찬다");
+            var bird = Bird(11.25f, charge: 0.99995f - FlappyMapRulesField.DefaultDiveRate * Dt);
+            system.Tick(bird, Dt);
+            Assert.AreEqual(1f, bird.Get<FlappyDash>().Charge, 0f, "칸 경계에 맞춰야 한다");
             Assert.IsTrue(system.TryActivate(bird));
+        }
+
+        [Test]
+        public void 스턴_중엔_속도가_남아_있어도_안_찬다()
+        {
+            //  박은 틱의 다음 틱: 대시 시스템이 스턴 새의 속도를 0으로 지우기 전에 지난 속도를 읽는다(재리뷰 10-23).
+            var bird = Bird(11.25f, charge: 1f);
+            bird.Add(new FlappyStun { StunRemaining = 1.0f });
+            new FlappyDashSystem(Config(), DiveRules()).Tick(bird, Dt);
+            Assert.AreEqual(1f, bird.Get<FlappyDash>().Charge, 0f);
+        }
+
+        [Test]
+        public void 수동_대시가_꺼진_맵에선_다이브로_안_찬다()
+        {
+            //  버튼이 숨겨진 맵에서 게이지만 차면 쓸 수 없는 게이지가 된다.
+            var rules = new FlappyMapRulesField();
+            rules.Set(chaser: false, manualDash: false, diveCharge: true);
+            var bird = Bird(11.25f);
+            new FlappyDashSystem(Config(), rules).Tick(bird, Dt);
+            Assert.AreEqual(0f, bird.Get<FlappyDash>().Charge);
         }
 
         [Test]
