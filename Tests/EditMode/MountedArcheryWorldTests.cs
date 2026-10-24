@@ -16,7 +16,7 @@ namespace LOP.Tests
             sharpTurnDeg: 100f, sharpTurnSpeedFactor: 0.35f, drawSpeedFactor: 0.5f);
 
         public static readonly MountedArcheryConfig Config
-            = new MountedArcheryConfig(150f, 40f, 80f, EyeHeight, Settings, 100, 34, 0.5f);
+            = new MountedArcheryConfig(150f, 40f, 80f, EyeHeight, Settings, 100, 34, 0.5f, 100f, 30f, null, 4f, 90f, 0.6f, 0.5f, 15f);
 
         public static MountedArcheryWorld Make(EntityRegistry registry, bool turnBodyToAim = false,
                                                WorldEventBuffer eventBuffer = null)
