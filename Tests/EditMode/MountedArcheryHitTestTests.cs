@@ -64,5 +64,24 @@ namespace LOP.Tests
             Assert.IsFalse(MountedArcheryHitTest.SegmentHits(
                 new Vector3(-5f, 4f, 0f), new Vector3(5f, 4f, 0f), Vector3.zero, 0f, out _));
         }
+        [Test]
+        public void 말_목_아래쪽도_맞는다()
+        {
+            //  목 상자는 앞으로 기울어 아래 끝이 (높이 1.55, 앞 1.2) 근처다 — 몸 구와 머리 구 사이 빈틈.
+            Assert.IsTrue(MountedArcheryHitTest.SegmentHits(
+                new Vector3(-5f, 1.6f, 1.15f), new Vector3(5f, 1.6f, 1.15f), Vector3.zero, 0f, out _));
+        }
+
+        [Test]
+        public void 처음_닿는_구를_지나는_구간을_준다()
+        {
+            //  기수 구(높이 2.1, 뒤 0.1, 반지름 0.35)를 정면으로 가로지른다.
+            bool hit = MountedArcheryHitTest.SegmentChord(
+                new Vector3(-5f, 2.1f, -0.1f), new Vector3(5f, 2.1f, -0.1f), Vector3.zero, 0f, out float enter, out float exit);
+
+            Assert.IsTrue(hit);
+            Assert.AreEqual(0.465f, enter, 1e-3f);
+            Assert.AreEqual(0.535f, exit, 1e-3f);
+        }
     }
 }

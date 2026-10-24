@@ -18,7 +18,10 @@ namespace LOP
             (new Vector3(0f, 1.4f, -0.19f), 0.43f),
             (new Vector3(0f, 1.4f, 0.19f), 0.43f),
             (new Vector3(0f, 1.4f, 0.57f), 0.43f),
-            (new Vector3(0f, 1.95f, 0.95f), 0.25f),  // 말 목
+            // 말 목 — 0.95 m 상자가 앞으로 31° 기울어 있다. 축을 따라 구 셋을 놓는다(위 끝이 기수 쪽, 아래 끝이 앞쪽).
+            (new Vector3(0f, 2.207f, 0.795f), 0.21f),
+            (new Vector3(0f, 1.95f, 0.95f), 0.21f),
+            (new Vector3(0f, 1.693f, 1.105f), 0.21f),
             (new Vector3(0f, 2.32f, 1.2f), 0.21f),   // 말 머리
             (new Vector3(0f, 2.32f, 1.55f), 0.21f),
         };
@@ -61,6 +64,43 @@ namespace LOP
             }
             if (hit) along = best;
             return hit;
+        }
+
+        /// <summary>
+        /// 선분이 <b>처음 닿는 구</b>를 지나는 구간(선분 위 0~1 비율). 조준이 구의 가장자리가 아니라 가운데를 겨누는 데 쓴다.
+        /// 선분이 그 구 안에서 시작하면 <paramref name="enter"/>는 0이다.
+        /// </summary>
+        public static bool SegmentChord(Vector3 from, Vector3 to, Vector3 mountPosition, float headingDeg,
+                                        out float enter, out float exit)
+        {
+            enter = exit = 0f;
+            bool hit = false;
+            float best = float.MaxValue;
+            foreach (var (center, radius) in Spheres)
+            {
+                Vector3 world = ToWorld(center, mountPosition, headingDeg);
+                if (EarliestContact(from, to, world, radius, out float t) && t < best)
+                {
+                    best = t;
+                    hit = true;
+                    enter = t;
+                    exit = Exit(from, to, world, radius);
+                }
+            }
+            return hit;
+        }
+
+        // 선분이 구를 빠져나가는 비율(0~1로 자른다).
+        private static float Exit(Vector3 from, Vector3 to, Vector3 center, float radius)
+        {
+            Vector3 d = to - from;
+            Vector3 m = from - center;
+            float a = d.sqrMagnitude;
+            if (a < 1e-12f) return 0f;
+            float b = Vector3.Dot(m, d);
+            float c = m.sqrMagnitude - radius * radius;
+            float disc = Mathf.Max(0f, b * b - a * c);
+            return Mathf.Clamp01((-b + Mathf.Sqrt(disc)) / a);
         }
 
         // 선분 위 점 from + t*(to-from)이 구 안에 처음 들어가는 t. 이미 안이면 0.
