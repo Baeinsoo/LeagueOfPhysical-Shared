@@ -25,14 +25,21 @@ public static partial class MountedArcheryStateToCReflection {
           "ChxNb3VudGVkQXJjaGVyeVN0YXRlVG9DLnByb3RvInYKGE1vdW50ZWRBcmNo",
           "ZXJ5UGxheWVyV2lyZRIRCgllbnRpdHlfaWQYASABKAkSFwoPZWxpbWluYXRl",
           "ZF90aWNrGAIgASgDEhgKEGtpbGxlcl9lbnRpdHlfaWQYAyABKAkSFAoMZGlz",
-          "cGxheV9uYW1lGAQgASgJIlUKFk1vdW50ZWRBcmNoZXJ5U3RhdGVUb0MSDwoH",
-          "dmVyc2lvbhgBIAEoBRIqCgdwbGF5ZXJzGAIgAygLMhkuTW91bnRlZEFyY2hl",
-          "cnlQbGF5ZXJXaXJlYgZwcm90bzM="));
+          "cGxheV9uYW1lGAQgASgJIu0BChRNb3VudGVkWm9uZVN0YWdlV2lyZRINCgVp",
+          "bmRleBgBIAEoBRITCgtyZXZlYWxfdGljaxgCIAEoAxIZChFzaHJpbmtfc3Rh",
+          "cnRfdGljaxgDIAEoAxIXCg9zaHJpbmtfZW5kX3RpY2sYBCABKAMSDgoGZnJv",
+          "bV94GAUgASgCEg4KBmZyb21fehgGIAEoAhITCgtmcm9tX3JhZGl1cxgHIAEo",
+          "AhIMCgR0b194GAggASgCEgwKBHRvX3oYCSABKAISEQoJdG9fcmFkaXVzGAog",
+          "ASgCEhkKEWRhbWFnZV9wZXJfc2Vjb25kGAsgASgCIoEBChZNb3VudGVkQXJj",
+          "aGVyeVN0YXRlVG9DEg8KB3ZlcnNpb24YASABKAUSKgoHcGxheWVycxgCIAMo",
+          "CzIZLk1vdW50ZWRBcmNoZXJ5UGxheWVyV2lyZRIqCgt6b25lX3N0YWdlcxgD",
+          "IAMoCzIVLk1vdW50ZWRab25lU3RhZ2VXaXJlYgZwcm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
           new pbr::GeneratedClrTypeInfo(typeof(global::MountedArcheryPlayerWire), global::MountedArcheryPlayerWire.Parser, new[]{ "EntityId", "EliminatedTick", "KillerEntityId", "DisplayName" }, null, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::MountedArcheryStateToC), global::MountedArcheryStateToC.Parser, new[]{ "Version", "Players" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::MountedZoneStageWire), global::MountedZoneStageWire.Parser, new[]{ "Index", "RevealTick", "ShrinkStartTick", "ShrinkEndTick", "FromX", "FromZ", "FromRadius", "ToX", "ToZ", "ToRadius", "DamagePerSecond" }, null, null, null, null),
+          new pbr::GeneratedClrTypeInfo(typeof(global::MountedArcheryStateToC), global::MountedArcheryStateToC.Parser, new[]{ "Version", "Players", "ZoneStages" }, null, null, null, null)
         }));
   }
   #endregion
@@ -361,6 +368,577 @@ public sealed partial class MountedArcheryPlayerWire : pb::IMessage<MountedArche
 }
 
 /// <summary>
+/// 서버가 공개한 원 한 단계. 반지름은 이 값과 틱으로 클·서가 같은 식으로 계산한다.
+/// </summary>
+[global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+public sealed partial class MountedZoneStageWire : pb::IMessage<MountedZoneStageWire>
+#if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    , pb::IBufferMessage
+#endif
+{
+  private static readonly pb::MessageParser<MountedZoneStageWire> _parser = new pb::MessageParser<MountedZoneStageWire>(() => new MountedZoneStageWire());
+  private pb::UnknownFieldSet _unknownFields;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public static pb::MessageParser<MountedZoneStageWire> Parser { get { return _parser; } }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public static pbr::MessageDescriptor Descriptor {
+    get { return global::MountedArcheryStateToCReflection.Descriptor.MessageTypes[1]; }
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  pbr::MessageDescriptor pb::IMessage.Descriptor {
+    get { return Descriptor; }
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public MountedZoneStageWire() {
+    OnConstruction();
+  }
+
+  partial void OnConstruction();
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public MountedZoneStageWire(MountedZoneStageWire other) : this() {
+    index_ = other.index_;
+    revealTick_ = other.revealTick_;
+    shrinkStartTick_ = other.shrinkStartTick_;
+    shrinkEndTick_ = other.shrinkEndTick_;
+    fromX_ = other.fromX_;
+    fromZ_ = other.fromZ_;
+    fromRadius_ = other.fromRadius_;
+    toX_ = other.toX_;
+    toZ_ = other.toZ_;
+    toRadius_ = other.toRadius_;
+    damagePerSecond_ = other.damagePerSecond_;
+    _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public MountedZoneStageWire Clone() {
+    return new MountedZoneStageWire(this);
+  }
+
+  /// <summary>Field number for the "index" field.</summary>
+  public const int IndexFieldNumber = 1;
+  private int index_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Index {
+    get { return index_; }
+    set {
+      index_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "reveal_tick" field.</summary>
+  public const int RevealTickFieldNumber = 2;
+  private long revealTick_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long RevealTick {
+    get { return revealTick_; }
+    set {
+      revealTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "shrink_start_tick" field.</summary>
+  public const int ShrinkStartTickFieldNumber = 3;
+  private long shrinkStartTick_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long ShrinkStartTick {
+    get { return shrinkStartTick_; }
+    set {
+      shrinkStartTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "shrink_end_tick" field.</summary>
+  public const int ShrinkEndTickFieldNumber = 4;
+  private long shrinkEndTick_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long ShrinkEndTick {
+    get { return shrinkEndTick_; }
+    set {
+      shrinkEndTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "from_x" field.</summary>
+  public const int FromXFieldNumber = 5;
+  private float fromX_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public float FromX {
+    get { return fromX_; }
+    set {
+      fromX_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "from_z" field.</summary>
+  public const int FromZFieldNumber = 6;
+  private float fromZ_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public float FromZ {
+    get { return fromZ_; }
+    set {
+      fromZ_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "from_radius" field.</summary>
+  public const int FromRadiusFieldNumber = 7;
+  private float fromRadius_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public float FromRadius {
+    get { return fromRadius_; }
+    set {
+      fromRadius_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "to_x" field.</summary>
+  public const int ToXFieldNumber = 8;
+  private float toX_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public float ToX {
+    get { return toX_; }
+    set {
+      toX_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "to_z" field.</summary>
+  public const int ToZFieldNumber = 9;
+  private float toZ_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public float ToZ {
+    get { return toZ_; }
+    set {
+      toZ_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "to_radius" field.</summary>
+  public const int ToRadiusFieldNumber = 10;
+  private float toRadius_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public float ToRadius {
+    get { return toRadius_; }
+    set {
+      toRadius_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "damage_per_second" field.</summary>
+  public const int DamagePerSecondFieldNumber = 11;
+  private float damagePerSecond_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public float DamagePerSecond {
+    get { return damagePerSecond_; }
+    set {
+      damagePerSecond_ = value;
+    }
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public override bool Equals(object other) {
+    return Equals(other as MountedZoneStageWire);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public bool Equals(MountedZoneStageWire other) {
+    if (ReferenceEquals(other, null)) {
+      return false;
+    }
+    if (ReferenceEquals(other, this)) {
+      return true;
+    }
+    if (Index != other.Index) return false;
+    if (RevealTick != other.RevealTick) return false;
+    if (ShrinkStartTick != other.ShrinkStartTick) return false;
+    if (ShrinkEndTick != other.ShrinkEndTick) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(FromX, other.FromX)) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(FromZ, other.FromZ)) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(FromRadius, other.FromRadius)) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(ToX, other.ToX)) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(ToZ, other.ToZ)) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(ToRadius, other.ToRadius)) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(DamagePerSecond, other.DamagePerSecond)) return false;
+    return Equals(_unknownFields, other._unknownFields);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public override int GetHashCode() {
+    int hash = 1;
+    if (Index != 0) hash ^= Index.GetHashCode();
+    if (RevealTick != 0L) hash ^= RevealTick.GetHashCode();
+    if (ShrinkStartTick != 0L) hash ^= ShrinkStartTick.GetHashCode();
+    if (ShrinkEndTick != 0L) hash ^= ShrinkEndTick.GetHashCode();
+    if (FromX != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(FromX);
+    if (FromZ != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(FromZ);
+    if (FromRadius != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(FromRadius);
+    if (ToX != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(ToX);
+    if (ToZ != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(ToZ);
+    if (ToRadius != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(ToRadius);
+    if (DamagePerSecond != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(DamagePerSecond);
+    if (_unknownFields != null) {
+      hash ^= _unknownFields.GetHashCode();
+    }
+    return hash;
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public override string ToString() {
+    return pb::JsonFormatter.ToDiagnosticString(this);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public void WriteTo(pb::CodedOutputStream output) {
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    output.WriteRawMessage(this);
+  #else
+    if (Index != 0) {
+      output.WriteRawTag(8);
+      output.WriteInt32(Index);
+    }
+    if (RevealTick != 0L) {
+      output.WriteRawTag(16);
+      output.WriteInt64(RevealTick);
+    }
+    if (ShrinkStartTick != 0L) {
+      output.WriteRawTag(24);
+      output.WriteInt64(ShrinkStartTick);
+    }
+    if (ShrinkEndTick != 0L) {
+      output.WriteRawTag(32);
+      output.WriteInt64(ShrinkEndTick);
+    }
+    if (FromX != 0F) {
+      output.WriteRawTag(45);
+      output.WriteFloat(FromX);
+    }
+    if (FromZ != 0F) {
+      output.WriteRawTag(53);
+      output.WriteFloat(FromZ);
+    }
+    if (FromRadius != 0F) {
+      output.WriteRawTag(61);
+      output.WriteFloat(FromRadius);
+    }
+    if (ToX != 0F) {
+      output.WriteRawTag(69);
+      output.WriteFloat(ToX);
+    }
+    if (ToZ != 0F) {
+      output.WriteRawTag(77);
+      output.WriteFloat(ToZ);
+    }
+    if (ToRadius != 0F) {
+      output.WriteRawTag(85);
+      output.WriteFloat(ToRadius);
+    }
+    if (DamagePerSecond != 0F) {
+      output.WriteRawTag(93);
+      output.WriteFloat(DamagePerSecond);
+    }
+    if (_unknownFields != null) {
+      _unknownFields.WriteTo(output);
+    }
+  #endif
+  }
+
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+    if (Index != 0) {
+      output.WriteRawTag(8);
+      output.WriteInt32(Index);
+    }
+    if (RevealTick != 0L) {
+      output.WriteRawTag(16);
+      output.WriteInt64(RevealTick);
+    }
+    if (ShrinkStartTick != 0L) {
+      output.WriteRawTag(24);
+      output.WriteInt64(ShrinkStartTick);
+    }
+    if (ShrinkEndTick != 0L) {
+      output.WriteRawTag(32);
+      output.WriteInt64(ShrinkEndTick);
+    }
+    if (FromX != 0F) {
+      output.WriteRawTag(45);
+      output.WriteFloat(FromX);
+    }
+    if (FromZ != 0F) {
+      output.WriteRawTag(53);
+      output.WriteFloat(FromZ);
+    }
+    if (FromRadius != 0F) {
+      output.WriteRawTag(61);
+      output.WriteFloat(FromRadius);
+    }
+    if (ToX != 0F) {
+      output.WriteRawTag(69);
+      output.WriteFloat(ToX);
+    }
+    if (ToZ != 0F) {
+      output.WriteRawTag(77);
+      output.WriteFloat(ToZ);
+    }
+    if (ToRadius != 0F) {
+      output.WriteRawTag(85);
+      output.WriteFloat(ToRadius);
+    }
+    if (DamagePerSecond != 0F) {
+      output.WriteRawTag(93);
+      output.WriteFloat(DamagePerSecond);
+    }
+    if (_unknownFields != null) {
+      _unknownFields.WriteTo(ref output);
+    }
+  }
+  #endif
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int CalculateSize() {
+    int size = 0;
+    if (Index != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Index);
+    }
+    if (RevealTick != 0L) {
+      size += 1 + pb::CodedOutputStream.ComputeInt64Size(RevealTick);
+    }
+    if (ShrinkStartTick != 0L) {
+      size += 1 + pb::CodedOutputStream.ComputeInt64Size(ShrinkStartTick);
+    }
+    if (ShrinkEndTick != 0L) {
+      size += 1 + pb::CodedOutputStream.ComputeInt64Size(ShrinkEndTick);
+    }
+    if (FromX != 0F) {
+      size += 1 + 4;
+    }
+    if (FromZ != 0F) {
+      size += 1 + 4;
+    }
+    if (FromRadius != 0F) {
+      size += 1 + 4;
+    }
+    if (ToX != 0F) {
+      size += 1 + 4;
+    }
+    if (ToZ != 0F) {
+      size += 1 + 4;
+    }
+    if (ToRadius != 0F) {
+      size += 1 + 4;
+    }
+    if (DamagePerSecond != 0F) {
+      size += 1 + 4;
+    }
+    if (_unknownFields != null) {
+      size += _unknownFields.CalculateSize();
+    }
+    return size;
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public void MergeFrom(MountedZoneStageWire other) {
+    if (other == null) {
+      return;
+    }
+    if (other.Index != 0) {
+      Index = other.Index;
+    }
+    if (other.RevealTick != 0L) {
+      RevealTick = other.RevealTick;
+    }
+    if (other.ShrinkStartTick != 0L) {
+      ShrinkStartTick = other.ShrinkStartTick;
+    }
+    if (other.ShrinkEndTick != 0L) {
+      ShrinkEndTick = other.ShrinkEndTick;
+    }
+    if (other.FromX != 0F) {
+      FromX = other.FromX;
+    }
+    if (other.FromZ != 0F) {
+      FromZ = other.FromZ;
+    }
+    if (other.FromRadius != 0F) {
+      FromRadius = other.FromRadius;
+    }
+    if (other.ToX != 0F) {
+      ToX = other.ToX;
+    }
+    if (other.ToZ != 0F) {
+      ToZ = other.ToZ;
+    }
+    if (other.ToRadius != 0F) {
+      ToRadius = other.ToRadius;
+    }
+    if (other.DamagePerSecond != 0F) {
+      DamagePerSecond = other.DamagePerSecond;
+    }
+    _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public void MergeFrom(pb::CodedInputStream input) {
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    input.ReadRawMessage(this);
+  #else
+    uint tag;
+    while ((tag = input.ReadTag()) != 0) {
+    if ((tag & 7) == 4) {
+      // Abort on any end group tag.
+      return;
+    }
+    switch(tag) {
+        default:
+          _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+          break;
+        case 8: {
+          Index = input.ReadInt32();
+          break;
+        }
+        case 16: {
+          RevealTick = input.ReadInt64();
+          break;
+        }
+        case 24: {
+          ShrinkStartTick = input.ReadInt64();
+          break;
+        }
+        case 32: {
+          ShrinkEndTick = input.ReadInt64();
+          break;
+        }
+        case 45: {
+          FromX = input.ReadFloat();
+          break;
+        }
+        case 53: {
+          FromZ = input.ReadFloat();
+          break;
+        }
+        case 61: {
+          FromRadius = input.ReadFloat();
+          break;
+        }
+        case 69: {
+          ToX = input.ReadFloat();
+          break;
+        }
+        case 77: {
+          ToZ = input.ReadFloat();
+          break;
+        }
+        case 85: {
+          ToRadius = input.ReadFloat();
+          break;
+        }
+        case 93: {
+          DamagePerSecond = input.ReadFloat();
+          break;
+        }
+      }
+    }
+  #endif
+  }
+
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+    uint tag;
+    while ((tag = input.ReadTag()) != 0) {
+    if ((tag & 7) == 4) {
+      // Abort on any end group tag.
+      return;
+    }
+    switch(tag) {
+        default:
+          _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+          break;
+        case 8: {
+          Index = input.ReadInt32();
+          break;
+        }
+        case 16: {
+          RevealTick = input.ReadInt64();
+          break;
+        }
+        case 24: {
+          ShrinkStartTick = input.ReadInt64();
+          break;
+        }
+        case 32: {
+          ShrinkEndTick = input.ReadInt64();
+          break;
+        }
+        case 45: {
+          FromX = input.ReadFloat();
+          break;
+        }
+        case 53: {
+          FromZ = input.ReadFloat();
+          break;
+        }
+        case 61: {
+          FromRadius = input.ReadFloat();
+          break;
+        }
+        case 69: {
+          ToX = input.ReadFloat();
+          break;
+        }
+        case 77: {
+          ToZ = input.ReadFloat();
+          break;
+        }
+        case 85: {
+          ToRadius = input.ReadFloat();
+          break;
+        }
+        case 93: {
+          DamagePerSecond = input.ReadFloat();
+          break;
+        }
+      }
+    }
+  }
+  #endif
+
+}
+
+/// <summary>
 /// 말 타고 활쏘기 판 상태 전체(서버 → 클라). 사건이 아니라 상태로 보낸다 — 끊겼다 돌아온 사람도 받는 즉시 맞춰진다.
 /// @auto_generate
 /// </summary>
@@ -379,7 +957,7 @@ public sealed partial class MountedArcheryStateToC : pb::IMessage<MountedArchery
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public static pbr::MessageDescriptor Descriptor {
-    get { return global::MountedArcheryStateToCReflection.Descriptor.MessageTypes[1]; }
+    get { return global::MountedArcheryStateToCReflection.Descriptor.MessageTypes[2]; }
   }
 
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -401,6 +979,7 @@ public sealed partial class MountedArcheryStateToC : pb::IMessage<MountedArchery
   public MountedArcheryStateToC(MountedArcheryStateToC other) : this() {
     version_ = other.version_;
     players_ = other.players_.Clone();
+    zoneStages_ = other.zoneStages_.Clone();
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -436,6 +1015,20 @@ public sealed partial class MountedArcheryStateToC : pb::IMessage<MountedArchery
     get { return players_; }
   }
 
+  /// <summary>Field number for the "zone_stages" field.</summary>
+  public const int ZoneStagesFieldNumber = 3;
+  private static readonly pb::FieldCodec<global::MountedZoneStageWire> _repeated_zoneStages_codec
+      = pb::FieldCodec.ForMessage(26, global::MountedZoneStageWire.Parser);
+  private readonly pbc::RepeatedField<global::MountedZoneStageWire> zoneStages_ = new pbc::RepeatedField<global::MountedZoneStageWire>();
+  /// <summary>
+  /// 공개된 원 단계(순서대로). 비어 있으면 아직 줍기 시간이다.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public pbc::RepeatedField<global::MountedZoneStageWire> ZoneStages {
+    get { return zoneStages_; }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -453,6 +1046,7 @@ public sealed partial class MountedArcheryStateToC : pb::IMessage<MountedArchery
     }
     if (Version != other.Version) return false;
     if(!players_.Equals(other.players_)) return false;
+    if(!zoneStages_.Equals(other.zoneStages_)) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -462,6 +1056,7 @@ public sealed partial class MountedArcheryStateToC : pb::IMessage<MountedArchery
     int hash = 1;
     if (Version != 0) hash ^= Version.GetHashCode();
     hash ^= players_.GetHashCode();
+    hash ^= zoneStages_.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -485,6 +1080,7 @@ public sealed partial class MountedArcheryStateToC : pb::IMessage<MountedArchery
       output.WriteInt32(Version);
     }
     players_.WriteTo(output, _repeated_players_codec);
+    zoneStages_.WriteTo(output, _repeated_zoneStages_codec);
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -500,6 +1096,7 @@ public sealed partial class MountedArcheryStateToC : pb::IMessage<MountedArchery
       output.WriteInt32(Version);
     }
     players_.WriteTo(ref output, _repeated_players_codec);
+    zoneStages_.WriteTo(ref output, _repeated_zoneStages_codec);
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -514,6 +1111,7 @@ public sealed partial class MountedArcheryStateToC : pb::IMessage<MountedArchery
       size += 1 + pb::CodedOutputStream.ComputeInt32Size(Version);
     }
     size += players_.CalculateSize(_repeated_players_codec);
+    size += zoneStages_.CalculateSize(_repeated_zoneStages_codec);
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
     }
@@ -530,6 +1128,7 @@ public sealed partial class MountedArcheryStateToC : pb::IMessage<MountedArchery
       Version = other.Version;
     }
     players_.Add(other.players_);
+    zoneStages_.Add(other.zoneStages_);
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
 
@@ -557,6 +1156,10 @@ public sealed partial class MountedArcheryStateToC : pb::IMessage<MountedArchery
           players_.AddEntriesFrom(input, _repeated_players_codec);
           break;
         }
+        case 26: {
+          zoneStages_.AddEntriesFrom(input, _repeated_zoneStages_codec);
+          break;
+        }
       }
     }
   #endif
@@ -582,6 +1185,10 @@ public sealed partial class MountedArcheryStateToC : pb::IMessage<MountedArchery
         }
         case 18: {
           players_.AddEntriesFrom(ref input, _repeated_players_codec);
+          break;
+        }
+        case 26: {
+          zoneStages_.AddEntriesFrom(ref input, _repeated_zoneStages_codec);
           break;
         }
       }

@@ -12,6 +12,22 @@ message MountedArcheryPlayerWire
 	string display_name = 4;
 }
 
+// 서버가 공개한 원 한 단계. 반지름은 이 값과 틱으로 클·서가 같은 식으로 계산한다.
+message MountedZoneStageWire
+{
+	int32 index = 1;
+	int64 reveal_tick = 2;
+	int64 shrink_start_tick = 3;
+	int64 shrink_end_tick = 4;
+	float from_x = 5;
+	float from_z = 6;
+	float from_radius = 7;
+	float to_x = 8;
+	float to_z = 9;
+	float to_radius = 10;
+	float damage_per_second = 11;
+}
+
 // 말 타고 활쏘기 판 상태 전체(서버 → 클라). 사건이 아니라 상태로 보낸다 — 끊겼다 돌아온 사람도 받는 즉시 맞춰진다.
 // @auto_generate
 message MountedArcheryStateToC
@@ -19,4 +35,6 @@ message MountedArcheryStateToC
 	// 받는 쪽은 자기가 가진 판본보다 작으면 버린다(늦게 도착한 낡은 소식).
 	int32 version = 1;
 	repeated MountedArcheryPlayerWire players = 2;
+	// 공개된 원 단계(순서대로). 비어 있으면 아직 줍기 시간이다.
+	repeated MountedZoneStageWire zone_stages = 3;
 }
