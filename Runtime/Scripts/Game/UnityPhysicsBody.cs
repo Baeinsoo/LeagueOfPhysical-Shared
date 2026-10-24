@@ -125,5 +125,50 @@ namespace LOP
                 .ComputePushOut(capsule, position.ToUnity(), rotation.ToUnity(), layerMask)
                 .ToNumerics();
         }
+
+        /// <summary>
+        /// <see cref="ComputePushOut"/>과 같은 밀어내기인데 <paramref name="skip"/>이 고른 콜라이더는 빼고 민다.
+        /// 기절·무적인 Flappy 새가 치는 장애물(진자·풍차·낙석)에는 안 밀리고 맵·문에는 밀리게 하려고 있다.
+        /// 식은 GameFramework <c>KinematicDepenetration.ComputePushOut</c>을 그대로 따른다(캡슐 끝점·자기 제외·
+        /// ComputePenetration 합산) — 거를 것이 없으면 두 함수가 같은 답을 내야 한다. 그쪽은 다른 레포라 거름을
+        /// 넣지 않고 여기 둔다.
+        /// </summary>
+        public System.Numerics.Vector3 ComputePushOutExcept(
+            System.Numerics.Vector3 position, System.Numerics.Quaternion rotation, int layerMask,
+            System.Func<Collider, bool> skip)
+        {
+            if (_collider is not CapsuleCollider own)
+            {
+                return System.Numerics.Vector3.Zero;
+            }
+            Vector3 pos = position.ToUnity();
+            Quaternion rot = rotation.ToUnity();
+            Vector3 center = pos + rot * own.center;
+            float radius = own.radius;
+            float halfSpan = Mathf.Max(own.height * 0.5f - radius, 0f);
+            Vector3 axis = rot * (own.direction == 0 ? Vector3.right : own.direction == 2 ? Vector3.forward : Vector3.up);
+            Vector3 p1 = center - axis * halfSpan;
+            Vector3 p2 = center + axis * halfSpan;
+
+            //  원본과 같은 무제한 OverlapCapsule — 고정 버퍼로 자르면 겹침이 많을 때 무엇이 잘리는지가 PhysX 순서에 달려
+            //  거를 것이 없을 때도 원본과 답이 갈린다(10-24 리뷰). 기절·무적인 새에만 쓰는 자리라 할당은 감수한다.
+            Collider[] overlaps = Physics.OverlapCapsule(p1, p2, radius, layerMask, QueryTriggerInteraction.Ignore);
+            Vector3 total = Vector3.zero;
+            for (int i = 0; i < overlaps.Length; i++)
+            {
+                Collider other = overlaps[i];
+                if (other == own || skip(other))
+                {
+                    continue;
+                }
+                if (Physics.ComputePenetration(own, pos, rot,
+                        other, other.transform.position, other.transform.rotation,
+                        out Vector3 dir, out float dist))
+                {
+                    total += dir * dist;
+                }
+            }
+            return total.ToNumerics();
+        }
     }
 }

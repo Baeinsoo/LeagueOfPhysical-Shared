@@ -37,7 +37,12 @@ namespace LOP
                 bool falling = FlappyRockfallCurve.FallingAt(rockfall.Period, rockfall.Speed, rockfall.Drop, rockfall.Phase,
                                                              tick, tickSeconds, out float fallen);
                 //  떨어지지 않는 동안은 천장 속(판정 밖)에 둔다 — 콜라이더를 껐다 켜는 상태를 따로 들지 않으려고.
-                float y = falling ? -(fallen + rockfall.Size * 0.5f) : rockfall.HiddenRise;
+                //  떨어지는 동안은 윗면이 천장선에서 fallen만큼 내려온 자리(가운데 = Size/2 − fallen) — 천장 속에서
+                //  미끄러져 나온다. 10-24 전엔 아랫면 기준(가운데 = −(fallen + Size/2))이라 첫 틱에 바위 한 개가 통째로
+                //  천장 밑에 나타나, 천장 가까이 날던 새는 볼 틈도 없이 맞았다. Drop(통로 + 바위)만큼 내려오면
+                //  윗면이 바닥선에 닿아 그때 다 빠진다. 예전엔 같은 Drop에서 바위가 바닥 밑으로 한 변 더 내려가
+                //  있었으니, 통로를 비우는 때는 Size/Speed(1.2/9 ≈ 0.13초)만큼 늦어졌다.
+                float y = falling ? rockfall.Size * 0.5f - fallen : rockfall.HiddenRise;
                 Vector3 p = rockfall.Rock.localPosition;
                 rockfall.Rock.localPosition = new Vector3(p.x, y, p.z);
                 posed = true;
