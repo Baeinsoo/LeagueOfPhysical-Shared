@@ -45,13 +45,17 @@ namespace LOP
         /// <summary>최고 낙하로 떨어질 때 초당 차는 칸.</summary>
         public float DiveRate = FlappyMapRulesField.DefaultDiveRate;
 
+        /// <summary>박아서(스턴) 잃는 게이지(칸). 이미 찬 칸은 지킨다 — 채우던 몫이 이보다 적으면 그만큼만.
+        /// 알갱이·다이브로 채우는 맵에서만 쓴다.</summary>
+        public float StunLoss = FlappyMapRulesField.DefaultStunLoss;
+
         private FlappyMapRulesField field;
 
         [Inject]
         public void Construct(FlappyMapRulesField field)
         {
             this.field = field;
-            field.Set(Chaser, ManualDash, MoteCharge, MoteValue, MoteReach, DiveCharge, DiveMinFallRatio, DiveRate);
+            field.Set(Chaser, ManualDash, MoteCharge, MoteValue, MoteReach, DiveCharge, DiveMinFallRatio, DiveRate, StunLoss);
         }
 
         private void OnDestroy()
