@@ -3,38 +3,56 @@ using UnityEngine;
 namespace LOP
 {
     /// <summary>
-    /// 말 탄 사람 한 명의 맞는 자리(구 네 개)와, 화살이 이번 틱에 지나온 선분이 그것에 닿는지 재는 식.
+    /// 말 탄 사람 한 명의 맞는 자리(구 여러 개)와, 화살이 이번 틱에 지나온 선분이 그것에 닿는지 재는 식.
     /// 클·서가 같은 식을 써야 "보이는 대로 맞는다". 구 값은 수치 튜닝 전까지 상수다(슬라이스 4에서 표로 옮긴다).
     /// 방향은 <see cref="MountMotor"/>와 같다 — 0도가 +z, 90도가 +x.
     /// </summary>
     public static class MountedArcheryHitTest
     {
-        // 탈것 기준: 앞이 +z, 위가 +y
+        // 탈것 기준: 앞이 +z, 위가 +y. 클라가 그리는 회색 말(MountedHorseView)과 안장 위 치비 기수 안에 들어가게 잡았다 —
+        // 판정이 그림보다 크면 눈에는 빗나간 화살이 맞는다. 말 몸(0.85×0.85×2 m 상자)은 구 넷을 앞뒤로 늘어놓아 채운다.
         private static readonly (Vector3 center, float radius)[] Spheres =
         {
-            (new Vector3(0f, 2.4f, 0f), 0.62f),     // 기수
-            (new Vector3(0f, 1.4f, 0.6f), 0.72f),   // 말 몸 앞
-            (new Vector3(0f, 1.4f, -0.6f), 0.72f),  // 말 몸 뒤
-            (new Vector3(0f, 2.15f, 1.35f), 0.45f), // 말 머리
+            (new Vector3(0f, 2.1f, -0.1f), 0.35f),   // 기수(안장 위로 보이는 상체와 머리)
+            (new Vector3(0f, 1.4f, -0.57f), 0.43f),  // 말 몸
+            (new Vector3(0f, 1.4f, -0.19f), 0.43f),
+            (new Vector3(0f, 1.4f, 0.19f), 0.43f),
+            (new Vector3(0f, 1.4f, 0.57f), 0.43f),
+            (new Vector3(0f, 1.95f, 0.95f), 0.25f),  // 말 목
+            (new Vector3(0f, 2.32f, 1.2f), 0.21f),   // 말 머리
+            (new Vector3(0f, 2.32f, 1.55f), 0.21f),
         };
 
+        public static int ShapeCount => Spheres.Length;
+
+        /// <summary>i번째 판정 구의 월드 중심과 반지름. 디버그 그림이 판정과 그림을 겹쳐 보는 데 쓴다.</summary>
+        public static (Vector3 center, float radius) WorldShape(int i, Vector3 mountPosition, float headingDeg)
+        {
+            var (center, radius) = Spheres[i];
+            return (ToWorld(center, mountPosition, headingDeg), radius);
+        }
+
+        private static Vector3 ToWorld(Vector3 local, Vector3 mountPosition, float headingDeg)
+        {
+            float rad = headingDeg * Mathf.Deg2Rad;
+            var forward = new Vector3(Mathf.Sin(rad), 0f, Mathf.Cos(rad));
+            var right = new Vector3(Mathf.Cos(rad), 0f, -Mathf.Sin(rad));
+            return mountPosition + right * local.x + Vector3.up * local.y + forward * local.z;
+        }
+
         /// <summary>
-        /// 선분 <paramref name="from"/>→<paramref name="to"/>가 구 넷 중 하나라도 지나면 참.
+        /// 선분 <paramref name="from"/>→<paramref name="to"/>가 구 중 하나라도 지나면 참.
         /// <paramref name="along"/>은 선분 위 0~1에서 가장 이른 접점 비율(안 맞으면 0).
         /// 빠른 화살이 한 틱에 몸을 건너뛰어도 선분으로 재므로 놓치지 않는다.
         /// </summary>
         public static bool SegmentHits(Vector3 from, Vector3 to, Vector3 mountPosition, float headingDeg, out float along)
         {
-            float rad = headingDeg * Mathf.Deg2Rad;
-            var forward = new Vector3(Mathf.Sin(rad), 0f, Mathf.Cos(rad));
-            var right = new Vector3(Mathf.Cos(rad), 0f, -Mathf.Sin(rad));
-
             along = 0f;
             bool hit = false;
             float best = float.MaxValue;
             foreach (var (center, radius) in Spheres)
             {
-                Vector3 world = mountPosition + right * center.x + Vector3.up * center.y + forward * center.z;
+                Vector3 world = ToWorld(center, mountPosition, headingDeg);
                 if (EarliestContact(from, to, world, radius, out float t) && t < best)
                 {
                     best = t;
