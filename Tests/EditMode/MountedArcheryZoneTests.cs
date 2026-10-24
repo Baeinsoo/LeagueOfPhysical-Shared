@@ -82,10 +82,28 @@ namespace LOP.Tests
         [Test]
         public void 원_밖_피해는_공개된_단계_값()
         {
-            Assert.AreEqual(0f, MountedArcheryZone.DamagePerSecondAt(Stages, 1499));
-            Assert.AreEqual(4f, MountedArcheryZone.DamagePerSecondAt(Stages, 1500));
-            Assert.AreEqual(4f, MountedArcheryZone.DamagePerSecondAt(Stages, 5999));
-            Assert.AreEqual(15f, MountedArcheryZone.DamagePerSecondAt(Stages, 6000));
+            Assert.AreEqual(0f, MountedArcheryZone.DamagePerSecondAt(Stages, 1499, 15f, 0.02f));
+            Assert.AreEqual(4f, MountedArcheryZone.DamagePerSecondAt(Stages, 1500, 15f, 0.02f));
+            Assert.AreEqual(4f, MountedArcheryZone.DamagePerSecondAt(Stages, 5999, 15f, 0.02f));
+            Assert.AreEqual(15f, MountedArcheryZone.DamagePerSecondAt(Stages, 6000, 15f, 0.02f));
+        }
+
+        [Test]
+        public void 마지막_원_뒤엔_피해가_커진다()
+        {
+            Assert.AreEqual(15f, MountedArcheryZone.DamagePerSecondAt(Stages, 7050, 15f, 0.02f), 1e-4f);
+            Assert.AreEqual(30f, MountedArcheryZone.DamagePerSecondAt(Stages, 7100, 15f, 0.02f), 1e-4f);
+            Assert.AreEqual(45f, MountedArcheryZone.DamagePerSecondAt(Stages, 7150, 15f, 0.02f), 1e-4f);
+            // 마지막이 아닌 단계는 시간이 지나도 안 커진다
+            Assert.AreEqual(4f, MountedArcheryZone.DamagePerSecondAt(new[] { First }, 9000, 0f, 0.02f), 1e-4f);
+        }
+
+        [Test]
+        public void 반지름_0이면_한가운데도_밖()
+        {
+            Assert.IsTrue(MountedArcheryZone.IsOutside(new Vector2(10f, 0f), (new Vector2(10f, 0f), 0f)));
+            // 양성 대조: 반지름이 있으면 한가운데는 안
+            Assert.IsFalse(MountedArcheryZone.IsOutside(new Vector2(10f, 0f), (new Vector2(10f, 0f), 1f)));
         }
 
         [Test]

@@ -43,6 +43,8 @@ namespace LOP
         public float AimAssistFriction { get; }
         /// <summary>적의 화면 움직임을 따라가 주는 비율(0~1).</summary>
         public float AimAssistTrack { get; }
+        /// <summary>마지막 원이 다 줄어든 뒤 1초마다 더해지는 원 밖 피해(초당).</summary>
+        public float ZoneOvertimeDpsGrowth { get; }
         /// <summary>순서대로(1단계부터).</summary>
         public IReadOnlyList<MountedArcheryZoneStageConfig> ZoneStages { get; }
 
@@ -52,7 +54,8 @@ namespace LOP
                                     float zoneInitialRadius, float zoneFirstRevealSeconds,
                                     IReadOnlyList<MountedArcheryZoneStageConfig> zoneStages,
                                     float aimAssistConeDeg, float aimAssistRange,
-                                    float aimAssistFriction, float aimAssistTrack)
+                                    float aimAssistFriction, float aimAssistTrack,
+                                    float zoneOvertimeDpsGrowth)
         {
             MatchDurationSeconds = matchDurationSeconds;
             ArrowMinSpeed = arrowMinSpeed;
@@ -69,6 +72,7 @@ namespace LOP
             AimAssistRange = aimAssistRange;
             AimAssistFriction = aimAssistFriction;
             AimAssistTrack = aimAssistTrack;
+            ZoneOvertimeDpsGrowth = zoneOvertimeDpsGrowth;
         }
 
         /// <summary>조준 시스템이 요구하는 큰 설정에서 활 값만 채운 것. 웨이브·흔들림 값은 쓰이지 않는다.</summary>
