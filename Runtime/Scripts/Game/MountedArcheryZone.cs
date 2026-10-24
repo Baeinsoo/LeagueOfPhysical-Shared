@@ -52,12 +52,27 @@ namespace LOP
             return (Vector2.Lerp(s.fromCenter, s.toCenter, t), Mathf.Lerp(s.fromRadius, s.toRadius, t));
         }
 
-        /// <summary>줍기 시간엔 0, 그 뒤엔 가장 최근에 공개된 단계의 값. 공개되는 순간부터 원 밖이면 아프다.</summary>
-        public static float DamagePerSecondAt(IReadOnlyList<ZoneStage> stages, long tick)
-            => TryLatest(stages, tick, out var s) ? s.damagePerSecond : 0f;
+        /// <summary>
+        /// 줍기 시간엔 0, 그 뒤엔 가장 최근에 공개된 단계의 값. 공개되는 순간부터 원 밖이면 아프다.
+        /// 마지막 원이 다 줄어든 뒤엔 초마다 growth씩 더 아프다 — 끝까지 버티는 사람이 있어도 판이 끝나게 한다.
+        /// </summary>
+        public static float DamagePerSecondAt(IReadOnlyList<ZoneStage> stages, long tick, float growthPerSecond, float tickInterval)
+        {
+            if (!TryLatest(stages, tick, out var s)) { return 0f; }
+            if (stages.Count == 0 || s.index != MaxIndex(stages) || tick <= s.shrinkEndTick) { return s.damagePerSecond; }
+            return s.damagePerSecond + growthPerSecond * (tick - s.shrinkEndTick) * tickInterval;
+        }
 
+        static int MaxIndex(IReadOnlyList<ZoneStage> stages)
+        {
+            int max = int.MinValue;
+            for (int i = 0; i < stages.Count; i++) { if (stages[i].index > max) { max = stages[i].index; } }
+            return max;
+        }
+
+        /// <summary>반지름이 0 이하면 한가운데 한 점도 안전하지 않다.</summary>
         public static bool IsOutside(Vector2 position, (Vector2 center, float radius) circle)
-            => Vector2.Distance(position, circle.center) > circle.radius;
+            => circle.radius <= 0f || Vector2.Distance(position, circle.center) > circle.radius;
 
         /// <summary>
         /// 새 원이 지금 원 안에 통째로 들어가도록 중심을 고른다(중심 거리 &lt;= 반지름 차).
