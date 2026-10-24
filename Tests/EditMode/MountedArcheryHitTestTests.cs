@@ -9,10 +9,36 @@ namespace LOP.Tests
         public void 기수를_관통하면_맞는다()
         {
             bool hit = MountedArcheryHitTest.SegmentHits(
-                new Vector3(-5f, 2.4f, 0f), new Vector3(5f, 2.4f, 0f), Vector3.zero, 0f, out float along);
+                new Vector3(-5f, 2.1f, -0.1f), new Vector3(5f, 2.1f, -0.1f), Vector3.zero, 0f, out float along);
 
             Assert.IsTrue(hit);
-            Assert.AreEqual(0.438f, along, 0.01f);   // 접점 x = -0.62 → (5-0.62)/10
+            Assert.AreEqual(0.465f, along, 0.01f);   // 접점 x = -0.35 → (5-0.35)/10
+        }
+
+        //  판정은 그린 몸을 넘지 않는다 — 넘으면 "빗나갔는데 맞았다"가 된다.
+        [Test]
+        public void 기수_머리_위_허공은_안_맞는다()
+        {
+            Assert.IsFalse(MountedArcheryHitTest.SegmentHits(
+                new Vector3(-5f, 2.6f, -0.1f), new Vector3(5f, 2.6f, -0.1f), Vector3.zero, 0f, out _));
+        }
+
+        [Test]
+        public void 말_옆구리_바깥은_안_맞는다()
+        {
+            //  말 몸 그림은 폭 0.85 m(옆으로 0.425 m)다.
+            Assert.IsFalse(MountedArcheryHitTest.SegmentHits(
+                new Vector3(0.6f, 0f, 0f), new Vector3(0.6f, 3f, 0f), Vector3.zero, 0f, out _));
+        }
+
+        [Test]
+        public void 말_몸_그림의_끝자락은_맞는다()
+        {
+            //  말 몸 그림은 길이 2 m(앞뒤로 1 m)다.
+            Assert.IsTrue(MountedArcheryHitTest.SegmentHits(
+                new Vector3(-5f, 1.4f, 0.9f), new Vector3(5f, 1.4f, 0.9f), Vector3.zero, 0f, out _));
+            Assert.IsTrue(MountedArcheryHitTest.SegmentHits(
+                new Vector3(-5f, 1.4f, -0.9f), new Vector3(5f, 1.4f, -0.9f), Vector3.zero, 0f, out _));
         }
 
         [Test]
@@ -37,6 +63,25 @@ namespace LOP.Tests
         {
             Assert.IsFalse(MountedArcheryHitTest.SegmentHits(
                 new Vector3(-5f, 4f, 0f), new Vector3(5f, 4f, 0f), Vector3.zero, 0f, out _));
+        }
+        [Test]
+        public void 말_목_아래쪽도_맞는다()
+        {
+            //  목 상자는 앞으로 기울어 아래 끝이 (높이 1.55, 앞 1.2) 근처다 — 몸 구와 머리 구 사이 빈틈.
+            Assert.IsTrue(MountedArcheryHitTest.SegmentHits(
+                new Vector3(-5f, 1.6f, 1.15f), new Vector3(5f, 1.6f, 1.15f), Vector3.zero, 0f, out _));
+        }
+
+        [Test]
+        public void 처음_닿는_구를_지나는_구간을_준다()
+        {
+            //  기수 구(높이 2.1, 뒤 0.1, 반지름 0.35)를 정면으로 가로지른다.
+            bool hit = MountedArcheryHitTest.SegmentChord(
+                new Vector3(-5f, 2.1f, -0.1f), new Vector3(5f, 2.1f, -0.1f), Vector3.zero, 0f, out float enter, out float exit);
+
+            Assert.IsTrue(hit);
+            Assert.AreEqual(0.465f, enter, 1e-3f);
+            Assert.AreEqual(0.535f, exit, 1e-3f);
         }
     }
 }
