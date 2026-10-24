@@ -21,6 +21,10 @@ namespace LOP
         /// <summary>최고 낙하로 떨어질 때 초당 차는 칸. 문턱에선 이것의 40%.</summary>
         public const float DefaultDiveRate = 0.55f;
 
+        /// <summary>박아서 스턴이 걸리면 잃는 게이지(칸). 찬 칸은 지킨다 — 채우던 몫이 이보다 적으면 그만큼만.
+        /// 10-24 사람 판: 채우던 칸 전부는 아깝다 → "전부가 아닌 일정량".</summary>
+        public const float DefaultStunLoss = 0.3f;
+
         public bool Chaser { get; private set; }
 
         public bool ManualDash { get; private set; }
@@ -45,9 +49,12 @@ namespace LOP
 
         public float DiveRate { get; private set; } = DefaultDiveRate;
 
+        public float StunLoss { get; private set; } = DefaultStunLoss;
+
         public void Set(bool chaser, bool manualDash, bool moteCharge = false,
                         float moteValue = DefaultMoteValue, float moteReach = DefaultMoteReach,
-                        bool diveCharge = false, float diveMinFallRatio = DefaultDiveMinFallRatio, float diveRate = DefaultDiveRate)
+                        bool diveCharge = false, float diveMinFallRatio = DefaultDiveMinFallRatio, float diveRate = DefaultDiveRate,
+                        float stunLoss = DefaultStunLoss)
         {
             Chaser = chaser;
             ManualDash = manualDash;
@@ -57,6 +64,7 @@ namespace LOP
             DiveCharge = diveCharge;
             DiveMinFallRatio = diveMinFallRatio;
             DiveRate = diveRate;
+            StunLoss = stunLoss;
         }
 
         /// <summary>맵을 다시 로드하면 옛 마커가 사라진다 — 그때 거둬 기본값(전부 꺼짐)으로 되돌린다.</summary>
