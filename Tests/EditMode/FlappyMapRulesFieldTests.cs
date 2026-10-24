@@ -72,6 +72,19 @@ namespace LOP.Tests
             Assert.AreEqual(FlappyMapRulesField.DefaultMoteReach, field.MoteReach);
         }
 
+        [Test]
+        public void 잃는_양은_Clear하면_기본으로_돌아간다()
+        {
+            var field = new FlappyMapRulesField();
+            field.Set(chaser: false, manualDash: true, diveCharge: true, stunLoss: 0.5f);
+            Assert.AreEqual(0.5f, field.StunLoss);
+
+            field.Clear();
+
+            //  지난 맵의 값이 마커 없는 다음 맵에 남으면 안 된다.
+            Assert.AreEqual(FlappyMapRulesField.DefaultStunLoss, field.StunLoss);
+        }
+
         //  박아서 잃는 양은 맵 데이터다 — 마커에 적은 값이 그대로 필드로 가야 한다(10-24, 코드 상수에서 뺌).
         [Test]
         public void 마커의_잃는_양이_필드로_간다()
