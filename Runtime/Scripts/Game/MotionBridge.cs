@@ -12,7 +12,7 @@ namespace LOP
     /// 밀어내기가 겹침을 판정할 때 보는 자리도 그 진실원본이다. 엔진 트랜스폼을 읽으면 물리 스텝
     /// 뒤에야 갱신되는 한 틱 전 자리를 보게 되고, 롤백 재생 중에는 그마저 얼어 있다.
     /// </summary>
-    public class MotionBridge : GameFramework.World.IMotionBridge
+    public class MotionBridge : GameFramework.World.IMotionBridge, IFilteredDepenetration
     {
         private readonly int _envMask;
         private readonly int _charMask;
@@ -31,6 +31,25 @@ namespace LOP
         {
             // 지형 겹침(스폰 flush 등)에서 캡슐을 밖으로 — 지면은 안 움직이니 전부 해소.
             return ApplyPushOut(entity, _envMask, 1f);
+        }
+
+        public System.Numerics.Vector3 DepenetrateExcept(GameFramework.World.Entity entity,
+            System.Func<Collider, bool> skip)
+        {
+            var transform = entity.Get<GameFramework.World.Transform>();
+            //  거를 수 있는 건 Unity 몸뿐이다(실제 콜라이더가 있어야 ComputePenetration을 부른다).
+            //  그 밖의 몸은 거르지 않고 예전처럼 민다 — 안 미는 것보다 파묻힌 채 두지 않는 쪽이 안전하다.
+            if (entity.Get<GameFramework.World.PhysicsBody>() is not UnityPhysicsBody body || transform == null)
+            {
+                return Depenetrate(entity);
+            }
+            System.Numerics.Vector3 push = body.ComputePushOutExcept(transform.Position, transform.Rotation, _envMask, skip);
+            if (push.LengthSquared() <= 0f)
+            {
+                return System.Numerics.Vector3.Zero;
+            }
+            transform.Position += push;
+            return push;
         }
 
         public void Separate(GameFramework.World.Entity entity)

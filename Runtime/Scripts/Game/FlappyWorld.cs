@@ -15,10 +15,12 @@ namespace LOP
     /// ④ 맵에서 밀어내기(스폰 겹침 등) → ⑤ 맵은 막으며 이동(MoveBlockedByMap)
     /// + 부딪히면 스턴 진입(무적 중에도 막힘, 재진입만 안 함).
     ///
-    /// <para><b>기절·무적인 새는 움직이는 장애물을 통과한다</b>(10-24 사용자 결정). 장애물에 밀리지도(④를 건너뛴다),
-    /// 막히지도(⑤의 sweep이 장애물 히트를 버린다), 다시 걸리지도 않는다(장애물 속이면 무적이 안 끝난다).
-    /// 전엔 기절해 멈춘 새를 장애물이 끌고 다니다가 무적이 끝나는 틱에 아직 겹쳐 있으면 곧바로 다시 기절시켜,
-    /// 낙석·진자 구간에서 피할 수 없는 연속 기절이 났다. 맵(정적 지형)은 지금처럼 막는다.</para>
+    /// <para><b>기절·무적인 새는 치는 장애물(진자·풍차·낙석)을 통과한다</b>(10-24 사용자 결정). 그것들에 밀리지도
+    /// (④가 그 콜라이더만 빼고 민다), 막히지도(⑤의 sweep이 그 히트를 버린다), 다시 걸리지도(그 속이면 무적이 안
+    /// 끝난다), 대시가 끊기지도 않는다. 전엔 기절해 멈춘 새를 장애물이 끌고 다니다가 무적이 끝나는 틱에 아직 겹쳐
+    /// 있으면 곧바로 다시 기절시켜, 낙석·진자 구간에서 피할 수 없는 연속 기절이 났다.
+    /// 맵(정적 지형)과 <b>문(셔터·승강기)</b>은 지금처럼 막고 민다 — 문까지 통과시키면 닫힌 문에 일부러 박아
+    /// 기절한 뒤 그 무적으로 문을 뚫고 지나갈 수 있다.</para>
     ///
     /// <para><b>새끼리는 부딪히지 않는다 — 서로 통과한다.</b> 몸싸움을 두면 남의 새도 클라가
     /// 굴려야 하는데(안 굴리면 부딪힐 상대가 없다), 남의 입력은 오지 않으므로 "안 눌렀다"로
@@ -152,7 +154,7 @@ namespace LOP
             }
 
             //  움직이는 장애물이 새를 쳐서 들어왔으면 기절. 시간 감소 뒤라 이번 틱부터 멈추고,
-            //  이동 앞이라 이번 틱 속도를 만들지 않는다. 기절한 새는 아래 ④가 밀어내지 않는다.
+            //  이동 앞이라 이번 틱 속도를 만들지 않는다.
             if (_windmillField.Count > 0
                 || (_pendulumField != null && _pendulumField.Count > 0)
                 || (_shutterField != null && _shutterField.Count > 0)
@@ -161,17 +163,21 @@ namespace LOP
             {
                 for (int i = 0; i < _birds.Count; i++)
                 {
-                    if (StruckByMover(_birds[i]))
+                    //  기절·무적인 채로 치는 장애물 속이면 새로 맞은 게 아니다 — 무적을 붙들어 두고 지나가게 한다.
+                    //  대시도 안 끊는다(통과하는 중이지 부딪힌 게 아니다).
+                    //  틱 처음 상태도 본다: 위 시간 감소로 이번 틱에 무적이 막 0이 된 새는 지금 보면 멀쩡하지만,
+                    //  장애물에서 빠져나온 적이 없으니 다시 기절시키면 안 된다. 기절이 이번 틱에 끝난 새는
+                    //  Tick이 이미 무적을 채워 뒀다 — 붙들기만 하면 된다.
+                    bool ghost = _ghostAtStart[i] || _stunSystem.IsGhost(_birds[i]);
+                    if (ghost && Overlapping(_birds[i], FlappyMoverOverlap.StrikingFilter))
                     {
-                        //  기절·무적인 채로 장애물 속이면 새로 맞은 게 아니다 — 무적을 붙들어 두고 지나가게 한다.
-                        //  틱 처음 상태도 본다: 위 시간 감소로 이번 틱에 무적이 막 0이 된 새는 지금 보면 멀쩡하지만,
-                        //  장애물에서 빠져나온 적이 없으니 다시 기절시키면 안 된다. 기절이 이번 틱에 끝난 새는
-                        //  Tick이 이미 무적을 채워 뒀다 — 붙들기만 하면 된다.
-                        if (_ghostAtStart[i] || _stunSystem.IsGhost(_birds[i]))
-                        {
-                            _stunSystem.HoldInvuln(_birds[i], deltaTime);
-                        }
-                        else if (_stunSystem.Enter(_birds[i]))
+                        _stunSystem.HoldInvuln(_birds[i], deltaTime);
+                    }
+                    //  그 밖은 예전 그대로다. 기절·무적인 새도 문(셔터·승강기)은 본다 — 문은 통과 대상이 아니라,
+                    //  문 속에서 무적이 끝나면 예전처럼 기절한다(무적 중이면 Enter가 무시한다).
+                    if (Overlapping(_birds[i], ghost ? FlappyMoverOverlap.GateFilter : FlappyMoverOverlap.MoverFilter))
+                    {
+                        if (_stunSystem.Enter(_birds[i]))
                         {
                             _dashSystem.LoseOnStun(_birds[i]);
                         }
@@ -214,17 +220,17 @@ namespace LOP
             // 겹침 판정은 World.Transform(진실원본) 자리로 한다. 엔진 트랜스폼을 보면 물리 스텝
             // 뒤에야 갱신되는 한 틱 전 자리를 보고, 롤백 재생 중엔 물리를 안 돌려 아예 얼어 있다
             // — 그러면 같은 코드가 라이브와 재생에서 다른 답을 낸다.
-            //  기절·무적인 새는 건너뛴다. 밀어내기 마스크엔 움직이는 장애물도 들어 있어(맵과 같은 층),
-            //  안 건너뛰면 장애물이 새를 끌고 간다 — 멈춰 있어야 할 기절한 새가 낙석에 바닥 속으로 끌려가고
-            //  광차에 옆으로 떠밀렸다. 건너뛰어도 맵에 파묻히지 않는다: 기절한 새는 안 움직이고, 무적인 새는
-            //  ⑤의 sweep으로만 움직이는데 그 sweep이 정적 지형은 지금처럼 막는다.
+            //  기절·무적인 새는 치는 장애물(진자·풍차·낙석)만 빼고 민다. 밀어내기 마스크엔 장애물도 들어 있어
+            //  (맵과 같은 층) 그대로 밀면 장애물이 새를 끌고 간다 — 멈춰 있어야 할 기절한 새가 낙석에 바닥 속으로
+            //  끌려가고 광차에 옆으로 떠밀렸다. 아예 건너뛰지 않는 이유: 맵·문에 파묻힌 새를 빼내는 안전망은
+            //  그 새에게도 있어야 한다(z=0 클램프가 벽 속으로 되미는 경우, 문이 닫히며 덮는 경우).
+            //  거를 수 없는 브리지면 예전처럼 다 민다 — 파묻힌 채 두는 것보다 안전하다.
             for (int i = 0; i < _birds.Count; i++)
             {
-                if (_stunSystem.IsGhost(_birds[i]))
-                {
-                    continue;
-                }
-                ClearVelocityIntoSurface(_birds[i], _motionBridge.Depenetrate(_birds[i]));
+                System.Numerics.Vector3 push = _stunSystem.IsGhost(_birds[i]) && _motionBridge is IFilteredDepenetration filtered
+                    ? filtered.DepenetrateExcept(_birds[i], FlappyMoverOverlap.StrikingFilter)
+                    : _motionBridge.Depenetrate(_birds[i]);
+                ClearVelocityIntoSurface(_birds[i], push);
             }
 
             for (int i = 0; i < _birds.Count; i++)
@@ -336,7 +342,8 @@ namespace LOP
             _birds.Sort((left, right) => string.CompareOrdinal(left.Id, right.Id));
         }
 
-        private bool StruckByMover(GameFramework.World.Entity bird)
+        //  새 캡슐이 which가 고른 장애물 콜라이더와 겹쳤나.
+        private bool Overlapping(GameFramework.World.Entity bird, System.Func<Collider, bool> which)
         {
             var transform = bird.Get<GameFramework.World.Transform>();
             var body = bird.Get<GameFramework.World.CapsuleShape>();
@@ -346,8 +353,8 @@ namespace LOP
             }
             //  누운 몸(X축)이면 가로 치수(Length)를 넘긴다 — CapsuleEnds.Of가 두 끝점을 그에 맞게 벌린다.
             float lyingLength = body.Axis == GameFramework.World.CapsuleAxis.X ? body.Length : 0f;
-            return FlappyMoverOverlap.StruckBy(transform.Position.ToUnity(), body.Radius, body.Height, _layerMask,
-                lyingLength);
+            return FlappyMoverOverlap.Overlaps(transform.Position.ToUnity(), body.Radius, body.Height, _layerMask,
+                lyingLength, which);
         }
 
         // 맵은 막는다 — KinematicMover가 벽까지만 이동시키고 미끄러뜨린다(collide-and-slide).
@@ -399,7 +406,8 @@ namespace LOP
                 return;
             }
 
-            //  기절·무적이면 움직이는 장애물을 뚫고 지나간다 — 거름망이 장애물 히트를 버리고 그 뒤를 본다.
+            //  기절·무적이면 치는 장애물을 뚫고 지나간다 — 거름망이 그 히트를 버리고 그 뒤를 본다. 버린 히트는
+            //  SawHit에 안 잡히므로 대시도 안 끊긴다. 문·맵 히트는 그대로 막고 센다.
             _hitTracker.Reset(_stunSystem.IsGhost(entity) ? _moverPassing.Reset(_collisionQuery) : _collisionQuery);
             //  새는 날아다니므로 턱을 오를 이유도, 발밑 땅을 미리 훑을 이유도 없다. 둘 다 0을 준다.
             //  지면 훑기를 끄는 이유가 이 게임에는 하나 더 있다: 그 훑기는 몸이 이번 틱에 실제로
@@ -407,7 +415,7 @@ namespace LOP
             //  맵에 안 닿은 새가 스턴에 걸렸다. 부딪힘 판정은 몸 기준이어야 한다.
             //  대시 중이면 홀로그램을 통과한다 — 새마다 자기 대시 상태로 고르므로 남이 뚫었다고 열리지 않는다.
             int mask = _dashSystem.IsDashing(entity) ? _layerMask & ~_hologramMask : _layerMask;
-            //  누운 몸(X축)이면 가로 치수(Length)를 넘긴다 — StruckByMover와 같은 식(CapsuleEnds.Of)이다.
+            //  누운 몸(X축)이면 가로 치수(Length)를 넘긴다 — Overlapping과 같은 식(CapsuleEnds.Of)이다.
             float lyingLength = body.Axis == GameFramework.World.CapsuleAxis.X ? body.Length : 0f;
             var result = KinematicMover.Move(new KinematicMoveInput(
                 transform.Position.ToUnity(), velocity.Linear.ToUnity(),
@@ -471,10 +479,14 @@ namespace LOP
                 => _inner.OverlapSphere(center, radius, layerMask);
         }
 
-        //  sweep에서 움직이는 장애물 히트를 버리고, 그 너머의 첫 히트(맵)를 돌려준다.
-        //  층으로는 못 거른다 — 장애물이 맵과 같은 층이다. 그래서 히트 콜라이더를 보고, 장애물이면 그 지점보다
+        //  sweep에서 치는 장애물(진자·풍차·낙석) 히트를 버리고, 그 너머의 첫 히트(맵·문)를 돌려준다.
+        //  층으로는 못 거른다 — 장애물이 맵과 같은 층이다. 그래서 히트 콜라이더를 보고, 치는 장애물이면 그 지점보다
         //  조금 더 들어간 자리에서 남은 거리만큼 다시 쏜다. 다시 쏜 캡슐은 그 장애물과 시작부터 겹쳐 있어
-        //  sweep이 못 본다(PhysX가 시작 겹침을 무시한다) — 그래서 장애물 뒤에 바로 붙은 벽도 놓치지 않는다.
+        //  sweep이 못 본다(PhysX가 시작 겹침을 무시한다) — 그래서 장애물 뒤에 붙은 벽도 본다.
+        //  ⚠️ 그 "시작 겹침 무시"는 장애물만이 아니라 그 자리에 겹친 <b>모든</b> 콜라이더에 걸린다. 장애물 면이 맵 면과
+        //  같거나(낙석 첫 틱의 바위 아랫면 = 천장선) 1 mm 안에 붙어 있으면, 다시 쏜 캡슐이 맵과도 시작부터 겹쳐
+        //  맵을 못 보고 그 속으로 들어간다(리뷰에서 재현). 그래서 다시 쏘기 전에 그 자리를 겹침 검사해, 치는 장애물
+        //  말고 다른 게 겹치면 장애물 히트로 막는다 — 그 자리는 이미 맵에 닿은 자리다.
         private sealed class MoverPassingQuery : ICollisionQuery
         {
             //  한 번 쏠 때 넘겨 볼 장애물 수의 상한. 한 틱 이동(수십 cm) 안에 이보다 많이 겹쳐 설 일은 없다.
@@ -482,6 +494,9 @@ namespace LOP
             private const int MaxSkips = 8;
             //  히트 지점보다 이만큼 더 들어가서 다시 쏜다. 0이면 면에 딱 닿은 자리라 같은 장애물을 또 맞힌다.
             private const float StepIn = 0.001f;
+
+            //  다시 쏠 자리의 겹침 검사 버퍼. 매 sweep 부르는 자리라 배열을 새로 만들지 않는다.
+            private readonly Collider[] _overlaps = new Collider[16];
 
             private ICollisionQuery _inner;
 
@@ -502,22 +517,45 @@ namespace LOP
                     {
                         return hit;
                     }
-                    if (FlappyMoverOverlap.IsMover(hit.Collider) == false || skips >= MaxSkips)
-                    {
+                    var measured = travelled > 0f
                         //  거리는 처음 쏜 자리부터 다시 잰다 — 부르는 쪽(KinematicMover)은 처음 자리 기준으로 읽는다.
-                        return travelled > 0f
-                            ? new CollisionHit(true, travelled + hit.Distance, hit.Normal, hit.Point, hit.Collider)
-                            : hit;
+                        ? new CollisionHit(true, travelled + hit.Distance, hit.Normal, hit.Point, hit.Collider)
+                        : hit;
+                    if (FlappyMoverOverlap.IsStrikingMover(hit.Collider) == false || skips >= MaxSkips)
+                    {
+                        return measured;
                     }
                     float step = hit.Distance + StepIn;
-                    travelled += step;
-                    if (travelled >= distance)
+                    if (travelled + step >= distance)
                     {
                         return CollisionHit.None;
                     }
-                    point1 += direction * step;
-                    point2 += direction * step;
+                    Vector3 next1 = point1 + direction * step;
+                    Vector3 next2 = point2 + direction * step;
+                    if (BlockedAt(next1, next2, radius, layerMask))
+                    {
+                        return measured;
+                    }
+                    travelled += step;
+                    point1 = next1;
+                    point2 = next2;
                 }
+            }
+
+            //  다시 쏠 자리에 치는 장애물 말고 다른 것(맵·문)이 겹쳐 있나. 새 자신의 콜라이더는 Character 층이라
+            //  sweep 마스크에 없다(FlappyWorld를 만드는 쪽 주석) — 그래서 따로 뺄 필요가 없다.
+            private bool BlockedAt(Vector3 point1, Vector3 point2, float radius, int layerMask)
+            {
+                int count = Physics.OverlapCapsuleNonAlloc(point1, point2, radius, _overlaps, layerMask,
+                    QueryTriggerInteraction.Ignore);
+                for (int i = 0; i < count; i++)
+                {
+                    if (FlappyMoverOverlap.IsStrikingMover(_overlaps[i]) == false)
+                    {
+                        return true;
+                    }
+                }
+                return false;
             }
 
             //  아래 둘은 이동을 막지 않으므로 거르지 않고 넘긴다(HitTrackingQuery와 같은 이유).

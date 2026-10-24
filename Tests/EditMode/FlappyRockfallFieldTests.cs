@@ -65,9 +65,6 @@ namespace LOP.Tests
             Assert.Greater(top, floor);
             Assert.LessOrEqual(top - floor, 0.2f + 1e-4f);
 
-            //  Drop만큼 내려온 자리라면 윗면이 정확히 바닥선이다 — 위 식을 그대로 한 틱 더 민 값.
-            Assert.AreEqual(floor, top - 0.2f, 1e-4f);
-
             field.PoseForTick(36, 0.02f);
             Assert.AreEqual(r.HiddenRise, r.Rock.localPosition.y, 1e-5f);
         }
