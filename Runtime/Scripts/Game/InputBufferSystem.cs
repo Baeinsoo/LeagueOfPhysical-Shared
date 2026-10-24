@@ -83,6 +83,7 @@ namespace LOP
                 Posing = buffer.LastReceived.Posing,
                 Drawing = buffer.LastReceived.Drawing,
                 DrawRatio = buffer.LastReceived.DrawRatio,
+                ViewTick = buffer.LastReceived.ViewTick,
                 AimYaw = buffer.LastReceived.AimYaw,
                 AimPitch = buffer.LastReceived.AimPitch,
             };

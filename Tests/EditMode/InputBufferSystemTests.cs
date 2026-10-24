@@ -92,6 +92,18 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 새_입력이_없는_틱엔_ViewTick을_유지한다()
+        {
+            // 화면 시각도 DrawRatio처럼 이어지는 값이다 — 접히면 유실 틱에 쏜 화살이 래그 보상을 못 받는다.
+            system.Enqueue(buffer, 10, new InputCommand { SequenceNumber = 0, ViewTick = 77 });
+            system.Consume(buffer, 10);
+
+            var predicted = system.PredictMissing(buffer, maxTicks: 8);
+
+            Assert.That(predicted.ViewTick, Is.EqualTo(77L));
+        }
+
+        [Test]
         public void PredictMissing_DoesNotRepeatJumpOrAbility()
         {
             system.Enqueue(buffer, 10, new InputCommand { SequenceNumber = 0, Horizontal = 0.8f, Jump = true, AbilityId = 7 });

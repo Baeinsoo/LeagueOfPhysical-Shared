@@ -50,9 +50,15 @@ namespace LOP
         /// </summary>
         public float DrawRatio { get; set; }
 
+        /// <summary>
+        /// 쏜 사람 화면이 이 입력을 만든 순간 보던 틱. 서버가 "얼마나 되감아 맞았는지 볼지"를 정하는 근거다.
+        /// 서버는 이 값을 믿고 상한으로 자른다(<c>MountedArcheryLagCompensation</c>).
+        /// </summary>
+        public long ViewTick { get; set; }
+
         // 진단 로그가 커맨드를 한 줄로 찍을 때 쓴다. 무엇이 실렸는지는 커맨드 자신이 안다 —
         // 읽는 쪽(넷코드 로그)이 필드를 하나씩 나열하면 그쪽이 게임 내용을 알게 된다.
         public override string ToString()
-            => $"h={Horizontal:F2} v={Vertical:F2} jump={Jump} ability={AbilityId} posture={Posture:F2} glide={Glide} posing={Posing} dash={Dash} aim=({AimYaw:F1},{AimPitch:F1}) draw={Drawing}({DrawRatio:F2}) release={Release}";
+            => $"h={Horizontal:F2} v={Vertical:F2} jump={Jump} ability={AbilityId} posture={Posture:F2} glide={Glide} posing={Posing} dash={Dash} aim=({AimYaw:F1},{AimPitch:F1}) draw={Drawing}({DrawRatio:F2}) release={Release} view={ViewTick}";
     }
 }
