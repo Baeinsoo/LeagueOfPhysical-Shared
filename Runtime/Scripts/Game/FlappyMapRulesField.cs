@@ -9,11 +9,17 @@ namespace LOP
     /// </summary>
     public class FlappyMapRulesField
     {
-        /// <summary>알갱이 하나가 채우는 게이지(칸). 32알 = 1칸 — 웹 시제품에서 정한 값.</summary>
-        public const float DefaultMoteValue = 1f / 32f;
+        /// <summary>알갱이 하나가 채우는 게이지(칸). 24알 = 1칸 — 웹 시제품은 32였고, 10-23 사람 판("게이지가 한 번도 안 찼다")으로 올렸다.</summary>
+        public const float DefaultMoteValue = 1f / 24f;
 
         /// <summary>몸 표면에서 이만큼 안의 알갱이를 먹는다(m). 웹 시제품에서 정한 값.</summary>
         public const float DefaultMoteReach = 0.5f;
+
+        /// <summary>다이브 충전 문턱 = 최고 낙하 × 이 비율. 원조 물리(11.25)면 8.44 — 날갯짓 뒤 약 0.5초 참으면 넘는다.</summary>
+        public const float DefaultDiveMinFallRatio = 0.75f;
+
+        /// <summary>최고 낙하로 떨어질 때 초당 차는 칸. 문턱에선 이것의 40%.</summary>
+        public const float DefaultDiveRate = 0.55f;
 
         public bool Chaser { get; private set; }
 
@@ -21,7 +27,7 @@ namespace LOP
 
         /// <summary>
         /// 대시 게이지를 다이브 대신 빛 알갱이(<see cref="FlappyMoteField"/>)로 채우나.
-        /// 켜지면 다이브 충전은 쉬고, 출발 게이지는 0, 박으면 게이지를 절반 잃는다.
+        /// 켜지면 다이브 충전은 쉬고, 출발 게이지는 0, 박으면 채우던 칸만 잃는다(찬 칸은 지킨다).
         /// </summary>
         public bool MoteCharge { get; private set; }
 
@@ -29,14 +35,28 @@ namespace LOP
 
         public float MoteReach { get; private set; } = DefaultMoteReach;
 
+        /// <summary>
+        /// 날갯짓을 참고 빠르게 떨어지는 동안 대시 게이지가 차나(새 다이브 충전, spec 2026-10-23-flappy-dive-charge).
+        /// 켜지면 옛 다이브 식(MasterData DashChargeDive·MinFall)은 쉬고, 출발 게이지 0, 박으면 채우던 칸만 잃는다.
+        /// </summary>
+        public bool DiveCharge { get; private set; }
+
+        public float DiveMinFallRatio { get; private set; } = DefaultDiveMinFallRatio;
+
+        public float DiveRate { get; private set; } = DefaultDiveRate;
+
         public void Set(bool chaser, bool manualDash, bool moteCharge = false,
-                        float moteValue = DefaultMoteValue, float moteReach = DefaultMoteReach)
+                        float moteValue = DefaultMoteValue, float moteReach = DefaultMoteReach,
+                        bool diveCharge = false, float diveMinFallRatio = DefaultDiveMinFallRatio, float diveRate = DefaultDiveRate)
         {
             Chaser = chaser;
             ManualDash = manualDash;
             MoteCharge = moteCharge;
             MoteValue = moteValue;
             MoteReach = moteReach;
+            DiveCharge = diveCharge;
+            DiveMinFallRatio = diveMinFallRatio;
+            DiveRate = diveRate;
         }
 
         /// <summary>맵을 다시 로드하면 옛 마커가 사라진다 — 그때 거둬 기본값(전부 꺼짐)으로 되돌린다.</summary>
