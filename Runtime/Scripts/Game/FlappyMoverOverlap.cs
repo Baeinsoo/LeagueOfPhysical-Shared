@@ -20,17 +20,26 @@ namespace LOP
             int count = Physics.OverlapCapsuleNonAlloc(p1, p2, radius, Buffer, layerMask, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < count; i++)
             {
-                Collider other = Buffer[i];
-                if (other.GetComponentInParent<FlappyPendulum>() != null
-                    || other.GetComponentInParent<FlappyWindmill>() != null
-                    || other.GetComponentInParent<FlappyShutter>() != null
-                    || other.GetComponentInParent<FlappyLift>() != null
-                    || other.GetComponentInParent<FlappyRockfall>() != null)
+                if (IsMover(Buffer[i]))
                 {
                     return true;
                 }
             }
             return false;
+        }
+
+        /// <summary>
+        /// 이 콜라이더가 움직이는 장애물(풍차·진자·셔터·승강기·낙석)의 것인가. 장애물은 맵과 같은 층(Default)에
+        /// 있어 층으로는 못 가른다 — 표식 컴포넌트로 가린다. 콜라이더가 없으면(테스트 스텁의 히트) 맵으로 본다.
+        /// </summary>
+        public static bool IsMover(Collider collider)
+        {
+            return collider != null
+                && (collider.GetComponentInParent<FlappyPendulum>() != null
+                    || collider.GetComponentInParent<FlappyWindmill>() != null
+                    || collider.GetComponentInParent<FlappyShutter>() != null
+                    || collider.GetComponentInParent<FlappyLift>() != null
+                    || collider.GetComponentInParent<FlappyRockfall>() != null);
         }
     }
 }

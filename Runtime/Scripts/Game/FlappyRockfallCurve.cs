@@ -2,7 +2,9 @@ namespace LOP
 {
     /// <summary>
     /// 낙석 바위가 이 틱에 떨어지는 중인가, 그렇다면 천장에서 얼마나 내려왔나. 주기·속도·위상과 틱만 보고 답한다 — 누적하지 않는다.
-    /// 한 주기: 천장에서 곧게 떨어져 바닥 밑까지(<paramref name="dropDistance"/>) → 남은 시간은 천장 속에 숨는다. 예고는 없다(10-13 사용자).
+    /// 한 주기: 천장 속에서 미끄러져 나와 곧게 떨어져 바닥 밑까지(<paramref name="dropDistance"/>) → 남은 시간은 천장 속에 숨는다.
+    /// <c>fallen</c>은 바위 <b>윗면</b>이 떨어지기 시작한 자리(천장선 위 바위 한 변)에서 내려온 거리다 — 0이면 아랫면이 천장선.
+    /// 예고는 판정엔 없다(10-13 사용자) — 클라가 그림으로만 보인다.
     /// <see cref="FlappyShutterCurve"/>와 같은 이유로 순수 함수다.
     /// </summary>
     public static class FlappyRockfallCurve

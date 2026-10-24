@@ -47,8 +47,12 @@ namespace LOP.Tests
             return world;
         }
 
-        //  1틱에 주기 안 0.5556초 → 5.0 m 내려와 바위 y −0.2~1.0, 새(y 0~0.9)를 덮는다. (0.01 + 96.4/360)·2 = 0.5556
-        private const float Falling = 96.4f;
+        //  1틱에 주기 안 34틱(0.68초) → 6.12 m 내려와 바위 y −0.12~1.08, 새(y 0~0.9)를 덮는다. 위상 33틱 = 118.8°.
+        //  (10-24 전엔 96.4°(28틱, 5.04 m)였다. 그땐 바위 *아랫면*이 내려온 거리만큼 천장 밑이었는데, 이제 *윗면*이라
+        //  바위 한 변(1.2 m)만큼 덜 내려와 있다 — 같은 자리를 덮으려면 그만큼 더 떨어진 틱이 필요하다.)
+        private const float Falling = 118.8f;
+        //  1틱에 주기 안 0틱 — 막 떨어지기 시작했다. 위상 99틱 = 356.4°.
+        private const float JustStarted = 356.4f;
         //  1틱에 1.52초 → 13.7 m > 7.2 — 천장 속에 숨어 있다.
         private const float Hidden = 270f;
 
@@ -64,6 +68,17 @@ namespace LOP.Tests
         public void 숨어_있으면_밑을_지나도_기절하지_않는다()
         {
             var world = World(Rockfall(0f, Hidden), out var bird);
+            world.Tick(FlappyWorldFixture.StartTick, 0.02f);
+            Assert.AreEqual(0f, bird.Get<FlappyStun>().StunRemaining);
+        }
+
+        [Test]
+        public void 막_떨어지기_시작한_바위는_천장_바로_밑의_새를_치지_않는다()
+        {
+            //  새 머리가 천장선(y 6)보다 0.1 m 아래. 바위는 천장 속에서 미끄러져 나오므로 첫 틱엔 아직 안 닿는다.
+            //  (10-24 전엔 첫 틱에 바위 한 개(1.2 m)가 통째로 천장 밑에 나타나 피할 틈 없이 쳤다.)
+            var world = World(Rockfall(0f, JustStarted), out var bird);
+            bird.Get<GameFramework.World.Transform>().Position = new System.Numerics.Vector3(0f, 5f, 0f);
             world.Tick(FlappyWorldFixture.StartTick, 0.02f);
             Assert.AreEqual(0f, bird.Get<FlappyStun>().StunRemaining);
         }

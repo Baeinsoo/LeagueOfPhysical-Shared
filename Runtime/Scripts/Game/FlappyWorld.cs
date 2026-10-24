@@ -15,6 +15,11 @@ namespace LOP
     /// ④ 맵에서 밀어내기(스폰 겹침 등) → ⑤ 맵은 막으며 이동(MoveBlockedByMap)
     /// + 부딪히면 스턴 진입(무적 중에도 막힘, 재진입만 안 함).
     ///
+    /// <para><b>기절·무적인 새는 움직이는 장애물을 통과한다</b>(10-24 사용자 결정). 장애물에 밀리지도(④를 건너뛴다),
+    /// 막히지도(⑤의 sweep이 장애물 히트를 버린다), 다시 걸리지도 않는다(장애물 속이면 무적이 안 끝난다).
+    /// 전엔 기절해 멈춘 새를 장애물이 끌고 다니다가 무적이 끝나는 틱에 아직 겹쳐 있으면 곧바로 다시 기절시켜,
+    /// 낙석·진자 구간에서 피할 수 없는 연속 기절이 났다. 맵(정적 지형)은 지금처럼 막는다.</para>
+    ///
     /// <para><b>새끼리는 부딪히지 않는다 — 서로 통과한다.</b> 몸싸움을 두면 남의 새도 클라가
     /// 굴려야 하는데(안 굴리면 부딪힐 상대가 없다), 남의 입력은 오지 않으므로 "안 눌렀다"로
     /// 굴러 상대가 날갯짓할 때마다 크게 어긋났다. 몸싸움을 버리는 대신 남의 새를 <b>지연 스냅샷
@@ -58,6 +63,14 @@ namespace LOP
         // "맵에 부딪혔다"로 읽힌다(아래 MoveBlockedByMap의 SawHit→Enter). 그게 08-27 설계 §9의
         // 열린 항목 O4였고, 훑기를 끄는 것이 그 답이다.
         private readonly HitTrackingQuery _hitTracker = new HitTrackingQuery();
+
+        //  기절·무적인 새의 sweep에서 움직이는 장애물 히트를 버리는 거름망. _hitTracker 안쪽에 끼운다 —
+        //  버린 히트는 "맵에 부딪혔다"로도 안 세야 하므로.
+        private readonly MoverPassingQuery _moverPassing = new MoverPassingQuery();
+
+        //  새마다 이 틱을 기절·무적으로 시작했나(_birds와 같은 순서). 시간 감소가 맞음 검사보다 먼저라
+        //  감소 뒤에 보면 이번 틱에 무적이 0이 된 새를 놓친다. 매 틱 비워서 다시 쓴다.
+        private readonly List<bool> _ghostAtStart = new List<bool>();
 
         // 스턴 타이머의 틱별 사진. 위치·속도는 WorldBase가 담는다.
         private readonly GameFramework.Netcode.SequenceBuffer<Dictionary<string, FlappySavedState>> _gameFrames
@@ -125,6 +138,12 @@ namespace LOP
                 return;
             }
 
+            _ghostAtStart.Clear();
+            for (int i = 0; i < _birds.Count; i++)
+            {
+                _ghostAtStart.Add(_stunSystem.IsGhost(_birds[i]));
+            }
+
             // 시간 감소가 먼저다. 이번 틱에 풀릴 새는 이번 틱부터 움직인다.
             for (int i = 0; i < _birds.Count; i++)
             {
@@ -133,7 +152,7 @@ namespace LOP
             }
 
             //  움직이는 장애물이 새를 쳐서 들어왔으면 기절. 시간 감소 뒤라 이번 틱부터 멈추고,
-            //  이동 앞이라 이번 틱 속도를 만들지 않는다. 밀어내기는 아래 ④가 지금처럼 한다.
+            //  이동 앞이라 이번 틱 속도를 만들지 않는다. 기절한 새는 아래 ④가 밀어내지 않는다.
             if (_windmillField.Count > 0
                 || (_pendulumField != null && _pendulumField.Count > 0)
                 || (_shutterField != null && _shutterField.Count > 0)
@@ -144,7 +163,15 @@ namespace LOP
                 {
                     if (StruckByMover(_birds[i]))
                     {
-                        if (_stunSystem.Enter(_birds[i]))   // 이미 기절·무적이면 Enter가 무시한다
+                        //  기절·무적인 채로 장애물 속이면 새로 맞은 게 아니다 — 무적을 붙들어 두고 지나가게 한다.
+                        //  틱 처음 상태도 본다: 위 시간 감소로 이번 틱에 무적이 막 0이 된 새는 지금 보면 멀쩡하지만,
+                        //  장애물에서 빠져나온 적이 없으니 다시 기절시키면 안 된다. 기절이 이번 틱에 끝난 새는
+                        //  Tick이 이미 무적을 채워 뒀다 — 붙들기만 하면 된다.
+                        if (_ghostAtStart[i] || _stunSystem.IsGhost(_birds[i]))
+                        {
+                            _stunSystem.HoldInvuln(_birds[i], deltaTime);
+                        }
+                        else if (_stunSystem.Enter(_birds[i]))
                         {
                             _dashSystem.LoseOnStun(_birds[i]);
                         }
@@ -187,8 +214,16 @@ namespace LOP
             // 겹침 판정은 World.Transform(진실원본) 자리로 한다. 엔진 트랜스폼을 보면 물리 스텝
             // 뒤에야 갱신되는 한 틱 전 자리를 보고, 롤백 재생 중엔 물리를 안 돌려 아예 얼어 있다
             // — 그러면 같은 코드가 라이브와 재생에서 다른 답을 낸다.
+            //  기절·무적인 새는 건너뛴다. 밀어내기 마스크엔 움직이는 장애물도 들어 있어(맵과 같은 층),
+            //  안 건너뛰면 장애물이 새를 끌고 간다 — 멈춰 있어야 할 기절한 새가 낙석에 바닥 속으로 끌려가고
+            //  광차에 옆으로 떠밀렸다. 건너뛰어도 맵에 파묻히지 않는다: 기절한 새는 안 움직이고, 무적인 새는
+            //  ⑤의 sweep으로만 움직이는데 그 sweep이 정적 지형은 지금처럼 막는다.
             for (int i = 0; i < _birds.Count; i++)
             {
+                if (_stunSystem.IsGhost(_birds[i]))
+                {
+                    continue;
+                }
                 ClearVelocityIntoSurface(_birds[i], _motionBridge.Depenetrate(_birds[i]));
             }
 
@@ -364,7 +399,8 @@ namespace LOP
                 return;
             }
 
-            _hitTracker.Reset(_collisionQuery);
+            //  기절·무적이면 움직이는 장애물을 뚫고 지나간다 — 거름망이 장애물 히트를 버리고 그 뒤를 본다.
+            _hitTracker.Reset(_stunSystem.IsGhost(entity) ? _moverPassing.Reset(_collisionQuery) : _collisionQuery);
             //  새는 날아다니므로 턱을 오를 이유도, 발밑 땅을 미리 훑을 이유도 없다. 둘 다 0을 준다.
             //  지면 훑기를 끄는 이유가 이 게임에는 하나 더 있다: 그 훑기는 몸이 이번 틱에 실제로
             //  가는 거리보다 멀리(발밑 5cm) 보는데, 아래 SawHit이 그것까지 "부딪혔다"로 세서
@@ -428,6 +464,63 @@ namespace LOP
 
             //  아래 둘은 그대로 넘기기만 한다. 이 데코레이터가 보려는 건 "이동이 벽에 막혔나"뿐이고,
             //  그건 sweep(CapsuleCast)만 답한다 — 시야 검사나 범위 조회는 이동을 막지 않는다.
+            public CollisionHit Raycast(Vector3 origin, Vector3 direction, float distance, int layerMask)
+                => _inner.Raycast(origin, direction, distance, layerMask);
+
+            public CollisionHit[] OverlapSphere(Vector3 center, float radius, int layerMask)
+                => _inner.OverlapSphere(center, radius, layerMask);
+        }
+
+        //  sweep에서 움직이는 장애물 히트를 버리고, 그 너머의 첫 히트(맵)를 돌려준다.
+        //  층으로는 못 거른다 — 장애물이 맵과 같은 층이다. 그래서 히트 콜라이더를 보고, 장애물이면 그 지점보다
+        //  조금 더 들어간 자리에서 남은 거리만큼 다시 쏜다. 다시 쏜 캡슐은 그 장애물과 시작부터 겹쳐 있어
+        //  sweep이 못 본다(PhysX가 시작 겹침을 무시한다) — 그래서 장애물 뒤에 바로 붙은 벽도 놓치지 않는다.
+        private sealed class MoverPassingQuery : ICollisionQuery
+        {
+            //  한 번 쏠 때 넘겨 볼 장애물 수의 상한. 한 틱 이동(수십 cm) 안에 이보다 많이 겹쳐 설 일은 없다.
+            //  넘으면 마지막 장애물 히트로 막는다 — 뚫는 쪽보다 막는 쪽이 안전하다.
+            private const int MaxSkips = 8;
+            //  히트 지점보다 이만큼 더 들어가서 다시 쏜다. 0이면 면에 딱 닿은 자리라 같은 장애물을 또 맞힌다.
+            private const float StepIn = 0.001f;
+
+            private ICollisionQuery _inner;
+
+            public ICollisionQuery Reset(ICollisionQuery inner)
+            {
+                _inner = inner;
+                return this;
+            }
+
+            public CollisionHit CapsuleCast(Vector3 point1, Vector3 point2, float radius,
+                Vector3 direction, float distance, int layerMask)
+            {
+                float travelled = 0f;
+                for (int skips = 0; ; skips++)
+                {
+                    var hit = _inner.CapsuleCast(point1, point2, radius, direction, distance - travelled, layerMask);
+                    if (hit.HasHit == false)
+                    {
+                        return hit;
+                    }
+                    if (FlappyMoverOverlap.IsMover(hit.Collider) == false || skips >= MaxSkips)
+                    {
+                        //  거리는 처음 쏜 자리부터 다시 잰다 — 부르는 쪽(KinematicMover)은 처음 자리 기준으로 읽는다.
+                        return travelled > 0f
+                            ? new CollisionHit(true, travelled + hit.Distance, hit.Normal, hit.Point, hit.Collider)
+                            : hit;
+                    }
+                    float step = hit.Distance + StepIn;
+                    travelled += step;
+                    if (travelled >= distance)
+                    {
+                        return CollisionHit.None;
+                    }
+                    point1 += direction * step;
+                    point2 += direction * step;
+                }
+            }
+
+            //  아래 둘은 이동을 막지 않으므로 거르지 않고 넘긴다(HitTrackingQuery와 같은 이유).
             public CollisionHit Raycast(Vector3 origin, Vector3 direction, float distance, int layerMask)
                 => _inner.Raycast(origin, direction, distance, layerMask);
 

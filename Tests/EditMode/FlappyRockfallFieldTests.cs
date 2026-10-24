@@ -23,13 +23,53 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 떨어지는_중이면_바위_가운데가_천장_아래로()
+        public void 떨어지는_중이면_바위_윗면이_천장에서_내려온_만큼_아래에()
         {
             var field = new FlappyRockfallField();
             var r = Make(0f);
             field.Add(r);
-            field.PoseForTick(50, 0.02f);   // 9 m 내려옴 → 가운데 −(9 + 0.6)
-            Assert.AreEqual(-9.6f, r.Rock.localPosition.y, 1e-3f);
+            //  9 m 내려옴 → 윗면 −9, 가운데 0.6 − 9. (10-24 전엔 아랫면이 −9였다 — 첫 틱에 바위 한 개가
+            //  통째로 천장 밑에 나타나던 식. 지금은 윗면 기준이라 천장에서 미끄러져 나온다.)
+            field.PoseForTick(50, 0.02f);
+            Assert.AreEqual(-8.4f, r.Rock.localPosition.y, 1e-3f);
+        }
+
+        [Test]
+        public void 떨어지기_시작한_틱엔_바위가_천장_속에서_미끄러져_나온다()
+        {
+            var field = new FlappyRockfallField();
+            var r = Make(0f);
+            field.Add(r);
+            //  0틱: 막 떨어지기 시작 — 아랫면이 천장선(0)에 있고 몸통은 다 천장 속이다.
+            field.PoseForTick(0, 0.02f);
+            Assert.AreEqual(0f, r.Rock.localPosition.y - r.Size * 0.5f, 1e-4f);
+            //  1틱: 한 틱 낙하(0.18 m)만큼만 천장 밑으로 나와 있다.
+            field.PoseForTick(1, 0.02f);
+            Assert.AreEqual(-0.18f, r.Rock.localPosition.y - r.Size * 0.5f, 1e-4f);
+        }
+
+        [Test]
+        public void 다_떨어지면_바위가_바닥_밑으로_다_빠져_있다()
+        {
+            //  통로 6 m(천장 0, 바닥 −6), Drop = 통로 + 바위 = 7.2, 한 틱 0.2 m(10 m/s).
+            //  마지막으로 떨어지는 틱(35틱, 7.0 m)엔 윗면이 바닥선 위 한 틱 거리 안이고, 다음 틱(7.2 m = Drop)
+            //  부터는 숨는다 — 윗면이 바닥선에 닿는 바로 그때 끝나므로 통로에 바위가 남은 채 사라지지 않는다.
+            var field = new FlappyRockfallField();
+            var r = Make(0f);
+            r.Speed = 10f; r.Drop = 7.2f; r.Period = 2f;
+            field.Add(r);
+            const float floor = -6f;
+
+            field.PoseForTick(35, 0.02f);
+            float top = r.Rock.localPosition.y + r.Size * 0.5f;
+            Assert.Greater(top, floor);
+            Assert.LessOrEqual(top - floor, 0.2f + 1e-4f);
+
+            //  Drop만큼 내려온 자리라면 윗면이 정확히 바닥선이다 — 위 식을 그대로 한 틱 더 민 값.
+            Assert.AreEqual(floor, top - 0.2f, 1e-4f);
+
+            field.PoseForTick(36, 0.02f);
+            Assert.AreEqual(r.HiddenRise, r.Rock.localPosition.y, 1e-5f);
         }
 
         [Test]

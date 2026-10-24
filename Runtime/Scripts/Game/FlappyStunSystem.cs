@@ -20,6 +20,35 @@ namespace LOP
         }
 
         /// <summary>
+        /// 기절 또는 무적 중인가 — 이 동안은 움직이는 장애물을 통과한다(10-24 사용자 결정). 장애물에 밀리지도,
+        /// 막히지도, 다시 걸리지도 않는다. 맵(정적 지형)은 여전히 막는다.
+        /// </summary>
+        public bool IsGhost(GameFramework.World.Entity entity)
+        {
+            var stun = entity.Get<FlappyStun>();
+            return stun != null && (stun.StunRemaining > 0f || stun.InvulnRemaining > 0f);
+        }
+
+        /// <summary>
+        /// 움직이는 장애물 속에 있는 동안 무적을 붙들어 둔다 — 적어도 한 틱은 더 남긴다. 장애물 속에서 무적이
+        /// 끝나면 그 틱에 바로 다시 기절해, 빠져나올 틈 없이 기절이 이어졌다(10-24 제보). 빠져나온 뒤 한 틱이면
+        /// 저절로 끝나므로 "장애물을 나와서 새로 맞아야 다시 기절한다"가 된다.
+        /// 기절 중이면 아무 일도 없다 — 기절이 끝나는 틱에 Tick이 무적을 채운다.
+        /// </summary>
+        public void HoldInvuln(GameFramework.World.Entity entity, float deltaTime)
+        {
+            var stun = entity.Get<FlappyStun>();
+            if (stun == null || stun.StunRemaining > 0f)
+            {
+                return;
+            }
+            if (stun.InvulnRemaining < deltaTime)
+            {
+                stun.InvulnRemaining = deltaTime;
+            }
+        }
+
+        /// <summary>
         /// 맵에 닿았을 때. 이미 스턴 중이거나 무적이면 아무 일도 없다.
         /// 이번에 새로 스턴을 걸었으면 true — 박았을 때의 페널티(게이지 잃기)는 이때만 준다.
         /// </summary>
