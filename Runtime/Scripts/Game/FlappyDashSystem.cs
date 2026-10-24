@@ -101,16 +101,18 @@ namespace LOP
         }
 
         /// <summary>
-        /// 스턴이 실제로 걸렸을 때. 알갱이 맵이면 <b>채우던 칸만</b> 잃고 이미 찬 칸은 지킨다. 다이브 맵은 예전처럼 안 잃는다.
-        /// <para>10-23 사람 판: 전체 절반을 잃게 했더니 도전적으로 붙을수록 자주 박아 게이지가 한 번도 안 찼다.
-        /// 모은 칸을 지키면 "칸이 찼으니 쓸까, 아껴서 하나 더 모을까"가 살아난다.</para>
+        /// 스턴이 실제로 걸렸을 때. 알갱이·다이브 맵이면 <see cref="FlappyMapRulesField.StunLoss"/>(0.3칸)만 잃고 이미 찬 칸은 지킨다
+        /// — 채우던 몫이 그보다 적으면 그만큼만. 클래식 맵은 예전처럼 안 잃는다.
+        /// <para>10-23 사람 판: 전체 절반을 잃게 했더니 도전적으로 붙을수록 자주 박아 게이지가 한 번도 안 찼다 → 찬 칸 지킴.
+        /// 10-24 사람 판: 채우던 칸 전부도 아깝다 → 일정량만.</para>
         /// </summary>
         public void LoseOnStun(GameFramework.World.Entity entity)
         {
             var dash = entity.Get<FlappyDash>();
             if (dash != null && EarnedGauge)
             {
-                dash.Charge = (float)System.Math.Floor(dash.Charge);
+                float slot = (float)System.Math.Floor(dash.Charge);
+                dash.Charge = System.Math.Max(slot, dash.Charge - rules.StunLoss);
             }
         }
 

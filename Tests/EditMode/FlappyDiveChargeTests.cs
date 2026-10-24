@@ -64,16 +64,20 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 다이브_맵은_출발_0이고_박으면_채우던_칸만_잃는다()
+        public void 다이브_맵은_출발_0이고_박으면_일정량만_잃되_찬_칸은_지킨다()
         {
+            //  10-24 사람 판: 채우던 칸 전부는 아깝다 → 0.3칸만. 채우던 몫이 그보다 적으면 그만큼만(찬 칸은 지킨다).
             var system = new FlappyDashSystem(Config(), DiveRules());
             var bird = Bird(0f, charge: 0.6f);
             system.ResetForStart(bird);
             Assert.AreEqual(0f, bird.Get<FlappyDash>().Charge);
 
-            bird.Get<FlappyDash>().Charge = 1.7f;
-            system.LoseOnStun(bird);
-            Assert.AreEqual(1f, bird.Get<FlappyDash>().Charge, 1e-6f);
+            foreach (var (before, after) in new[] { (1.7f, 1.4f), (1.2f, 1f), (0.2f, 0f), (2f, 2f), (0.65f, 0.35f) })
+            {
+                bird.Get<FlappyDash>().Charge = before;
+                system.LoseOnStun(bird);
+                Assert.AreEqual(after, bird.Get<FlappyDash>().Charge, 1e-5f, $"{before}에서 박음");
+            }
         }
 
         [Test]
