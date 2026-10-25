@@ -69,9 +69,12 @@ namespace LOP
                                     float botReactionMaxSeconds, float botEngageRange,
                                     float fullDrawSeconds = ArcheryAimSystem.FullDrawSeconds)
         {
-            if (fullDrawSeconds <= 0f)
+            //  0·음수·NaN이면 던지지 않고 기본값으로 쓴다 — 표 오타 하나로 서버·클라 입장이 막히면 안 된다.
+            if (!(fullDrawSeconds > 0f))
             {
-                throw new ArgumentOutOfRangeException(nameof(fullDrawSeconds), "만작 시간은 0보다 커야 한다");
+                UnityEngine.Debug.LogWarning(
+                    $"[MountedArcheryConfig] 만작 시간({fullDrawSeconds})이 0보다 크지 않아 기본값 {ArcheryAimSystem.FullDrawSeconds}초를 쓴다");
+                fullDrawSeconds = ArcheryAimSystem.FullDrawSeconds;
             }
 
             //  표 오타로 최소가 최대보다 크면 서버·클라 모두 입장이 막힌다 — 던지지 않고 맞바꿔 쓴다.
@@ -114,6 +117,10 @@ namespace LOP
             riseHeightMin: 0.1f, riseHeightMax: 0.1f, staggerTicks: 1, restTicks: 1,
             kinds: null,
             arrowMinSpeedMps: ArrowMinSpeed, arrowMaxSpeedMps: ArrowMaxSpeed);
+
+        /// <summary>이 설정의 만작 시간·눈높이로 조준 시스템을 만든다. 클·서 스코프가 같은 이 한 곳을 써야 당기는 속도가 갈리지 않는다.</summary>
+        public ArcheryAimSystem CreateAimSystem()
+            => new ArcheryAimSystem(ToBowConfig(), RiderEyeHeight, turnBodyToAim: false, fullDrawSeconds: FullDrawSeconds);
 
         /// <summary>되감기 상한(초)을 틱 수로. 이만큼보다 오래 전 모습으로는 판정하지 않는다.</summary>
         public int LagCompMaxTicks(float tickInterval)

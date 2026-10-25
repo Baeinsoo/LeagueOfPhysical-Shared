@@ -29,7 +29,7 @@ namespace LOP
         /// <param name="fullDrawSeconds">누르고 만작까지 걸리는 시간(초). 모드마다 다를 수 있다.</param>
         public ArcheryAimSystem(ArcheryConfig config, float eyeHeight, bool turnBodyToAim, float fullDrawSeconds)
         {
-            if (fullDrawSeconds <= 0f)
+            if (!(fullDrawSeconds > 0f))
             {
                 throw new System.ArgumentOutOfRangeException(nameof(fullDrawSeconds), "만작 시간은 0보다 커야 한다");
             }
@@ -63,7 +63,7 @@ namespace LOP
         /// 이만큼은 끌어야 시위가 걸린다(0~1). 못 미치면 쏘지 않고 취소다 — 화면을 스치기만 해도
         /// 화살이 나가면 조준하다 실수로 쏘게 된다.
         ///
-        /// <para>지금 램프 속도(<see cref="DrawRisePerSecond"/> = 초당 2, <see cref="FullDrawSeconds"/>에서
+        /// <para>기본 램프 속도(<see cref="DrawRisePerSecond"/> = 초당 2, <see cref="FullDrawSeconds"/>에서
         /// 유도)에서 0.3은 <b>0.15초</b>에 해당한다. 사람이 의도적으로 톡 치는 시간(60~120ms)보다
         /// 확실히 길어야 한다 — 예전 값 0.15(=0.08초)는 그 범위 안에 들어 화면을 스치기만 해도
         /// 걸렸다.</para>
@@ -71,7 +71,9 @@ namespace LOP
         public const float DrawThreshold = 0.3f;
 
         /// <summary>
-        /// 시위가 당겨지는 속도(초당 당김 비율). <b>만작 시간에서 유도한다</b> — 따로 박으면 두
+        /// 기본 만작 시간(<see cref="FullDrawSeconds"/>)일 때 시위가 당겨지는 속도(초당 당김 비율). 모드가 만작 시간을
+        /// 따로 받으면(말 활쏘기 0.35초) 그 시스템은 이 값을 쓰지 않는다 — 실제 속도는 시스템이 들고 있다.
+        /// <b>만작 시간에서 유도한다</b> — 따로 박으면 두
         /// 상수가 서로 다른 만작 시간을 말하게 된다.
         ///
         /// <para>예전엔 10f였다(0.1초). 그땐 당김을 <b>손가락이 끈 거리</b>가 정했고 이 값은
