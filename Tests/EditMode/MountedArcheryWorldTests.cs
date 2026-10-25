@@ -16,7 +16,7 @@ namespace LOP.Tests
             sharpTurnDeg: 100f, sharpTurnSpeedFactor: 0.35f, drawSpeedFactor: 0.5f, reverseSpeed: 3f);
 
         public static readonly MountedArcheryConfig Config
-            = new MountedArcheryConfig(150f, 40f, 80f, EyeHeight, Settings, 100, 34, 0.5f, 100f, 30f, null, 4f, 90f, 0.6f, 0.5f, 15f);
+            = new MountedArcheryConfig(150f, 40f, 80f, EyeHeight, Settings, 100, 34, 0.5f, 100f, 30f, null, 4f, 90f, 0.6f, 0.5f, 15f, 2.5f, 0.2f, 0.4f, 60f);
 
         public static MountedArcheryWorld Make(EntityRegistry registry, bool turnBodyToAim = false,
                                                WorldEventBuffer eventBuffer = null)
@@ -354,6 +354,18 @@ namespace LOP.Tests
 
             Assert.AreEqual(0f, rider.Get<GameFramework.World.Transform>().Position.Z, 1e-5f);
             Assert.AreEqual(0, world.Shots.Count);
+        }
+    }
+
+    public class MountedArcheryConfigTests
+    {
+        [Test]
+        public void 봇_반응_최소가_최대보다_크면_맞바꾼다()
+        {
+            UnityEngine.TestTools.LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("맞바꿨다"));
+            var c = new MountedArcheryConfig(150f, 40f, 80f, 1.4f, MountedArcheryWorldFixture.Settings, 100, 34, 0.5f, 100f, 30f, null, 4f, 90f, 0.6f, 0.5f, 15f, 2.5f, 0.9f, 0.2f, 60f);
+            Assert.AreEqual(0.2f, c.BotReactionMinSeconds);
+            Assert.AreEqual(0.9f, c.BotReactionMaxSeconds);
         }
     }
 }
