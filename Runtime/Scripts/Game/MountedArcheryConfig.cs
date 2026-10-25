@@ -52,6 +52,8 @@ namespace LOP
         public float BotReactionMaxSeconds { get; }
         /// <summary>봇이 적을 싸울 상대로 삼는 최대 거리(m).</summary>
         public float BotEngageRange { get; }
+        /// <summary>누르고 만작까지 걸리는 시간(초). 클라 예측과 서버가 같은 값으로 당겨야 한다.</summary>
+        public float FullDrawSeconds { get; }
         /// <summary>순서대로(1단계부터).</summary>
         public IReadOnlyList<MountedArcheryZoneStageConfig> ZoneStages { get; }
 
@@ -64,8 +66,14 @@ namespace LOP
                                     float aimAssistFriction, float aimAssistTrack,
                                     float zoneOvertimeDpsGrowth,
                                     float botAimErrorDeg, float botReactionMinSeconds,
-                                    float botReactionMaxSeconds, float botEngageRange)
+                                    float botReactionMaxSeconds, float botEngageRange,
+                                    float fullDrawSeconds = ArcheryAimSystem.FullDrawSeconds)
         {
+            if (fullDrawSeconds <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(fullDrawSeconds), "만작 시간은 0보다 커야 한다");
+            }
+
             //  표 오타로 최소가 최대보다 크면 서버·클라 모두 입장이 막힌다 — 던지지 않고 맞바꿔 쓴다.
             if (botReactionMinSeconds > botReactionMaxSeconds)
             {
@@ -94,6 +102,7 @@ namespace LOP
             BotReactionMinSeconds = botReactionMinSeconds;
             BotReactionMaxSeconds = botReactionMaxSeconds;
             BotEngageRange = botEngageRange;
+            FullDrawSeconds = fullDrawSeconds;
         }
 
         /// <summary>조준 시스템이 요구하는 큰 설정에서 활 값만 채운 것. 웨이브·흔들림 값은 쓰이지 않는다.</summary>

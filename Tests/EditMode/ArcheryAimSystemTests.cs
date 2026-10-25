@@ -706,5 +706,41 @@ namespace LOP.Tests
             Assert.AreEqual(1f / ArcheryAimSystem.FullDrawSeconds,
                             ArcheryAimSystem.DrawRisePerSecond, 1e-5f);
         }
+
+        static float RampWith(ArcheryAimSystem system, float seconds)
+        {
+            var archer = Archer(Vector3.zero);
+            int ticks = Mathf.RoundToInt(seconds / TickInterval);
+            for (int i = 0; i < ticks; i++)
+            {
+                Feed(archer, 0f, 0f, drawing: true, release: false, drawRatio: 1f);
+                system.Tick(archer, 100 + i, TickInterval);
+            }
+            return archer.Get<ArcheryAim>().DrawRatio;
+        }
+
+        [Test]
+        public void 말_활쏘기는_0점35초에_만작()
+        {
+            var system = new ArcheryAimSystem(NoSwayConfig(), 2.5f, turnBodyToAim: false, fullDrawSeconds: 0.35f);
+            Assert.Less(RampWith(system, 0.30f), 1f, "0.35초 전인데 이미 만작이다");
+            Assert.AreEqual(1f, RampWith(system, 0.40f), 1e-3f, "0.35초가 지났는데 만작이 아니다");
+        }
+
+        [Test]
+        public void 다른_활쏘기는_그대로_0점5초()
+        {
+            var system = new ArcheryAimSystem(NoSwayConfig());
+            Assert.Less(RampWith(system, 0.44f), 1f, "다른 모드의 만작이 0.5초보다 빨라졌다");
+            Assert.AreEqual(1f, RampWith(system, 0.56f), 1e-3f);
+            Assert.AreEqual(0.5f, ArcheryAimSystem.FullDrawSeconds);
+        }
+
+        [Test]
+        public void 만작_시간은_0_이하면_거절한다()
+        {
+            Assert.Throws<System.ArgumentOutOfRangeException>(
+                () => new ArcheryAimSystem(NoSwayConfig(), 2.5f, false, 0f));
+        }
     }
 }

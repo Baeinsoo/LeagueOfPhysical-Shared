@@ -13,15 +13,27 @@ namespace LOP
 
         private readonly float eyeHeight;
         private readonly bool turnBodyToAim;
+        private readonly float drawRisePerSecond;
 
         public ArcheryAimSystem(ArcheryConfig config) : this(config, EyeHeight, true)
         {
         }
 
+        public ArcheryAimSystem(ArcheryConfig config, float eyeHeight, bool turnBodyToAim)
+            : this(config, eyeHeight, turnBodyToAim, FullDrawSeconds)
+        {
+        }
+
         /// <param name="eyeHeight">화살이 떠나는 높이. 탈것 위 사수는 더 높다.</param>
         /// <param name="turnBodyToAim">거짓이면 몸 회전을 건드리지 않는다 — 탈것이 몸의 방향을 정할 때.</param>
-        public ArcheryAimSystem(ArcheryConfig config, float eyeHeight, bool turnBodyToAim)
+        /// <param name="fullDrawSeconds">누르고 만작까지 걸리는 시간(초). 모드마다 다를 수 있다.</param>
+        public ArcheryAimSystem(ArcheryConfig config, float eyeHeight, bool turnBodyToAim, float fullDrawSeconds)
         {
+            if (fullDrawSeconds <= 0f)
+            {
+                throw new System.ArgumentOutOfRangeException(nameof(fullDrawSeconds), "만작 시간은 0보다 커야 한다");
+            }
+            drawRisePerSecond = 1f / fullDrawSeconds;
             this.config = config;
             this.eyeHeight = eyeHeight;
             this.turnBodyToAim = turnBodyToAim;
@@ -162,7 +174,7 @@ namespace LOP
             //  클라가 보낸 크기는 그대로 믿지 않는다 — 수정된 클라가 50 같은 값을 실어도
             //  0~1로 잘라야 힘이 여전히 "몇 틱을 당겼나"로만 정해진다(서버가 신뢰하는 건 시간뿐).
             float drawTarget = drawing ? Mathf.Clamp01(command.DrawRatio) : 0f;
-            float drawSpeed = drawTarget > aim.DrawRatio ? DrawRisePerSecond : DrawFallPerSecond;
+            float drawSpeed = drawTarget > aim.DrawRatio ? drawRisePerSecond : DrawFallPerSecond;
             aim.DrawRatio = Mathf.MoveTowards(
                 aim.DrawRatio, drawTarget, drawSpeed * tickInterval);
 
