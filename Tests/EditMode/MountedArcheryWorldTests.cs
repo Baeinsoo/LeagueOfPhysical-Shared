@@ -13,7 +13,7 @@ namespace LOP.Tests
         public static readonly MountSettings Settings = new MountSettings(
             maxSpeed: 13f, acceleration: 9f, deceleration: 16f,
             turnRateStoppedDeg: 172f, turnRateAtMaxDeg: 92f,
-            sharpTurnDeg: 100f, sharpTurnSpeedFactor: 0.35f, drawSpeedFactor: 0.5f);
+            sharpTurnDeg: 100f, sharpTurnSpeedFactor: 0.35f, drawSpeedFactor: 0.5f, reverseSpeed: 3f);
 
         public static readonly MountedArcheryConfig Config
             = new MountedArcheryConfig(150f, 40f, 80f, EyeHeight, Settings, 100, 34, 0.5f, 100f, 30f, null, 4f, 90f, 0.6f, 0.5f, 15f);
@@ -132,7 +132,7 @@ namespace LOP.Tests
 
             for (long t = 1; t <= 50; t++)
             {
-                Feed(rider, Mathf.Sin(rad), Mathf.Cos(rad), false, false);
+                Feed(rider, 0f, 1f, false, false);
                 world.Tick(t, Dt);
             }
 
@@ -207,6 +207,40 @@ namespace LOP.Tests
             Assert.AreEqual(pos1.Z, transform.Position.Z, 1e-4f);
             Assert.AreEqual(yaw1, Yaw(rider), 1e-3f);
             Assert.AreEqual(shots1, world.Shots.Count);
+        }
+
+        [Test]
+        public void 후진은_되감아도_같다()
+        {
+            var (world, rider) = Make();
+            var transform = rider.Get<GameFramework.World.Transform>();
+
+            //  앞으로 달리다 아래로 당겨 멈추고 후진까지 가는 입력열 — 부호 있는 속도가 Transform+Velocity로 복원돼야 한다
+            void Step(long t)
+            {
+                Feed(rider, t % 9 < 4 ? 0.5f : 0f, t <= 15 ? 1f : -1f, false, false);
+                world.Tick(t, Dt);
+            }
+
+            for (long t = 1; t <= 50; t++) { Step(t); }
+            var mid = Vector3.Dot(rider.Get<GameFramework.World.Velocity>().Linear.ToUnity(),
+                Quaternion.Euler(0f, Yaw(rider), 0f) * Vector3.forward);
+            Assert.Less(mid, -1f, "저장하는 순간 이미 후진 중이어야 한다");
+            world.SaveState(50);
+
+            for (long t = 51; t <= 80; t++) { Step(t); }
+            var pos1 = transform.Position;
+            float vz1 = rider.Get<GameFramework.World.Velocity>().Linear.Z;
+            var heading = Quaternion.Euler(0f, Yaw(rider), 0f) * Vector3.forward;
+            float speed1 = Vector3.Dot(rider.Get<GameFramework.World.Velocity>().Linear.ToUnity(), heading);
+            Assert.Less(speed1, -1f);
+
+            world.LoadState(50);
+            for (long t = 51; t <= 80; t++) { Step(t); }
+
+            Assert.AreEqual(pos1.X, transform.Position.X, 1e-4f);
+            Assert.AreEqual(pos1.Z, transform.Position.Z, 1e-4f);
+            Assert.AreEqual(vz1, rider.Get<GameFramework.World.Velocity>().Linear.Z, 1e-4f);
         }
 
         [Test]

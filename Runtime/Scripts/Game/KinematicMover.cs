@@ -168,6 +168,13 @@ namespace LOP
                 }
             }
 
+            //  쐐기(V자) 구석에서 면을 연달아 투영하면 속도가 처음과 반대로 뒤집힌다. 구석에 박힌
+            //  것이니 수평 속도는 0이어야 한다(Quake PM_SlideMove와 같은 처리).
+            if (Vector3.Dot(horizVel, new Vector3(input.velocity.x, 0f, input.velocity.z)) < 0f)
+            {
+                horizVel = Vector3.zero;
+            }
+
             return new KinematicMoveResult(pos, new Vector3(horizVel.x, vy, horizVel.z), grounded);
         }
 
