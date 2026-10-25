@@ -45,6 +45,13 @@ namespace LOP
         public float AimAssistTrack { get; }
         /// <summary>마지막 원이 다 줄어든 뒤 1초마다 더해지는 원 밖 피해(초당).</summary>
         public float ZoneOvertimeDpsGrowth { get; }
+        /// <summary>봇 조준의 정규 오차 표준편차(도). 좌우·위아래, 발마다 새로 뽑는다.</summary>
+        public float BotAimErrorDeg { get; }
+        /// <summary>봇이 위험을 보고 피하기 시작하기까지의 지연 범위(초). 봇마다 이 안에서 난수로 고른다.</summary>
+        public float BotReactionMinSeconds { get; }
+        public float BotReactionMaxSeconds { get; }
+        /// <summary>봇이 적을 싸울 상대로 삼는 최대 거리(m).</summary>
+        public float BotEngageRange { get; }
         /// <summary>순서대로(1단계부터).</summary>
         public IReadOnlyList<MountedArcheryZoneStageConfig> ZoneStages { get; }
 
@@ -55,8 +62,16 @@ namespace LOP
                                     IReadOnlyList<MountedArcheryZoneStageConfig> zoneStages,
                                     float aimAssistConeDeg, float aimAssistRange,
                                     float aimAssistFriction, float aimAssistTrack,
-                                    float zoneOvertimeDpsGrowth)
+                                    float zoneOvertimeDpsGrowth,
+                                    float botAimErrorDeg, float botReactionMinSeconds,
+                                    float botReactionMaxSeconds, float botEngageRange)
         {
+            if (botReactionMinSeconds > botReactionMaxSeconds)
+            {
+                throw new ArgumentException(
+                    $"봇 반응 지연의 최소({botReactionMinSeconds})가 최대({botReactionMaxSeconds})보다 크다");
+            }
+
             MatchDurationSeconds = matchDurationSeconds;
             ArrowMinSpeed = arrowMinSpeed;
             ArrowMaxSpeed = arrowMaxSpeed;
@@ -73,6 +88,10 @@ namespace LOP
             AimAssistFriction = aimAssistFriction;
             AimAssistTrack = aimAssistTrack;
             ZoneOvertimeDpsGrowth = zoneOvertimeDpsGrowth;
+            BotAimErrorDeg = botAimErrorDeg;
+            BotReactionMinSeconds = botReactionMinSeconds;
+            BotReactionMaxSeconds = botReactionMaxSeconds;
+            BotEngageRange = botEngageRange;
         }
 
         /// <summary>조준 시스템이 요구하는 큰 설정에서 활 값만 채운 것. 웨이브·흔들림 값은 쓰이지 않는다.</summary>
