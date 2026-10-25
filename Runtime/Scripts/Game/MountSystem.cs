@@ -30,7 +30,9 @@ namespace LOP
 
             float heading = Mathf.DeltaAngle(0f, transform.Rotation.ToUnity().eulerAngles.y);
             var linear = velocity.Linear.ToUnity();
-            float speed = new Vector2(linear.x, linear.z).magnitude;
+            //  머리 방향으로의 성분을 그대로 쓴다 — 크기만 쓰면 후진 중인 걸 앞으로 착각한다.
+            float rad = heading * Mathf.Deg2Rad;
+            float speed = linear.x * Mathf.Sin(rad) + linear.z * Mathf.Cos(rad);
 
             var next = MountMotor.Step(new MountState(heading, speed),
                 new Vector2(command.Horizontal, command.Vertical), command.Drawing, settings, deltaTime);

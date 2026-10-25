@@ -13,16 +13,19 @@ namespace LOP
         public readonly float TurnRateStoppedDeg;
         /// <summary>최고 속도일 때 도는 빠르기(도/초). 빠를수록 덜 돈다.</summary>
         public readonly float TurnRateAtMaxDeg;
-        /// <summary>가려는 방향과 이 각도보다 벌어지면 급회전으로 보고 목표 속도를 줄인다.</summary>
+        /// <summary>쓰이지 않는다 — 말 기준 조작으로 바뀌며 "가려는 방향"이 없어졌다. 마스터데이터 열만 남아 있다.</summary>
         public readonly float SharpTurnDeg;
-        /// <summary>급회전일 때 목표 속도에 곱하는 값.</summary>
+        /// <summary>쓰이지 않는다(위와 같음).</summary>
         public readonly float SharpTurnSpeedFactor;
         /// <summary>활을 당기는 동안 목표 속도에 곱하는 값.</summary>
         public readonly float DrawSpeedFactor;
+        /// <summary>뒤로 갈 때 최고 속도(m/s, 양수로 적는다).</summary>
+        public readonly float ReverseSpeed;
 
         public MountSettings(float maxSpeed, float acceleration, float deceleration,
                              float turnRateStoppedDeg, float turnRateAtMaxDeg,
-                             float sharpTurnDeg, float sharpTurnSpeedFactor, float drawSpeedFactor)
+                             float sharpTurnDeg, float sharpTurnSpeedFactor, float drawSpeedFactor,
+                             float reverseSpeed)
         {
             MaxSpeed = maxSpeed;
             Acceleration = acceleration;
@@ -32,6 +35,7 @@ namespace LOP
             SharpTurnDeg = sharpTurnDeg;
             SharpTurnSpeedFactor = sharpTurnSpeedFactor;
             DrawSpeedFactor = drawSpeedFactor;
+            ReverseSpeed = reverseSpeed;
         }
     }
 }

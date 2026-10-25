@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace LOP
 {
-    /// <summary>탈것의 머리 방향(도)과 앞으로 가는 속도.</summary>
+    /// <summary>탈것의 머리 방향(도)과 앞으로 가는 속도(음수면 후진).</summary>
     public readonly struct MountState
     {
         public readonly float HeadingDeg;
@@ -16,35 +16,44 @@ namespace LOP
     }
 
     /// <summary>
-    /// 탈것 이동 커널. 스틱은 "가고 싶은 방향"일 뿐, 몸은 돌기 빠르기 한도 안에서 따라가고
-    /// 속도는 가속/감속 한도 안에서 바뀐다. 앞으로만 간다.
+    /// 탈것 이동 커널. 스틱은 말 기준이다 — 위는 가속, 좌우는 방향 돌리기, 아래는 브레이크 뒤 후진.
+    /// 카메라가 어디를 보든 "위 = 말 앞"이라, 뒤를 보고 쏘면서도 말은 똑바로 달릴 수 있다.
+    /// 속도는 부호가 있다(음수 = 후진).
     /// </summary>
     public static class MountMotor
     {
         /// <summary>이보다 약한 스틱은 놓은 것으로 본다.</summary>
         private const float Deadzone = 0.08f;
 
-        /// <param name="desired">세계 x,z 기준 스틱 값(패드가 카메라 기준으로 이미 돌린 것).</param>
-        public static MountState Step(MountState current, Vector2 desired, bool drawing,
+        /// <summary>이 속도 이하로 느려지면 멈춘 것으로 보고 아래 스틱을 후진으로 바꾼다.</summary>
+        private const float StopSpeed = 0.1f;
+
+        /// <param name="stick">말 기준 스틱 값. x = 좌우 돌리기, y = 위 가속 / 아래 브레이크·후진.</param>
+        public static MountState Step(MountState current, Vector2 stick, bool drawing,
                                       in MountSettings s, float dt)
         {
             float heading = current.HeadingDeg;
-            float mag = Mathf.Clamp01(desired.magnitude);
-            float target;
+            bool released = stick.magnitude < Deadzone;
+            float turn = released ? 0f : Mathf.Clamp(stick.x, -1f, 1f);
+            float throttle = released ? 0f : Mathf.Clamp(stick.y, -1f, 1f);
 
-            if (mag < Deadzone)
+            float rate = Mathf.Lerp(s.TurnRateStoppedDeg, s.TurnRateAtMaxDeg,
+                                    Mathf.Clamp01(Mathf.Abs(current.Speed) / s.MaxSpeed));
+            heading += turn * rate * dt;
+
+            float target;
+            if (throttle > 0f)
             {
-                target = 0f;
+                target = throttle * s.MaxSpeed;
+            }
+            else if (throttle < 0f && current.Speed <= StopSpeed)
+            {
+                target = throttle * s.ReverseSpeed;
             }
             else
             {
-                float want = Mathf.Atan2(desired.x, desired.y) * Mathf.Rad2Deg;
-                //  급회전 판정은 돌기 전 차이로 한다 — 돈 뒤로 재면 한 틱 돌고 나서야 감속이 걸린다.
-                float diff = Mathf.DeltaAngle(heading, want);
-                float rate = Mathf.Lerp(s.TurnRateStoppedDeg, s.TurnRateAtMaxDeg,
-                                        Mathf.Clamp01(current.Speed / s.MaxSpeed));
-                heading += Mathf.Clamp(diff, -rate * dt, rate * dt);
-                target = mag * s.MaxSpeed * (Mathf.Abs(diff) > s.SharpTurnDeg ? s.SharpTurnSpeedFactor : 1f);
+                //  놓았거나, 앞으로 달리는 중 아래를 당겼다 — 먼저 0까지 줄인다.
+                target = 0f;
             }
 
             if (drawing)
@@ -52,8 +61,10 @@ namespace LOP
                 target *= s.DrawSpeedFactor;
             }
 
-            float change = target > current.Speed ? s.Acceleration : s.Deceleration;
-            float speed = Mathf.Max(0f, Mathf.MoveTowards(current.Speed, target, change * dt));
+            //  빨라지는 쪽(0에서 멀어지는 쪽)은 가속, 0 쪽이나 반대쪽으로 가는 건 감속.
+            bool speedingUp = target * current.Speed >= 0f && Mathf.Abs(target) > Mathf.Abs(current.Speed);
+            float change = speedingUp ? s.Acceleration : s.Deceleration;
+            float speed = Mathf.MoveTowards(current.Speed, target, change * dt);
 
             return new MountState(Normalize(heading), speed);
         }

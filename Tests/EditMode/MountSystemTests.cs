@@ -12,7 +12,7 @@ namespace LOP.Tests
         static readonly MountSettings S = new MountSettings(
             maxSpeed: 13f, acceleration: 9f, deceleration: 16f,
             turnRateStoppedDeg: 172f, turnRateAtMaxDeg: 92f,
-            sharpTurnDeg: 100f, sharpTurnSpeedFactor: 0.35f, drawSpeedFactor: 0.5f);
+            sharpTurnDeg: 100f, sharpTurnSpeedFactor: 0.35f, drawSpeedFactor: 0.5f, reverseSpeed: 3f);
 
         static Entity Rider(bool mounted = true)
         {
@@ -56,6 +56,18 @@ namespace LOP.Tests
             new MountSystem(S).Tick(rider, Dt);
 
             Assert.AreEqual(10f - 0.32f, Linear(rider).z, 1e-4f);
+        }
+
+        [Test]
+        public void 뒤로_가는_속도는_부호를_읽어_계속_후진한다()
+        {
+            var rider = Rider();
+            rider.Get<GameFramework.World.Velocity>().Linear = new Vector3(0f, 0f, -2f).ToNumerics();
+            Feed(rider, 0f, -1f);
+            new MountSystem(S).Tick(rider, Dt);
+
+            //  크기로만 읽으면 +2로 착각해 브레이크를 걸어 -1.68이 된다. 부호를 읽으면 -2.18.
+            Assert.AreEqual(-2.18f, Linear(rider).z, 1e-4f);
         }
 
         [Test]
