@@ -367,5 +367,40 @@ namespace LOP.Tests
             Assert.AreEqual(0.2f, c.BotReactionMinSeconds);
             Assert.AreEqual(0.9f, c.BotReactionMaxSeconds);
         }
+
+        static MountedArcheryConfig ConfigWithDraw(float fullDrawSeconds)
+            => new MountedArcheryConfig(150f, 40f, 80f, 2.5f, MountedArcheryWorldFixture.Settings, 100, 34, 0.5f,
+                100f, 30f, null, 4f, 90f, 0.6f, 0.5f, 15f, 2.5f, 0.2f, 0.4f, 60f, fullDrawSeconds);
+
+        static float DrawRatioAfter(ArcheryAimSystem system, int ticks)
+        {
+            var registry = new EntityRegistry();
+            var rider = MountedArcheryWorldFixture.Rider(registry);
+            for (int i = 0; i < ticks; i++)
+            {
+                rider.Get<InputBuffer>().Current = new InputCommand { Drawing = true, DrawRatio = 1f };
+                system.Tick(rider, 100 + i, MountedArcheryWorldFixture.Dt);
+            }
+            return rider.Get<ArcheryAim>().DrawRatio;
+        }
+
+        [Test]
+        public void 스코프가_쓰는_조준_시스템은_설정의_만작_시간으로_당긴다()
+        {
+            var system = ConfigWithDraw(0.35f).CreateAimSystem();
+            Assert.Less(DrawRatioAfter(system, 15), 1f, "0.30초에 벌써 만작이다");
+            Assert.AreEqual(1f, DrawRatioAfter(system, 20), 1e-3f, "0.40초인데 만작이 아니다 — 설정의 만작 시간이 안 들어갔다");
+        }
+
+        [TestCase(0f)]
+        [TestCase(-1f)]
+        [TestCase(float.NaN)]
+        public void 만작_시간이_잘못되면_던지지_않고_기본값을_쓴다(float bad)
+        {
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Warning, new System.Text.RegularExpressions.Regex("만작 시간"));
+            var cfg = ConfigWithDraw(bad);
+            Assert.AreEqual(ArcheryAimSystem.FullDrawSeconds, cfg.FullDrawSeconds);
+            Assert.AreEqual(1f, DrawRatioAfter(cfg.CreateAimSystem(), 30), 1e-3f);
+        }
     }
 }

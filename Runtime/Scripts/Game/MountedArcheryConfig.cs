@@ -52,6 +52,8 @@ namespace LOP
         public float BotReactionMaxSeconds { get; }
         /// <summary>봇이 적을 싸울 상대로 삼는 최대 거리(m).</summary>
         public float BotEngageRange { get; }
+        /// <summary>누르고 만작까지 걸리는 시간(초). 클라 예측과 서버가 같은 값으로 당겨야 한다.</summary>
+        public float FullDrawSeconds { get; }
         /// <summary>순서대로(1단계부터).</summary>
         public IReadOnlyList<MountedArcheryZoneStageConfig> ZoneStages { get; }
 
@@ -64,8 +66,17 @@ namespace LOP
                                     float aimAssistFriction, float aimAssistTrack,
                                     float zoneOvertimeDpsGrowth,
                                     float botAimErrorDeg, float botReactionMinSeconds,
-                                    float botReactionMaxSeconds, float botEngageRange)
+                                    float botReactionMaxSeconds, float botEngageRange,
+                                    float fullDrawSeconds = ArcheryAimSystem.FullDrawSeconds)
         {
+            //  0·음수·NaN이면 던지지 않고 기본값으로 쓴다 — 표 오타 하나로 서버·클라 입장이 막히면 안 된다.
+            if (!(fullDrawSeconds > 0f))
+            {
+                UnityEngine.Debug.LogWarning(
+                    $"[MountedArcheryConfig] 만작 시간({fullDrawSeconds})이 0보다 크지 않아 기본값 {ArcheryAimSystem.FullDrawSeconds}초를 쓴다");
+                fullDrawSeconds = ArcheryAimSystem.FullDrawSeconds;
+            }
+
             //  표 오타로 최소가 최대보다 크면 서버·클라 모두 입장이 막힌다 — 던지지 않고 맞바꿔 쓴다.
             if (botReactionMinSeconds > botReactionMaxSeconds)
             {
@@ -94,6 +105,7 @@ namespace LOP
             BotReactionMinSeconds = botReactionMinSeconds;
             BotReactionMaxSeconds = botReactionMaxSeconds;
             BotEngageRange = botEngageRange;
+            FullDrawSeconds = fullDrawSeconds;
         }
 
         /// <summary>조준 시스템이 요구하는 큰 설정에서 활 값만 채운 것. 웨이브·흔들림 값은 쓰이지 않는다.</summary>
@@ -105,6 +117,10 @@ namespace LOP
             riseHeightMin: 0.1f, riseHeightMax: 0.1f, staggerTicks: 1, restTicks: 1,
             kinds: null,
             arrowMinSpeedMps: ArrowMinSpeed, arrowMaxSpeedMps: ArrowMaxSpeed);
+
+        /// <summary>이 설정의 만작 시간·눈높이로 조준 시스템을 만든다. 클·서 스코프가 같은 이 한 곳을 써야 당기는 속도가 갈리지 않는다.</summary>
+        public ArcheryAimSystem CreateAimSystem()
+            => new ArcheryAimSystem(ToBowConfig(), RiderEyeHeight, turnBodyToAim: false, fullDrawSeconds: FullDrawSeconds);
 
         /// <summary>되감기 상한(초)을 틱 수로. 이만큼보다 오래 전 모습으로는 판정하지 않는다.</summary>
         public int LagCompMaxTicks(float tickInterval)
