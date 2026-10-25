@@ -35,6 +35,13 @@ namespace LOP.Tests
         static Vector3 Linear(Entity e) => e.Get<GameFramework.World.Velocity>().Linear.ToUnity();
 
         [Test]
+        public void 후진_속도가_0_이하면_설정을_거부한다()
+        {
+            Assert.Throws<System.ArgumentOutOfRangeException>(() =>
+                new MountSettings(13f, 9f, 16f, 172f, 92f, 100f, 0.35f, 0.5f, 0f));
+        }
+
+        [Test]
         public void 앞으로_밀면_머리_쪽으로_빨라진다()
         {
             var rider = Rider();

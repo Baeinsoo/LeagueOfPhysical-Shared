@@ -27,6 +27,10 @@ namespace LOP
                              float sharpTurnDeg, float sharpTurnSpeedFactor, float drawSpeedFactor,
                              float reverseSpeed)
         {
+            if (reverseSpeed <= 0f)
+            {
+                throw new System.ArgumentOutOfRangeException(nameof(reverseSpeed), "후진 최고 속도는 0보다 커야 한다 — mount_reverse_speed 열을 확인");
+            }
             MaxSpeed = maxSpeed;
             Acceleration = acceleration;
             Deceleration = deceleration;

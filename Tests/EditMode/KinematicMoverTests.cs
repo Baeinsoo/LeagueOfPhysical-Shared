@@ -84,6 +84,19 @@ namespace LOP.Tests
             => new KinematicMoveInput(pos, vel, 0.35f, 1.5f, dt, ~0, stepOffset);
 
         [Test]
+        public void 쐐기_구석에서는_속도가_뒤집히지_않고_0이_된다()
+        {
+            var query = new FakeCollisionQuery();
+            query.Horizontal.Enqueue(new CollisionHit(true, 0f, new Vector3(0.6f, 0f, -0.8f), Vector3.zero, null));
+            query.Horizontal.Enqueue(new CollisionHit(true, 0f, new Vector3(-0.6f, 0f, -0.8f), Vector3.zero, null));
+
+            var r = KinematicMover.Move(Input(Vector3.zero, new Vector3(0f, 0f, 13f)), query);
+
+            Assert.That(r.velocity.x, Is.EqualTo(0f).Within(Tolerance));
+            Assert.That(r.velocity.z, Is.EqualTo(0f).Within(Tolerance), "두 벽을 연달아 투영해도 뒤로 튀면 안 된다");
+        }
+
+        [Test]
         public void GroundedHorizontalMove_MovesAlongGround_NotBlockedByFloor()
         {
             // 지면(y=0) 위, 수평 속도 + 중력. 바닥에 발이 붙어 있어도 앞으로 걸어야 한다(현재 버그: 못 감).

@@ -222,18 +222,21 @@ namespace LOP.Tests
                 world.Tick(t, Dt);
             }
 
-            for (long t = 1; t <= 20; t++) { Step(t); }
-            world.SaveState(20);
+            for (long t = 1; t <= 50; t++) { Step(t); }
+            var mid = Vector3.Dot(rider.Get<GameFramework.World.Velocity>().Linear.ToUnity(),
+                Quaternion.Euler(0f, Yaw(rider), 0f) * Vector3.forward);
+            Assert.Less(mid, -1f, "저장하는 순간 이미 후진 중이어야 한다");
+            world.SaveState(50);
 
-            for (long t = 21; t <= 80; t++) { Step(t); }
+            for (long t = 51; t <= 80; t++) { Step(t); }
             var pos1 = transform.Position;
             float vz1 = rider.Get<GameFramework.World.Velocity>().Linear.Z;
             var heading = Quaternion.Euler(0f, Yaw(rider), 0f) * Vector3.forward;
             float speed1 = Vector3.Dot(rider.Get<GameFramework.World.Velocity>().Linear.ToUnity(), heading);
-            Assert.Less(speed1, -1f, "실제로 후진 중이어야 이 시험이 뜻이 있다");
+            Assert.Less(speed1, -1f);
 
-            world.LoadState(20);
-            for (long t = 21; t <= 80; t++) { Step(t); }
+            world.LoadState(50);
+            for (long t = 51; t <= 80; t++) { Step(t); }
 
             Assert.AreEqual(pos1.X, transform.Position.X, 1e-4f);
             Assert.AreEqual(pos1.Z, transform.Position.Z, 1e-4f);

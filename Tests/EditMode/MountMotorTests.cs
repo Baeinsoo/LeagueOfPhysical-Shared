@@ -48,7 +48,7 @@ namespace LOP.Tests
         {
             var right = MountMotor.Step(new MountState(0f, 0f), new Vector2(1f, 0f), false, S, Dt);
             Assert.AreEqual(172f * Dt, right.HeadingDeg, 1e-3f);
-            Assert.AreEqual(0f, right.Speed, 1e-6f);
+            Assert.AreEqual(0.18f, right.Speed, 1e-4f, "옆으로 밀면 돌면서 앞으로도 나간다");
 
             var left = MountMotor.Step(new MountState(0f, 0f), new Vector2(-1f, 0f), false, S, Dt);
             Assert.AreEqual(-172f * Dt, left.HeadingDeg, 1e-3f);
@@ -132,6 +132,52 @@ namespace LOP.Tests
         {
             var state = Run(new MountState(0f, 0f), new Vector2(0f, -1f), true, 1000);
             Assert.AreEqual(-1.5f, state.Speed, 1e-3f);
+        }
+
+        [Test]
+        public void 옆으로_밀어도_최고_속도로_돌며_달린다()
+        {
+            var state = new MountState(0f, 13f);
+            for (int i = 0; i < 20; i++)
+            {
+                state = MountMotor.Step(state, new Vector2(1f, 0f), false, S, Dt);
+            }
+            Assert.AreEqual(13f, state.Speed, 1e-3f);
+            Assert.Greater(state.HeadingDeg, 20f);
+        }
+
+        [Test]
+        public void 대각선은_최고_속도()
+        {
+            var state = Run(new MountState(0f, 0f), new Vector2(0.7071f, 0.7071f), false, 1000);
+            Assert.AreEqual(13f, state.Speed, 0.01f);
+        }
+
+        [Test]
+        public void 옆으로_민_작은_흔들림은_브레이크가_아니다()
+        {
+            var running = MountMotor.Step(new MountState(0f, 13f), new Vector2(1f, -0.05f), false, S, Dt);
+            Assert.AreEqual(13f, running.Speed, 1e-4f);
+
+            var standing = Run(new MountState(0f, 0f), new Vector2(1f, -0.05f), false, 50);
+            Assert.GreaterOrEqual(standing.Speed, 0f, "서 있을 때 옆으로 밀며 흔들려도 뒤로 기지 않는다");
+        }
+
+        [Test]
+        public void 아래_쪽_원뿔만_감속한다()
+        {
+            var braking = MountMotor.Step(new MountState(0f, 13f), new Vector2(0.3f, -1f), false, S, Dt);
+            Assert.AreEqual(13f - 16f * Dt, braking.Speed, 1e-4f);
+
+            var sideways = MountMotor.Step(new MountState(0f, 13f), new Vector2(1f, -0.5f), false, S, Dt);
+            Assert.AreEqual(13f, sideways.Speed, 1e-4f);
+        }
+
+        [Test]
+        public void 후진에서_앞으로_넘어갈_때_0을_지나는_틱도_가속_한_가지로_센다()
+        {
+            var next = MountMotor.Step(new MountState(0f, -0.1f), new Vector2(0f, 1f), false, S, Dt);
+            Assert.AreEqual(-0.1f + 9f * Dt, next.Speed, 1e-4f);
         }
     }
 }
