@@ -66,10 +66,12 @@ namespace LOP
                                     float botAimErrorDeg, float botReactionMinSeconds,
                                     float botReactionMaxSeconds, float botEngageRange)
         {
+            //  표 오타로 최소가 최대보다 크면 서버·클라 모두 입장이 막힌다 — 던지지 않고 맞바꿔 쓴다.
             if (botReactionMinSeconds > botReactionMaxSeconds)
             {
-                throw new ArgumentException(
-                    $"봇 반응 지연의 최소({botReactionMinSeconds})가 최대({botReactionMaxSeconds})보다 크다");
+                UnityEngine.Debug.LogWarning(
+                    $"[MountedArcheryConfig] 봇 반응 지연 최소({botReactionMinSeconds})가 최대({botReactionMaxSeconds})보다 커서 맞바꿨다");
+                (botReactionMinSeconds, botReactionMaxSeconds) = (botReactionMaxSeconds, botReactionMinSeconds);
             }
 
             MatchDurationSeconds = matchDurationSeconds;
