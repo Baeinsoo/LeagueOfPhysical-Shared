@@ -90,6 +90,43 @@ namespace LOP.Tests
             Assert.AreEqual(1f, Vel(e).x, 1e-4f);
         }
 
+        static float Yaw(Entity e) => e.Get<GameFramework.World.Transform>().Rotation.ToUnity().eulerAngles.y;
+
+        [Test]
+        public void 움직이는_방향을_바라본다()
+        {
+            var sys = NewSystem();
+            var e = Body(0f, 0f, 0f);
+            Feed(e, 1f, 0f);
+            for (int t = 0; t < 20; t++) sys.Tick(e, t, Dt);
+
+            Assert.AreEqual(90f, Yaw(e), 0.5f);
+        }
+
+        [Test]
+        public void 느리면_방향을_바꾸지_않는다()
+        {
+            var sys = NewSystem();
+            var e = Body(0f, 0f, 0f);
+            e.Get<GameFramework.World.Transform>().Rotation = Quaternion.Euler(0f, 30f, 0f).ToNumerics();
+            e.Get<GameFramework.World.Velocity>().Linear = new System.Numerics.Vector3(0.5f, 0f, 0f);
+            Feed(e, 0f, 0f);
+            sys.Tick(e, 0, Dt);
+
+            Assert.AreEqual(30f, Yaw(e), 0.01f);
+        }
+
+        [Test]
+        public void 뒤로_걸으면_돌아선다()
+        {
+            var sys = NewSystem();
+            var e = Body(0f, 0f, 0f);
+            Feed(e, 0f, -1f);
+            for (int t = 0; t < 20; t++) sys.Tick(e, t, Dt);
+
+            Assert.AreEqual(0f, Mathf.DeltaAngle(180f, Yaw(e)), 0.5f);
+        }
+
         [Test]
         public void 세로_속도_0으로_바닥에_선다()
         {
