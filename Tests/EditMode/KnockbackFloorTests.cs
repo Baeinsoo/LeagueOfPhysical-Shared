@@ -65,8 +65,8 @@ namespace LOP.Tests
             var floor = new KnockbackFloor(17f, 1.5f, 0f);
             foreach (var t in floor.Tiles)
             {
-                Assert.IsTrue(floor.IsSolid(t.x, t.z, 0));
-                Assert.IsTrue(floor.IsSolid(t.x, t.z, 10000));
+                Assert.IsTrue(floor.IsTileSolid(t.x, t.z, 0));
+                Assert.IsTrue(floor.IsTileSolid(t.x, t.z, 10000));
             }
         }
 
@@ -78,8 +78,8 @@ namespace LOP.Tests
             // 틱 150의 반지름 = (18.0607+11)/2 = 14.53.
             // 칸 (8,3): 가장 먼 꼭짓점 (13.5, 6) 거리 14.77 > 14.53 → 무너짐
             // 칸 (8,2): 가장 먼 꼭짓점 (13.5, 4.5) 거리 14.23 <= 14.53 → 살아 있음
-            Assert.IsFalse(floor.IsSolid(8, 3, 150));
-            Assert.IsTrue(floor.IsSolid(8, 2, 150));
+            Assert.IsFalse(floor.IsTileSolid(8, 3, 150));
+            Assert.IsTrue(floor.IsTileSolid(8, 2, 150));
         }
 
         [Test]
@@ -89,8 +89,8 @@ namespace LOP.Tests
             floor.SetZoneStages(new[] { Stage(new Vector2(3f, 0f), 11f, floor) });
             // 틱 150: 중심 (1.5, 0), 반지름 14.53.
             // 칸 (8,0)은 가장 먼 꼭짓점이 약 12.1 → 살아 있음, 칸 (-9,0)은 약 15.1 → 무너짐
-            Assert.IsTrue(floor.IsSolid(8, 0, 150));
-            Assert.IsFalse(floor.IsSolid(-9, 0, 150));
+            Assert.IsTrue(floor.IsTileSolid(8, 0, 150));
+            Assert.IsFalse(floor.IsTileSolid(-9, 0, 150));
         }
 
         [Test]
@@ -106,8 +106,8 @@ namespace LOP.Tests
             {
                 foreach (var t in a.Tiles)
                 {
-                    bool sa = a.IsSolid(t.x, t.z, tick);
-                    Assert.AreEqual(sa, b.IsSolid(t.x, t.z, tick));
+                    bool sa = a.IsTileSolid(t.x, t.z, tick);
+                    Assert.AreEqual(sa, b.IsTileSolid(t.x, t.z, tick));
                     if (!sa) anyDead = true;
                 }
             }
@@ -121,7 +121,7 @@ namespace LOP.Tests
             var list = new List<ZoneStage> { Stage(Vector2.zero, 11f, floor) };
             floor.SetZoneStages(list);
             list.Clear();
-            Assert.IsFalse(floor.IsSolid(8, 3, 150));
+            Assert.IsFalse(floor.IsTileSolid(8, 3, 150));
         }
 
         [Test]
@@ -129,8 +129,8 @@ namespace LOP.Tests
         {
             var floor = new KnockbackFloor(17f, 1.5f, 0f);
             floor.SetZoneStages(new[] { Stage(Vector2.zero, 0f, floor) });
-            foreach (var t in floor.Tiles) Assert.IsFalse(floor.IsSolid(t.x, t.z, 200));
-            Assert.IsTrue(floor.IsSolid(0, 0, 100));
+            foreach (var t in floor.Tiles) Assert.IsFalse(floor.IsTileSolid(t.x, t.z, 200));
+            Assert.IsTrue(floor.IsTileSolid(0, 0, 100));
         }
 
         [Test]
@@ -139,7 +139,7 @@ namespace LOP.Tests
             var floor = new KnockbackFloor(17f, 1.5f, 0f);
             floor.SetZoneStages(new[] { Stage(Vector2.zero, 11f, floor) });
             long death = 0;
-            for (long t = 100; t <= 200; t++) { if (!floor.IsSolid(8, 3, t)) { death = t; break; } }
+            for (long t = 100; t <= 200; t++) { if (!floor.IsTileSolid(8, 3, t)) { death = t; break; } }
             Assert.Greater(death, 100);
             Assert.IsTrue(floor.IsWarning(8, 3, death - 1, 50));
             Assert.IsTrue(floor.IsWarning(8, 3, death - 50, 50));
