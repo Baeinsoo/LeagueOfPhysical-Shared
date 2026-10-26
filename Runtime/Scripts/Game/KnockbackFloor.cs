@@ -62,10 +62,11 @@ namespace LOP
         public bool IsSolid(float x, float z, long tick)
         {
             var (tx, tz) = TileAt(x, z, TileSize);
-            return IsSolid(tx, tz, tick);
+            return IsTileSolid(tx, tz, tick);
         }
 
-        public bool IsSolid(int tx, int tz, long tick)
+        /// <summary>칸 번호(미터 아님)로 묻는다. 월드 좌표는 IsSolid(float, float, tick)를 쓴다.</summary>
+        public bool IsTileSolid(int tx, int tz, long tick)
         {
             if (!HasTile(tx, tz)) return false;
             var circle = MountedArcheryZone.CircleAt(stages, tick, Vector2.zero, ZoneStartRadius);
@@ -75,9 +76,9 @@ namespace LOP
             return fx * fx + fz * fz <= circle.radius * circle.radius;
         }
 
-        /// <summary>지금은 바닥인데 warningTicks 뒤엔 무너져 있는 칸 — 깜박이는 그림용.</summary>
+        /// <summary>x, z는 칸 번호. 지금은 바닥인데 warningTicks 뒤엔 무너져 있는 칸 — 깜박이는 그림용.</summary>
         public bool IsWarning(int x, int z, long tick, long warningTicks)
-            => IsSolid(x, z, tick) && !IsSolid(x, z, tick + warningTicks);
+            => IsTileSolid(x, z, tick) && !IsTileSolid(x, z, tick + warningTicks);
 
         public Vector3 TileCenter(int x, int z)
             => new Vector3((x + 0.5f) * TileSize, 0f, (z + 0.5f) * TileSize);
