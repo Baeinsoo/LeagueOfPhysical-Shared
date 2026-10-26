@@ -13,6 +13,8 @@ namespace LOP
         const float Gravity = -9.81f * 2f;   // KinematicMoveSystem과 같은 값
         // 이만큼보다 아래로 내려간 몸은 칸 위를 지나가도 다시 서지 않는다(떨어지는 중).
         const float StandMinY = -0.05f;
+        // 이보다 느리게 미끄러질 땐 몸을 돌리지 않는다(멈추는 중에 방향이 흔들리지 않게).
+        const float FaceMinSpeed = 0.8f;
 
         readonly KnockbackFloor floor;
         readonly ICollisionQuery query;
@@ -74,6 +76,13 @@ namespace LOP
             }
 
             ground.IsGrounded = standing;
+            float hx = moved.velocity.x;
+            float hz = moved.velocity.z;
+            if (hx * hx + hz * hz > FaceMinSpeed * FaceMinSpeed)
+            {
+                float yaw = Mathf.Atan2(hx, hz) * Mathf.Rad2Deg;
+                transform.Rotation = Quaternion.Euler(0f, yaw, 0f).ToNumerics();
+            }
             transform.Position = new Vector3(x, y, z).ToNumerics();
             velocity.Linear = new Vector3(moved.velocity.x, vy, moved.velocity.z).ToNumerics();
         }
