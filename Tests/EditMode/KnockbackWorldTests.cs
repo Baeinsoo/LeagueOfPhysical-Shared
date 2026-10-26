@@ -26,7 +26,8 @@ namespace LOP.Tests
             var floor = Config.CreateFloor();
             var world = new KnockbackWorld(registry, new WorldEventBuffer(),
                 Config.CreateMoveSystem(floor, new FlappyWorldFixture.NeverHit(), ~0),
-                new FlappyWorldFixture.NoopMotionBridge(), floor);
+                new FlappyWorldFixture.NoopMotionBridge(), floor)
+            { GameplayStartTick = 0 };
             return (world, body);
         }
 
@@ -91,6 +92,20 @@ namespace LOP.Tests
             Assert.AreEqual(vel1.Z, vel2.Z, 1e-5f);
             Assert.AreEqual(grounded1, ground.IsGrounded);
             Assert.Less(pos2.Y, -1f, "재생에서도 떨어졌어야 한다");
+        }
+
+        [Test]
+        public void 출발_전에는_입력을_줘도_안_움직인다()
+        {
+            var (world, body) = Make(0f);
+            world.GameplayStartTick = 100;
+            for (long t = 1; t <= 50; t++) { Step(world, body, t, 1f, 0f); }
+            var before = body.Get<GameFramework.World.Transform>().Position;
+            Assert.AreEqual(0f, before.X, 1e-6f);
+            Assert.AreEqual(0f, body.Get<GameFramework.World.Velocity>().Linear.X, 1e-6f);
+
+            for (long t = 100; t <= 150; t++) { Step(world, body, t, 1f, 0f); }
+            Assert.Greater(body.Get<GameFramework.World.Transform>().Position.X, 0f, "출발 뒤에는 움직여야 한다");
         }
 
         [Test]

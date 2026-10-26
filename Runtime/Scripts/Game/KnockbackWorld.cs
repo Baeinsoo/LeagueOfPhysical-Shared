@@ -30,6 +30,20 @@ namespace LOP
 
         protected override void Mutation(long tick, float deltaTime)
         {
+            if (HasStarted(tick) == false)
+            {
+                //  출발 전 대기. 속도를 0으로 적어 두는 건 스냅샷과 물리 팔로워가 이 값을 읽기 때문이다.
+                foreach (var entity in EntityRegistry.All)
+                {
+                    var velocity = entity.Get<GameFramework.World.Velocity>();
+                    if (velocity != null && entity.Has<GameFramework.World.Simulated>())
+                    {
+                        velocity.Linear = System.Numerics.Vector3.Zero;
+                    }
+                }
+                return;
+            }
+
             motionBridge.SyncTransforms();
             foreach (var entity in EntityRegistry.All)
             {
