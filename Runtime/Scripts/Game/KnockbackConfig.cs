@@ -94,6 +94,6 @@ namespace LOP
 
         //  바닥은 월드와 이동 시스템이 같은 한 개를 나눠 쓴다(칸이 무너지면 둘이 같은 상태를 봐야 한다).
         public KnockbackMoveSystem CreateMoveSystem(KnockbackFloor floor, GameFramework.Physics.ICollisionQuery query, int layerMask)
-            => new KnockbackMoveSystem(floor, query, layerMask, MoveSpeed, MoveGain);
+            => new KnockbackMoveSystem(floor, query, layerMask, MoveSpeed, MoveGain, StunGain);
     }
 }

@@ -21,14 +21,16 @@ namespace LOP
         readonly int layerMask;
         readonly float moveSpeed;
         readonly float moveGain;
+        readonly float stunGain;
 
-        public KnockbackMoveSystem(KnockbackFloor floor, ICollisionQuery query, int layerMask, float moveSpeed, float moveGain)
+        public KnockbackMoveSystem(KnockbackFloor floor, ICollisionQuery query, int layerMask, float moveSpeed, float moveGain, float stunGain)
         {
             this.floor = floor;
             this.query = query;
             this.layerMask = layerMask;
             this.moveSpeed = moveSpeed;
             this.moveGain = moveGain;
+            this.stunGain = stunGain;
         }
 
         public void Tick(GameFramework.World.Entity entity, long tick, float dt)
@@ -49,7 +51,9 @@ namespace LOP
             {
                 var input = entity.Get<InputBuffer>()?.Current;
                 var horizontal = new Vector2(input?.Horizontal ?? 0f, input?.Vertical ?? 0f);
-                var next = KnockbackMotor.Step(new Vector2(vel.x, vel.z), horizontal, moveSpeed, moveGain, dt);
+                // 날려지는 중엔 다가가는 빠르기가 약해서 거의 방향을 못 바꾼다.
+                float gain = tick < (entity.Get<KnockbackBody>()?.KnockbackEndTick ?? long.MinValue) ? stunGain : moveGain;
+                var next = KnockbackMotor.Step(new Vector2(vel.x, vel.z), horizontal, moveSpeed, gain, dt);
                 vel.x = next.x;
                 vel.z = next.y;
             }
