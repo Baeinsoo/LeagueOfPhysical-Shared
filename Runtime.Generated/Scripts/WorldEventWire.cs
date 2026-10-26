@@ -78,6 +78,29 @@ namespace LOP
                     }
                     return new WorldEventToC { ArcheryRoundResult = msg };
                 }
+                case KnockbackShotFiredEvent ks:
+                    return new WorldEventToC
+                    {
+                        KnockbackShot = new KnockbackShotToC
+                        {
+                            ShooterId = ks.shooterId,
+                            FireTick  = ks.fireTick,
+                            OriginX   = ks.origin.x,
+                            OriginZ   = ks.origin.y,
+                            DirX      = ks.direction.x,
+                            DirZ      = ks.direction.y,
+                        }
+                    };
+                case KnockbackHitEvent kh:
+                    return new WorldEventToC
+                    {
+                        KnockbackHit = new KnockbackHitToC
+                        {
+                            ShooterId = kh.shooterId,
+                            FireTick  = kh.fireTick,
+                            VictimId  = kh.victimId,
+                        }
+                    };
                 default:
                     return null;
             }
@@ -125,6 +148,17 @@ namespace LOP
                     return new ArcheryRoundResultEvent(rec.ArcheryRoundResult.RoundIndex,
                                                        rec.ArcheryRoundResult.Multiplier, list);
                 }
+                case WorldEventToC.EventOneofCase.KnockbackShot:
+                    return new KnockbackShotFiredEvent(
+                        shooterId: rec.KnockbackShot.ShooterId,
+                        fireTick:  rec.KnockbackShot.FireTick,
+                        origin:    new Vector2(rec.KnockbackShot.OriginX, rec.KnockbackShot.OriginZ),
+                        direction: new Vector2(rec.KnockbackShot.DirX, rec.KnockbackShot.DirZ));
+                case WorldEventToC.EventOneofCase.KnockbackHit:
+                    return new KnockbackHitEvent(
+                        shooterId: rec.KnockbackHit.ShooterId,
+                        fireTick:  rec.KnockbackHit.FireTick,
+                        victimId:  rec.KnockbackHit.VictimId);
                 default:
                     return null;
             }
