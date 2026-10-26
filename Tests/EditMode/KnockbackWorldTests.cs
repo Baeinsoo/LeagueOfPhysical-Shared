@@ -1,3 +1,4 @@
+using System.Linq;
 using GameFramework;
 using GameFramework.World;
 using NUnit.Framework;
@@ -11,24 +12,39 @@ namespace LOP.Tests
 
         static readonly KnockbackConfig Config = new KnockbackConfig(120f, 6.2f, 14f, 17f, 1.5f, 0f, 5f, 11f, 30f, 18f, 0.3f, 0.55f, 3, 0.95f, 0.26f, 1.2f, 1, 6f, 0.5f, 0.5f, 0.3f, 0.1f, 0.2f, 0.8f, 5f, new System.Collections.Generic.List<MountedArcheryZoneStageConfig>());
 
-        static (KnockbackWorld world, Entity body) Make(float z)
+        static Entity NewBody(string id, float x, float z)
         {
-            var registry = new EntityRegistry();
-            var body = new Entity("body-1");
-            body.Add(new GameFramework.World.Transform { Position = new System.Numerics.Vector3(0f, 0f, z) });
+            var body = new Entity(id);
+            body.Add(new GameFramework.World.Transform { Position = new System.Numerics.Vector3(x, 0f, z) });
             body.Add(new GameFramework.World.Velocity());
             body.Add(new CapsuleShape(BodySizes.CharacterRadius, BodySizes.CharacterHeight));
             body.Add(new GroundState { IsGrounded = true });
             body.Add(new InputBuffer());
             body.Add(new Simulated());
-            registry.Add(body);
+            body.Add(new KnockbackGun(Config.AmmoMax));
+            body.Add(new KnockbackBody());
+            return body;
+        }
+
+        static (KnockbackWorld world, Entity body) Make(float z)
+        {
+            var body = NewBody("body-1", 0f, z);
+            return (MakeWorld(body), body);
+        }
+
+        static KnockbackWorld MakeWorld(params Entity[] bodies)
+        {
+            var registry = new EntityRegistry();
+            foreach (var b in bodies) { registry.Add(b); }
 
             var floor = Config.CreateFloor();
-            var world = new KnockbackWorld(registry, new WorldEventBuffer(),
+            return new KnockbackWorld(registry, new WorldEventBuffer(),
                 Config.CreateMoveSystem(floor, new FlappyWorldFixture.NeverHit(), ~0),
-                new FlappyWorldFixture.NoopMotionBridge(), floor)
+                new FlappyWorldFixture.NoopMotionBridge(), floor,
+                new KnockbackFireSystem(Config),
+                new BodyCollisionSystem(BodySizes.CharacterRadius, BodySizes.CharacterHeight, Config.BodyRestitution, new Vector3(1, 0, 1)),
+                Config)
             { GameplayStartTick = 0 };
-            return (world, body);
         }
 
         static void Step(KnockbackWorld world, Entity body, long t, float h, float v)
@@ -92,6 +108,82 @@ namespace LOP.Tests
             Assert.AreEqual(vel1.Z, vel2.Z, 1e-5f);
             Assert.AreEqual(grounded1, ground.IsGrounded);
             Assert.Less(pos2.Y, -1f, "재생에서도 떨어졌어야 한다");
+        }
+
+        [Test]
+        public void 발사하면_목록과_사건에_생긴다()
+        {
+            var (world, body) = Make(0f);
+            body.Get<InputBuffer>().Current = new InputCommand { Fire = true, AimYaw = 90f };
+            world.Tick(1, Dt);
+
+            Assert.AreEqual(1, world.Shots.Shots.Count);
+            Assert.AreEqual("body-1", world.Shots.Shots[0].ShooterId);
+            Assert.AreEqual(1, world.Shots.Shots[0].FireTick);
+            Assert.AreEqual(2, body.Get<KnockbackGun>().Ammo);
+            Assert.IsTrue(world.EventBuffer.Snapshot.OfType<KnockbackShotFiredEvent>().Any(), "발사 사건이 나와야 한다");
+        }
+
+        [Test]
+        public void 날아간_몸이_선_몸을_친다()
+        {
+            var a = NewBody("a", -0.75f, 0f);
+            var b = NewBody("b", 0f, 0f);
+            var world = MakeWorld(a, b);
+            a.Get<GameFramework.World.Velocity>().Linear = new System.Numerics.Vector3(10f, 0f, 0f);
+
+            world.Tick(1, Dt);
+
+            float bx = b.Get<GameFramework.World.Velocity>().Linear.X;
+            float ax = a.Get<GameFramework.World.Velocity>().Linear.X;
+            Assert.Greater(bx, 0.1f, "선 몸이 밀려야 한다");
+            Assert.LessOrEqual(ax + bx, 10f + 1e-3f, "부딪혀서 운동량이 늘면 안 된다");
+        }
+
+        [Test]
+        public void 총과_날림과_탄이_되감아_다시_돌려도_같다()
+        {
+            var (world, body) = Make(0f);
+            var gun = body.Get<KnockbackGun>();
+            var knock = body.Get<KnockbackBody>();
+            const long SaveTick = 10;
+
+            void Step(long t)
+            {
+                body.Get<InputBuffer>().Current = new InputCommand { Fire = true, AimYaw = 90f, Horizontal = 1f };
+                //  15틱에 맞은 것으로 친다 — 날림 끝 틱이 되감기 상태에 끼게 한다.
+                if (t == 15) { knock.KnockbackEndTick = 40; knock.DamagePercent = 12; }
+                world.Tick(t, Dt);
+                world.SaveState(t);
+            }
+
+            for (long t = 1; t <= 30; t++) { Step(t); }
+            var shots1 = world.Shots.Capture();
+            long end1 = knock.KnockbackEndTick;
+            int dmg1 = knock.DamagePercent;
+            int ammo1 = gun.Ammo;
+            var pos1 = body.Get<GameFramework.World.Transform>().Position;
+            Assert.Greater(shots1.Count, 1, "여러 발이 나가야 시험이 의미 있다");
+
+            Assert.IsTrue(world.LoadState(SaveTick));
+            Assert.AreEqual(long.MinValue, knock.KnockbackEndTick, "저장 때는 아직 안 맞았다");
+            Assert.AreEqual(0, knock.DamagePercent);
+            Assert.IsTrue(world.TryGetSaved(SaveTick, "body-1", out var savedBody));
+            Assert.AreEqual(gun.Ammo, savedBody.Ammo);
+            Assert.AreNotEqual(ammo1, gun.Ammo, "저장 때 탄 수는 끝 탄 수와 달라야 시험이 의미 있다");
+            Assert.Less(world.Shots.Shots.Count, shots1.Count, "탄 목록도 저장 때로 돌아와야 한다");
+
+            for (long t = SaveTick + 1; t <= 30; t++) { Step(t); }
+            var shots2 = world.Shots.Capture();
+            Assert.AreEqual(shots1.Count, shots2.Count);
+            for (int i = 0; i < shots1.Count; i++)
+            {
+                Assert.AreEqual(shots1[i].FireTick, shots2[i].FireTick);
+            }
+            Assert.AreEqual(end1, knock.KnockbackEndTick);
+            Assert.AreEqual(dmg1, knock.DamagePercent);
+            Assert.AreEqual(ammo1, gun.Ammo);
+            Assert.AreEqual(pos1.X, body.Get<GameFramework.World.Transform>().Position.X, 1e-5f);
         }
 
         [Test]
