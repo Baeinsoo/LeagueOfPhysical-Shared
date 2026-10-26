@@ -20,7 +20,7 @@ namespace LOP.Tests
         public void 탄_하나는_몸_하나만()
         {
             var targets = new List<(string, Vector2)> { ("far", new Vector2(2.2f, 0f)), ("near", new Vector2(1.7f, 0f)) };
-            //  틱 3 선분 1.2~1.8 이 둘 다 반지름(0.85) 안에 든다 — 가까운 쪽만 나와야 한다.
+            //  틱 3 선분 1.2~1.8 이 둘 다 반지름(0.55+0.3=0.85) 안에 든다 — 가까운 쪽만 나와야 한다.
             var hits = KnockbackHits.Find(new[] { Shot("s") }, targets, 3, Config, Dt);
             Assert.AreEqual(1, hits.Count);
             Assert.AreEqual("near", hits[0].victimId);
