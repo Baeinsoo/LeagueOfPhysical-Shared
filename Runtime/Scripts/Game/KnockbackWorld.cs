@@ -52,7 +52,14 @@ namespace LOP
         /// <summary>서버가 알려 준 남의 탄을 장부에 넣는다. 이미 있으면 false.</summary>
         public bool IngestRemoteShot(in KnockbackShot shot) => Shots.Add(shot);
 
-        public bool RemoveShot(string shooterId, long fireTick) => Shots.Remove(shooterId, fireTick);
+        //  서버가 확정해 지운 탄(맞음). 되감기가 저장본에서 되살리지 못하게 키를 기억해 둔다.
+        private readonly HashSet<(string shooterId, long fireTick)> removedShots = new HashSet<(string, long)>();
+
+        public bool RemoveShot(string shooterId, long fireTick)
+        {
+            removedShots.Add((shooterId, fireTick));
+            return Shots.Remove(shooterId, fireTick);
+        }
 
         protected override void Mutation(long tick, float deltaTime)
         {
@@ -103,6 +110,8 @@ namespace LOP
             bodyCollision.Resolve(movers, standing);
 
             Shots.RemoveSpent(tick, config.ShotSpeed, config.ShotRange, deltaTime);
+            removedShots.RemoveWhere(k => new KnockbackShot(k.shooterId, k.fireTick, UnityEngine.Vector2.zero, UnityEngine.Vector2.right)
+                .IsSpent(tick, config.ShotSpeed, config.ShotRange, deltaTime));
         }
 
         //  id 순으로 세운다 — 푸는 순서가 클·서에서 같아야 같은 결과가 나온다.
@@ -113,20 +122,27 @@ namespace LOP
             foreach (var entity in EntityRegistry.All)
             {
                 var transform = entity.Get<GameFramework.World.Transform>();
+                if (entity.Get<EntityKind>()?.Kind != EntityType.Character)
+                {
+                    continue;
+                }
+
                 if (transform == null || entity.Has<GameFramework.World.Velocity>() == false
                     || entity.Has<GameFramework.World.CapsuleShape>() == false)
                 {
                     continue;
                 }
 
+                //  떨어지는 몸은 더 부딪히지 않는다 — 부딪히는 쪽(movers)도 마찬가지여야 클라가 서버와 같다.
+                if (transform.Position.Y < -0.05f)
+                {
+                    continue;
+                }
+
+                standing.Add(entity);
                 if (entity.Has<GameFramework.World.Simulated>())
                 {
                     movers.Add(entity);
-                }
-                //  떨어지는 몸은 더 부딪히지 않는다.
-                if (transform.Position.Y >= -0.05f)
-                {
-                    standing.Add(entity);
                 }
             }
             movers.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
@@ -199,9 +215,33 @@ namespace LOP
                     body.DamagePercent = s.DamagePercent;
                 }
             }
-            Shots.Restore(state.Shots);
+            //  내 몸이 쏜 탄(예측)만 저장본으로 되돌린다. 남의 탄은 서버가 한 번만 알려 준 사실이라
+            //  저장본에 없어도 지우지 않고, 서버가 지운 탄은 저장본에 있어도 되살리지 않는다.
+            var rebuilt = new List<KnockbackShot>();
+            foreach (var shot in Shots.Shots)
+            {
+                if (IsSimulatedShooter(shot.ShooterId) == false)
+                {
+                    rebuilt.Add(shot);
+                }
+            }
+            Shots.Restore(new List<KnockbackShot>());
+            foreach (var shot in rebuilt)
+            {
+                Shots.Add(shot);
+            }
+            foreach (var shot in state.Shots)
+            {
+                if (IsSimulatedShooter(shot.ShooterId) && removedShots.Contains((shot.ShooterId, shot.FireTick)) == false)
+                {
+                    Shots.Add(shot);
+                }
+            }
             return true;
         }
+
+        private bool IsSimulatedShooter(string shooterId)
+            => EntityRegistry.Get(shooterId)?.Has<GameFramework.World.Simulated>() == true;
 
         /// <summary>그 틱에 저장된 한 몸의 상태. 서버 보정 처리기가 "그때 내 값이 뭐였나"를 물을 때 쓴다.</summary>
         public bool TryGetSaved(long tick, string entityId, out KnockbackSavedBody savedBody)

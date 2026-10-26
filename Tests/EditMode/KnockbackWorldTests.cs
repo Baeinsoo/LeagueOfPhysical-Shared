@@ -23,6 +23,7 @@ namespace LOP.Tests
             body.Add(new Simulated());
             body.Add(new KnockbackGun(Config.AmmoMax));
             body.Add(new KnockbackBody());
+            body.Add(new EntityKind(EntityType.Character));
             return body;
         }
 
@@ -184,6 +185,52 @@ namespace LOP.Tests
             Assert.AreEqual(dmg1, knock.DamagePercent);
             Assert.AreEqual(ammo1, gun.Ammo);
             Assert.AreEqual(pos1.X, body.Get<GameFramework.World.Transform>().Position.X, 1e-5f);
+        }
+
+        [Test]
+        public void 되감아도_남의_탄은_남는다()
+        {
+            var (world, body) = Make(0f);
+            world.Tick(1, Dt);
+            world.SaveState(1);
+
+            var remote = new Entity("remote");
+            remote.Add(new GameFramework.World.Transform());
+            world.EntityRegistry.Add(remote);
+            Assert.IsTrue(world.IngestRemoteShot(new KnockbackShot("remote", 2, Vector2.zero, Vector2.right)));
+
+            Assert.IsTrue(world.LoadState(1));
+            Assert.AreEqual(1, world.Shots.Shots.Count, "남의 탄은 되감아도 남아야 한다");
+            Assert.AreEqual("remote", world.Shots.Shots[0].ShooterId);
+        }
+
+        [Test]
+        public void 맞아서_지운_탄은_되감아도_안_살아난다()
+        {
+            var (world, body) = Make(0f);
+            body.Get<InputBuffer>().Current = new InputCommand { Fire = true, AimYaw = 90f };
+            world.Tick(1, Dt);
+            world.SaveState(1);
+            Assert.AreEqual(1, world.Shots.Shots.Count);
+
+            Assert.IsTrue(world.RemoveShot("body-1", 1));
+            Assert.IsTrue(world.LoadState(1));
+            Assert.AreEqual(0, world.Shots.Shots.Count, "지운 탄이 되살아나면 안 된다");
+        }
+
+        [Test]
+        public void 떨어지는_몸은_부딪히지_않는다()
+        {
+            var a = NewBody("a", -0.75f, 0f);
+            var b = NewBody("b", 0f, 0f);
+            a.Get<GameFramework.World.Transform>().Position = new System.Numerics.Vector3(-0.75f, -1f, 0f);
+            a.Get<GroundState>().IsGrounded = false;
+            var world = MakeWorld(a, b);
+            a.Get<GameFramework.World.Velocity>().Linear = new System.Numerics.Vector3(10f, 0f, 0f);
+
+            world.Tick(1, Dt);
+
+            Assert.AreEqual(0f, b.Get<GameFramework.World.Velocity>().Linear.X, 1e-4f, "떨어지는 몸과는 부딪히지 않는다");
         }
 
         [Test]
