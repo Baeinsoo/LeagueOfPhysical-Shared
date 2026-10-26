@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+// 폴리모픽 래퍼 안에 담기는 payload — top-level 패킷 아님.
+// 탄이 사람을 맞혔다는 연출용 알림. 날림·피해 %의 진실원본은 EntitySnap이다.
+message KnockbackHitToC
+{
+	string shooter_id = 1;
+	int64  fire_tick  = 2;
+	string victim_id  = 3;
+}

@@ -24,7 +24,7 @@ public static partial class EntitySnapReflection {
         string.Concat(
           "ChBFbnRpdHlTbmFwLnByb3RvGhJQcm90b1ZlY3RvcjMucHJvdG8aHVByb3Rv",
           "TW90aW9uQ29udHJpYnV0aW9uLnByb3RvGhdQcm90b0FjdGl2ZUVmZmVjdC5w",
-          "cm90byLPBAoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
+          "cm90byKDBQoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
           "aXRpb24YAiABKAsyDS5Qcm90b1ZlY3RvcjMSHwoIcm90YXRpb24YAyABKAsy",
           "DS5Qcm90b1ZlY3RvcjMSHwoIdmVsb2NpdHkYBCABKAsyDS5Qcm90b1ZlY3Rv",
           "cjMSDgoGbWF4X0hQGAUgASgFEhIKCmN1cnJlbnRfSFAYBiABKAUSNgoUbW90",
@@ -37,11 +37,12 @@ public static partial class EntitySnapReflection {
           "ChNlbWVyZ2VuY3lfcmVtYWluaW5nGBMgASgCEhUKDWRhc2hfZW5kX3RpY2sY",
           "FCABKAMSEwoLZGFzaF9jaGFyZ2UYFSABKAISFgoOdGVsZXBvcnRfY291bnQY",
           "FiABKAUSGAoQZmluaXNoX3BsYWNlbWVudBgXIAEoBRINCgVzY29yZRgYIAEo",
-          "BUoECAwQDUoECA0QDmIGcHJvdG8z"));
+          "BRIaChJrbm9ja2JhY2tfZW5kX3RpY2sYGSABKAMSFgoOZGFtYWdlX3BlcmNl",
+          "bnQYGiABKAVKBAgMEA1KBAgNEA5iBnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::ProtoVector3Reflection.Descriptor, global::ProtoMotionContributionReflection.Descriptor, global::ProtoActiveEffectReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick", "PostureAxis", "Gliding", "Stamina", "EmergencyRemaining", "DashEndTick", "DashCharge", "TeleportCount", "FinishPlacement", "Score" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick", "PostureAxis", "Gliding", "Stamina", "EmergencyRemaining", "DashEndTick", "DashCharge", "TeleportCount", "FinishPlacement", "Score", "KnockbackEndTick", "DamagePercent" }, null, null, null, null)
         }));
   }
   #endregion
@@ -105,6 +106,8 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     teleportCount_ = other.teleportCount_;
     finishPlacement_ = other.finishPlacement_;
     score_ = other.score_;
+    knockbackEndTick_ = other.knockbackEndTick_;
+    damagePercent_ = other.damagePercent_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -420,6 +423,36 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
   }
 
+  /// <summary>Field number for the "knockback_end_tick" field.</summary>
+  public const int KnockbackEndTickFieldNumber = 25;
+  private long knockbackEndTick_;
+  /// <summary>
+  /// Knockback: 날림이 끝나는 절대 틱. 0 = 날리는 중 아님
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long KnockbackEndTick {
+    get { return knockbackEndTick_; }
+    set {
+      knockbackEndTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "damage_percent" field.</summary>
+  public const int DamagePercentFieldNumber = 26;
+  private int damagePercent_;
+  /// <summary>
+  /// Knockback: 누적 피해 %. 클수록 멀리 날아간다
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int DamagePercent {
+    get { return damagePercent_; }
+    set {
+      damagePercent_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -457,6 +490,8 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (TeleportCount != other.TeleportCount) return false;
     if (FinishPlacement != other.FinishPlacement) return false;
     if (Score != other.Score) return false;
+    if (KnockbackEndTick != other.KnockbackEndTick) return false;
+    if (DamagePercent != other.DamagePercent) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -486,6 +521,8 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (TeleportCount != 0) hash ^= TeleportCount.GetHashCode();
     if (FinishPlacement != 0) hash ^= FinishPlacement.GetHashCode();
     if (Score != 0) hash ^= Score.GetHashCode();
+    if (KnockbackEndTick != 0L) hash ^= KnockbackEndTick.GetHashCode();
+    if (DamagePercent != 0) hash ^= DamagePercent.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -586,6 +623,14 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(192, 1);
       output.WriteInt32(Score);
     }
+    if (KnockbackEndTick != 0L) {
+      output.WriteRawTag(200, 1);
+      output.WriteInt64(KnockbackEndTick);
+    }
+    if (DamagePercent != 0) {
+      output.WriteRawTag(208, 1);
+      output.WriteInt32(DamagePercent);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -678,6 +723,14 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(192, 1);
       output.WriteInt32(Score);
     }
+    if (KnockbackEndTick != 0L) {
+      output.WriteRawTag(200, 1);
+      output.WriteInt64(KnockbackEndTick);
+    }
+    if (DamagePercent != 0) {
+      output.WriteRawTag(208, 1);
+      output.WriteInt32(DamagePercent);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -749,6 +802,12 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
     if (Score != 0) {
       size += 2 + pb::CodedOutputStream.ComputeInt32Size(Score);
+    }
+    if (KnockbackEndTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(KnockbackEndTick);
+    }
+    if (DamagePercent != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(DamagePercent);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -832,6 +891,12 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
     if (other.Score != 0) {
       Score = other.Score;
+    }
+    if (other.KnockbackEndTick != 0L) {
+      KnockbackEndTick = other.KnockbackEndTick;
+    }
+    if (other.DamagePercent != 0) {
+      DamagePercent = other.DamagePercent;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -949,6 +1014,14 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
           Score = input.ReadInt32();
           break;
         }
+        case 200: {
+          KnockbackEndTick = input.ReadInt64();
+          break;
+        }
+        case 208: {
+          DamagePercent = input.ReadInt32();
+          break;
+        }
       }
     }
   #endif
@@ -1063,6 +1136,14 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
         }
         case 192: {
           Score = input.ReadInt32();
+          break;
+        }
+        case 200: {
+          KnockbackEndTick = input.ReadInt64();
+          break;
+        }
+        case 208: {
+          DamagePercent = input.ReadInt32();
           break;
         }
       }

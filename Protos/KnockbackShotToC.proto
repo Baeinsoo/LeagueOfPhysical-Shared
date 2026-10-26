@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+// 폴리모픽 래퍼 안에 담기는 payload — top-level 패킷 아님.
+// 서버가 탄을 쏜 것을 알린다. 받은 쪽은 (발사 틱, 위치, 방향)으로 탄 궤적을 스스로 계산한다.
+message KnockbackShotToC
+{
+	string shooter_id = 1;
+	int64  fire_tick  = 2;   // shooter_id와 짝이 되어 "어느 탄"인지를 가리킨다
+	float  origin_x   = 3;
+	float  origin_z   = 4;
+	float  dir_x      = 5;
+	float  dir_z      = 6;
+}

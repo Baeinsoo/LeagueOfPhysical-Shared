@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+import "MountedArcheryStateToC.proto";
+
+// 넉백 판의 플레이어 한 명 상태.
+message KnockbackPlayerWire
+{
+	string entity_id = 1;
+	// 탈락 안 했으면 -1
+	int64 eliminated_tick = 2;
+	int32 damage_percent = 3;
+}
+
+// 넉백 판 상태 전체(서버 → 클라). 사건이 아니라 상태로 보낸다 — 끊겼다 돌아온 사람도 받는 즉시 맞춰진다.
+// @auto_generate
+message KnockbackStateToC
+{
+	// 받는 쪽은 자기가 가진 판본보다 작으면 버린다(늦게 도착한 낡은 소식).
+	int32 version = 1;
+	repeated KnockbackPlayerWire players = 2;
+	// 공개된 원 단계(순서대로). 활쏘기와 같은 모양을 재사용한다.
+	repeated MountedZoneStageWire zone_stages = 3;
+}

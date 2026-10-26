@@ -104,6 +104,19 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 빠진_틱_예측은_발사를_복사하지_않는다()
+        {
+            system.Enqueue(buffer, 10, new InputCommand { SequenceNumber = 0, Horizontal = 0.8f, Fire = true, AimYaw = 30f });
+            system.Consume(buffer, 10);
+            Assert.IsTrue(buffer.Current.Fire, "받은 틱의 발사는 그대로 읽힌다");
+
+            var predicted = system.PredictMissing(buffer, maxTicks: 8);
+
+            Assert.That(predicted.Horizontal, Is.EqualTo(0.8f), "이동은 이어 쓴다");
+            Assert.IsFalse(predicted.Fire, "발사는 한 번짜리라 반복하면 탄이 두 번 나간다");
+        }
+
+        [Test]
         public void PredictMissing_DoesNotRepeatJumpOrAbility()
         {
             system.Enqueue(buffer, 10, new InputCommand { SequenceNumber = 0, Horizontal = 0.8f, Jump = true, AbilityId = 7 });
