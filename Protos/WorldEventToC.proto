@@ -5,6 +5,8 @@ import "AbilityActivatedToC.proto";
 import "ArcheryShotToC.proto";
 import "ArcheryHitToC.proto";
 import "ArcheryRoundResultToC.proto";
+import "KnockbackShotToC.proto";
+import "KnockbackHitToC.proto";
 
 // 폴리모픽 래퍼 — top-level 패킷 아님(@auto_generate 없음). WorldEventBatchToC 안에 담긴다.
 // 새 WorldEvent 타입 = oneof에 한 줄 추가.
@@ -17,5 +19,7 @@ message WorldEventToC
 		ArcheryShotToC        archery_shot           = 3;
 		ArcheryHitToC         archery_hit            = 4;
 		ArcheryRoundResultToC archery_round_result   = 5;
+		KnockbackShotToC      knockback_shot         = 6;
+		KnockbackHitToC       knockback_hit          = 7;
 	}
 }
