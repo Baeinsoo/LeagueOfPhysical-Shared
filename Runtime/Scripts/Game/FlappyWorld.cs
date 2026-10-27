@@ -11,7 +11,7 @@ namespace LOP
     /// 진자·셔터·승강기·낙석도 풍차 다음에 세운다.
     /// ⓪ 출발틱 전이면 아무것도 굴리지 않고 속도만 0으로 둔다.
     /// ① 스턴 시간 감소 → ①' 장애물이 쳐서 들어오면 기절 → ② 부스트 패드를 밟았으면 공짜 대시 →
-    /// ③ 속도(중력·플랩·고정 전진, 스턴 중이면 스킵) →
+    /// ③ 속도(중력·플랩·고정 전진, 스턴 중이면 스킵 — 그 바로 앞에서 받은 날갯짓을 센다: 연속 날갯짓·고비 보상) →
     /// ④ 맵에서 밀어내기(스폰 겹침 등) → ⑤ 맵은 막으며 이동(MoveBlockedByMap)
     /// + 부딪히면 스턴 진입(무적 중에도 막힘, 재진입만 안 함).
     ///
@@ -46,6 +46,7 @@ namespace LOP
         private readonly FlappyRockfallField _rockfallField;
         private readonly FlappyBoostPadField _boostPadField;
         private readonly FlappyMoteField _moteField;
+        private readonly FlappyFlapComboSystem _flapCombo;
         private readonly ICollisionQuery _collisionQuery;
         private readonly GameFramework.World.IMotionBridge _motionBridge;
         private readonly int _layerMask;
@@ -94,7 +95,9 @@ namespace LOP
             FlappyShutterField shutterField = null,
             FlappyLiftField liftField = null,
             FlappyRockfallField rockfallField = null,
-            FlappyMoteField moteField = null)
+            FlappyMoteField moteField = null,
+            //  null이면 연속 날갯짓을 안 센다 — 세는 일과 무관한 시험·도구가 그대로 돌게. 실제 판은 클·서 스코프가 늘 넣는다.
+            FlappyFlapComboSystem flapCombo = null)
             : base(entityRegistry, eventBuffer)
         {
             _moveSystem = moveSystem;
@@ -111,6 +114,7 @@ namespace LOP
             _liftField = liftField;
             _rockfallField = rockfallField;
             _moteField = moteField;
+            _flapCombo = flapCombo;
 
             int hologramLayer = LayerMask.NameToLayer(FlappyHologram.LayerName);
             _hologramMask = hologramLayer >= 0 ? 1 << hologramLayer : 0;
@@ -180,6 +184,7 @@ namespace LOP
                         if (_stunSystem.Enter(_birds[i]))
                         {
                             _dashSystem.LoseOnStun(_birds[i]);
+                            _flapCombo?.Break(_birds[i]);   // 새로 기절했다 — 연속 날갯짓이 끊긴다
                         }
                         _dashSystem.Cancel(_birds[i]);
                     }
@@ -212,7 +217,14 @@ namespace LOP
                 }
 
                 bool finished = _birds[i].Get<FinishState>()?.Finished ?? false;
-                _moveSystem.Tick(_birds[i], deltaTime, _dashSystem.IsDashing(_birds[i]), finished);
+                bool dashing = _dashSystem.IsDashing(_birds[i]);
+                //  연속 날갯짓(spec 2026-10-27): 이동 커널이 실제로 쓰는 날갯짓만 센다 — 대시 중·결승 뒤엔 커널이 날갯짓을 버린다.
+                //  대시 중 난타로 고비를 벌지 못하게 하는 것도 이 조건이다. 이동 앞이라 고비 보상이 이번 틱 게이지에 바로 든다.
+                if (input != null && input.Jump && dashing == false && finished == false)
+                {
+                    _flapCombo?.Flap(_birds[i]);
+                }
+                _moveSystem.Tick(_birds[i], deltaTime, dashing, finished);
             }
 
             // 벽 안이면 밖으로 밀어낸다 — 스폰 겹침 등. 겹침이
@@ -428,6 +440,7 @@ namespace LOP
                 if (_stunSystem.Enter(entity))
                 {
                     _dashSystem.LoseOnStun(entity);
+                    _flapCombo?.Break(entity);   // 새로 기절했다 — 연속 날갯짓이 끊긴다
                 }
                 // 대시는 무적 여부와 무관하게 끝난다 — 벽에 막힌 순간 수평 직선은 이미 깨졌다.
                 _dashSystem.Cancel(entity);
