@@ -35,4 +35,7 @@ message EntitySnap
 	// Archery: 이 판에서 모은 점수. 이 컴포넌트가 없는 게임에서는 0이 나가고 아무도 안 읽는다
 	// (finish_placement와 같은 방식).
 	int32 score = 24;
+	// Flappy: 기절 없이 이어진, 시뮬이 받은 날갯짓 수(spec 2026-10-27-flappy-combo-dash-reward). 고비 보상(대시 게이지)이 이 수에서
+	// 나오므로 내 새 예측이 서버와 같은 날갯짓에서 고비를 맞게 함께 싣는다. 시간이 아니라 개수라 끝 틱 관례(ADR-0015)와 무관하다.
+	int32 flap_combo = 25;
 }
