@@ -70,6 +70,43 @@ namespace LOP.Tests
             Assert.AreEqual(0f, bird.Get<FlappyStun>().StunRemaining);
         }
 
+        //  Pendulum과 똑같은 월드지만 연속 날갯짓까지 센다(FlappyFlapComboSystem) — 움직이는 장애물에 맞아
+        //  새로 기절하는 자리(FlappyWorld.cs:187 _flapCombo?.Break)가 MoveBlockedByMap과 별도로 끊는지 본다.
+        private static FlappyWorld WorldWithCombo(FlappyPendulumField field, out Entity bird)
+        {
+            var registry = new EntityRegistry();
+            bird = FlappyWorldFixture.Bird("bird-1");
+            registry.Add(bird);
+            var rules = new FlappyMapRulesField();
+            rules.Set(chaser: false, manualDash: true, diveCharge: true);
+            var dash = new FlappyDashSystem(FlappyWorldFixture.Config(), rules);
+            var world = new FlappyWorld(registry, new WorldEventBuffer(),
+                new FlappyMoveSystem(FlappyWorldFixture.Config()),
+                new FlappyStunSystem(FlappyWorldFixture.Config()),
+                dash,
+                new FinishSystem(new FinishLineBounds(FinishAxis.X), FinishAxis.X, increasing: true),
+                new FlappyWindmillField(), new FlappyBoostPadField(),
+                new FlappyWorldFixture.NeverHit(), new FlappyWorldFixture.NoopMotionBridge(),
+                layerMask: ~0, pendulumField: field,
+                flapCombo: new FlappyFlapComboSystem(dash, rules));
+            world.GameplayStartTick = 0;
+            return world;
+        }
+
+        [Test]
+        public void 막대에_맞으면_연속_날갯짓이_끊긴다()
+        {
+            //  MoveBlockedByMap(맵 충돌)과는 다른 자리다 — 여기는 움직이는 장애물(진자·낙석)이 가만히
+            //  있는 새를 쳐서 기절시키는 경로(176~190줄)다. 둘 다 끊어야 한다.
+            var world = WorldWithCombo(Pendulum(0f), out var bird);
+            bird.Get<FlappyFlapCombo>().Count = 5;
+
+            world.Tick(FlappyWorldFixture.StartTick, 0.02f);
+
+            Assert.Greater(bird.Get<FlappyStun>().StunRemaining, 0f, "막대에 맞아 기절했다");
+            Assert.AreEqual(0, bird.Get<FlappyFlapCombo>().Count, "기절했으니 연속 날갯짓이 끊겨야 한다");
+        }
+
         [Test]
         public void 진자가_없으면_예전과_같다()
         {
