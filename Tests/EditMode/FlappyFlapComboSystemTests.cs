@@ -50,15 +50,15 @@ namespace LOP.Tests
             Flaps(system, bird, 9);
             Assert.AreEqual(0f, Charge(bird), "9");
             Flaps(system, bird, 1);
-            Assert.AreEqual(0.25f, Charge(bird), "10");
+            Assert.AreEqual(0f, Charge(bird), "10 — 10-28부터 말만, 게이지는 없다");
             Flaps(system, bird, 14);
-            Assert.AreEqual(0.25f, Charge(bird), "24");
+            Assert.AreEqual(0f, Charge(bird), "24");
             Flaps(system, bird, 1);
-            Assert.AreEqual(0.75f, Charge(bird), "25");
+            Assert.AreEqual(0.25f, Charge(bird), "25");
             Flaps(system, bird, 25);
-            Assert.AreEqual(1.25f, Charge(bird), "50");
+            Assert.AreEqual(0.75f, Charge(bird), "50");
             Flaps(system, bird, 50);
-            Assert.AreEqual(FlappyDash.MaxCharge, Charge(bird), "100 — 1칸을 더하면 2.25지만 2칸에서 멈춘다");
+            Assert.AreEqual(1.25f, Charge(bird), "100 — 합 1.25칸, 2칸 상한 전");
         }
 
         [Test]
@@ -78,14 +78,15 @@ namespace LOP.Tests
         [Test]
         public void 끊으면_0이고_다음_연속도_고비에서_또_준다()
         {
+            //  10은 보상이 0이라(10-28) 이 시험은 25로 본다.
             var system = System();
             var bird = Bird();
-            Flaps(system, bird, 10);
+            Flaps(system, bird, 25);
             Assert.AreEqual(0.25f, Charge(bird));
 
             system.Break(bird);
             Assert.AreEqual(0, bird.Get<FlappyFlapCombo>().Count);
-            Flaps(system, bird, 10);
+            Flaps(system, bird, 25);
 
             Assert.AreEqual(0.5f, Charge(bird));
         }

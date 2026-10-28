@@ -34,7 +34,7 @@ namespace LOP.Tests
             var marker = Marker();
 
             CollectionAssert.AreEqual(new[] { 10, 25, 50, 100 }, marker.ComboMilestones);
-            CollectionAssert.AreEqual(new[] { 0.25f, 0.5f, 0.5f, 1f }, marker.ComboDashGains);
+            CollectionAssert.AreEqual(new[] { 0f, 0.25f, 0.5f, 0.5f }, marker.ComboDashGains);
         }
 
         [Test]

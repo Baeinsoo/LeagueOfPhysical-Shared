@@ -18,8 +18,8 @@ namespace LOP
         /// <summary>다이브 충전 문턱 = 최고 낙하 × 이 비율. 원조 물리(11.25)면 8.44 — 날갯짓 뒤 약 0.5초 참으면 넘는다.</summary>
         public const float DefaultDiveMinFallRatio = 0.75f;
 
-        /// <summary>최고 낙하로 떨어질 때 초당 차는 칸. 문턱에선 이것의 40%.</summary>
-        public const float DefaultDiveRate = 0.55f;
+        /// <summary>최고 낙하로 떨어질 때 초당 차는 칸. 문턱에선 이것의 40%(사용자 결정 10-28 — 고비 보상이 생겨 게이지가 너무 잘 찬다, 0.55에서 내렸다).</summary>
+        public const float DefaultDiveRate = 0.4f;
 
         /// <summary>박아서 스턴이 걸리면 잃는 게이지(칸). 찬 칸은 지킨다 — 채우던 몫이 이보다 적으면 그만큼만.
         /// 10-24 사람 판: 채우던 칸 전부는 아깝다 → "전부가 아닌 일정량".</summary>

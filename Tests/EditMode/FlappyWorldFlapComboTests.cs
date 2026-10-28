@@ -105,44 +105,46 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 열_번째_날갯짓에_게이지가_4분의1칸_오른다()
+        public void 스물다섯_번째_날갯짓에_게이지가_4분의1칸_오른다()
         {
+            //  10-28부터 10은 말만, 게이지 없음 — 처음 게이지가 오르는 고비는 25다.
             var world = Make(new FlappyWorldFixture.NeverHit(), out var bird);
 
-            for (long t = 1; t <= 9; t++)
+            for (long t = 1; t <= 24; t++)
             {
                 Step(world, bird, t, flap: true);
             }
-            Assert.AreEqual(0f, Charge(bird), "9");
+            Assert.AreEqual(0f, Charge(bird), "24 — 10엔 보상이 없다");
 
-            Step(world, bird, 10, flap: true);
-            Assert.AreEqual(0.25f, Charge(bird), "10");
+            Step(world, bird, 25, flap: true);
+            Assert.AreEqual(0.25f, Charge(bird), "25");
 
-            for (long t = 11; t <= 24; t++)
+            for (long t = 26; t <= 49; t++)
             {
                 Step(world, bird, t, flap: true);
             }
-            Assert.AreEqual(0.25f, Charge(bird), "24 — 다음 고비 전");
+            Assert.AreEqual(0.25f, Charge(bird), "49 — 다음 고비 전");
         }
 
         [Test]
         public void 되감아_다시_굴려도_고비_보상은_한_번()
         {
+            //  10-28부터 10은 보상 0이라 25까지 굴려야 게이지가 움직인다.
             var world = Make(new FlappyWorldFixture.NeverHit(), out var bird);
-            for (long t = 1; t <= 14; t++)
+            for (long t = 1; t <= 30; t++)
             {
                 Step(world, bird, t, flap: true);
             }
             int liveCombo = Combo(bird);
             float liveCharge = Charge(bird);
-            Assert.AreEqual(14, liveCombo);
+            Assert.AreEqual(30, liveCombo);
             Assert.AreEqual(0.25f, liveCharge);
 
-            //  고비 앞(5) · 고비 틱(10) · 고비 뒤(12)에서 되감아 같은 입력으로 다시 굴린다.
-            foreach (long anchor in new long[] { 5, 10, 12 })
+            //  고비 앞(20) · 고비 틱(25) · 고비 뒤(27)에서 되감아 같은 입력으로 다시 굴린다.
+            foreach (long anchor in new long[] { 20, 25, 27 })
             {
                 Assert.IsTrue(world.LoadState(anchor), $"앵커 {anchor}");
-                for (long t = anchor + 1; t <= 14; t++)
+                for (long t = anchor + 1; t <= 30; t++)
                 {
                     Step(world, bird, t, flap: true);
                 }
@@ -154,42 +156,44 @@ namespace LOP.Tests
         [Test]
         public void 서버가_고비_전이면_재생에서_서버_수로_한_번_준다()
         {
-            //  예측은 14번 다 받았다. 서버는 한 번을 늦게 받아 8틱에 7번·게이지 0이다(보정이 덮는 값).
+            //  10-28부터 10은 보상 0이라 이 시험은 25로 본다. 예측은 29번 다 받았다.
+            //  서버는 한 번을 늦게 받아 23틱에 22번·게이지 0이다(보정이 덮는 값).
             var world = Make(new FlappyWorldFixture.NeverHit(), out var bird);
-            for (long t = 1; t <= 14; t++)
+            for (long t = 1; t <= 29; t++)
             {
                 Step(world, bird, t, flap: true);
             }
 
-            Assert.IsTrue(world.LoadState(8));
-            bird.Get<FlappyFlapCombo>().Count = 7;
+            Assert.IsTrue(world.LoadState(23));
+            bird.Get<FlappyFlapCombo>().Count = 22;
             bird.Get<FlappyDash>().Charge = 0f;
-            Step(world, bird, 9, flap: true);
-            Step(world, bird, 10, flap: true);
-            Assert.AreEqual(9, Combo(bird));
-            Assert.AreEqual(0f, Charge(bird), "예측이 10틱에 받았던 ¼칸은 서버 수로는 아직이다");
+            Step(world, bird, 24, flap: true);
+            Step(world, bird, 25, flap: true);
+            Assert.AreEqual(24, Combo(bird));
+            Assert.AreEqual(0f, Charge(bird), "예측이 25틱에 받았던 ¼칸은 서버 수로는 아직이다");
 
-            Step(world, bird, 11, flap: true);
-            Assert.AreEqual(10, Combo(bird));
-            Assert.AreEqual(0.25f, Charge(bird), "서버와 같은 날갯짓(11틱)에서 한 번");
+            Step(world, bird, 26, flap: true);
+            Assert.AreEqual(25, Combo(bird));
+            Assert.AreEqual(0.25f, Charge(bird), "서버와 같은 날갯짓(26틱)에서 한 번");
         }
 
         [Test]
         public void 서버가_이미_줬으면_재생은_다시_안_준다()
         {
+            //  10-28부터 10은 보상 0이라 이 시험은 25로 본다.
             var world = Make(new FlappyWorldFixture.NeverHit(), out var bird);
-            for (long t = 1; t <= 14; t++)
+            for (long t = 1; t <= 29; t++)
             {
                 Step(world, bird, t, flap: true);
             }
 
-            Assert.IsTrue(world.LoadState(12));
-            bird.Get<FlappyFlapCombo>().Count = 11;     //  서버: 한 번 덜 받았지만 고비(10)는 이미 지났다
+            Assert.IsTrue(world.LoadState(27));
+            bird.Get<FlappyFlapCombo>().Count = 26;     //  서버: 한 번 덜 받았지만 고비(25)는 이미 지났다
             bird.Get<FlappyDash>().Charge = 0.25f;
-            Step(world, bird, 13, flap: true);
-            Step(world, bird, 14, flap: true);
+            Step(world, bird, 28, flap: true);
+            Step(world, bird, 29, flap: true);
 
-            Assert.AreEqual(13, Combo(bird));
+            Assert.AreEqual(28, Combo(bird));
             Assert.AreEqual(0.25f, Charge(bird), "0.5가 되면 두 번 준 것이다");
         }
 
@@ -216,7 +220,7 @@ namespace LOP.Tests
             }
 
             Assert.AreEqual(40, Combo(serverBird), "무언가 실제로 셌는지 — 120틱에 세 틱마다");
-            Assert.AreEqual(0.75f, Charge(serverBird), "10·25 두 고비");
+            Assert.AreEqual(0.25f, Charge(serverBird), "10은 보상 0, 25만 4분의1칸(10-28)");
             Assert.AreEqual(Combo(serverBird), Combo(clientBird));
             Assert.AreEqual(Charge(serverBird), Charge(clientBird));
             Assert.AreEqual(serverBird.Get<GameFramework.World.Transform>().Position,
