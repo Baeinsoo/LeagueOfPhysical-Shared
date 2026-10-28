@@ -51,10 +51,14 @@ namespace LOP
 
         public float StunLoss { get; private set; } = DefaultStunLoss;
 
+        /// <summary>연속 날갯짓 고비와 보상(spec 2026-10-27-flappy-combo-dash-reward). 마커가 없는 맵·<see cref="Clear"/> 뒤는 기본이다
+        /// (그런 맵은 대개 수동 대시도 꺼져 있어 실제로는 안 준다 — <see cref="FlappyDashSystem.GrantCharge"/>).</summary>
+        public FlappyFlapComboRules FlapCombo { get; private set; } = FlappyFlapComboRules.Default;
+
         public void Set(bool chaser, bool manualDash, bool moteCharge = false,
                         float moteValue = DefaultMoteValue, float moteReach = DefaultMoteReach,
                         bool diveCharge = false, float diveMinFallRatio = DefaultDiveMinFallRatio, float diveRate = DefaultDiveRate,
-                        float stunLoss = DefaultStunLoss)
+                        float stunLoss = DefaultStunLoss, FlappyFlapComboRules flapCombo = null)
         {
             Chaser = chaser;
             ManualDash = manualDash;
@@ -65,6 +69,7 @@ namespace LOP
             DiveMinFallRatio = diveMinFallRatio;
             DiveRate = diveRate;
             StunLoss = stunLoss;
+            FlapCombo = flapCombo ?? FlappyFlapComboRules.Default;
         }
 
         /// <summary>맵을 다시 로드하면 옛 마커가 사라진다 — 그때 거둬 기본값(전부 꺼짐)으로 되돌린다.</summary>

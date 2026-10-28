@@ -122,5 +122,19 @@ namespace LOP.Tests
                 Object.DestroyImmediate(go);
             }
         }
+
+        [Test]
+        public void 연속_날갯짓_고비는_기본값이고_Clear하면_기본으로_돌아간다()
+        {
+            var field = new FlappyMapRulesField();
+            Assert.AreSame(FlappyFlapComboRules.Default, field.FlapCombo, "마커가 없는 맵도 기본 고비");
+
+            FlappyFlapComboRules.TryCreate(new[] { 5 }, new[] { 1f }, out var custom);
+            field.Set(chaser: false, manualDash: true, flapCombo: custom);
+            Assert.AreSame(custom, field.FlapCombo);
+
+            field.Clear();
+            Assert.AreSame(FlappyFlapComboRules.Default, field.FlapCombo);
+        }
     }
 }

@@ -410,5 +410,41 @@ namespace LOP.Tests
 
             Assert.That(system.IsDashing(bird), Is.True);
         }
+
+        [Test]
+        public void 고비_보상은_칸을_더하고_실제로_더한_양을_돌려준다()
+        {
+            var bird = Bird(charge: 0.5f);
+
+            float added = new FlappyDashSystem(Config()).GrantCharge(bird, 0.25f);
+
+            Assert.That(bird.Get<FlappyDash>().Charge, Is.EqualTo(0.75f).Within(Tolerance));
+            Assert.That(added, Is.EqualTo(0.25f).Within(Tolerance));
+        }
+
+        [Test]
+        public void 고비_보상은_두_칸에서_멈추고_넘친_몫은_버린다()
+        {
+            var bird = Bird(charge: 1.9f);
+
+            float added = new FlappyDashSystem(Config()).GrantCharge(bird, 1f);
+
+            Assert.That(bird.Get<FlappyDash>().Charge, Is.EqualTo(FlappyDash.MaxCharge));
+            Assert.That(added, Is.EqualTo(0.1f).Within(1e-5f));
+        }
+
+        [Test]
+        public void 버튼을_숨긴_맵에선_고비_보상이_없다()
+        {
+            //  수동 대시를 끈 맵은 버튼이 없다 — 쓸 수 없는 게이지를 채우면 "왜 찼지?"만 남는다.
+            var rules = new FlappyMapRulesField();
+            rules.Set(chaser: false, manualDash: false);
+            var bird = Bird(charge: 0.5f);
+
+            float added = new FlappyDashSystem(Config(), rules).GrantCharge(bird, 0.25f);
+
+            Assert.That(bird.Get<FlappyDash>().Charge, Is.EqualTo(0.5f));
+            Assert.That(added, Is.EqualTo(0f));
+        }
     }
 }
