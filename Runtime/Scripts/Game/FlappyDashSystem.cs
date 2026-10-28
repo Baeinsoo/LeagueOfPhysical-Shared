@@ -90,6 +90,22 @@ namespace LOP
             AddCharge(dash, count * rules.MoteValue);
         }
 
+        /// <summary>
+        /// 연속 날갯짓 고비 보상(<see cref="FlappyFlapComboSystem"/>). 게이지를 더하고 상한(<see cref="FlappyDash.MaxCharge"/>)에서 멈춘다 —
+        /// 실제로 더해진 양을 돌려준다. 버튼이 숨겨진 맵(수동 대시 끔)에선 쓸 수 없는 게이지라 안 더한다. 출발 게이지·다이브·알갱이 규칙과는 따로다.
+        /// </summary>
+        public float GrantCharge(GameFramework.World.Entity entity, float amount)
+        {
+            var dash = entity.Get<FlappyDash>();
+            if (dash == null || amount <= 0f || (rules != null && rules.ManualDash == false))
+            {
+                return 0f;
+            }
+            float before = dash.Charge;
+            AddCharge(dash, amount);
+            return dash.Charge - before;
+        }
+
         //  게이지를 더하고 상한에서 멈춘다. 1/24처럼 2진수로 안 떨어지는 값을 나눠 더하면 칸 경계 바로 아래(1.9999998)에
         //  멈춘다 — 그러면 찬 칸이 내림으로 사라지고, 한 칸이 덜 보이고, 버튼이 안 나간다. 경계에 아주 가까우면 정확히 그 칸으로
         //  맞춘다. 클·서가 같은 식이라 결과도 같다.

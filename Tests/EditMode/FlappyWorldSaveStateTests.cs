@@ -125,5 +125,22 @@ namespace LOP.Tests
 
             Assert.IsFalse(world.TryGetSavedState(999, bird.Id, out _));
         }
+
+        [Test]
+        public void 되감으면_연속_날갯짓_수도_그_틱으로_돌아간다()
+        {
+            //  수가 사진에 없으면 재생이 라이브의 큰 수에서 이어 세어 고비를 건너뛰거나 두 번 지난다(spec 2026-10-27 §3).
+            var world = FlappyWorldFixture.Create(new FlappyWorldFixture.NeverHit(), out var bird);
+            world.GameplayStartTick = 0;
+            var combo = bird.Get<FlappyFlapCombo>();
+            combo.Count = 12;
+
+            world.Tick(1, 0.02f);
+            world.SaveState(1);
+            combo.Count = 40;
+
+            Assert.That(world.LoadState(1), Is.True);
+            Assert.That(combo.Count, Is.EqualTo(12));
+        }
     }
 }

@@ -70,6 +70,7 @@ namespace LOP.Tests
             entity.Add(new EntityKind(EntityType.Character));   // FlappyWorld.CollectBirds가 이걸로 "새"를 가린다
             entity.Add(new FlappyStun());
             entity.Add(new FlappyDash());
+            entity.Add(new FlappyFlapCombo());
             if (withInput)
             {
                 entity.Add(new InputBuffer());
@@ -121,6 +122,28 @@ namespace LOP.Tests
             registry.Add(localBird);
             registry.Add(remoteBird);
             return Build(registry, collisionQuery, new NoopMotionBridge());
+        }
+
+        /// <summary>
+        /// 연속 날갯짓까지 세는 월드(spec 2026-10-27). 대시 시스템과 세기 시스템이 같은 규칙 필드를 본다 — 실제 스코프와 같은 모양.
+        /// 출발 게이트는 열어 둔다(<see cref="StartTick"/>부터).
+        /// </summary>
+        public static FlappyWorld CreateWithCombo(ICollisionQuery collisionQuery, FlappyMapRulesField rules, out Entity bird)
+        {
+            var registry = new EntityRegistry();
+            bird = Bird("bird-1");
+            registry.Add(bird);
+            var dash = new FlappyDashSystem(Config(), rules);
+            var world = new FlappyWorld(registry, new WorldEventBuffer(),
+                new FlappyMoveSystem(Config()),
+                new FlappyStunSystem(Config()),
+                dash,
+                new FinishSystem(new FinishLineBounds(FinishAxis.X), FinishAxis.X, increasing: true),
+                new FlappyWindmillField(), new FlappyBoostPadField(),
+                collisionQuery, new NoopMotionBridge(), layerMask: ~0,
+                flapCombo: new FlappyFlapComboSystem(dash, rules));
+            world.GameplayStartTick = 0;
+            return world;
         }
 
         private static FlappyWorld Build(EntityRegistry registry, ICollisionQuery collisionQuery, IMotionBridge motionBridge, int layerMask = ~0)
