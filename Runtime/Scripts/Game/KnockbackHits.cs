@@ -7,7 +7,7 @@ namespace LOP
     public static class KnockbackHits
     {
         /// <summary>
-        /// 탄마다 이번 틱에 지나온 선분(앞 틱 자리 → 이번 틱 자리, 쏜 틱이면 원점 → 이번 틱 자리)을
+        /// 탄마다 이번 틱에 지나온 선분(앞 틱 자리 → 이번 틱 자리, 쏜 틱이면 원점 → 이번 틱 자리, 사거리 끝에서 자름)을
         /// 자기 아닌 몸의 원(몸 + 탄 반지름)에 대어, 가장 먼저 닿는 몸 하나만 고른다.
         /// 같은 틱에 두 탄이 한 몸을 맞히면 둘 다 나온다. 결과 순서는 탄 목록 순서다.
         /// 떨어지는 몸·탈락한 몸은 부르는 쪽이 targets에서 뺀다.
@@ -27,8 +27,8 @@ namespace LOP
                     continue;
                 }
 
-                Vector2 from = tick == shot.FireTick ? shot.Origin : shot.PositionAt(tick - 1, cfg.ShotSpeed, dt);
-                Vector2 to = shot.PositionAt(tick, cfg.ShotSpeed, dt);
+                Vector2 from = tick == shot.FireTick ? shot.Origin : shot.PositionWithinRange(tick - 1, cfg.ShotSpeed, cfg.ShotRange, dt);
+                Vector2 to = shot.PositionWithinRange(tick, cfg.ShotSpeed, cfg.ShotRange, dt);
 
                 string victim = null;
                 float best = float.MaxValue;

@@ -24,7 +24,7 @@ public static partial class EntitySnapReflection {
         string.Concat(
           "ChBFbnRpdHlTbmFwLnByb3RvGhJQcm90b1ZlY3RvcjMucHJvdG8aHVByb3Rv",
           "TW90aW9uQ29udHJpYnV0aW9uLnByb3RvGhdQcm90b0FjdGl2ZUVmZmVjdC5w",
-          "cm90byKXBQoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
+          "cm90byL4BQoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
           "aXRpb24YAiABKAsyDS5Qcm90b1ZlY3RvcjMSHwoIcm90YXRpb24YAyABKAsy",
           "DS5Qcm90b1ZlY3RvcjMSHwoIdmVsb2NpdHkYBCABKAsyDS5Qcm90b1ZlY3Rv",
           "cjMSDgoGbWF4X0hQGAUgASgFEhIKCmN1cnJlbnRfSFAYBiABKAUSNgoUbW90",
@@ -38,12 +38,14 @@ public static partial class EntitySnapReflection {
           "FCABKAMSEwoLZGFzaF9jaGFyZ2UYFSABKAISFgoOdGVsZXBvcnRfY291bnQY",
           "FiABKAUSGAoQZmluaXNoX3BsYWNlbWVudBgXIAEoBRINCgVzY29yZRgYIAEo",
           "BRISCgpmbGFwX2NvbWJvGBkgASgFEhoKEmtub2NrYmFja19lbmRfdGljaxga",
-          "IAEoAxIWCg5kYW1hZ2VfcGVyY2VudBgbIAEoBUoECAwQDUoECA0QDmIGcHJv",
-          "dG8z"));
+          "IAEoAxIWCg5kYW1hZ2VfcGVyY2VudBgbIAEoBRIWCg5rbm9ja2JhY2tfYW1t",
+          "bxgcIAEoBRIiChprbm9ja2JhY2tfbmV4dF9yZWxvYWRfdGljaxgdIAEoAxIj",
+          "Chtrbm9ja2JhY2tfY29vbGRvd25fZW5kX3RpY2sYHiABKANKBAgMEA1KBAgN",
+          "EA5iBnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::ProtoVector3Reflection.Descriptor, global::ProtoMotionContributionReflection.Descriptor, global::ProtoActiveEffectReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick", "PostureAxis", "Gliding", "Stamina", "EmergencyRemaining", "DashEndTick", "DashCharge", "TeleportCount", "FinishPlacement", "Score", "FlapCombo", "KnockbackEndTick", "DamagePercent" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick", "PostureAxis", "Gliding", "Stamina", "EmergencyRemaining", "DashEndTick", "DashCharge", "TeleportCount", "FinishPlacement", "Score", "FlapCombo", "KnockbackEndTick", "DamagePercent", "KnockbackAmmo", "KnockbackNextReloadTick", "KnockbackCooldownEndTick" }, null, null, null, null)
         }));
   }
   #endregion
@@ -110,6 +112,9 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     flapCombo_ = other.flapCombo_;
     knockbackEndTick_ = other.knockbackEndTick_;
     damagePercent_ = other.damagePercent_;
+    knockbackAmmo_ = other.knockbackAmmo_;
+    knockbackNextReloadTick_ = other.knockbackNextReloadTick_;
+    knockbackCooldownEndTick_ = other.knockbackCooldownEndTick_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -471,6 +476,48 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
   }
 
+  /// <summary>Field number for the "knockback_ammo" field.</summary>
+  public const int KnockbackAmmoFieldNumber = 28;
+  private int knockbackAmmo_;
+  /// <summary>
+  /// Knockback: 총 상태. 클라 예측과 갈리면(입력 유실 등) 보정 처리기가 되감아 맞춘다.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int KnockbackAmmo {
+    get { return knockbackAmmo_; }
+    set {
+      knockbackAmmo_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "knockback_next_reload_tick" field.</summary>
+  public const int KnockbackNextReloadTickFieldNumber = 29;
+  private long knockbackNextReloadTick_;
+  /// <summary>
+  /// 가득이면 long.MaxValue 그대로 싣는다(0이 아니다)
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long KnockbackNextReloadTick {
+    get { return knockbackNextReloadTick_; }
+    set {
+      knockbackNextReloadTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "knockback_cooldown_end_tick" field.</summary>
+  public const int KnockbackCooldownEndTickFieldNumber = 30;
+  private long knockbackCooldownEndTick_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long KnockbackCooldownEndTick {
+    get { return knockbackCooldownEndTick_; }
+    set {
+      knockbackCooldownEndTick_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -511,6 +558,9 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (FlapCombo != other.FlapCombo) return false;
     if (KnockbackEndTick != other.KnockbackEndTick) return false;
     if (DamagePercent != other.DamagePercent) return false;
+    if (KnockbackAmmo != other.KnockbackAmmo) return false;
+    if (KnockbackNextReloadTick != other.KnockbackNextReloadTick) return false;
+    if (KnockbackCooldownEndTick != other.KnockbackCooldownEndTick) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -543,6 +593,9 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (FlapCombo != 0) hash ^= FlapCombo.GetHashCode();
     if (KnockbackEndTick != 0L) hash ^= KnockbackEndTick.GetHashCode();
     if (DamagePercent != 0) hash ^= DamagePercent.GetHashCode();
+    if (KnockbackAmmo != 0) hash ^= KnockbackAmmo.GetHashCode();
+    if (KnockbackNextReloadTick != 0L) hash ^= KnockbackNextReloadTick.GetHashCode();
+    if (KnockbackCooldownEndTick != 0L) hash ^= KnockbackCooldownEndTick.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -655,6 +708,18 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(216, 1);
       output.WriteInt32(DamagePercent);
     }
+    if (KnockbackAmmo != 0) {
+      output.WriteRawTag(224, 1);
+      output.WriteInt32(KnockbackAmmo);
+    }
+    if (KnockbackNextReloadTick != 0L) {
+      output.WriteRawTag(232, 1);
+      output.WriteInt64(KnockbackNextReloadTick);
+    }
+    if (KnockbackCooldownEndTick != 0L) {
+      output.WriteRawTag(240, 1);
+      output.WriteInt64(KnockbackCooldownEndTick);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -759,6 +824,18 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(216, 1);
       output.WriteInt32(DamagePercent);
     }
+    if (KnockbackAmmo != 0) {
+      output.WriteRawTag(224, 1);
+      output.WriteInt32(KnockbackAmmo);
+    }
+    if (KnockbackNextReloadTick != 0L) {
+      output.WriteRawTag(232, 1);
+      output.WriteInt64(KnockbackNextReloadTick);
+    }
+    if (KnockbackCooldownEndTick != 0L) {
+      output.WriteRawTag(240, 1);
+      output.WriteInt64(KnockbackCooldownEndTick);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -839,6 +916,15 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
     if (DamagePercent != 0) {
       size += 2 + pb::CodedOutputStream.ComputeInt32Size(DamagePercent);
+    }
+    if (KnockbackAmmo != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(KnockbackAmmo);
+    }
+    if (KnockbackNextReloadTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(KnockbackNextReloadTick);
+    }
+    if (KnockbackCooldownEndTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(KnockbackCooldownEndTick);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -931,6 +1017,15 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
     if (other.DamagePercent != 0) {
       DamagePercent = other.DamagePercent;
+    }
+    if (other.KnockbackAmmo != 0) {
+      KnockbackAmmo = other.KnockbackAmmo;
+    }
+    if (other.KnockbackNextReloadTick != 0L) {
+      KnockbackNextReloadTick = other.KnockbackNextReloadTick;
+    }
+    if (other.KnockbackCooldownEndTick != 0L) {
+      KnockbackCooldownEndTick = other.KnockbackCooldownEndTick;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -1060,6 +1155,18 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
           DamagePercent = input.ReadInt32();
           break;
         }
+        case 224: {
+          KnockbackAmmo = input.ReadInt32();
+          break;
+        }
+        case 232: {
+          KnockbackNextReloadTick = input.ReadInt64();
+          break;
+        }
+        case 240: {
+          KnockbackCooldownEndTick = input.ReadInt64();
+          break;
+        }
       }
     }
   #endif
@@ -1186,6 +1293,18 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
         }
         case 216: {
           DamagePercent = input.ReadInt32();
+          break;
+        }
+        case 224: {
+          KnockbackAmmo = input.ReadInt32();
+          break;
+        }
+        case 232: {
+          KnockbackNextReloadTick = input.ReadInt64();
+          break;
+        }
+        case 240: {
+          KnockbackCooldownEndTick = input.ReadInt64();
           break;
         }
       }

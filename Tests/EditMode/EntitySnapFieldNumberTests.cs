@@ -10,6 +10,9 @@ namespace LOP.Tests
             Assert.AreEqual(25, EntitySnap.FlapComboFieldNumber);
             Assert.AreEqual(26, EntitySnap.KnockbackEndTickFieldNumber);
             Assert.AreEqual(27, EntitySnap.DamagePercentFieldNumber);
+            Assert.AreEqual(28, EntitySnap.KnockbackAmmoFieldNumber);
+            Assert.AreEqual(29, EntitySnap.KnockbackNextReloadTickFieldNumber);
+            Assert.AreEqual(30, EntitySnap.KnockbackCooldownEndTickFieldNumber);
         }
     }
 }

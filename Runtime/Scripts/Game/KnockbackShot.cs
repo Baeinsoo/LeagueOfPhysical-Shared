@@ -24,7 +24,15 @@ namespace LOP
         public Vector2 PositionAt(long tick, float speed, float dt)
             => Origin + Direction * (speed * (tick - FireTick) * dt);
 
+        /// <summary>그 틱의 자리를 사거리 끝에서 멈춘 것. 판정은 사거리까지만 본다.</summary>
+        public Vector2 PositionWithinRange(long tick, float speed, float range, float dt)
+            => Origin + Direction * Mathf.Min(speed * (tick - FireTick) * dt, range);
+
+        /// <summary>
+        /// 앞 틱에 이미 사거리 끝에 닿았으면 다 쓴 탄. 사거리를 넘는 그 틱은 아직 살려 두어
+        /// 마지막 선분(앞 틱 자리 → 사거리 끝)도 판정되게 한다 — 서버 판정은 월드 틱의 정리 뒤에 돈다.
+        /// </summary>
         public bool IsSpent(long tick, float speed, float range, float dt)
-            => speed * (tick - FireTick) * dt > range;
+            => speed * (tick - 1 - FireTick) * dt >= range;
     }
 }
