@@ -107,29 +107,38 @@ namespace LOP.Tests
         [Test]
         public void 스물다섯_번째_날갯짓에_게이지가_4분의1칸_오른다()
         {
-            //  10-28부터 10은 말만, 게이지 없음 — 처음 게이지가 오르는 고비는 25다.
+            //  10-30부터 10도 0.1칸 — 25에서 4분의1칸이 더 보태진다.
             var world = Make(new FlappyWorldFixture.NeverHit(), out var bird);
 
-            for (long t = 1; t <= 24; t++)
+            for (long t = 1; t <= 9; t++)
             {
                 Step(world, bird, t, flap: true);
             }
-            Assert.AreEqual(0f, Charge(bird), "24 — 10엔 보상이 없다");
+            Assert.AreEqual(0f, Charge(bird), "9 — 고비 전");
+
+            Step(world, bird, 10, flap: true);
+            Assert.AreEqual(0.1f, Charge(bird), "10");
+
+            for (long t = 11; t <= 24; t++)
+            {
+                Step(world, bird, t, flap: true);
+            }
+            Assert.AreEqual(0.1f, Charge(bird), "24 — 다음 고비 전");
 
             Step(world, bird, 25, flap: true);
-            Assert.AreEqual(0.25f, Charge(bird), "25");
+            Assert.AreEqual(0.35f, Charge(bird), "25");
 
             for (long t = 26; t <= 49; t++)
             {
                 Step(world, bird, t, flap: true);
             }
-            Assert.AreEqual(0.25f, Charge(bird), "49 — 다음 고비 전");
+            Assert.AreEqual(0.35f, Charge(bird), "49 — 다음 고비 전");
         }
 
         [Test]
         public void 되감아_다시_굴려도_고비_보상은_한_번()
         {
-            //  10-28부터 10은 보상 0이라 25까지 굴려야 게이지가 움직인다.
+            //  10-30부터 10도 0.1칸 — 30번째까지면 10(0.1)·25(0.25)가 겹쳐 0.35칸이다.
             var world = Make(new FlappyWorldFixture.NeverHit(), out var bird);
             for (long t = 1; t <= 30; t++)
             {
@@ -138,7 +147,7 @@ namespace LOP.Tests
             int liveCombo = Combo(bird);
             float liveCharge = Charge(bird);
             Assert.AreEqual(30, liveCombo);
-            Assert.AreEqual(0.25f, liveCharge);
+            Assert.AreEqual(0.35f, liveCharge);
 
             //  고비 앞(20) · 고비 틱(25) · 고비 뒤(27)에서 되감아 같은 입력으로 다시 굴린다.
             foreach (long anchor in new long[] { 20, 25, 27 })
@@ -156,7 +165,7 @@ namespace LOP.Tests
         [Test]
         public void 서버가_고비_전이면_재생에서_서버_수로_한_번_준다()
         {
-            //  10-28부터 10은 보상 0이라 이 시험은 25로 본다. 예측은 29번 다 받았다.
+            //  이 시험은 10을 지난 수(22)에서 시작해 25로 본다. 예측은 29번 다 받았다.
             //  서버는 한 번을 늦게 받아 23틱에 22번·게이지 0이다(보정이 덮는 값).
             var world = Make(new FlappyWorldFixture.NeverHit(), out var bird);
             for (long t = 1; t <= 29; t++)
@@ -180,7 +189,7 @@ namespace LOP.Tests
         [Test]
         public void 서버가_이미_줬으면_재생은_다시_안_준다()
         {
-            //  10-28부터 10은 보상 0이라 이 시험은 25로 본다.
+            //  이 시험은 10을 지난 수(26)에서 시작해 25로 본다.
             var world = Make(new FlappyWorldFixture.NeverHit(), out var bird);
             for (long t = 1; t <= 29; t++)
             {
@@ -220,7 +229,7 @@ namespace LOP.Tests
             }
 
             Assert.AreEqual(40, Combo(serverBird), "무언가 실제로 셌는지 — 120틱에 세 틱마다");
-            Assert.AreEqual(0.25f, Charge(serverBird), "10은 보상 0, 25만 4분의1칸(10-28)");
+            Assert.AreEqual(0.35f, Charge(serverBird), "10이 0.1칸, 25가 4분의1칸 더해 0.35칸(10-30)");
             Assert.AreEqual(Combo(serverBird), Combo(clientBird));
             Assert.AreEqual(Charge(serverBird), Charge(clientBird));
             Assert.AreEqual(serverBird.Get<GameFramework.World.Transform>().Position,

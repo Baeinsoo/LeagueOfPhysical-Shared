@@ -50,15 +50,15 @@ namespace LOP.Tests
             Flaps(system, bird, 9);
             Assert.AreEqual(0f, Charge(bird), "9");
             Flaps(system, bird, 1);
-            Assert.AreEqual(0f, Charge(bird), "10 — 10-28부터 말만, 게이지는 없다");
+            Assert.AreEqual(0.1f, Charge(bird), "10 — 10-30부터 작은 게이지를 준다");
             Flaps(system, bird, 14);
-            Assert.AreEqual(0f, Charge(bird), "24");
+            Assert.AreEqual(0.1f, Charge(bird), "24");
             Flaps(system, bird, 1);
-            Assert.AreEqual(0.25f, Charge(bird), "25");
+            Assert.AreEqual(0.35f, Charge(bird), "25");
             Flaps(system, bird, 25);
-            Assert.AreEqual(0.75f, Charge(bird), "50");
+            Assert.AreEqual(0.85f, Charge(bird), "50");
             Flaps(system, bird, 50);
-            Assert.AreEqual(1.25f, Charge(bird), "100 — 합 1.25칸, 2칸 상한 전");
+            Assert.AreEqual(1.35f, Charge(bird), "100 — 합 1.35칸, 2칸 상한 전");
         }
 
         [Test]
@@ -78,17 +78,17 @@ namespace LOP.Tests
         [Test]
         public void 끊으면_0이고_다음_연속도_고비에서_또_준다()
         {
-            //  10은 보상이 0이라(10-28) 이 시험은 25로 본다.
+            //  10-30부터 10도 0.1칸을 줘 25까지 한 묶음은 0.35칸이다.
             var system = System();
             var bird = Bird();
             Flaps(system, bird, 25);
-            Assert.AreEqual(0.25f, Charge(bird));
+            Assert.AreEqual(0.35f, Charge(bird));
 
             system.Break(bird);
             Assert.AreEqual(0, bird.Get<FlappyFlapCombo>().Count);
             Flaps(system, bird, 25);
 
-            Assert.AreEqual(0.5f, Charge(bird));
+            Assert.AreEqual(0.70f, Charge(bird));
         }
 
         [Test]

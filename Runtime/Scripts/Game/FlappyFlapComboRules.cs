@@ -28,8 +28,9 @@ namespace LOP
         /// <summary>기본 고비(사용자 결정 10-27). 마커 필드 초기값으로도 쓰여 부를 때마다 새 배열이다.</summary>
         public static int[] DefaultMilestones() => new[] { 10, 25, 50, 100 };
 
-        /// <summary>기본 보상(칸). <see cref="DefaultMilestones"/>와 짝(사용자 결정 10-28 — 게이지가 너무 잘 차 10은 말만, 25/50/100을 내렸다).</summary>
-        public static float[] DefaultGains() => new[] { 0f, 0.25f, 0.5f, 0.5f };
+        /// <summary>기본 보상(칸). <see cref="DefaultMilestones"/>와 짝(사용자 결정 10-28 — 게이지가 너무 잘 차 10은 말만, 25/50/100을 내렸다.
+        /// 10-30 — 10도 조금은 준다, 0.1칸).</summary>
+        public static float[] DefaultGains() => new[] { 0.1f, 0.25f, 0.5f, 0.5f };
 
         public int Count => _milestones.Length;
 
@@ -80,7 +81,7 @@ namespace LOP
             return i < 0 ? 0f : _gains[i];
         }
 
-        /// <summary>로그 한 줄. 예: "10:+0 25:+0.25 50:+0.5 100:+0.5". 보상이 없으면 "없음".</summary>
+        /// <summary>로그 한 줄. 예: "10:+0.1 25:+0.25 50:+0.5 100:+0.5". 보상이 없으면 "없음".</summary>
         public string Describe()
         {
             if (_milestones.Length == 0)

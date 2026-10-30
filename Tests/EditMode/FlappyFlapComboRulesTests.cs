@@ -9,12 +9,12 @@ namespace LOP.Tests
     public class FlappyFlapComboRulesTests
     {
         [Test]
-        public void 기본은_10_25_50_100에_0_4분의1_2분의1_2분의1칸()
+        public void 기본은_10_25_50_100에_10분의1_4분의1_2분의1_2분의1칸()
         {
             var rules = FlappyFlapComboRules.Default;
 
             Assert.AreEqual(4, rules.Count);
-            Assert.AreEqual(0f, rules.Gain(10), "10-28: 말만 뜨고 게이지는 안 준다");
+            Assert.AreEqual(0.1f, rules.Gain(10), "10-30: 10도 작은 대시 게이지를 준다");
             Assert.AreEqual(0.25f, rules.Gain(25));
             Assert.AreEqual(0.5f, rules.Gain(50));
             Assert.AreEqual(0.5f, rules.Gain(100));
@@ -99,14 +99,14 @@ namespace LOP.Tests
             first[0] = 999;
 
             CollectionAssert.AreEqual(new[] { 10, 25, 50, 100 }, FlappyFlapComboRules.DefaultMilestones());
-            CollectionAssert.AreEqual(new[] { 0f, 0.25f, 0.5f, 0.5f }, FlappyFlapComboRules.DefaultGains());
-            Assert.AreEqual(0f, FlappyFlapComboRules.Default.Gain(10));
+            CollectionAssert.AreEqual(new[] { 0.1f, 0.25f, 0.5f, 0.5f }, FlappyFlapComboRules.DefaultGains());
+            Assert.AreEqual(0.1f, FlappyFlapComboRules.Default.Gain(10));
         }
 
         [Test]
         public void 로그_한_줄로_적는다()
         {
-            Assert.AreEqual("10:+0 25:+0.25 50:+0.5 100:+0.5", FlappyFlapComboRules.Default.Describe());
+            Assert.AreEqual("10:+0.1 25:+0.25 50:+0.5 100:+0.5", FlappyFlapComboRules.Default.Describe());
             Assert.AreEqual("없음", FlappyFlapComboRules.Off.Describe());
         }
     }
