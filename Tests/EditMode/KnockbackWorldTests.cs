@@ -219,6 +219,66 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 되감아_다시_돌려도_서버가_지운_내_탄은_다시_안_생긴다()
+        {
+            var (world, body) = Make(0f);
+            world.SaveState(0);
+            body.Get<InputBuffer>().Current = new InputCommand { Fire = true, AimYaw = 90f };
+            world.Tick(1, Dt);
+            Assert.AreEqual(1, world.Shots.Shots.Count, "쏘아야 시험이 의미 있다");
+
+            //  서버가 이 탄이 맞았다고 지웠다 — 그 뒤 발사 틱보다 앞선 앵커로 되감아 같은 입력을 다시 돌린다.
+            Assert.IsTrue(world.RemoveShot("body-1", 1));
+            Assert.IsTrue(world.LoadState(0));
+            body.Get<InputBuffer>().Current = new InputCommand { Fire = true, AimYaw = 90f };
+            world.Tick(1, Dt);
+
+            Assert.AreEqual(0, world.Shots.Shots.Count, "재생이 지운 탄을 다시 쏘면 안 된다");
+            Assert.AreEqual(Config.AmmoMax - 1, body.Get<KnockbackGun>().Ammo, "탄 수는 쏜 것으로 줄어야 한다(서버도 쐈다)");
+        }
+
+        //  사거리 13 m, 탄 17 m/s — 틱당 0.34 m라 13 m를 넘는 틱의 선분(12.92 → 13.26)에 사거리 끝이 걸린다.
+        static readonly KnockbackConfig RangeConfig = new KnockbackConfig(120f, 6.2f, 14f, 17f, 1.5f, 0f, 5f, 11f,
+            17f, 13f, 0.28f, 0.6f, 3, 0.95f, 0.26f, 1.2f, 1, 6f, 0.5f, 0.5f, 0.3f, 0.1f, 0.2f, 0.8f, 5f,
+            new System.Collections.Generic.List<MountedArcheryZoneStageConfig>());
+
+        static bool HitsWithinRange(float touchDistance)
+        {
+            var registry = new EntityRegistry();
+            var floor = RangeConfig.CreateFloor();
+            var world = new KnockbackWorld(registry, new WorldEventBuffer(),
+                RangeConfig.CreateMoveSystem(floor, new FlappyWorldFixture.NeverHit(), ~0),
+                new FlappyWorldFixture.NoopMotionBridge(), floor, new KnockbackFireSystem(RangeConfig),
+                new BodyCollisionSystem(BodySizes.CharacterRadius, BodySizes.CharacterHeight, RangeConfig.BodyRestitution, new Vector3(1, 0, 1)),
+                RangeConfig) { GameplayStartTick = 0 };
+            world.IngestRemoteShot(new KnockbackShot("remote", 0, Vector2.zero, Vector2.right));
+
+            float reach = RangeConfig.HitRadius + RangeConfig.ShotRadius;
+            var targets = new System.Collections.Generic.List<(string, Vector2)> { ("v", new Vector2(touchDistance + reach, 0f)) };
+            //  서버 차례 그대로: 월드 틱(다 쓴 탄 정리 포함) 뒤에 End의 맞음 판정.
+            for (long t = 1; t <= 60; t++)
+            {
+                world.Tick(t, Dt);
+                if (KnockbackHits.Find(world.Shots.Shots, targets, t, RangeConfig, Dt).Count > 0) return true;
+            }
+            return false;
+        }
+
+        [Test]
+        public void 사거리_끝_바로_앞에_선_몸도_맞는다()
+        {
+            //  마지막으로 판정되던 자리(38틱, 12.92 m)와 사거리 끝(13 m) 사이에 닿는 몸.
+            Assert.IsTrue(HitsWithinRange(12.96f), "사거리 끝까지 판정해야 한다");
+        }
+
+        [Test]
+        public void 사거리_밖에_선_몸은_안_맞는다()
+        {
+            Assert.IsFalse(HitsWithinRange(13.1f), "사거리를 넘은 몫은 판정하지 않는다");
+            Assert.IsTrue(HitsWithinRange(12.5f), "양성 대조 — 사거리 안이면 맞는다");
+        }
+
+        [Test]
         public void 떨어지는_몸은_부딪히지_않는다()
         {
             var a = NewBody("a", -0.75f, 0f);

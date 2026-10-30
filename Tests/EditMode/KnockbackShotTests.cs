@@ -25,11 +25,12 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 사거리를_넘으면_다_쓴_탄()
+        public void 사거리를_넘은_다음_틱에_다_쓴_탄()
         {
             var shot = new KnockbackShot("a", 0, Vector2.zero, new Vector2(1, 0));
-            Assert.IsFalse(shot.IsSpent(38, Speed, 13f, Dt));
-            Assert.IsTrue(shot.IsSpent(39, Speed, 13f, Dt));
+            //  39틱에 13 m를 넘지만(13.26) 그 틱 선분까지 판정하려고 살려 두고, 40틱에 정리한다.
+            Assert.IsFalse(shot.IsSpent(39, Speed, 13f, Dt));
+            Assert.IsTrue(shot.IsSpent(40, Speed, 13f, Dt));
         }
 
         [Test]
@@ -72,7 +73,7 @@ namespace LOP.Tests
             var book = new KnockbackShotBook();
             book.Add(new KnockbackShot("a", 0, Vector2.zero, Vector2.right));
             book.Add(new KnockbackShot("a", 30, Vector2.zero, Vector2.right));
-            book.RemoveSpent(39, Speed, 13f, Dt);
+            book.RemoveSpent(40, Speed, 13f, Dt);
             Assert.AreEqual(1, book.Shots.Count);
             Assert.AreEqual(30, book.Shots[0].FireTick);
         }

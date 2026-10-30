@@ -40,4 +40,8 @@ message EntitySnap
 	int32 flap_combo = 25;
 	int64 knockback_end_tick = 26;  // Knockback: 날림이 끝나는 절대 틱. 0 = 날리는 중 아님
 	int32 damage_percent = 27;      // Knockback: 누적 피해 %. 클수록 멀리 날아간다
+	// Knockback: 총 상태. 클라 예측과 갈리면(입력 유실 등) 보정 처리기가 되감아 맞춘다.
+	int32 knockback_ammo = 28;
+	int64 knockback_next_reload_tick = 29;   // 가득이면 long.MaxValue 그대로 싣는다(0이 아니다)
+	int64 knockback_cooldown_end_tick = 30;
 }

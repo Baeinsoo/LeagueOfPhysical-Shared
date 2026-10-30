@@ -86,7 +86,10 @@ namespace LOP
                 }
 
                 fireSystem.Reload(entity, tick);
-                if (fireSystem.TryFire(entity, tick, out var shot) && Shots.Add(shot))
+                //  서버가 맞았다고 지운 탄은 되감기 재생이 같은 입력으로 다시 쏘아도 장부에 넣지 않는다(탄 수는 쏜 대로 준다).
+                if (fireSystem.TryFire(entity, tick, out var shot)
+                    && removedShots.Contains((shot.ShooterId, shot.FireTick)) == false
+                    && Shots.Add(shot))
                 {
                     EventBuffer.Append(new KnockbackShotFiredEvent(shot.ShooterId, shot.FireTick, shot.Origin, shot.Direction));
                 }
