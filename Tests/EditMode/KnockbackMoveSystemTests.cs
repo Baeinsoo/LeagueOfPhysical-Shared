@@ -10,9 +10,10 @@ namespace LOP.Tests
         const float Dt = 0.02f;
         const float MoveSpeed = 6.2f;
         const float Gain = 14f;
+        const float StunGain = 1.6f;
 
         static KnockbackMoveSystem NewSystem() => new KnockbackMoveSystem(
-            new KnockbackFloor(17f, 1.5f, 0f), new FlappyWorldFixture.NeverHit(), ~0, MoveSpeed, Gain);
+            new KnockbackFloor(17f, 1.5f, 0f), new FlappyWorldFixture.NeverHit(), ~0, MoveSpeed, Gain, StunGain);
 
         static Entity Body(float x, float y, float z, bool grounded = true)
         {
@@ -139,6 +140,36 @@ namespace LOP.Tests
             Assert.AreEqual(0f, Pos(e).y, 1e-4f);
             Assert.AreEqual(0f, Vel(e).y, 1e-4f);
             Assert.IsTrue(e.Get<GroundState>().IsGrounded);
+        }
+
+        static KnockbackMoveSystem NewSystem24() => new KnockbackMoveSystem(
+            new KnockbackFloor(17f, 1.5f, 0f), new FlappyWorldFixture.NeverHit(), ~0, MoveSpeed, 24f, StunGain);
+
+        static Entity Flying(long endTick)
+        {
+            var e = Body(0f, 0f, 0f);
+            e.Add(new KnockbackBody { KnockbackEndTick = endTick });
+            e.Get<GameFramework.World.Velocity>().Linear = new System.Numerics.Vector3(8.44f, 0f, 0f);
+            Feed(e, -1f, 0f);
+            return e;
+        }
+
+        [Test]
+        public void 날림_중엔_조작이_약하다()
+        {
+            var e = Flying(endTick: 10);
+            NewSystem24().Tick(e, 5, Dt);
+
+            Assert.AreEqual(7.9715f, Vel(e).x, 1e-3f);
+        }
+
+        [Test]
+        public void 날림이_끝나면_평소대로()
+        {
+            var e = Flying(endTick: 10);
+            NewSystem24().Tick(e, 10, Dt);
+
+            Assert.AreEqual(8.44f + (-6.2f - 8.44f) * 0.48f, Vel(e).x, 1e-3f);
         }
     }
 }

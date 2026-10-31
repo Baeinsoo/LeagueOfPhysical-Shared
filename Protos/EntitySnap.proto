@@ -38,4 +38,10 @@ message EntitySnap
 	// Flappy: 기절 없이 이어진, 시뮬이 받은 날갯짓 수(spec 2026-10-27-flappy-combo-dash-reward). 고비 보상(대시 게이지)이 이 수에서
 	// 나오므로 내 새 예측이 서버와 같은 날갯짓에서 고비를 맞게 함께 싣는다. 시간이 아니라 개수라 끝 틱 관례(ADR-0015)와 무관하다.
 	int32 flap_combo = 25;
+	int64 knockback_end_tick = 26;  // Knockback: 날림이 끝나는 절대 틱. 0 = 날리는 중 아님
+	int32 damage_percent = 27;      // Knockback: 누적 피해 %. 클수록 멀리 날아간다
+	// Knockback: 총 상태. 클라 예측과 갈리면(입력 유실 등) 보정 처리기가 되감아 맞춘다.
+	int32 knockback_ammo = 28;
+	int64 knockback_next_reload_tick = 29;   // 가득이면 long.MaxValue 그대로 싣는다(0이 아니다)
+	int64 knockback_cooldown_end_tick = 30;
 }

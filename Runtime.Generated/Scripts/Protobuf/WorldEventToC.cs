@@ -25,16 +25,19 @@ public static partial class WorldEventToCReflection {
           "ChNXb3JsZEV2ZW50VG9DLnByb3RvGhREYW1hZ2VFdmVudFRvQy5wcm90bxoZ",
           "QWJpbGl0eUFjdGl2YXRlZFRvQy5wcm90bxoUQXJjaGVyeVNob3RUb0MucHJv",
           "dG8aE0FyY2hlcnlIaXRUb0MucHJvdG8aG0FyY2hlcnlSb3VuZFJlc3VsdFRv",
-          "Qy5wcm90byL2AQoNV29ybGRFdmVudFRvQxIhCgZkYW1hZ2UYASABKAsyDy5E",
-          "YW1hZ2VFdmVudFRvQ0gAEjEKEWFiaWxpdHlfYWN0aXZhdGVkGAIgASgLMhQu",
-          "QWJpbGl0eUFjdGl2YXRlZFRvQ0gAEicKDGFyY2hlcnlfc2hvdBgDIAEoCzIP",
-          "LkFyY2hlcnlTaG90VG9DSAASJQoLYXJjaGVyeV9oaXQYBCABKAsyDi5BcmNo",
-          "ZXJ5SGl0VG9DSAASNgoUYXJjaGVyeV9yb3VuZF9yZXN1bHQYBSABKAsyFi5B",
-          "cmNoZXJ5Um91bmRSZXN1bHRUb0NIAEIHCgVldmVudGIGcHJvdG8z"));
+          "Qy5wcm90bxoWS25vY2tiYWNrU2hvdFRvQy5wcm90bxoVS25vY2tiYWNrSGl0",
+          "VG9DLnByb3RvIs4CCg1Xb3JsZEV2ZW50VG9DEiEKBmRhbWFnZRgBIAEoCzIP",
+          "LkRhbWFnZUV2ZW50VG9DSAASMQoRYWJpbGl0eV9hY3RpdmF0ZWQYAiABKAsy",
+          "FC5BYmlsaXR5QWN0aXZhdGVkVG9DSAASJwoMYXJjaGVyeV9zaG90GAMgASgL",
+          "Mg8uQXJjaGVyeVNob3RUb0NIABIlCgthcmNoZXJ5X2hpdBgEIAEoCzIOLkFy",
+          "Y2hlcnlIaXRUb0NIABI2ChRhcmNoZXJ5X3JvdW5kX3Jlc3VsdBgFIAEoCzIW",
+          "LkFyY2hlcnlSb3VuZFJlc3VsdFRvQ0gAEisKDmtub2NrYmFja19zaG90GAYg",
+          "ASgLMhEuS25vY2tiYWNrU2hvdFRvQ0gAEikKDWtub2NrYmFja19oaXQYByAB",
+          "KAsyEC5Lbm9ja2JhY2tIaXRUb0NIAEIHCgVldmVudGIGcHJvdG8z"));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-        new pbr::FileDescriptor[] { global::DamageEventToCReflection.Descriptor, global::AbilityActivatedToCReflection.Descriptor, global::ArcheryShotToCReflection.Descriptor, global::ArcheryHitToCReflection.Descriptor, global::ArcheryRoundResultToCReflection.Descriptor, },
+        new pbr::FileDescriptor[] { global::DamageEventToCReflection.Descriptor, global::AbilityActivatedToCReflection.Descriptor, global::ArcheryShotToCReflection.Descriptor, global::ArcheryHitToCReflection.Descriptor, global::ArcheryRoundResultToCReflection.Descriptor, global::KnockbackShotToCReflection.Descriptor, global::KnockbackHitToCReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::WorldEventToC), global::WorldEventToC.Parser, new[]{ "Damage", "AbilityActivated", "ArcheryShot", "ArcheryHit", "ArcheryRoundResult" }, new[]{ "Event" }, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::WorldEventToC), global::WorldEventToC.Parser, new[]{ "Damage", "AbilityActivated", "ArcheryShot", "ArcheryHit", "ArcheryRoundResult", "KnockbackShot", "KnockbackHit" }, new[]{ "Event" }, null, null, null)
         }));
   }
   #endregion
@@ -95,6 +98,12 @@ public sealed partial class WorldEventToC : pb::IMessage<WorldEventToC>
         break;
       case EventOneofCase.ArcheryRoundResult:
         ArcheryRoundResult = other.ArcheryRoundResult.Clone();
+        break;
+      case EventOneofCase.KnockbackShot:
+        KnockbackShot = other.KnockbackShot.Clone();
+        break;
+      case EventOneofCase.KnockbackHit:
+        KnockbackHit = other.KnockbackHit.Clone();
         break;
     }
 
@@ -167,6 +176,30 @@ public sealed partial class WorldEventToC : pb::IMessage<WorldEventToC>
     }
   }
 
+  /// <summary>Field number for the "knockback_shot" field.</summary>
+  public const int KnockbackShotFieldNumber = 6;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public global::KnockbackShotToC KnockbackShot {
+    get { return eventCase_ == EventOneofCase.KnockbackShot ? (global::KnockbackShotToC) event_ : null; }
+    set {
+      event_ = value;
+      eventCase_ = value == null ? EventOneofCase.None : EventOneofCase.KnockbackShot;
+    }
+  }
+
+  /// <summary>Field number for the "knockback_hit" field.</summary>
+  public const int KnockbackHitFieldNumber = 7;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public global::KnockbackHitToC KnockbackHit {
+    get { return eventCase_ == EventOneofCase.KnockbackHit ? (global::KnockbackHitToC) event_ : null; }
+    set {
+      event_ = value;
+      eventCase_ = value == null ? EventOneofCase.None : EventOneofCase.KnockbackHit;
+    }
+  }
+
   private object event_;
   /// <summary>Enum of possible cases for the "event" oneof.</summary>
   public enum EventOneofCase {
@@ -176,6 +209,8 @@ public sealed partial class WorldEventToC : pb::IMessage<WorldEventToC>
     ArcheryShot = 3,
     ArcheryHit = 4,
     ArcheryRoundResult = 5,
+    KnockbackShot = 6,
+    KnockbackHit = 7,
   }
   private EventOneofCase eventCase_ = EventOneofCase.None;
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -211,6 +246,8 @@ public sealed partial class WorldEventToC : pb::IMessage<WorldEventToC>
     if (!object.Equals(ArcheryShot, other.ArcheryShot)) return false;
     if (!object.Equals(ArcheryHit, other.ArcheryHit)) return false;
     if (!object.Equals(ArcheryRoundResult, other.ArcheryRoundResult)) return false;
+    if (!object.Equals(KnockbackShot, other.KnockbackShot)) return false;
+    if (!object.Equals(KnockbackHit, other.KnockbackHit)) return false;
     if (EventCase != other.EventCase) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
@@ -224,6 +261,8 @@ public sealed partial class WorldEventToC : pb::IMessage<WorldEventToC>
     if (eventCase_ == EventOneofCase.ArcheryShot) hash ^= ArcheryShot.GetHashCode();
     if (eventCase_ == EventOneofCase.ArcheryHit) hash ^= ArcheryHit.GetHashCode();
     if (eventCase_ == EventOneofCase.ArcheryRoundResult) hash ^= ArcheryRoundResult.GetHashCode();
+    if (eventCase_ == EventOneofCase.KnockbackShot) hash ^= KnockbackShot.GetHashCode();
+    if (eventCase_ == EventOneofCase.KnockbackHit) hash ^= KnockbackHit.GetHashCode();
     hash ^= (int) eventCase_;
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
@@ -263,6 +302,14 @@ public sealed partial class WorldEventToC : pb::IMessage<WorldEventToC>
       output.WriteRawTag(42);
       output.WriteMessage(ArcheryRoundResult);
     }
+    if (eventCase_ == EventOneofCase.KnockbackShot) {
+      output.WriteRawTag(50);
+      output.WriteMessage(KnockbackShot);
+    }
+    if (eventCase_ == EventOneofCase.KnockbackHit) {
+      output.WriteRawTag(58);
+      output.WriteMessage(KnockbackHit);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -293,6 +340,14 @@ public sealed partial class WorldEventToC : pb::IMessage<WorldEventToC>
       output.WriteRawTag(42);
       output.WriteMessage(ArcheryRoundResult);
     }
+    if (eventCase_ == EventOneofCase.KnockbackShot) {
+      output.WriteRawTag(50);
+      output.WriteMessage(KnockbackShot);
+    }
+    if (eventCase_ == EventOneofCase.KnockbackHit) {
+      output.WriteRawTag(58);
+      output.WriteMessage(KnockbackHit);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -317,6 +372,12 @@ public sealed partial class WorldEventToC : pb::IMessage<WorldEventToC>
     }
     if (eventCase_ == EventOneofCase.ArcheryRoundResult) {
       size += 1 + pb::CodedOutputStream.ComputeMessageSize(ArcheryRoundResult);
+    }
+    if (eventCase_ == EventOneofCase.KnockbackShot) {
+      size += 1 + pb::CodedOutputStream.ComputeMessageSize(KnockbackShot);
+    }
+    if (eventCase_ == EventOneofCase.KnockbackHit) {
+      size += 1 + pb::CodedOutputStream.ComputeMessageSize(KnockbackHit);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -360,6 +421,18 @@ public sealed partial class WorldEventToC : pb::IMessage<WorldEventToC>
           ArcheryRoundResult = new global::ArcheryRoundResultToC();
         }
         ArcheryRoundResult.MergeFrom(other.ArcheryRoundResult);
+        break;
+      case EventOneofCase.KnockbackShot:
+        if (KnockbackShot == null) {
+          KnockbackShot = new global::KnockbackShotToC();
+        }
+        KnockbackShot.MergeFrom(other.KnockbackShot);
+        break;
+      case EventOneofCase.KnockbackHit:
+        if (KnockbackHit == null) {
+          KnockbackHit = new global::KnockbackHitToC();
+        }
+        KnockbackHit.MergeFrom(other.KnockbackHit);
         break;
     }
 
@@ -427,6 +500,24 @@ public sealed partial class WorldEventToC : pb::IMessage<WorldEventToC>
           ArcheryRoundResult = subBuilder;
           break;
         }
+        case 50: {
+          global::KnockbackShotToC subBuilder = new global::KnockbackShotToC();
+          if (eventCase_ == EventOneofCase.KnockbackShot) {
+            subBuilder.MergeFrom(KnockbackShot);
+          }
+          input.ReadMessage(subBuilder);
+          KnockbackShot = subBuilder;
+          break;
+        }
+        case 58: {
+          global::KnockbackHitToC subBuilder = new global::KnockbackHitToC();
+          if (eventCase_ == EventOneofCase.KnockbackHit) {
+            subBuilder.MergeFrom(KnockbackHit);
+          }
+          input.ReadMessage(subBuilder);
+          KnockbackHit = subBuilder;
+          break;
+        }
       }
     }
   #endif
@@ -489,6 +580,24 @@ public sealed partial class WorldEventToC : pb::IMessage<WorldEventToC>
           }
           input.ReadMessage(subBuilder);
           ArcheryRoundResult = subBuilder;
+          break;
+        }
+        case 50: {
+          global::KnockbackShotToC subBuilder = new global::KnockbackShotToC();
+          if (eventCase_ == EventOneofCase.KnockbackShot) {
+            subBuilder.MergeFrom(KnockbackShot);
+          }
+          input.ReadMessage(subBuilder);
+          KnockbackShot = subBuilder;
+          break;
+        }
+        case 58: {
+          global::KnockbackHitToC subBuilder = new global::KnockbackHitToC();
+          if (eventCase_ == EventOneofCase.KnockbackHit) {
+            subBuilder.MergeFrom(KnockbackHit);
+          }
+          input.ReadMessage(subBuilder);
+          KnockbackHit = subBuilder;
           break;
         }
       }

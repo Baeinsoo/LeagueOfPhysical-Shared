@@ -73,7 +73,7 @@ namespace LOP
             // Drawing/DrawRatio/AimYaw/AimPitch도 손을 대고 있는 동안 이어지는 연속값이라 같이 이어 쓴다
             // (안 이으면 한 틱만 비어도 서버에서 당김이 취소돼 화살이 안 나가거나 최소속도로 나간다).
             // Release는 여기 넣지 않는다 — 손을 뗀 틱에만 참인 1회성 액션이라 이어 쓰면 다음 틱에도
-            // 참이 되어 발사가 두 번 일어난다.
+            // 참이 되어 발사가 두 번 일어난다. Fire도 같은 이유로 넣지 않는다.
             buffer.Current = new InputCommand
             {
                 Horizontal = buffer.LastReceived.Horizontal,
