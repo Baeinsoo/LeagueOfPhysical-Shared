@@ -31,6 +31,7 @@ namespace LOP
         public float BodyRestitution { get; }
         public float ZoneFirstRevealSeconds { get; }
         public IReadOnlyList<MountedArcheryZoneStageConfig> ZoneStages { get; }
+        public KnockbackPillarLayout Pillars { get; }
 
         //  시뮬 틱 간격. 초를 틱으로 바꿀 때 클·서가 같은 값을 쓴다.
         public const float TickInterval = 0.02f;
@@ -54,7 +55,8 @@ namespace LOP
                                float stunGain,
                                float bodyRestitution,
                                float zoneFirstRevealSeconds,
-                               IReadOnlyList<MountedArcheryZoneStageConfig> zoneStages)
+                               IReadOnlyList<MountedArcheryZoneStageConfig> zoneStages,
+                               KnockbackPillarLayout pillars = null)
         {
             MatchDurationSeconds = matchDurationSeconds;
             MoveSpeed = moveSpeed;
@@ -82,6 +84,7 @@ namespace LOP
             BodyRestitution = bodyRestitution;
             ZoneFirstRevealSeconds = zoneFirstRevealSeconds;
             ZoneStages = zoneStages;
+            Pillars = pillars ?? KnockbackPillarLayout.None;
         }
 
         //  올림이라 0.26초는 13틱 — 시간이 모자라 일찍 풀리지 않는다.
