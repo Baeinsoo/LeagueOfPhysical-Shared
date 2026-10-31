@@ -112,5 +112,33 @@ namespace LOP.Tests
             var hitBack = (KnockbackHitEvent)WorldEventWire.FromWire(WorldEventWire.ToWire(hit));
             Assert.AreEqual(hit, hitBack);
         }
+
+        static readonly KnockbackConfig BlockConfig = new KnockbackConfig(120f, 6.2f, 14f, 17f, 1.5f, 0f, 5f, 11f,
+            30f, 18f, 0.3f, 0.55f, 3, 0.95f, 0.26f, 1.2f, 1, 6f, 0.5f, 0.5f, 0.3f, 0.1f, 0.2f, 0.8f, 5f,
+            new System.Collections.Generic.List<MountedArcheryZoneStageConfig>());
+
+        [Test]
+        public void 막힌_탄은_장부에서_빠진다()
+        {
+            var book = new KnockbackShotBook();
+            book.Add(new KnockbackShot("through", 0, Vector2.zero, new Vector2(1, 0)));
+            book.Add(new KnockbackShot("aside", 0, new Vector2(0, 5f), new Vector2(1, 0)));
+            var pillars = new System.Collections.Generic.List<Vector2> { new Vector2(3f, 0f) };
+
+            //  30 m/s x 0.02 = 틱당 0.6 m - 틱 5의 선분 2.4~3.0 이 기둥 원(반지름 0.9+0.3)에 든다.
+            Assert.AreEqual(1, book.RemoveBlocked(5, pillars, 0.9f, BlockConfig, 0.02f));
+            Assert.AreEqual(1, book.Shots.Count);
+            Assert.AreEqual("aside", book.Shots[0].ShooterId);
+        }
+
+        [Test]
+        public void 쏘기_전_틱은_기둥이_건드리지_않는다()
+        {
+            var book = new KnockbackShotBook();
+            book.Add(new KnockbackShot("s", 10, new Vector2(3f, 0f), new Vector2(1, 0)));
+            var pillars = new System.Collections.Generic.List<Vector2> { new Vector2(3f, 0f) };
+            Assert.AreEqual(0, book.RemoveBlocked(9, pillars, 0.9f, BlockConfig, 0.02f));
+            Assert.AreEqual(1, book.RemoveBlocked(10, pillars, 0.9f, BlockConfig, 0.02f));
+        }
     }
 }

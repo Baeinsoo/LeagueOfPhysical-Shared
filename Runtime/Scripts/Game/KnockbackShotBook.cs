@@ -49,6 +49,34 @@ namespace LOP
             shots.RemoveAll(s => s.IsSpent(tick, speed, range, dt));
         }
 
+        /// <summary>그 틱에 지나온 선분이 서 있는 기둥에 닿은 탄을 지우고, 지운 수를 돌려준다.</summary>
+        public int RemoveBlocked(long tick, IReadOnlyList<UnityEngine.Vector2> standingPillars, float pillarRadius,
+                                 KnockbackConfig cfg, float dt)
+        {
+            if (standingPillars.Count == 0)
+            {
+                return 0;
+            }
+            float reach = pillarRadius + cfg.ShotRadius;
+            return shots.RemoveAll(s =>
+            {
+                if (tick < s.FireTick)
+                {
+                    return false;
+                }
+                var from = tick == s.FireTick ? s.Origin : s.PositionWithinRange(tick - 1, cfg.ShotSpeed, cfg.ShotRange, dt);
+                var to = s.PositionWithinRange(tick, cfg.ShotSpeed, cfg.ShotRange, dt);
+                for (int p = 0; p < standingPillars.Count; p++)
+                {
+                    if (KnockbackHitTest.SegmentHitsCircle(from, to, standingPillars[p], reach, out _))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            });
+        }
+
         public List<KnockbackShot> Capture() => new List<KnockbackShot>(shots);
 
         public void Restore(List<KnockbackShot> saved)

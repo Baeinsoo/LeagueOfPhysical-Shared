@@ -9,6 +9,7 @@ namespace LOP.Tests
     public class KnockbackWorldTests
     {
         const float Dt = 0.02f;
+        static readonly System.Collections.Generic.List<Vector2> NoPillars = new System.Collections.Generic.List<Vector2>();
 
         static readonly KnockbackConfig Config = new KnockbackConfig(120f, 6.2f, 14f, 17f, 1.5f, 0f, 5f, 11f, 30f, 18f, 0.3f, 0.55f, 3, 0.95f, 0.26f, 1.2f, 1, 6f, 0.5f, 0.5f, 0.3f, 0.1f, 0.2f, 0.8f, 5f, new System.Collections.Generic.List<MountedArcheryZoneStageConfig>());
 
@@ -259,7 +260,7 @@ namespace LOP.Tests
             for (long t = 1; t <= 60; t++)
             {
                 world.Tick(t, Dt);
-                if (KnockbackHits.Find(world.Shots.Shots, targets, t, RangeConfig, Dt).Count > 0) return true;
+                if (KnockbackHits.Find(world.Shots.Shots, targets, NoPillars, 0f, t, RangeConfig, Dt).Count > 0) return true;
             }
             return false;
         }
@@ -312,6 +313,77 @@ namespace LOP.Tests
         {
             Assert.IsTrue(Config.CreateFloor().IsSolid(0f, 0f, 0));
             Assert.AreEqual(6000, Config.MatchDurationTicks(0.02f));
+        }
+
+        //  ---- 기둥 ----
+        KnockbackPillarColliders pillarColliders;
+
+        [TearDown]
+        public void DisposePillarColliders()
+        {
+            pillarColliders?.Dispose();
+            pillarColliders = null;
+        }
+
+        KnockbackWorld MakePillarWorld(out KnockbackPillars pillars)
+        {
+            var floor = Config.CreateFloor();
+            floor.SetZoneStages(new[] { new ZoneStage(0, 0, 100, 200, Vector2.zero, floor.ZoneStartRadius, Vector2.zero, 3f, 4f) });
+            pillars = new KnockbackPillars(new KnockbackPillarLayout(1, 7f, 0.9f, 3f), floor);
+            pillarColliders = new KnockbackPillarColliders(pillars);
+            return new KnockbackWorld(new EntityRegistry(), new WorldEventBuffer(),
+                Config.CreateMoveSystem(floor, new FlappyWorldFixture.NeverHit(), ~0),
+                new FlappyWorldFixture.NoopMotionBridge(), floor,
+                new KnockbackFireSystem(Config),
+                new BodyCollisionSystem(BodySizes.CharacterRadius, BodySizes.CharacterHeight, Config.BodyRestitution, new Vector3(1, 0, 1)),
+                Config, pillars, pillarColliders)
+            { GameplayStartTick = 0 };
+        }
+
+        [Test]
+        public void 월드는_앞_틱에_기둥에_막힌_탄을_지운다()
+        {
+            var world = MakePillarWorld(out var pillars);
+            var shot = new KnockbackShot("remote", 0, Vector2.zero, pillars.Center(0));
+            world.IngestRemoteShot(shot);
+
+            //  탄이 기둥 원에 처음 닿는 틱(선분 기준).
+            long hitTick = -1;
+            for (long t = 1; t <= 60 && hitTick < 0; t++)
+            {
+                var from = shot.PositionWithinRange(t - 1, Config.ShotSpeed, Config.ShotRange, Dt);
+                var to = shot.PositionWithinRange(t, Config.ShotSpeed, Config.ShotRange, Dt);
+                if (KnockbackHitTest.SegmentHitsCircle(from, to, pillars.Center(0), 0.9f + Config.ShotRadius, out _)) { hitTick = t; }
+            }
+            Assert.Greater(hitTick, 1);
+
+            for (long t = 1; t <= hitTick; t++) { world.Tick(t, Dt); }
+            Assert.AreEqual(1, world.Shots.Shots.Count, "그 틱의 서버 판정이 끝나기 전이라 아직 남아 있다");
+            world.Tick(hitTick + 1, Dt);
+            Assert.AreEqual(0, world.Shots.Shots.Count, "다음 틱 첫머리에 지워진다");
+        }
+
+        [Test]
+        public void 월드는_되감아도_기둥_상태를_다시_세운다()
+        {
+            var world = MakePillarWorld(out var pillars);
+            long collapse = -1;
+            for (long t = 100; t <= 200; t++)
+            {
+                if (!pillars.IsStanding(0, t)) { collapse = t; break; }
+            }
+            Assert.Greater(collapse, 102);
+
+            long anchor = collapse - 2;
+            world.Tick(anchor, Dt);
+            world.SaveState(anchor);
+            world.Tick(anchor + 1, Dt);
+            world.Tick(collapse, Dt);
+            Assert.IsFalse(pillarColliders.IsEnabled(0), "무너진 틱에는 꺼진다");
+
+            Assert.IsTrue(world.LoadState(anchor));
+            world.Tick(anchor + 1, Dt);
+            Assert.IsTrue(pillarColliders.IsEnabled(0), "되감아 다시 돌리면 그 틱의 기둥이 다시 선다");
         }
     }
 }

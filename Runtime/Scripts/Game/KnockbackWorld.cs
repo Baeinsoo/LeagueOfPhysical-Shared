@@ -13,6 +13,9 @@ namespace LOP
         private readonly KnockbackFireSystem fireSystem;
         private readonly BodyCollisionSystem bodyCollision;
         private readonly KnockbackConfig config;
+        private readonly KnockbackPillars pillars;
+        private readonly KnockbackPillarColliders pillarColliders;
+        private readonly List<UnityEngine.Vector2> standingPillars = new List<UnityEngine.Vector2>();
 
         private sealed class SavedState
         {
@@ -38,7 +41,9 @@ namespace LOP
                               KnockbackFloor floor,
                               KnockbackFireSystem fireSystem,
                               BodyCollisionSystem bodyCollision,
-                              KnockbackConfig config)
+                              KnockbackConfig config,
+                              KnockbackPillars pillars = null,
+                              KnockbackPillarColliders pillarColliders = null)
             : base(entityRegistry, eventBuffer)
         {
             this.moveSystem = moveSystem;
@@ -46,6 +51,8 @@ namespace LOP
             this.fireSystem = fireSystem;
             this.bodyCollision = bodyCollision;
             this.config = config;
+            this.pillars = pillars;
+            this.pillarColliders = pillarColliders;
             Floor = floor;
         }
 
@@ -63,6 +70,9 @@ namespace LOP
 
         protected override void Mutation(long tick, float deltaTime)
         {
+            //  기둥 몸을 이 틱 모양으로 세운다 — 이동의 충돌 검사(SyncTransforms 뒤)보다 앞이어야 한다.
+            pillarColliders?.Apply(tick);
+
             if (HasStarted(tick) == false)
             {
                 //  출발 전 대기. 속도를 0으로 적어 두는 건 스냅샷과 물리 팔로워가 이 값을 읽기 때문이다.
@@ -111,6 +121,13 @@ namespace LOP
 
             CollectBodies();
             bodyCollision.Resolve(movers, standing);
+
+            //  앞 틱 선분으로 지운다 — 그 틱의 서버 판정은 이미 끝났으니 순서가 결과를 바꾸지 않는다.
+            if (pillars != null)
+            {
+                pillars.CollectStanding(tick - 1, standingPillars);
+                Shots.RemoveBlocked(tick - 1, standingPillars, pillars.Radius, config, deltaTime);
+            }
 
             Shots.RemoveSpent(tick, config.ShotSpeed, config.ShotRange, deltaTime);
             removedShots.RemoveWhere(k => new KnockbackShot(k.shooterId, k.fireTick, UnityEngine.Vector2.zero, UnityEngine.Vector2.right)
