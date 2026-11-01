@@ -123,7 +123,7 @@ namespace LOP.Tests
             var book = new KnockbackShotBook();
             book.Add(new KnockbackShot("through", 0, Vector2.zero, new Vector2(1, 0)));
             book.Add(new KnockbackShot("aside", 0, new Vector2(0, 5f), new Vector2(1, 0)));
-            var pillars = new System.Collections.Generic.List<Vector2> { new Vector2(3f, 0f) };
+            var pillars = Always(new Vector2(3f, 0f));
 
             //  30 m/s x 0.02 = 틱당 0.6 m - 틱 5의 선분 2.4~3.0 이 기둥 원(반지름 0.9+0.3)에 든다.
             Assert.AreEqual(1, book.RemoveBlocked(5, pillars, 0.9f, BlockConfig, 0.02f));
@@ -136,9 +136,56 @@ namespace LOP.Tests
         {
             var book = new KnockbackShotBook();
             book.Add(new KnockbackShot("s", 10, new Vector2(3f, 0f), new Vector2(1, 0)));
-            var pillars = new System.Collections.Generic.List<Vector2> { new Vector2(3f, 0f) };
+            var pillars = Always(new Vector2(3f, 0f));
             Assert.AreEqual(0, book.RemoveBlocked(9, pillars, 0.9f, BlockConfig, 0.02f));
             Assert.AreEqual(1, book.RemoveBlocked(10, pillars, 0.9f, BlockConfig, 0.02f));
+        }
+
+        static System.Action<long, System.Collections.Generic.List<Vector2>> Always(Vector2 c) => (t, into) =>
+        {
+            into.Clear();
+            into.Add(c);
+        };
+
+        [Test]
+        public void 늦게_받은_탄도_이미_지난_기둥에_막혔으면_지운다()
+        {
+            var book = new KnockbackShotBook();
+            //  틱당 0.6 m. 틱 0 발사 - 기둥(x=3)은 틱 5 근처에서 지나고, 장부에는 틱 10에야 처음 들어온다.
+            book.Add(new KnockbackShot("through", 0, Vector2.zero, new Vector2(1, 0)));
+            book.Add(new KnockbackShot("aside", 0, new Vector2(0, 5f), new Vector2(1, 0)));
+            Assert.AreEqual(1, book.RemoveBlocked(10, Always(new Vector2(3f, 0f)), 0.9f, BlockConfig, 0.02f));
+            Assert.AreEqual(1, book.Shots.Count);
+            Assert.AreEqual("aside", book.Shots[0].ShooterId);
+        }
+
+        [Test]
+        public void 기둥이_나중에_쓰러져도_그때_서_있었으면_막힌_것()
+        {
+            var book = new KnockbackShotBook();
+            book.Add(new KnockbackShot("s", 0, Vector2.zero, new Vector2(1, 0)));
+            //  틱 7부터는 기둥이 없다. 탄이 기둥을 지난 틱 4~5에는 서 있었다.
+            System.Action<long, System.Collections.Generic.List<Vector2>> fallsAt7 = (t, into) =>
+            {
+                into.Clear();
+                if (t < 7) into.Add(new Vector2(3f, 0f));
+            };
+            Assert.AreEqual(1, book.RemoveBlocked(12, fallsAt7, 0.9f, BlockConfig, 0.02f));
+        }
+
+        [Test]
+        public void 지나갈_때_이미_쓰러져_있던_기둥은_안_막는다()
+        {
+            var book = new KnockbackShotBook();
+            book.Add(new KnockbackShot("s", 0, Vector2.zero, new Vector2(1, 0)));
+            //  기둥이 틱 3에 이미 쓰러짐 - 탄은 틱 4 이후에 지나가므로 안 막힌다(양성 대조).
+            System.Action<long, System.Collections.Generic.List<Vector2>> fallsAt3 = (t, into) =>
+            {
+                into.Clear();
+                if (t < 3) into.Add(new Vector2(3f, 0f));
+            };
+            Assert.AreEqual(0, book.RemoveBlocked(12, fallsAt3, 0.9f, BlockConfig, 0.02f));
+            Assert.AreEqual(1, book.Shots.Count);
         }
     }
 }

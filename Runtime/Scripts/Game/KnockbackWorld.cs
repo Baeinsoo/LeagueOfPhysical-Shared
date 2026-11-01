@@ -15,7 +15,6 @@ namespace LOP
         private readonly KnockbackConfig config;
         private readonly KnockbackPillars pillars;
         private readonly KnockbackPillarColliders pillarColliders;
-        private readonly List<UnityEngine.Vector2> standingPillars = new List<UnityEngine.Vector2>();
 
         private sealed class SavedState
         {
@@ -125,8 +124,7 @@ namespace LOP
             //  앞 틱 선분으로 지운다 — 그 틱의 서버 판정은 이미 끝났으니 순서가 결과를 바꾸지 않는다.
             if (pillars != null)
             {
-                pillars.CollectStanding(tick - 1, standingPillars);
-                Shots.RemoveBlocked(tick - 1, standingPillars, pillars.Radius, config, deltaTime);
+                Shots.RemoveBlocked(tick - 1, pillars.CollectStanding, pillars.Radius, config, deltaTime);
             }
 
             Shots.RemoveSpent(tick, config.ShotSpeed, config.ShotRange, deltaTime);

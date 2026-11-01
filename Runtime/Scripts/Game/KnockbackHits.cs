@@ -13,6 +13,13 @@ namespace LOP
         /// 같은 선분에서 서 있는 기둥이 몸보다 먼저 닿으면 그 몸은 맞지 않는다(기둥 뒤에 숨기).
         /// 떨어지는 몸·탈락한 몸은 부르는 쪽이 targets에서 뺀다.
         /// </summary>
+        /// <summary>탄이 그 틱에 지나온 선분(쏜 틱이면 원점 → 이번 자리). 서버 판정과 클라 기둥 막기가 같은 선분을 쓰게 한 곳에 둔다.</summary>
+        public static void Segment(in KnockbackShot shot, long tick, KnockbackConfig cfg, float dt, out Vector2 from, out Vector2 to)
+        {
+            from = tick == shot.FireTick ? shot.Origin : shot.PositionWithinRange(tick - 1, cfg.ShotSpeed, cfg.ShotRange, dt);
+            to = shot.PositionWithinRange(tick, cfg.ShotSpeed, cfg.ShotRange, dt);
+        }
+
         public static List<(KnockbackShot shot, string victimId)> Find(
             IReadOnlyList<KnockbackShot> shots,
             IReadOnlyList<(string id, Vector2 position)> targets,
@@ -30,8 +37,7 @@ namespace LOP
                     continue;
                 }
 
-                Vector2 from = tick == shot.FireTick ? shot.Origin : shot.PositionWithinRange(tick - 1, cfg.ShotSpeed, cfg.ShotRange, dt);
-                Vector2 to = shot.PositionWithinRange(tick, cfg.ShotSpeed, cfg.ShotRange, dt);
+                Segment(shot, tick, cfg, dt, out Vector2 from, out Vector2 to);
 
                 float wall = float.MaxValue;
                 for (int p = 0; p < standingPillars.Count; p++)
