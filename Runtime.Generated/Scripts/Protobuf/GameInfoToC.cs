@@ -22,14 +22,15 @@ public static partial class GameInfoToCReflection {
   static GameInfoToCReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChFHYW1lSW5mb1RvQy5wcm90bxoOR2FtZUluZm8ucHJvdG8icgoLR2FtZUlu",
-          "Zm9Ub0MSEQoJZW50aXR5X2lkGAEgASgJEhIKCnNlc3Npb25faWQYAiABKAkS",
-          "HgoWZXhwZWN0ZWRfbmV4dF9zZXF1ZW5jZRgDIAEoAxIcCglnYW1lX2luZm8Y",
-          "BCABKAsyCS5HYW1lSW5mb2IGcHJvdG8z"));
+          "ChFHYW1lSW5mb1RvQy5wcm90bxoOR2FtZUluZm8ucHJvdG8ijAEKC0dhbWVJ",
+          "bmZvVG9DEhEKCWVudGl0eV9pZBgBIAEoCRISCgpzZXNzaW9uX2lkGAIgASgJ",
+          "Eh4KFmV4cGVjdGVkX25leHRfc2VxdWVuY2UYAyABKAMSHAoJZ2FtZV9pbmZv",
+          "GAQgASgLMgkuR2FtZUluZm8SGAoQZm9ybWVyX2VudGl0eV9pZBgFIAEoCWIG",
+          "cHJvdG8z"));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::GameInfoReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::GameInfoToC), global::GameInfoToC.Parser, new[]{ "EntityId", "SessionId", "ExpectedNextSequence", "GameInfo" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::GameInfoToC), global::GameInfoToC.Parser, new[]{ "EntityId", "SessionId", "ExpectedNextSequence", "GameInfo", "FormerEntityId" }, null, null, null, null)
         }));
   }
   #endregion
@@ -78,6 +79,7 @@ public sealed partial class GameInfoToC : pb::IMessage<GameInfoToC>
     sessionId_ = other.sessionId_;
     expectedNextSequence_ = other.expectedNextSequence_;
     gameInfo_ = other.gameInfo_ != null ? other.gameInfo_.Clone() : null;
+    formerEntityId_ = other.formerEntityId_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -135,6 +137,21 @@ public sealed partial class GameInfoToC : pb::IMessage<GameInfoToC>
     }
   }
 
+  /// <summary>Field number for the "former_entity_id" field.</summary>
+  public const int FormerEntityIdFieldNumber = 5;
+  private string formerEntityId_ = "";
+  /// <summary>
+  /// 이 판에서 마지막으로 가졌던 몸 id. 탈락 뒤 다시 들어온 관전자가 팀을 찾는 데 쓴다(조종용 entity_id와 별개).
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public string FormerEntityId {
+    get { return formerEntityId_; }
+    set {
+      formerEntityId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -154,6 +171,7 @@ public sealed partial class GameInfoToC : pb::IMessage<GameInfoToC>
     if (SessionId != other.SessionId) return false;
     if (ExpectedNextSequence != other.ExpectedNextSequence) return false;
     if (!object.Equals(GameInfo, other.GameInfo)) return false;
+    if (FormerEntityId != other.FormerEntityId) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -165,6 +183,7 @@ public sealed partial class GameInfoToC : pb::IMessage<GameInfoToC>
     if (SessionId.Length != 0) hash ^= SessionId.GetHashCode();
     if (ExpectedNextSequence != 0L) hash ^= ExpectedNextSequence.GetHashCode();
     if (gameInfo_ != null) hash ^= GameInfo.GetHashCode();
+    if (FormerEntityId.Length != 0) hash ^= FormerEntityId.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -199,6 +218,10 @@ public sealed partial class GameInfoToC : pb::IMessage<GameInfoToC>
       output.WriteRawTag(34);
       output.WriteMessage(GameInfo);
     }
+    if (FormerEntityId.Length != 0) {
+      output.WriteRawTag(42);
+      output.WriteString(FormerEntityId);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -225,6 +248,10 @@ public sealed partial class GameInfoToC : pb::IMessage<GameInfoToC>
       output.WriteRawTag(34);
       output.WriteMessage(GameInfo);
     }
+    if (FormerEntityId.Length != 0) {
+      output.WriteRawTag(42);
+      output.WriteString(FormerEntityId);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -246,6 +273,9 @@ public sealed partial class GameInfoToC : pb::IMessage<GameInfoToC>
     }
     if (gameInfo_ != null) {
       size += 1 + pb::CodedOutputStream.ComputeMessageSize(GameInfo);
+    }
+    if (FormerEntityId.Length != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeStringSize(FormerEntityId);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -273,6 +303,9 @@ public sealed partial class GameInfoToC : pb::IMessage<GameInfoToC>
         GameInfo = new global::GameInfo();
       }
       GameInfo.MergeFrom(other.GameInfo);
+    }
+    if (other.FormerEntityId.Length != 0) {
+      FormerEntityId = other.FormerEntityId;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -312,6 +345,10 @@ public sealed partial class GameInfoToC : pb::IMessage<GameInfoToC>
           input.ReadMessage(GameInfo);
           break;
         }
+        case 42: {
+          FormerEntityId = input.ReadString();
+          break;
+        }
       }
     }
   #endif
@@ -348,6 +385,10 @@ public sealed partial class GameInfoToC : pb::IMessage<GameInfoToC>
             GameInfo = new global::GameInfo();
           }
           input.ReadMessage(GameInfo);
+          break;
+        }
+        case 42: {
+          FormerEntityId = input.ReadString();
           break;
         }
       }
