@@ -8,4 +8,6 @@ message GameInfoToC {
   string session_id = 2;
   int64 expected_next_sequence = 3;
   GameInfo game_info = 4;
+  // 이 판에서 마지막으로 가졌던 몸 id. 탈락 뒤 다시 들어온 관전자가 팀을 찾는 데 쓴다(조종용 entity_id와 별개).
+  string former_entity_id = 5;
 }
