@@ -9,6 +9,8 @@ message KnockbackPlayerWire
 	// 탈락 안 했으면 -1
 	int64 eliminated_tick = 2;
 	int32 damage_percent = 3;
+	// 0 = 개인전(팀 없음), 팀전은 1과 2
+	int32 team = 4;
 }
 
 // 넉백 판 상태 전체(서버 → 클라). 사건이 아니라 상태로 보낸다 — 끊겼다 돌아온 사람도 받는 즉시 맞춰진다.
@@ -20,4 +22,6 @@ message KnockbackStateToC
 	repeated KnockbackPlayerWire players = 2;
 	// 공개된 원 단계(순서대로). 활쏘기와 같은 모양을 재사용한다.
 	repeated MountedZoneStageWire zone_stages = 3;
+	// 0 = 개인전, 2 = 팀전
+	int32 team_count = 4;
 }
