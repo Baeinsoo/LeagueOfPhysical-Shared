@@ -73,5 +73,20 @@ namespace LOP.Tests
             p.CollectStanding(200, standing);
             Assert.AreEqual(0, standing.Count);
         }
+
+        [Test]
+        public void 무너지는_틱은_서_있던_마지막_틱의_다음이고_안_무너지면_최댓값()
+        {
+            var (p, floor) = MakePillars();
+            Assert.AreEqual(long.MaxValue, p.CollapseTick(0), "원 단계가 없으면 안 무너진다");
+            floor.SetZoneStages(new[] { new ZoneStage(0, 0, 100, 200, Vector2.zero, floor.ZoneStartRadius, Vector2.zero, 3f, 4f) });
+            for (int i = 0; i < p.Count; i++)
+            {
+                long c = p.CollapseTick(i);
+                Assert.Less(c, long.MaxValue);
+                Assert.IsFalse(p.IsStanding(i, c));
+                Assert.IsTrue(p.IsStanding(i, c - 1));
+            }
+        }
     }
 }
