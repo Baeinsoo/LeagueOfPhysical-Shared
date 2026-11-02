@@ -117,6 +117,18 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 빠진_틱은_Grab을_이어_쓰지_않는다()
+        {
+            var system = new InputBufferSystem();
+            var buffer = new InputBuffer();
+            // 양성 대조: 연속 값(Horizontal)은 이어 쓴다 — 이 단정이 없으면 PredictMissing이 아무것도 안 해도 통과한다.
+            buffer.LastReceived = new InputCommand { Grab = true, Horizontal = 0.5f };
+            var predicted = system.PredictMissing(buffer, maxTicks: 5);
+            Assert.AreEqual(0.5f, predicted.Horizontal, 1e-6f);
+            Assert.IsFalse(predicted.Grab);
+        }
+
+        [Test]
         public void PredictMissing_DoesNotRepeatJumpOrAbility()
         {
             system.Enqueue(buffer, 10, new InputCommand { SequenceNumber = 0, Horizontal = 0.8f, Jump = true, AbilityId = 7 });

@@ -33,4 +33,6 @@ message InputCommand {
   int64 view_tick = 16;
   // Knockback: 쏜 틱에만 참인 이산 액션. 쏘는 방향은 aim_yaw에 실린다.
   bool fire = 17;
+  // CardRush: 카드 잡기. 누른 틱에만 참인 이산 액션(jump·dash·fire와 같은 짝)
+  bool grab = 18;
 }

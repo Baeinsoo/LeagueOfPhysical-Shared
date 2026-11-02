@@ -22,18 +22,18 @@ public static partial class InputCommandReflection {
   static InputCommandReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChJJbnB1dENvbW1hbmQucHJvdG8iqAIKDElucHV0Q29tbWFuZBIXCg9zZXF1",
+          "ChJJbnB1dENvbW1hbmQucHJvdG8itgIKDElucHV0Q29tbWFuZBIXCg9zZXF1",
           "ZW5jZV9udW1iZXIYASABKAMSEgoKaG9yaXpvbnRhbBgCIAEoAhIQCgh2ZXJ0",
           "aWNhbBgDIAEoAhIMCgRqdW1wGAQgASgIEhIKCmFiaWxpdHlfaWQYBiABKAUS",
           "DwoHcG9zdHVyZRgHIAEoAhINCgVnbGlkZRgIIAEoCBIOCgZwb3NpbmcYCSAB",
           "KAgSDAoEZGFzaBgKIAEoCBIPCgdhaW1feWF3GAsgASgCEhEKCWFpbV9waXRj",
           "aBgMIAEoAhIPCgdkcmF3aW5nGA0gASgIEg8KB3JlbGVhc2UYDiABKAgSEgoK",
           "ZHJhd19yYXRpbxgPIAEoAhIRCgl2aWV3X3RpY2sYECABKAMSDAoEZmlyZRgR",
-          "IAEoCGIGcHJvdG8z"));
+          "IAEoCBIMCgRncmFiGBIgASgIYgZwcm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::InputCommand), global::InputCommand.Parser, new[]{ "SequenceNumber", "Horizontal", "Vertical", "Jump", "AbilityId", "Posture", "Glide", "Posing", "Dash", "AimYaw", "AimPitch", "Drawing", "Release", "DrawRatio", "ViewTick", "Fire" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::InputCommand), global::InputCommand.Parser, new[]{ "SequenceNumber", "Horizontal", "Vertical", "Jump", "AbilityId", "Posture", "Glide", "Posing", "Dash", "AimYaw", "AimPitch", "Drawing", "Release", "DrawRatio", "ViewTick", "Fire", "Grab" }, null, null, null, null)
         }));
   }
   #endregion
@@ -91,6 +91,7 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     drawRatio_ = other.drawRatio_;
     viewTick_ = other.viewTick_;
     fire_ = other.fire_;
+    grab_ = other.grab_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -330,6 +331,21 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     }
   }
 
+  /// <summary>Field number for the "grab" field.</summary>
+  public const int GrabFieldNumber = 18;
+  private bool grab_;
+  /// <summary>
+  /// CardRush: 카드 잡기. 누른 틱에만 참인 이산 액션(jump·dash·fire와 같은 짝)
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public bool Grab {
+    get { return grab_; }
+    set {
+      grab_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -361,6 +377,7 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(DrawRatio, other.DrawRatio)) return false;
     if (ViewTick != other.ViewTick) return false;
     if (Fire != other.Fire) return false;
+    if (Grab != other.Grab) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -384,6 +401,7 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     if (DrawRatio != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(DrawRatio);
     if (ViewTick != 0L) hash ^= ViewTick.GetHashCode();
     if (Fire != false) hash ^= Fire.GetHashCode();
+    if (Grab != false) hash ^= Grab.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -466,6 +484,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
       output.WriteRawTag(136, 1);
       output.WriteBool(Fire);
     }
+    if (Grab != false) {
+      output.WriteRawTag(144, 1);
+      output.WriteBool(Grab);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -540,6 +562,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
       output.WriteRawTag(136, 1);
       output.WriteBool(Fire);
     }
+    if (Grab != false) {
+      output.WriteRawTag(144, 1);
+      output.WriteBool(Grab);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -596,6 +622,9 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
       size += 2 + pb::CodedOutputStream.ComputeInt64Size(ViewTick);
     }
     if (Fire != false) {
+      size += 2 + 1;
+    }
+    if (Grab != false) {
       size += 2 + 1;
     }
     if (_unknownFields != null) {
@@ -657,6 +686,9 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
     }
     if (other.Fire != false) {
       Fire = other.Fire;
+    }
+    if (other.Grab != false) {
+      Grab = other.Grab;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -741,6 +773,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
           Fire = input.ReadBool();
           break;
         }
+        case 144: {
+          Grab = input.ReadBool();
+          break;
+        }
       }
     }
   #endif
@@ -822,6 +858,10 @@ public sealed partial class InputCommand : pb::IMessage<InputCommand>
         }
         case 136: {
           Fire = input.ReadBool();
+          break;
+        }
+        case 144: {
+          Grab = input.ReadBool();
           break;
         }
       }
