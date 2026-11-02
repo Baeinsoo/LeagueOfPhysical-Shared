@@ -129,7 +129,7 @@ namespace LOP.Tests
             var field = new FlappyMapRulesField();
             Assert.AreSame(FlappyFlapComboRules.Default, field.FlapCombo, "마커가 없는 맵도 기본 고비");
 
-            FlappyFlapComboRules.TryCreate(new[] { 5 }, new[] { 1f }, out var custom);
+            FlappyFlapComboRules.TryCreate(5, new[] { 1f }, 1f, out var custom);
             field.Set(chaser: false, manualDash: true, flapCombo: custom);
             Assert.AreSame(custom, field.FlapCombo);
 
