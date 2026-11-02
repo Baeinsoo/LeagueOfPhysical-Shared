@@ -82,10 +82,10 @@ namespace LOP
             HazardDamagePerSecond = hazardDamagePerSecond;
             HazardSpeedScale = hazardSpeedScale;
             CrateFirstSeconds = crateFirstSeconds;
-            CrateIntervalSeconds = crateIntervalSeconds;
-            CrateWarnSeconds = crateWarnSeconds;
-            CratePickupRadius = cratePickupRadius;
-            BlastRadius = blastRadius;
+            CrateIntervalSeconds = PositiveOrDefault(crateIntervalSeconds, 20f, "crate_interval_seconds");
+            CrateWarnSeconds = PositiveOrDefault(crateWarnSeconds, 1.5f, "crate_warn_seconds");
+            CratePickupRadius = PositiveOrDefault(cratePickupRadius, 0.9f, "crate_pickup_radius");
+            BlastRadius = PositiveOrDefault(blastRadius, 2.5f, "blast_radius");
             MatchDurationSeconds = matchDurationSeconds;
             MoveSpeed = moveSpeed;
             MoveGain = moveGain;
@@ -113,6 +113,14 @@ namespace LOP
             ZoneFirstRevealSeconds = zoneFirstRevealSeconds;
             ZoneStages = zoneStages;
             Pillars = pillars ?? KnockbackPillarLayout.None;
+        }
+
+        //  0 이하면 상자가 안 주워지거나 일정이 꼬이므로 기본값으로 쓴다. 클·서가 같은 생성자를 지나 같은 값이 된다.
+        private static float PositiveOrDefault(float value, float fallback, string column)
+        {
+            if (value > 0f) return value;
+            Debug.LogError($"TbKnockbackConfig {column}는 0보다 커야 한다: {value} - {fallback}로 처리한다");
+            return fallback;
         }
 
         //  올림이라 0.26초는 13틱 — 시간이 모자라 일찍 풀리지 않는다.
