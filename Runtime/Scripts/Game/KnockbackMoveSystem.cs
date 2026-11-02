@@ -51,10 +51,11 @@ namespace LOP
 
             if (ground.IsGrounded)
             {
-                var input = entity.Get<InputBuffer>()?.Current;
+                // 날려지는 동안엔 입력을 받지 않는다 — 목표 속도 0으로 천천히 줄어 갑자기 서지 않는다.
+                bool stunned = tick < (entity.Get<KnockbackBody>()?.KnockbackEndTick ?? long.MinValue);
+                var input = stunned ? null : entity.Get<InputBuffer>()?.Current;
                 var horizontal = new Vector2(input?.Horizontal ?? 0f, input?.Vertical ?? 0f);
-                // 날려지는 중엔 다가가는 빠르기가 약해서 거의 방향을 못 바꾼다.
-                float gain = tick < (entity.Get<KnockbackBody>()?.KnockbackEndTick ?? long.MinValue) ? stunGain : moveGain;
+                float gain = stunned ? stunGain : moveGain;
                 // 위험 지대에 서 있으면 목표 속도가 느려진다(몸 중심 기준).
                 float speed = floor.InHazard(pos.x, pos.z, tick) ? moveSpeed * hazardSpeedScale : moveSpeed;
                 var next = KnockbackMotor.Step(new Vector2(vel.x, vel.z), horizontal, speed, gain, dt);

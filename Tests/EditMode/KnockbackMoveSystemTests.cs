@@ -155,12 +155,21 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 날림_중엔_조작이_약하다()
+        public void 날림_중엔_이동_입력을_무시한다()
         {
             var e = Flying(endTick: 10);
-            NewSystem24().Tick(e, 5, Dt);
+            var sys = NewSystem24();
+            sys.Tick(e, 5, Dt);
 
-            Assert.AreEqual(7.9715f, Vel(e).x, 1e-3f);
+            //  입력(-x)이 있어도 목표 속도는 0이다 — 입력 쪽으로 꺾이지 않고 날리던 방향으로 서서히 준다.
+            Assert.AreEqual(8.44f * (1f - 1.6f * Dt), Vel(e).x, 1e-3f);
+            Assert.Greater(Vel(e).x, 0f);
+
+            //  입력이 없을 때와 결과가 같다.
+            var idle = Flying(endTick: 10);
+            Feed(idle, 0f, 0f);
+            sys.Tick(idle, 5, Dt);
+            Assert.AreEqual(Vel(idle).x, Vel(e).x, 1e-5f);
         }
 
         [Test]

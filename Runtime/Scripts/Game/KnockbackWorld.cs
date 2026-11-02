@@ -121,7 +121,9 @@ namespace LOP
             AddHazardDamage(tick);
 
             CollectBodies();
+            MarkChainHits(tick);
             bodyCollision.Resolve(movers, standing);
+            ApplyChainHits(tick);
 
             //  앞 틱 선분으로 지운다 — 그 틱의 서버 판정은 이미 끝났으니 순서가 결과를 바꾸지 않는다.
             if (pillars != null)
@@ -158,6 +160,62 @@ namespace LOP
                 {
                     body.DamagePercent += 1;
                 }
+            }
+        }
+
+        //  날아가는 몸에 맞닿은 몸은 충돌로 속도를 받는 순간 같이 날려진다 — 줄줄이 떨어지는 장면.
+        //  누가 날아가는 중이었는지는 속도를 푸는 "앞"의 상태로 정한다(푼 뒤엔 서로 얽힌다).
+        private readonly List<GameFramework.World.Entity> chainTargets = new List<GameFramework.World.Entity>();
+        private readonly List<System.Numerics.Vector3> chainBefore = new List<System.Numerics.Vector3>();
+
+        private static UnityEngine.Vector3 ToUnity(System.Numerics.Vector3 v) => new UnityEngine.Vector3(v.X, v.Y, v.Z);
+
+        private static bool IsFlying(GameFramework.World.Entity entity, long tick)
+            => tick < (entity.Get<KnockbackBody>()?.KnockbackEndTick ?? long.MinValue);
+
+        private void MarkChainHits(long tick)
+        {
+            chainTargets.Clear();
+            chainBefore.Clear();
+            foreach (var mover in movers)
+            {
+                if (mover.Has<KnockbackBody>() == false)
+                {
+                    continue;
+                }
+
+                var moverPos = ToUnity(mover.Get<GameFramework.World.Transform>().Position);
+                foreach (var other in standing)
+                {
+                    if (ReferenceEquals(other, mover) || IsFlying(other, tick) == false)
+                    {
+                        continue;
+                    }
+
+                    var otherPos = ToUnity(other.Get<GameFramework.World.Transform>().Position);
+                    if (BodyOverlap.TryCompute(moverPos, otherPos, BodySizes.CharacterRadius, BodySizes.CharacterHeight,
+                                               out _, out _))
+                    {
+                        chainTargets.Add(mover);
+                        chainBefore.Add(mover.Get<GameFramework.World.Velocity>().Linear);
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void ApplyChainHits(long tick)
+        {
+            for (int i = 0; i < chainTargets.Count; i++)
+            {
+                var entity = chainTargets[i];
+                if (entity.Get<GameFramework.World.Velocity>().Linear == chainBefore[i])
+                {
+                    continue;
+                }
+
+                var body = entity.Get<KnockbackBody>();
+                body.KnockbackEndTick = System.Math.Max(body.KnockbackEndTick, KnockbackRules.StunEndTick(body, tick, config));
             }
         }
 
