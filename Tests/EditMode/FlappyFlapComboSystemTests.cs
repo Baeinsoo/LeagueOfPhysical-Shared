@@ -4,7 +4,7 @@ using NUnit.Framework;
 namespace LOP.Tests
 {
     /// <summary>
-    /// 연속 날갯짓 세기와 고비 보상(spec 2026-10-27 §1). 시뮬이 받은 날갯짓마다 +1, 수가 고비 값이 되는 그 날갯짓에 게이지,
+    /// 연속 날갯짓 세기와 보상(spec 2026-10-27 §1, 11-02 개정). 시뮬이 받은 날갯짓마다 +1, 수가 간격(10)의 배수가 되는 그 날갯짓에 표의 칸,
     /// 새로 기절하면 0. 게이지 상한은 2칸. 어느 날갯짓을 "받았나"는 월드가 가린다(<see cref="FlappyWorldFlapComboTests"/>).
     /// </summary>
     public class FlappyFlapComboSystemTests
@@ -31,6 +31,9 @@ namespace LOP.Tests
 
         private static float Charge(Entity bird) => bird.Get<FlappyDash>().Charge;
 
+        //  0.06+0.07처럼 2진수로 안 떨어지는 칸을 더하면 끝자리가 흔들린다.
+        private const float Eps = 1e-4f;
+
         [Test]
         public void 날갯짓마다_하나씩_센다()
         {
@@ -42,59 +45,59 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 고비가_되는_날갯짓에만_칸을_준다()
+        public void 간격마다_표의_칸을_준다()
         {
+            //  11-02 — 10마다 커지는 고정 표(0.06·0.07·0.07·…). 누적 50→0.37, 100→0.97, 150→1.93.
             var system = System();
             var bird = Bird();
 
             Flaps(system, bird, 9);
             Assert.AreEqual(0f, Charge(bird), "9");
             Flaps(system, bird, 1);
-            Assert.AreEqual(0.1f, Charge(bird), "10 — 10-30부터 작은 게이지를 준다");
-            Flaps(system, bird, 14);
-            Assert.AreEqual(0.1f, Charge(bird), "24");
+            Assert.AreEqual(0.06f, Charge(bird), Eps, "10");
+            Flaps(system, bird, 9);
+            Assert.AreEqual(0.06f, Charge(bird), Eps, "19");
             Flaps(system, bird, 1);
-            Assert.AreEqual(0.35f, Charge(bird), "25");
-            Flaps(system, bird, 25);
-            Assert.AreEqual(0.85f, Charge(bird), "50");
+            Assert.AreEqual(0.13f, Charge(bird), Eps, "20");
+            Flaps(system, bird, 30);
+            Assert.AreEqual(0.37f, Charge(bird), Eps, "50");
             Flaps(system, bird, 50);
-            Assert.AreEqual(1.35f, Charge(bird), "100 — 합 1.35칸, 2칸 상한 전");
+            Assert.AreEqual(0.97f, Charge(bird), Eps, "100");
+            Flaps(system, bird, 50);
+            Assert.AreEqual(1.93f, Charge(bird), Eps, "150 — 2칸 상한 전");
         }
 
         [Test]
-        public void 마지막_고비_뒤로는_50마다_반_칸을_다시_준다()
+        public void 표_뒤로는_10마다_4분의1칸()
         {
-            //  사용자 결정 11-02 — 100 뒤로 150·200·250…
             var system = System();
             var bird = Bird();
-            Flaps(system, bird, 100);
+            Flaps(system, bird, 150);
             bird.Get<FlappyDash>().Charge = 0f;
 
-            Flaps(system, bird, 49);
-            Assert.AreEqual(0f, Charge(bird), "149");
+            Flaps(system, bird, 9);
+            Assert.AreEqual(0f, Charge(bird), "159");
             Flaps(system, bird, 1);
-            Assert.AreEqual(0.5f, Charge(bird), "150");
-            Flaps(system, bird, 49);
-            Assert.AreEqual(0.5f, Charge(bird), "199");
-            Flaps(system, bird, 1);
-            Assert.AreEqual(1f, Charge(bird), "200");
+            Assert.AreEqual(0.25f, Charge(bird), Eps, "160");
+            Flaps(system, bird, 40);
+            Assert.AreEqual(1.25f, Charge(bird), Eps, "200");
             Assert.AreEqual(200, bird.Get<FlappyFlapCombo>().Count, "수는 계속 센다(기록용)");
         }
 
         [Test]
-        public void 끊으면_0이고_다음_연속도_고비에서_또_준다()
+        public void 끊으면_0이고_다음_연속도_처음_칸부터_또_준다()
         {
-            //  10-30부터 10도 0.1칸을 줘 25까지 한 묶음은 0.35칸이다.
+            //  25까지 한 묶음은 10(0.06)·20(0.07) = 0.13칸이다.
             var system = System();
             var bird = Bird();
             Flaps(system, bird, 25);
-            Assert.AreEqual(0.35f, Charge(bird));
+            Assert.AreEqual(0.13f, Charge(bird), Eps);
 
             system.Break(bird);
             Assert.AreEqual(0, bird.Get<FlappyFlapCombo>().Count);
             Flaps(system, bird, 25);
 
-            Assert.AreEqual(0.70f, Charge(bird));
+            Assert.AreEqual(0.26f, Charge(bird), Eps);
         }
 
         [Test]
@@ -111,18 +114,18 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 맵이_정한_고비를_따른다()
+        public void 맵이_정한_간격을_따른다()
         {
-            FlappyFlapComboRules.TryCreate(new[] { 3 }, new[] { 1f }, out var custom);
+            FlappyFlapComboRules.TryCreate(4, new[] { 0.5f }, 0.5f, out var custom);
             var rules = new FlappyMapRulesField();
             rules.Set(chaser: false, manualDash: true, flapCombo: custom);
             var system = System(rules);
             var bird = Bird();
 
-            Flaps(system, bird, 3);
-            Assert.AreEqual(1f, Charge(bird), "3번째");
-            Flaps(system, bird, 7);
-            Assert.AreEqual(1f, Charge(bird), "기본 고비 10은 이 맵엔 없다");
+            Flaps(system, bird, 4);
+            Assert.AreEqual(0.5f, Charge(bird), "4번째");
+            Flaps(system, bird, 6);
+            Assert.AreEqual(1f, Charge(bird), "8에서 한 번 더, 기본 간격 10은 이 맵엔 없다");
         }
 
         [Test]

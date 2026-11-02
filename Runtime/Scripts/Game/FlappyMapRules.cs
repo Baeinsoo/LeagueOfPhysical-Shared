@@ -49,13 +49,15 @@ namespace LOP
         /// 알갱이·다이브로 채우는 맵에서만 쓴다.</summary>
         public float StunLoss = FlappyMapRulesField.DefaultStunLoss;
 
-        /// <summary>연속 날갯짓 고비 — 연속 수가 이 값이 되는 날갯짓에 <see cref="ComboDashGains"/>의 같은 자리 칸을 준다(1 이상, 오름차순).
-        /// 마지막 고비 뒤로는 <see cref="FlappyFlapComboRules.RepeatEvery"/>마다 마지막 칸을 다시 준다(마커 칸 아님, 11-02).
-        /// 둘 다 비우면 이 맵은 보상이 없다. 이미 구운 맵엔 이 칸이 없어 초기값(기본)이 돈다 — 그래서 다시 굽지 않아도 된다.</summary>
-        public int[] ComboMilestones = FlappyFlapComboRules.DefaultMilestones();
+        /// <summary>연속 날갯짓 보상 간격 — 연속 수가 이 값의 배수가 되는 날갯짓마다 <see cref="ComboDashGains"/>의 k번째 칸을 준다(11-02).
+        /// 0이면 이 맵은 보상이 없다. 어느 맵에도 이 칸들이 직렬화돼 있지 않아 초기값(기본)이 돈다 — 다시 굽지 않아도 된다.</summary>
+        public int ComboStep = FlappyFlapComboRules.DefaultStep;
 
-        /// <summary>고비마다 주는 대시 게이지(칸, 0~2). <see cref="ComboMilestones"/>와 같은 개수.</summary>
+        /// <summary>간격마다 주는 대시 게이지 표(칸, 0~2, 뒤로 가며 줄지 않게).</summary>
         public float[] ComboDashGains = FlappyFlapComboRules.DefaultGains();
+
+        /// <summary>표가 끝난 뒤 간격마다 주는 칸(표 끝 칸 이상, 2 이하).</summary>
+        public float ComboTailGain = FlappyFlapComboRules.DefaultTailGain;
 
         private FlappyMapRulesField field;
 
@@ -63,12 +65,12 @@ namespace LOP
         public void Construct(FlappyMapRulesField field)
         {
             this.field = field;
-            if (FlappyFlapComboRules.TryCreate(ComboMilestones, ComboDashGains, out var flapCombo) == false)
+            if (FlappyFlapComboRules.TryCreate(ComboStep, ComboDashGains, ComboTailGain, out var flapCombo) == false)
             {
-                Debug.LogWarning("[FlappyMapRules] 연속 날갯짓 고비 값이 잘못돼 기본값을 쓴다 — 고비와 보상은 같은 개수, 고비는 1 이상 오름차순, 보상은 0~2칸");
+                Debug.LogWarning("[FlappyMapRules] 연속 날갯짓 보상 값이 잘못돼 기본값을 쓴다 — 간격은 0 이상, 표와 꼬리는 0~2칸이고 뒤로 가며 줄지 않게");
             }
             //  어느 값이 돌았는지 서버 파드 로그에서도 보이게 한 줄 — 이미 구운 맵은 이 칸이 없어 기본값이어야 한다.
-            Debug.Log($"[FlappyMapRules] 연속 날갯짓 고비 {flapCombo.Describe()}");
+            Debug.Log($"[FlappyMapRules] 연속 날갯짓 보상 {flapCombo.Describe()}");
             field.Set(Chaser, ManualDash, MoteCharge, MoteValue, MoteReach, DiveCharge, DiveMinFallRatio, DiveRate, StunLoss, flapCombo);
         }
 

@@ -10,7 +10,7 @@ namespace LOP
         private readonly FlappyDashSystem dash;
         private readonly FlappyMapRulesField rules;
 
-        /// <param name="rules"><c>null</c>은 규칙 없이 만든 시험·도구용이라 기본 고비로 센다. 실제 판은 DI가 늘 필드를 넣는다.</param>
+        /// <param name="rules"><c>null</c>은 규칙 없이 만든 시험·도구용이라 기본 보상으로 센다. 실제 판은 DI가 늘 필드를 넣는다.</param>
         public FlappyFlapComboSystem(FlappyDashSystem dash, FlappyMapRulesField rules = null)
         {
             this.dash = dash;
@@ -19,7 +19,7 @@ namespace LOP
 
         public FlappyFlapComboRules Rules => rules?.FlapCombo ?? FlappyFlapComboRules.Default;
 
-        /// <summary>시뮬이 이번 틱 날갯짓을 받았다 — 연속 +1, 그 수가 보상 자리(고비, 마지막 고비 뒤 50마다)면 게이지(버튼 없는 맵·가득이면 대시 쪽이 거른다).</summary>
+        /// <summary>시뮬이 이번 틱 날갯짓을 받았다 — 연속 +1, 그 수가 보상 간격(기본 10)의 배수면 표의 칸만큼 게이지(버튼 없는 맵·가득이면 대시 쪽이 거른다).</summary>
         public void Flap(GameFramework.World.Entity entity)
         {
             var combo = entity.Get<FlappyFlapCombo>();
