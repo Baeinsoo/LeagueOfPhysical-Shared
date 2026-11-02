@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace LOP
 {
@@ -32,6 +33,10 @@ namespace LOP
         public float ZoneFirstRevealSeconds { get; }
         public IReadOnlyList<MountedArcheryZoneStageConfig> ZoneStages { get; }
         public KnockbackPillarLayout Pillars { get; }
+        /// <summary>0 낭떠러지(원 밖 칸이 무너짐), 1 위험 지대(원 밖 칸은 남고 위험해짐).</summary>
+        public int EdgeMode { get; }
+        public float HazardDamagePerSecond { get; }
+        public float HazardSpeedScale { get; }
 
         //  시뮬 틱 간격. 초를 틱으로 바꿀 때 클·서가 같은 값을 쓴다.
         public const float TickInterval = 0.02f;
@@ -56,8 +61,14 @@ namespace LOP
                                float bodyRestitution,
                                float zoneFirstRevealSeconds,
                                IReadOnlyList<MountedArcheryZoneStageConfig> zoneStages,
-                               KnockbackPillarLayout pillars = null)
+                               KnockbackPillarLayout pillars = null,
+                               int edgeMode = 0,
+                               float hazardDamagePerSecond = 0f,
+                               float hazardSpeedScale = 1f)
         {
+            EdgeMode = edgeMode;
+            HazardDamagePerSecond = hazardDamagePerSecond;
+            HazardSpeedScale = hazardSpeedScale;
             MatchDurationSeconds = matchDurationSeconds;
             MoveSpeed = moveSpeed;
             MoveGain = moveGain;
@@ -90,13 +101,21 @@ namespace LOP
         //  올림이라 0.26초는 13틱 — 시간이 모자라 일찍 풀리지 않는다.
         public int Ticks(float seconds) => (int)System.Math.Ceiling(seconds / TickInterval - 1e-4);
 
+        /// <summary>위험 지대에서 위험도가 1 오르는 간격(틱). 0이면 오르지 않는다.</summary>
+        public int HazardDamageIntervalTicks => HazardDamagePerSecond > 0f
+            ? Mathf.Max(1, Mathf.RoundToInt(1f / HazardDamagePerSecond / TickInterval))
+            : 0;
+
+        /// <summary>위험 지대 방식에서 마지막 원이 끝난 뒤 바깥부터 전부 무너지기까지의 시간. 값을 바꿔 보게 되면 그때 표로 뺀다.</summary>
+        public const float SuddenDeathSeconds = 15f;
+
         public long MatchDurationTicks(float tickInterval)
             => (long)System.Math.Round(MatchDurationSeconds / tickInterval);
 
-        public KnockbackFloor CreateFloor() => new KnockbackFloor(ArenaRadius, TileSize, HoleRadius);
+        public KnockbackFloor CreateFloor() => new KnockbackFloor(ArenaRadius, TileSize, HoleRadius, EdgeMode == 1, Ticks(SuddenDeathSeconds));
 
         //  바닥은 월드와 이동 시스템이 같은 한 개를 나눠 쓴다(칸이 무너지면 둘이 같은 상태를 봐야 한다).
         public KnockbackMoveSystem CreateMoveSystem(KnockbackFloor floor, GameFramework.Physics.ICollisionQuery query, int layerMask)
-            => new KnockbackMoveSystem(floor, query, layerMask, MoveSpeed, MoveGain, StunGain);
+            => new KnockbackMoveSystem(floor, query, layerMask, MoveSpeed, MoveGain, StunGain, HazardSpeedScale);
     }
 }

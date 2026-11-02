@@ -118,6 +118,8 @@ namespace LOP
                 motionBridge.PushMotion(entity);
             }
 
+            AddHazardDamage(tick);
+
             CollectBodies();
             bodyCollision.Resolve(movers, standing);
 
@@ -130,6 +132,33 @@ namespace LOP
             Shots.RemoveSpent(tick, config.ShotSpeed, config.ShotRange, deltaTime);
             removedShots.RemoveWhere(k => new KnockbackShot(k.shooterId, k.fireTick, UnityEngine.Vector2.zero, UnityEngine.Vector2.right)
                 .IsSpent(tick, config.ShotSpeed, config.ShotRange, deltaTime));
+        }
+
+        //  위험 지대에 서 있는 몸의 위험도를 올린다. 소수 누적 없이 틱 번호로 정해 되감아도 같다.
+        private void AddHazardDamage(long tick)
+        {
+            int interval = config.HazardDamageIntervalTicks;
+            if (interval <= 0 || tick % interval != 0)
+            {
+                return;
+            }
+
+            foreach (var entity in EntityRegistry.All)
+            {
+                var transform = entity.Get<GameFramework.World.Transform>();
+                var body = entity.Get<KnockbackBody>();
+                var ground = entity.Get<GameFramework.World.GroundState>();
+                if (entity.Has<GameFramework.World.Simulated>() == false || transform == null || body == null || ground == null)
+                {
+                    continue;
+                }
+
+                //  떨어지는 중(접지 아님)이거나 이미 떨어져 탈락한 몸은 올리지 않는다.
+                if (ground.IsGrounded && Floor.InHazard(transform.Position.X, transform.Position.Z, tick))
+                {
+                    body.DamagePercent += 1;
+                }
+            }
         }
 
         //  id 순으로 세운다 — 푸는 순서가 클·서에서 같아야 같은 결과가 나온다.

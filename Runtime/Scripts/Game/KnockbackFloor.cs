@@ -15,8 +15,18 @@ namespace LOP
         public float TileSize { get; }
         public IReadOnlyList<(int x, int z)> Tiles => tiles;
 
-        public KnockbackFloor(float arenaRadius, float tileSize, float holeRadius)
+        /// <summary>true면 위험 지대 방식: 원이 줄어도 칸은 남고, 원 밖 칸이 위험 지대가 된다.</summary>
+        public bool HazardEdge { get; }
+
+        readonly float arenaRadius;
+        readonly long suddenDeathTicks;
+
+        /// <param name="suddenDeathTicks">위험 지대 방식에서 마지막 원이 다 줄어든 뒤, 바깥부터 전부 무너지기까지 걸리는 틱. 0이면 서든데스 없음.</param>
+        public KnockbackFloor(float arenaRadius, float tileSize, float holeRadius, bool hazardEdge = false, long suddenDeathTicks = 0)
         {
+            HazardEdge = hazardEdge;
+            this.arenaRadius = arenaRadius;
+            this.suddenDeathTicks = suddenDeathTicks;
             TileSize = tileSize;
             ZoneStartRadius = arenaRadius + tileSize * Mathf.Sqrt(2f) * 0.5f;
             int range = Mathf.CeilToInt(arenaRadius / tileSize);
@@ -69,6 +79,28 @@ namespace LOP
         public bool IsTileSolid(int tx, int tz, long tick)
         {
             if (!HasTile(tx, tz)) return false;
+            if (HazardEdge) return !SuddenDeathCollapsed(tx, tz, tick);
+            return TileInsideCircle(tx, tz, tick);
+        }
+
+        // 위험 지대 방식의 판 끝내기: 마지막 원이 다 줄어든 틱(E) 뒤로 원판 중심 기준 반지름이 D틱에 걸쳐 0까지 줄고, 그 밖으로 걸친 칸은 무너진다.
+        bool SuddenDeathCollapsed(int tx, int tz, long tick)
+        {
+            if (suddenDeathTicks <= 0 || stages.Length == 0) return false;
+            int last = 0;
+            for (int i = 1; i < stages.Length; i++) { if (stages[i].index > stages[last].index) last = i; }
+            long end = stages[last].shrinkEndTick;
+            if (tick <= end) return false;
+            float radius = arenaRadius * (1f - (float)(tick - end) / suddenDeathTicks);
+            if (radius <= 0f) return true;
+            float fx = Mathf.Max(Mathf.Abs(tx * TileSize), Mathf.Abs((tx + 1) * TileSize));
+            float fz = Mathf.Max(Mathf.Abs(tz * TileSize), Mathf.Abs((tz + 1) * TileSize));
+            return fx * fx + fz * fz > radius * radius;
+        }
+
+        // 칸의 가장 먼 꼭짓점까지 그 틱의 원 안이면 true. 반지름 0이면 어떤 칸도 안에 없다.
+        bool TileInsideCircle(int tx, int tz, long tick)
+        {
             var circle = MountedArcheryZone.CircleAt(stages, tick, Vector2.zero, ZoneStartRadius);
             if (circle.radius <= 0f) return false;
             float fx = Mathf.Max(Mathf.Abs(tx * TileSize - circle.center.x), Mathf.Abs((tx + 1) * TileSize - circle.center.x));
@@ -76,9 +108,26 @@ namespace LOP
             return fx * fx + fz * fz <= circle.radius * circle.radius;
         }
 
-        /// <summary>x, z는 칸 번호. 지금은 바닥인데 warningTicks 뒤엔 무너져 있는 칸 — 깜박이는 그림용.</summary>
+        /// <summary>
+        /// 위험 지대 방식에서, 그 점 아래 칸이 있고 칸의 한 조각이라도 그 틱의 원 밖이면 true.
+        /// 낭떠러지 방식은 늘 false.
+        /// </summary>
+        public bool InHazard(float x, float z, long tick)
+        {
+            var (tx, tz) = TileAt(x, z, TileSize);
+            return IsTileHazard(tx, tz, tick);
+        }
+
+        /// <summary>칸 번호로 묻는 InHazard.</summary>
+        public bool IsTileHazard(int tx, int tz, long tick)
+            => HazardEdge && IsTileSolid(tx, tz, tick) && !TileInsideCircle(tx, tz, tick);
+
+        /// <summary>x, z는 칸 번호. 지금은 바닥인데 warningTicks 뒤엔 무너져 있는 칸(위험 지대 방식은 위험 지대가 되거나 서든데스로 무너지는 칸) — 깜박이는 그림용.</summary>
         public bool IsWarning(int x, int z, long tick, long warningTicks)
-            => IsTileSolid(x, z, tick) && !IsTileSolid(x, z, tick + warningTicks);
+            => HazardEdge
+                ? IsTileSolid(x, z, tick)
+                    && ((!IsTileHazard(x, z, tick) && IsTileHazard(x, z, tick + warningTicks)) || !IsTileSolid(x, z, tick + warningTicks))
+                : IsTileSolid(x, z, tick) && !IsTileSolid(x, z, tick + warningTicks);
 
         public Vector3 TileCenter(int x, int z)
             => new Vector3((x + 0.5f) * TileSize, 0f, (z + 0.5f) * TileSize);
