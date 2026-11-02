@@ -114,5 +114,18 @@ namespace LOP.Tests
             Assert.IsFalse(back.placements[1].Hit);
             Assert.AreEqual(1, back.placements[1].Rank);
         }
+
+        [Test]
+        public void 넉백_터짐_사건은_와이어를_왕복한다()
+        {
+            var wire = WorldEventWire.ToWire(new KnockbackBlastEvent("e1", new Vector2(3.5f, -2f), 321));
+            Assert.AreEqual(WorldEventToC.EventOneofCase.KnockbackBlast, wire.EventCase);
+            var back = (KnockbackBlastEvent)WorldEventWire.FromWire(wire);
+
+            Assert.AreEqual("e1", back.shooterId);
+            Assert.AreEqual(3.5f, back.position.x, 1e-6f);
+            Assert.AreEqual(-2f, back.position.y, 1e-6f);
+            Assert.AreEqual(321, back.tick);
+        }
     }
 }

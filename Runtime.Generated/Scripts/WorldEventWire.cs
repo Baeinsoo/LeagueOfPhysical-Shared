@@ -102,6 +102,17 @@ namespace LOP
                             VictimId  = kh.victimId,
                         }
                     };
+                case KnockbackBlastEvent kb:
+                    return new WorldEventToC
+                    {
+                        KnockbackBlast = new KnockbackBlastToC
+                        {
+                            ShooterId = kb.shooterId,
+                            X         = kb.position.x,
+                            Z         = kb.position.y,
+                            Tick      = kb.tick,
+                        }
+                    };
                 default:
                     return null;
             }
@@ -161,6 +172,11 @@ namespace LOP
                         shooterId: rec.KnockbackHit.ShooterId,
                         fireTick:  rec.KnockbackHit.FireTick,
                         victimId:  rec.KnockbackHit.VictimId);
+                case WorldEventToC.EventOneofCase.KnockbackBlast:
+                    return new KnockbackBlastEvent(
+                        shooterId: rec.KnockbackBlast.ShooterId,
+                        position:  new Vector2(rec.KnockbackBlast.X, rec.KnockbackBlast.Z),
+                        tick:      rec.KnockbackBlast.Tick);
                 default:
                     return null;
             }

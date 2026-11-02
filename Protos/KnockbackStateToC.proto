@@ -17,6 +17,15 @@ message KnockbackPlayerWire
 	bool ko_chain = 6;
 }
 
+// 떨어졌거나 떨어질 예정인 상자(충격파 폭탄이 든). 번호는 1부터, 상자마다 다르다.
+message KnockbackCrateWire
+{
+	int32 id = 1;
+	int64 land_tick = 2;
+	float x = 3;
+	float z = 4;
+}
+
 // 넉백 판 상태 전체(서버 → 클라). 사건이 아니라 상태로 보낸다 — 끊겼다 돌아온 사람도 받는 즉시 맞춰진다.
 // @auto_generate
 message KnockbackStateToC
@@ -28,4 +37,6 @@ message KnockbackStateToC
 	repeated MountedZoneStageWire zone_stages = 3;
 	// 0 = 개인전, 2 = 팀전
 	int32 team_count = 4;
+	// 지금 상자. 없으면 비어 있다(메시지가 없음).
+	KnockbackCrateWire crate = 5;
 }

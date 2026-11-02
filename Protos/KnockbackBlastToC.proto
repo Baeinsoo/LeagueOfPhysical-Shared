@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+// 폴리모픽 래퍼 안에 담기는 payload — top-level 패킷 아님.
+// 충격파 폭탄이 터졌다는 연출용 알림. 누가 얼마나 밀렸는지는 EntitySnap이 진실원본이다.
+message KnockbackBlastToC
+{
+	string shooter_id = 1;
+	float  x          = 2;
+	float  z          = 3;
+	int64  tick       = 4;
+}

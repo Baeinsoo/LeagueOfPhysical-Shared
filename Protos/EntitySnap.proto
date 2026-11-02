@@ -44,4 +44,5 @@ message EntitySnap
 	int32 knockback_ammo = 28;
 	int64 knockback_next_reload_tick = 29;   // 가득이면 long.MaxValue 그대로 싣는다(0이 아니다)
 	int64 knockback_cooldown_end_tick = 30;
+	bool knockback_has_bomb = 31;            // Knockback: 충격파 폭탄을 들고 있나
 }
