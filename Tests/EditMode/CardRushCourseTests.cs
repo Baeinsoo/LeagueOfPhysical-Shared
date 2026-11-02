@@ -55,6 +55,8 @@ namespace LOP.Tests
             Assert.AreEqual(20, course.DwellTicks(0));
             Assert.AreEqual(20, course.DwellTicks(14));
             Assert.AreEqual(17, course.DwellTicks(15));
+            Assert.AreEqual(17, course.DwellTicks(29));
+            Assert.AreEqual(14, course.DwellTicks(30));
             Assert.AreEqual(14, course.DwellTicks(39));
         }
 
