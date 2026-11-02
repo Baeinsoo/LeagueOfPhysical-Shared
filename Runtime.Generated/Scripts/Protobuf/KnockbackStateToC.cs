@@ -23,16 +23,17 @@ public static partial class KnockbackStateToCReflection {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
           "ChdLbm9ja2JhY2tTdGF0ZVRvQy5wcm90bxocTW91bnRlZEFyY2hlcnlTdGF0",
-          "ZVRvQy5wcm90byJnChNLbm9ja2JhY2tQbGF5ZXJXaXJlEhEKCWVudGl0eV9p",
-          "ZBgBIAEoCRIXCg9lbGltaW5hdGVkX3RpY2sYAiABKAMSFgoOZGFtYWdlX3Bl",
-          "cmNlbnQYAyABKAUSDAoEdGVhbRgEIAEoBSKLAQoRS25vY2tiYWNrU3RhdGVU",
-          "b0MSDwoHdmVyc2lvbhgBIAEoBRIlCgdwbGF5ZXJzGAIgAygLMhQuS25vY2ti",
-          "YWNrUGxheWVyV2lyZRIqCgt6b25lX3N0YWdlcxgDIAMoCzIVLk1vdW50ZWRa",
-          "b25lU3RhZ2VXaXJlEhIKCnRlYW1fY291bnQYBCABKAViBnByb3RvMw=="));
+          "ZVRvQy5wcm90byKIAQoTS25vY2tiYWNrUGxheWVyV2lyZRIRCgllbnRpdHlf",
+          "aWQYASABKAkSFwoPZWxpbWluYXRlZF90aWNrGAIgASgDEhYKDmRhbWFnZV9w",
+          "ZXJjZW50GAMgASgFEgwKBHRlYW0YBCABKAUSDQoFa29fYnkYBSABKAkSEAoI",
+          "a29fY2hhaW4YBiABKAgiiwEKEUtub2NrYmFja1N0YXRlVG9DEg8KB3ZlcnNp",
+          "b24YASABKAUSJQoHcGxheWVycxgCIAMoCzIULktub2NrYmFja1BsYXllcldp",
+          "cmUSKgoLem9uZV9zdGFnZXMYAyADKAsyFS5Nb3VudGVkWm9uZVN0YWdlV2ly",
+          "ZRISCgp0ZWFtX2NvdW50GAQgASgFYgZwcm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::MountedArcheryStateToCReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::KnockbackPlayerWire), global::KnockbackPlayerWire.Parser, new[]{ "EntityId", "EliminatedTick", "DamagePercent", "Team" }, null, null, null, null),
+          new pbr::GeneratedClrTypeInfo(typeof(global::KnockbackPlayerWire), global::KnockbackPlayerWire.Parser, new[]{ "EntityId", "EliminatedTick", "DamagePercent", "Team", "KoBy", "KoChain" }, null, null, null, null),
           new pbr::GeneratedClrTypeInfo(typeof(global::KnockbackStateToC), global::KnockbackStateToC.Parser, new[]{ "Version", "Players", "ZoneStages", "TeamCount" }, null, null, null, null)
         }));
   }
@@ -82,6 +83,8 @@ public sealed partial class KnockbackPlayerWire : pb::IMessage<KnockbackPlayerWi
     eliminatedTick_ = other.eliminatedTick_;
     damagePercent_ = other.damagePercent_;
     team_ = other.team_;
+    koBy_ = other.koBy_;
+    koChain_ = other.koChain_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -145,6 +148,36 @@ public sealed partial class KnockbackPlayerWire : pb::IMessage<KnockbackPlayerWi
     }
   }
 
+  /// <summary>Field number for the "ko_by" field.</summary>
+  public const int KoByFieldNumber = 5;
+  private string koBy_ = "";
+  /// <summary>
+  /// 장외시킨 사람의 entity_id. 자멸이거나 아직 탈락 안 했으면 빈 값
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public string KoBy {
+    get { return koBy_; }
+    set {
+      koBy_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+    }
+  }
+
+  /// <summary>Field number for the "ko_chain" field.</summary>
+  public const int KoChainFieldNumber = 6;
+  private bool koChain_;
+  /// <summary>
+  /// 장외시킨 것이 날아가는 몸에 부딪힌 연쇄(탄이 직접 날린 게 아님)였나
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public bool KoChain {
+    get { return koChain_; }
+    set {
+      koChain_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -164,6 +197,8 @@ public sealed partial class KnockbackPlayerWire : pb::IMessage<KnockbackPlayerWi
     if (EliminatedTick != other.EliminatedTick) return false;
     if (DamagePercent != other.DamagePercent) return false;
     if (Team != other.Team) return false;
+    if (KoBy != other.KoBy) return false;
+    if (KoChain != other.KoChain) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -175,6 +210,8 @@ public sealed partial class KnockbackPlayerWire : pb::IMessage<KnockbackPlayerWi
     if (EliminatedTick != 0L) hash ^= EliminatedTick.GetHashCode();
     if (DamagePercent != 0) hash ^= DamagePercent.GetHashCode();
     if (Team != 0) hash ^= Team.GetHashCode();
+    if (KoBy.Length != 0) hash ^= KoBy.GetHashCode();
+    if (KoChain != false) hash ^= KoChain.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -209,6 +246,14 @@ public sealed partial class KnockbackPlayerWire : pb::IMessage<KnockbackPlayerWi
       output.WriteRawTag(32);
       output.WriteInt32(Team);
     }
+    if (KoBy.Length != 0) {
+      output.WriteRawTag(42);
+      output.WriteString(KoBy);
+    }
+    if (KoChain != false) {
+      output.WriteRawTag(48);
+      output.WriteBool(KoChain);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -235,6 +280,14 @@ public sealed partial class KnockbackPlayerWire : pb::IMessage<KnockbackPlayerWi
       output.WriteRawTag(32);
       output.WriteInt32(Team);
     }
+    if (KoBy.Length != 0) {
+      output.WriteRawTag(42);
+      output.WriteString(KoBy);
+    }
+    if (KoChain != false) {
+      output.WriteRawTag(48);
+      output.WriteBool(KoChain);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -256,6 +309,12 @@ public sealed partial class KnockbackPlayerWire : pb::IMessage<KnockbackPlayerWi
     }
     if (Team != 0) {
       size += 1 + pb::CodedOutputStream.ComputeInt32Size(Team);
+    }
+    if (KoBy.Length != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeStringSize(KoBy);
+    }
+    if (KoChain != false) {
+      size += 1 + 1;
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -280,6 +339,12 @@ public sealed partial class KnockbackPlayerWire : pb::IMessage<KnockbackPlayerWi
     }
     if (other.Team != 0) {
       Team = other.Team;
+    }
+    if (other.KoBy.Length != 0) {
+      KoBy = other.KoBy;
+    }
+    if (other.KoChain != false) {
+      KoChain = other.KoChain;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -316,6 +381,14 @@ public sealed partial class KnockbackPlayerWire : pb::IMessage<KnockbackPlayerWi
           Team = input.ReadInt32();
           break;
         }
+        case 42: {
+          KoBy = input.ReadString();
+          break;
+        }
+        case 48: {
+          KoChain = input.ReadBool();
+          break;
+        }
       }
     }
   #endif
@@ -349,6 +422,14 @@ public sealed partial class KnockbackPlayerWire : pb::IMessage<KnockbackPlayerWi
         }
         case 32: {
           Team = input.ReadInt32();
+          break;
+        }
+        case 42: {
+          KoBy = input.ReadString();
+          break;
+        }
+        case 48: {
+          KoChain = input.ReadBool();
           break;
         }
       }
