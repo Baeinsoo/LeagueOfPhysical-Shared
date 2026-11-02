@@ -37,6 +37,13 @@ namespace LOP
         public int EdgeMode { get; }
         public float HazardDamagePerSecond { get; }
         public float HazardSpeedScale { get; }
+        /// <summary>첫 상자가 떨어지기까지(경기 시작 기준), 그 뒤 간격, 떨어지기 전 예고 시간(초).</summary>
+        public float CrateFirstSeconds { get; }
+        public float CrateIntervalSeconds { get; }
+        public float CrateWarnSeconds { get; }
+        public float CratePickupRadius { get; }
+        /// <summary>충격파 폭탄이 터질 때 밀리는 반경(m).</summary>
+        public float BlastRadius { get; }
 
         //  시뮬 틱 간격. 초를 틱으로 바꿀 때 클·서가 같은 값을 쓴다.
         public const float TickInterval = 0.02f;
@@ -64,11 +71,21 @@ namespace LOP
                                KnockbackPillarLayout pillars = null,
                                int edgeMode = 0,
                                float hazardDamagePerSecond = 0f,
-                               float hazardSpeedScale = 1f)
+                               float hazardSpeedScale = 1f,
+                               float crateFirstSeconds = 20f,
+                               float crateIntervalSeconds = 20f,
+                               float crateWarnSeconds = 1.5f,
+                               float cratePickupRadius = 0.9f,
+                               float blastRadius = 2.5f)
         {
             EdgeMode = edgeMode;
             HazardDamagePerSecond = hazardDamagePerSecond;
             HazardSpeedScale = hazardSpeedScale;
+            CrateFirstSeconds = crateFirstSeconds;
+            CrateIntervalSeconds = PositiveOrDefault(crateIntervalSeconds, 20f, "crate_interval_seconds");
+            CrateWarnSeconds = PositiveOrDefault(crateWarnSeconds, 1.5f, "crate_warn_seconds");
+            CratePickupRadius = PositiveOrDefault(cratePickupRadius, 0.9f, "crate_pickup_radius");
+            BlastRadius = PositiveOrDefault(blastRadius, 2.5f, "blast_radius");
             MatchDurationSeconds = matchDurationSeconds;
             MoveSpeed = moveSpeed;
             MoveGain = moveGain;
@@ -98,8 +115,20 @@ namespace LOP
             Pillars = pillars ?? KnockbackPillarLayout.None;
         }
 
+        //  0 이하면 상자가 안 주워지거나 일정이 꼬이므로 기본값으로 쓴다. 클·서가 같은 생성자를 지나 같은 값이 된다.
+        private static float PositiveOrDefault(float value, float fallback, string column)
+        {
+            if (value > 0f) return value;
+            Debug.LogError($"TbKnockbackConfig {column}는 0보다 커야 한다: {value} - {fallback}로 처리한다");
+            return fallback;
+        }
+
         //  올림이라 0.26초는 13틱 — 시간이 모자라 일찍 풀리지 않는다.
         public int Ticks(float seconds) => (int)System.Math.Ceiling(seconds / TickInterval - 1e-4);
+
+        public int CrateFirstTicks => Ticks(CrateFirstSeconds);
+        public int CrateIntervalTicks => Ticks(CrateIntervalSeconds);
+        public int CrateWarnTicks => Ticks(CrateWarnSeconds);
 
         /// <summary>위험 지대에서 위험도가 1 오르는 간격(틱). 0이면 오르지 않는다.</summary>
         public int HazardDamageIntervalTicks => HazardDamagePerSecond > 0f

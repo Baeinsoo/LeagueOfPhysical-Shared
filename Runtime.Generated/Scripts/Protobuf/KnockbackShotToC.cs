@@ -22,14 +22,14 @@ public static partial class KnockbackShotToCReflection {
   static KnockbackShotToCReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChZLbm9ja2JhY2tTaG90VG9DLnByb3RvInsKEEtub2NrYmFja1Nob3RUb0MS",
-          "EgoKc2hvb3Rlcl9pZBgBIAEoCRIRCglmaXJlX3RpY2sYAiABKAMSEAoIb3Jp",
-          "Z2luX3gYAyABKAISEAoIb3JpZ2luX3oYBCABKAISDQoFZGlyX3gYBSABKAIS",
-          "DQoFZGlyX3oYBiABKAJiBnByb3RvMw=="));
+          "ChZLbm9ja2JhY2tTaG90VG9DLnByb3RvIowBChBLbm9ja2JhY2tTaG90VG9D",
+          "EhIKCnNob290ZXJfaWQYASABKAkSEQoJZmlyZV90aWNrGAIgASgDEhAKCG9y",
+          "aWdpbl94GAMgASgCEhAKCG9yaWdpbl96GAQgASgCEg0KBWRpcl94GAUgASgC",
+          "Eg0KBWRpcl96GAYgASgCEg8KB2lzX2JvbWIYByABKAhiBnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::KnockbackShotToC), global::KnockbackShotToC.Parser, new[]{ "ShooterId", "FireTick", "OriginX", "OriginZ", "DirX", "DirZ" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::KnockbackShotToC), global::KnockbackShotToC.Parser, new[]{ "ShooterId", "FireTick", "OriginX", "OriginZ", "DirX", "DirZ", "IsBomb" }, null, null, null, null)
         }));
   }
   #endregion
@@ -81,6 +81,7 @@ public sealed partial class KnockbackShotToC : pb::IMessage<KnockbackShotToC>
     originZ_ = other.originZ_;
     dirX_ = other.dirX_;
     dirZ_ = other.dirZ_;
+    isBomb_ = other.isBomb_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -165,6 +166,21 @@ public sealed partial class KnockbackShotToC : pb::IMessage<KnockbackShotToC>
     }
   }
 
+  /// <summary>Field number for the "is_bomb" field.</summary>
+  public const int IsBombFieldNumber = 7;
+  private bool isBomb_;
+  /// <summary>
+  /// 충격파 폭탄 탄이면 true
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public bool IsBomb {
+    get { return isBomb_; }
+    set {
+      isBomb_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -186,6 +202,7 @@ public sealed partial class KnockbackShotToC : pb::IMessage<KnockbackShotToC>
     if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(OriginZ, other.OriginZ)) return false;
     if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(DirX, other.DirX)) return false;
     if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(DirZ, other.DirZ)) return false;
+    if (IsBomb != other.IsBomb) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -199,6 +216,7 @@ public sealed partial class KnockbackShotToC : pb::IMessage<KnockbackShotToC>
     if (OriginZ != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(OriginZ);
     if (DirX != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(DirX);
     if (DirZ != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(DirZ);
+    if (IsBomb != false) hash ^= IsBomb.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -241,6 +259,10 @@ public sealed partial class KnockbackShotToC : pb::IMessage<KnockbackShotToC>
       output.WriteRawTag(53);
       output.WriteFloat(DirZ);
     }
+    if (IsBomb != false) {
+      output.WriteRawTag(56);
+      output.WriteBool(IsBomb);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -275,6 +297,10 @@ public sealed partial class KnockbackShotToC : pb::IMessage<KnockbackShotToC>
       output.WriteRawTag(53);
       output.WriteFloat(DirZ);
     }
+    if (IsBomb != false) {
+      output.WriteRawTag(56);
+      output.WriteBool(IsBomb);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -302,6 +328,9 @@ public sealed partial class KnockbackShotToC : pb::IMessage<KnockbackShotToC>
     }
     if (DirZ != 0F) {
       size += 1 + 4;
+    }
+    if (IsBomb != false) {
+      size += 1 + 1;
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -332,6 +361,9 @@ public sealed partial class KnockbackShotToC : pb::IMessage<KnockbackShotToC>
     }
     if (other.DirZ != 0F) {
       DirZ = other.DirZ;
+    }
+    if (other.IsBomb != false) {
+      IsBomb = other.IsBomb;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -376,6 +408,10 @@ public sealed partial class KnockbackShotToC : pb::IMessage<KnockbackShotToC>
           DirZ = input.ReadFloat();
           break;
         }
+        case 56: {
+          IsBomb = input.ReadBool();
+          break;
+        }
       }
     }
   #endif
@@ -417,6 +453,10 @@ public sealed partial class KnockbackShotToC : pb::IMessage<KnockbackShotToC>
         }
         case 53: {
           DirZ = input.ReadFloat();
+          break;
+        }
+        case 56: {
+          IsBomb = input.ReadBool();
           break;
         }
       }

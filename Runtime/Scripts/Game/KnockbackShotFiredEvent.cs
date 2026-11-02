@@ -7,6 +7,7 @@ namespace LOP
         string shooterId,
         long fireTick,
         Vector2 origin,
-        Vector2 direction
+        Vector2 direction,
+        bool isBomb = false
     ) : GameFramework.World.WorldEvent;
 }

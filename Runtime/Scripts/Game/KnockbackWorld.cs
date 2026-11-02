@@ -106,7 +106,7 @@ namespace LOP
                     && removedShots.Contains((shot.ShooterId, shot.FireTick)) == false
                     && Shots.Add(shot))
                 {
-                    EventBuffer.Append(new KnockbackShotFiredEvent(shot.ShooterId, shot.FireTick, shot.Origin, shot.Direction));
+                    EventBuffer.Append(new KnockbackShotFiredEvent(shot.ShooterId, shot.FireTick, shot.Origin, shot.Direction, shot.IsBomb));
                 }
             }
 
@@ -297,6 +297,7 @@ namespace LOP
                     Ammo = gun != null ? gun.Ammo : 0,
                     NextReloadTick = gun != null ? gun.NextReloadTick : long.MaxValue,
                     CooldownEndTick = gun != null ? gun.CooldownEndTick : 0,
+                    HasBomb = gun != null && gun.HasBomb,
                 };
             }
             saved.Record(tick, state);
@@ -329,6 +330,7 @@ namespace LOP
                     gun.Ammo = s.Ammo;
                     gun.NextReloadTick = s.NextReloadTick;
                     gun.CooldownEndTick = s.CooldownEndTick;
+                    gun.HasBomb = s.HasBomb;
                 }
                 var body = entity.Get<KnockbackBody>();
                 if (body != null)
@@ -382,5 +384,6 @@ namespace LOP
         public int Ammo;
         public long NextReloadTick;
         public long CooldownEndTick;
+        public bool HasBomb;
     }
 }

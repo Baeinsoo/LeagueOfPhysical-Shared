@@ -12,9 +12,12 @@ namespace LOP
         public readonly long FireTick;
         public readonly Vector2 Origin;
         public readonly Vector2 Direction;
+        //  충격파 폭탄 탄이다. 날아가는 식과 판정은 보통 탄과 같고, 터진 뒤의 일만 다르다.
+        public readonly bool IsBomb;
 
-        public KnockbackShot(string shooterId, long fireTick, Vector2 origin, Vector2 direction)
+        public KnockbackShot(string shooterId, long fireTick, Vector2 origin, Vector2 direction, bool isBomb = false)
         {
+            IsBomb = isBomb;
             ShooterId = shooterId;
             FireTick = fireTick;
             Origin = origin;

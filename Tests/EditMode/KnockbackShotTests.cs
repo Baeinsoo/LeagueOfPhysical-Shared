@@ -113,6 +113,15 @@ namespace LOP.Tests
             Assert.AreEqual(hit, hitBack);
         }
 
+        [Test]
+        public void 폭탄_표시가_와이어를_왕복한다()
+        {
+            var bomb = new KnockbackShotFiredEvent("a", 42, new Vector2(1.5f, -2f), new Vector2(0, 1), true);
+            var back = (KnockbackShotFiredEvent)WorldEventWire.FromWire(WorldEventWire.ToWire(bomb));
+            Assert.IsTrue(back.isBomb);
+            Assert.AreEqual(bomb, back);
+        }
+
         static readonly KnockbackConfig BlockConfig = new KnockbackConfig(120f, 6.2f, 14f, 17f, 1.5f, 0f, 5f, 11f,
             30f, 18f, 0.3f, 0.55f, 3, 0.95f, 0.26f, 1.2f, 1, 6f, 0.5f, 0.5f, 0.3f, 0.1f, 0.2f, 0.8f, 5f,
             new System.Collections.Generic.List<MountedArcheryZoneStageConfig>());

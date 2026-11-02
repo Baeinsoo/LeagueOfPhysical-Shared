@@ -44,7 +44,8 @@ namespace LOP
             float yaw = input.AimYaw * Mathf.Deg2Rad;
             var direction = new Vector2(Mathf.Sin(yaw), Mathf.Cos(yaw));
             var origin = new Vector2(transform.Position.X, transform.Position.Z) + direction * MuzzleOffset;
-            shot = new KnockbackShot(body.Id, tick, origin, direction);
+            shot = new KnockbackShot(body.Id, tick, origin, direction, gun.HasBomb);
+            gun.HasBomb = false;
 
             // 가득 차 있다가 처음 줄어든 순간에만 충전 시계를 시작한다(이미 돌고 있으면 그대로).
             if (gun.Ammo == config.AmmoMax)

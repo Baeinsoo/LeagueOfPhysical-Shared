@@ -10,4 +10,5 @@ message KnockbackShotToC
 	float  origin_z   = 4;
 	float  dir_x      = 5;
 	float  dir_z      = 6;
+	bool   is_bomb    = 7;   // 충격파 폭탄 탄이면 true
 }

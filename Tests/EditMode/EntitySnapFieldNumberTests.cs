@@ -13,6 +13,7 @@ namespace LOP.Tests
             Assert.AreEqual(28, EntitySnap.KnockbackAmmoFieldNumber);
             Assert.AreEqual(29, EntitySnap.KnockbackNextReloadTickFieldNumber);
             Assert.AreEqual(30, EntitySnap.KnockbackCooldownEndTickFieldNumber);
+            Assert.AreEqual(31, EntitySnap.KnockbackHasBombFieldNumber);
         }
     }
 }
