@@ -25,11 +25,40 @@ namespace LOP.Tests
         [Test]
         public void 고비가_아닌_수는_보상_0이고_번호는_마이너스_1()
         {
-            foreach (int n in new[] { 0, 1, 9, 11, 24, 26, 99, 101, 200 })
+            foreach (int n in new[] { 0, 1, 9, 11, 24, 26, 99, 101, 149, 151, 175, 199 })
             {
                 Assert.AreEqual(0f, FlappyFlapComboRules.Default.Gain(n), n.ToString());
                 Assert.AreEqual(-1, FlappyFlapComboRules.Default.MilestoneIndex(n), n.ToString());
+                Assert.AreEqual(-1, FlappyFlapComboRules.Default.RewardIndex(n), n.ToString());
             }
+        }
+
+        [Test]
+        public void 마지막_고비_뒤로는_50마다_마지막_보상을_다시_준다()
+        {
+            //  사용자 결정 11-02 — 100 뒤로 150·200·250…마다 0.5칸. 끊지 않는 쪽이 박고 다시 쌓는 쪽보다 늘 낫게.
+            var rules = FlappyFlapComboRules.Default;
+            foreach (int n in new[] { 150, 200, 250, 1000 })
+            {
+                Assert.AreEqual(0.5f, rules.Gain(n), n.ToString());
+                Assert.AreEqual(3, rules.RewardIndex(n), n.ToString() + " — 연출은 마지막 고비(전설!)와 같게");
+                Assert.AreEqual(-1, rules.MilestoneIndex(n), n.ToString() + " — 고비 번호는 정확한 고비에만(서버·코인과 무관)");
+            }
+            Assert.AreEqual(0, rules.RewardIndex(10));
+            Assert.AreEqual(3, rules.RewardIndex(100));
+        }
+
+        [Test]
+        public void 되풀이는_맵이_준_마지막_고비에서부터_센다()
+        {
+            Assert.IsTrue(FlappyFlapComboRules.TryCreate(new[] { 5, 20 }, new[] { 0.1f, 2f }, out var rules));
+
+            Assert.AreEqual(2f, rules.Gain(70));
+            Assert.AreEqual(1, rules.RewardIndex(70));
+            Assert.AreEqual(0f, rules.Gain(50), "기본 고비(…100)에서 세지 않는다");
+            Assert.AreEqual(0f, rules.Gain(-30), "음수 쪽으로 되풀이하지 않는다");
+            Assert.AreEqual(-1, FlappyFlapComboRules.Off.RewardIndex(50), "보상 없는 맵은 되풀이도 없다");
+            Assert.AreEqual(0f, FlappyFlapComboRules.Off.Gain(50));
         }
 
         [Test]
@@ -106,7 +135,7 @@ namespace LOP.Tests
         [Test]
         public void 로그_한_줄로_적는다()
         {
-            Assert.AreEqual("10:+0.1 25:+0.25 50:+0.5 100:+0.5", FlappyFlapComboRules.Default.Describe());
+            Assert.AreEqual("10:+0.1 25:+0.25 50:+0.5 100:+0.5 그뒤50마다:+0.5", FlappyFlapComboRules.Default.Describe());
             Assert.AreEqual("없음", FlappyFlapComboRules.Off.Describe());
         }
     }

@@ -50,6 +50,7 @@ namespace LOP
         public float StunLoss = FlappyMapRulesField.DefaultStunLoss;
 
         /// <summary>연속 날갯짓 고비 — 연속 수가 이 값이 되는 날갯짓에 <see cref="ComboDashGains"/>의 같은 자리 칸을 준다(1 이상, 오름차순).
+        /// 마지막 고비 뒤로는 <see cref="FlappyFlapComboRules.RepeatEvery"/>마다 마지막 칸을 다시 준다(마커 칸 아님, 11-02).
         /// 둘 다 비우면 이 맵은 보상이 없다. 이미 구운 맵엔 이 칸이 없어 초기값(기본)이 돈다 — 그래서 다시 굽지 않아도 된다.</summary>
         public int[] ComboMilestones = FlappyFlapComboRules.DefaultMilestones();
 

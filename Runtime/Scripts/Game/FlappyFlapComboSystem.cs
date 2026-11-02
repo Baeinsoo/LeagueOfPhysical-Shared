@@ -19,7 +19,7 @@ namespace LOP
 
         public FlappyFlapComboRules Rules => rules?.FlapCombo ?? FlappyFlapComboRules.Default;
 
-        /// <summary>시뮬이 이번 틱 날갯짓을 받았다 — 연속 +1, 그 수가 고비면 게이지(버튼 없는 맵·가득이면 대시 쪽이 거른다).</summary>
+        /// <summary>시뮬이 이번 틱 날갯짓을 받았다 — 연속 +1, 그 수가 보상 자리(고비, 마지막 고비 뒤 50마다)면 게이지(버튼 없는 맵·가득이면 대시 쪽이 거른다).</summary>
         public void Flap(GameFramework.World.Entity entity)
         {
             var combo = entity.Get<FlappyFlapCombo>();

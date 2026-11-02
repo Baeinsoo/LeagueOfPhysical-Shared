@@ -163,6 +163,31 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 되감아_다시_굴려도_되풀이_보상_150은_한_번()
+        {
+            //  11-02 — 100 뒤 50마다 주는 보상도 수 하나에 묶여 있어 되감기에 한 번이다.
+            var world = Make(new FlappyWorldFixture.NeverHit(), out var bird);
+            bird.Get<FlappyFlapCombo>().Count = 140;
+            for (long t = 1; t <= 20; t++)
+            {
+                Step(world, bird, t, flap: true);
+            }
+            Assert.AreEqual(160, Combo(bird));
+            Assert.AreEqual(0.5f, Charge(bird), "150에서 반 칸");
+
+            foreach (long anchor in new long[] { 5, 10, 12 })
+            {
+                Assert.IsTrue(world.LoadState(anchor), $"앵커 {anchor}");
+                for (long t = anchor + 1; t <= 20; t++)
+                {
+                    Step(world, bird, t, flap: true);
+                }
+                Assert.AreEqual(160, Combo(bird), $"앵커 {anchor}: 수");
+                Assert.AreEqual(0.5f, Charge(bird), $"앵커 {anchor}: 150을 다시 지나도 한 번만");
+            }
+        }
+
+        [Test]
         public void 서버가_고비_전이면_재생에서_서버_수로_한_번_준다()
         {
             //  이 시험은 10을 지난 수(22)에서 시작해 25로 본다. 예측은 29번 다 받았다.
