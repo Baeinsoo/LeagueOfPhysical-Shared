@@ -7,6 +7,8 @@ namespace LOP
         //  탄이 가득이면 충전할 게 없어 long.MaxValue
         public long NextReloadTick = long.MaxValue;
         public long CooldownEndTick;
+        //  충격파 폭탄을 들고 있다. 다음 한 발이 폭탄이 되고, 쏘면 사라진다.
+        public bool HasBomb;
 
         public KnockbackGun(int ammoMax)
         {

@@ -360,6 +360,36 @@ namespace LOP.Tests
         }
 
         //  사거리 13 m, 탄 17 m/s — 틱당 0.34 m라 13 m를 넘는 틱의 선분(12.92 → 13.26)에 사거리 끝이 걸린다.
+        [Test]
+        public void 되감아_다시_계산해도_폭탄_가짐이_같다()
+        {
+            var (world, body) = Make(0f);
+            var gun = body.Get<KnockbackGun>();
+            const long SaveTick = 10;
+            gun.HasBomb = true;
+
+            void Step(long t)
+            {
+                //  12틱부터 쏜다 — 폭탄은 그 한 발에서 사라진다.
+                body.Get<InputBuffer>().Current = new InputCommand { Fire = t >= 12, AimYaw = 90f };
+                world.Tick(t, Dt);
+                world.SaveState(t);
+            }
+
+            for (long t = 1; t <= 20; t++) { Step(t); }
+            Assert.IsFalse(gun.HasBomb, "쏘고 나면 폭탄이 없어진다");
+            Assert.IsTrue(world.Shots.Shots[0].IsBomb, "첫 발이 폭탄");
+
+            Assert.IsTrue(world.LoadState(SaveTick));
+            Assert.IsTrue(gun.HasBomb, "저장 때는 아직 들고 있었다");
+            Assert.IsTrue(world.TryGetSaved(SaveTick, "body-1", out var savedBody));
+            Assert.IsTrue(savedBody.HasBomb);
+
+            for (long t = SaveTick + 1; t <= 20; t++) { Step(t); }
+            Assert.IsFalse(gun.HasBomb);
+            Assert.IsTrue(world.Shots.Shots[0].IsBomb);
+        }
+
         static readonly KnockbackConfig RangeConfig = new KnockbackConfig(120f, 6.2f, 14f, 17f, 1.5f, 0f, 5f, 11f,
             17f, 13f, 0.28f, 0.6f, 3, 0.95f, 0.26f, 1.2f, 1, 6f, 0.5f, 0.5f, 0.3f, 0.1f, 0.2f, 0.8f, 5f,
             new System.Collections.Generic.List<MountedArcheryZoneStageConfig>());

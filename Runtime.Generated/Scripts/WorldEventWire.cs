@@ -89,6 +89,7 @@ namespace LOP
                             OriginZ   = ks.origin.y,
                             DirX      = ks.direction.x,
                             DirZ      = ks.direction.y,
+                            IsBomb    = ks.isBomb,
                         }
                     };
                 case KnockbackHitEvent kh:
@@ -153,7 +154,8 @@ namespace LOP
                         shooterId: rec.KnockbackShot.ShooterId,
                         fireTick:  rec.KnockbackShot.FireTick,
                         origin:    new Vector2(rec.KnockbackShot.OriginX, rec.KnockbackShot.OriginZ),
-                        direction: new Vector2(rec.KnockbackShot.DirX, rec.KnockbackShot.DirZ));
+                        direction: new Vector2(rec.KnockbackShot.DirX, rec.KnockbackShot.DirZ),
+                        isBomb:    rec.KnockbackShot.IsBomb);
                 case WorldEventToC.EventOneofCase.KnockbackHit:
                     return new KnockbackHitEvent(
                         shooterId: rec.KnockbackHit.ShooterId,

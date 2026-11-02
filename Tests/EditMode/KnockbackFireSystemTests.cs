@@ -122,5 +122,44 @@ namespace LOP.Tests
             body.Get<GroundState>().IsGrounded = true;
             Assert.IsTrue(sys.TryFire(body, 10, out _));
         }
+
+        [Test]
+        public void 폭탄을_들고_쏘면_그_한_발만_폭탄이다()
+        {
+            var body = Body();
+            body.Get<KnockbackGun>().HasBomb = true;
+            Aim(body, true);
+            var sys = new KnockbackFireSystem(Config);
+            Assert.IsTrue(sys.TryFire(body, 10, out var first));
+            Assert.IsTrue(first.IsBomb);
+            Assert.IsFalse(body.Get<KnockbackGun>().HasBomb);
+            Assert.AreEqual(2, body.Get<KnockbackGun>().Ammo, "폭탄도 탄 한 발을 쓴다");
+
+            Assert.IsTrue(sys.TryFire(body, 30, out var second));
+            Assert.IsFalse(second.IsBomb);
+        }
+
+        [Test]
+        public void 폭탄이_없으면_보통_탄이다()
+        {
+            var body = Body();
+            Aim(body, true);
+            Assert.IsTrue(new KnockbackFireSystem(Config).TryFire(body, 10, out var shot));
+            Assert.IsFalse(shot.IsBomb);
+        }
+
+        [Test]
+        public void 날림_중엔_폭탄을_그대로_들고_있다()
+        {
+            var body = Body();
+            body.Get<KnockbackGun>().HasBomb = true;
+            body.Add(new KnockbackBody { KnockbackEndTick = 20 });
+            Aim(body, true);
+            var sys = new KnockbackFireSystem(Config);
+            Assert.IsFalse(sys.TryFire(body, 19, out _));
+            Assert.IsTrue(body.Get<KnockbackGun>().HasBomb);
+            Assert.IsTrue(sys.TryFire(body, 20, out var shot));
+            Assert.IsTrue(shot.IsBomb);
+        }
     }
 }
