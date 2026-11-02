@@ -15,8 +15,12 @@ namespace LOP
         public float TileSize { get; }
         public IReadOnlyList<(int x, int z)> Tiles => tiles;
 
-        public KnockbackFloor(float arenaRadius, float tileSize, float holeRadius)
+        /// <summary>true면 위험 지대 방식: 원이 줄어도 칸은 남고, 원 밖 칸이 위험 지대가 된다.</summary>
+        public bool HazardEdge { get; }
+
+        public KnockbackFloor(float arenaRadius, float tileSize, float holeRadius, bool hazardEdge = false)
         {
+            HazardEdge = hazardEdge;
             TileSize = tileSize;
             ZoneStartRadius = arenaRadius + tileSize * Mathf.Sqrt(2f) * 0.5f;
             int range = Mathf.CeilToInt(arenaRadius / tileSize);
@@ -69,6 +73,13 @@ namespace LOP
         public bool IsTileSolid(int tx, int tz, long tick)
         {
             if (!HasTile(tx, tz)) return false;
+            if (HazardEdge) return true;
+            return TileInsideCircle(tx, tz, tick);
+        }
+
+        // 칸의 가장 먼 꼭짓점까지 그 틱의 원 안이면 true. 반지름 0이면 어떤 칸도 안에 없다.
+        bool TileInsideCircle(int tx, int tz, long tick)
+        {
             var circle = MountedArcheryZone.CircleAt(stages, tick, Vector2.zero, ZoneStartRadius);
             if (circle.radius <= 0f) return false;
             float fx = Mathf.Max(Mathf.Abs(tx * TileSize - circle.center.x), Mathf.Abs((tx + 1) * TileSize - circle.center.x));
@@ -76,9 +87,25 @@ namespace LOP
             return fx * fx + fz * fz <= circle.radius * circle.radius;
         }
 
-        /// <summary>x, z는 칸 번호. 지금은 바닥인데 warningTicks 뒤엔 무너져 있는 칸 — 깜박이는 그림용.</summary>
+        /// <summary>
+        /// 위험 지대 방식에서, 그 점 아래 칸이 있고 칸의 한 조각이라도 그 틱의 원 밖이면 true.
+        /// 낭떠러지 방식은 늘 false.
+        /// </summary>
+        public bool InHazard(float x, float z, long tick)
+        {
+            var (tx, tz) = TileAt(x, z, TileSize);
+            return IsTileHazard(tx, tz, tick);
+        }
+
+        /// <summary>칸 번호로 묻는 InHazard.</summary>
+        public bool IsTileHazard(int tx, int tz, long tick)
+            => HazardEdge && HasTile(tx, tz) && !TileInsideCircle(tx, tz, tick);
+
+        /// <summary>x, z는 칸 번호. 지금은 바닥인데 warningTicks 뒤엔 무너져 있는 칸(위험 지대 방식은 위험 지대가 되는 칸) — 깜박이는 그림용.</summary>
         public bool IsWarning(int x, int z, long tick, long warningTicks)
-            => IsTileSolid(x, z, tick) && !IsTileSolid(x, z, tick + warningTicks);
+            => HazardEdge
+                ? HasTile(x, z) && !IsTileHazard(x, z, tick) && IsTileHazard(x, z, tick + warningTicks)
+                : IsTileSolid(x, z, tick) && !IsTileSolid(x, z, tick + warningTicks);
 
         public Vector3 TileCenter(int x, int z)
             => new Vector3((x + 0.5f) * TileSize, 0f, (z + 0.5f) * TileSize);

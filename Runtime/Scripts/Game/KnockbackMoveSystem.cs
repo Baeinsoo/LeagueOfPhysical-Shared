@@ -22,8 +22,9 @@ namespace LOP
         readonly float moveSpeed;
         readonly float moveGain;
         readonly float stunGain;
+        readonly float hazardSpeedScale;
 
-        public KnockbackMoveSystem(KnockbackFloor floor, ICollisionQuery query, int layerMask, float moveSpeed, float moveGain, float stunGain)
+        public KnockbackMoveSystem(KnockbackFloor floor, ICollisionQuery query, int layerMask, float moveSpeed, float moveGain, float stunGain, float hazardSpeedScale = 1f)
         {
             this.floor = floor;
             this.query = query;
@@ -31,6 +32,7 @@ namespace LOP
             this.moveSpeed = moveSpeed;
             this.moveGain = moveGain;
             this.stunGain = stunGain;
+            this.hazardSpeedScale = hazardSpeedScale;
         }
 
         public void Tick(GameFramework.World.Entity entity, long tick, float dt)
@@ -53,7 +55,9 @@ namespace LOP
                 var horizontal = new Vector2(input?.Horizontal ?? 0f, input?.Vertical ?? 0f);
                 // 날려지는 중엔 다가가는 빠르기가 약해서 거의 방향을 못 바꾼다.
                 float gain = tick < (entity.Get<KnockbackBody>()?.KnockbackEndTick ?? long.MinValue) ? stunGain : moveGain;
-                var next = KnockbackMotor.Step(new Vector2(vel.x, vel.z), horizontal, moveSpeed, gain, dt);
+                // 위험 지대에 서 있으면 목표 속도가 느려진다(몸 중심 기준).
+                float speed = floor.InHazard(pos.x, pos.z, tick) ? moveSpeed * hazardSpeedScale : moveSpeed;
+                var next = KnockbackMotor.Step(new Vector2(vel.x, vel.z), horizontal, speed, gain, dt);
                 vel.x = next.x;
                 vel.z = next.y;
             }
