@@ -49,14 +49,22 @@ namespace LOP
         /// 알갱이·다이브로 채우는 맵에서만 쓴다.</summary>
         public float StunLoss = FlappyMapRulesField.DefaultStunLoss;
 
-        /// <summary>연속 날갯짓 보상 간격 — 연속 수가 이 값의 배수가 되는 날갯짓마다 <see cref="ComboDashGains"/>의 k번째 칸을 준다(11-02).
-        /// 0이면 이 맵은 보상이 없다. 어느 맵에도 이 칸들이 직렬화돼 있지 않아 초기값(기본)이 돈다 — 다시 굽지 않아도 된다.</summary>
+        /// <summary>
+        /// 연속 날갯짓 보상을 이 맵만 따로 정하나(리뷰2 I1). 끄면(기본) 아래 세 칸 값이 무엇이든 <see cref="FlappyFlapComboRules.Default"/>다 —
+        /// 번들 빌드는 그때 클래스의 모든 필드를 초기값까지 싣는다. 그래서 "칸이 직렬화 안 됨 = 코드 기본"이 아니다.
+        /// 켜야만 아래 칸을 검사해 쓴다(잘못이면 경고하고 기본).
+        /// <para>화면 고비(한마디·고리·화음)는 이 칸들과 따로 늘 10·30·50·100, 그 뒤 50마다다 — 간격을 바꿔도 안 따라간다(리뷰2 M2).</para>
+        /// </summary>
+        public bool ComboOverride;
+
+        /// <summary>보상 간격 — 연속 수가 이 값의 배수가 되는 날갯짓마다 <see cref="ComboDashGains"/>의 k번째 칸을 준다(11-02).
+        /// 0이면 이 맵은 보상이 없다. <see cref="ComboOverride"/>가 켜졌을 때만 쓴다.</summary>
         public int ComboStep = FlappyFlapComboRules.DefaultStep;
 
-        /// <summary>간격마다 주는 대시 게이지 표(칸, 0~2, 뒤로 가며 줄지 않게).</summary>
+        /// <summary>간격마다 주는 대시 게이지 표(칸, 0~2, 비지 않고 뒤로 가며 줄지 않게). <see cref="ComboOverride"/>가 켜졌을 때만 쓴다.</summary>
         public float[] ComboDashGains = FlappyFlapComboRules.DefaultGains();
 
-        /// <summary>표가 끝난 뒤 간격마다 주는 칸(표 끝 칸 이상, 2 이하).</summary>
+        /// <summary>표가 끝난 뒤 간격마다 주는 칸(표 끝 칸 이상, 2 이하). <see cref="ComboOverride"/>가 켜졌을 때만 쓴다.</summary>
         public float ComboTailGain = FlappyFlapComboRules.DefaultTailGain;
 
         private FlappyMapRulesField field;
@@ -65,11 +73,12 @@ namespace LOP
         public void Construct(FlappyMapRulesField field)
         {
             this.field = field;
-            if (FlappyFlapComboRules.TryCreate(ComboStep, ComboDashGains, ComboTailGain, out var flapCombo) == false)
+            var flapCombo = FlappyFlapComboRules.Default;
+            if (ComboOverride && FlappyFlapComboRules.TryCreate(ComboStep, ComboDashGains, ComboTailGain, out flapCombo) == false)
             {
-                Debug.LogWarning("[FlappyMapRules] 연속 날갯짓 보상 값이 잘못돼 기본값을 쓴다 — 간격은 0 이상, 표와 꼬리는 0~2칸이고 뒤로 가며 줄지 않게");
+                Debug.LogWarning("[FlappyMapRules] 연속 날갯짓 보상 값이 잘못돼 기본값을 쓴다 — 간격은 0 이상, 표는 비지 않고 표와 꼬리는 0~2칸이고 뒤로 가며 줄지 않게");
             }
-            //  어느 값이 돌았는지 서버 파드 로그에서도 보이게 한 줄 — 이미 구운 맵은 이 칸이 없어 기본값이어야 한다.
+            //  어느 값이 돌았는지 서버 파드 로그에서도 보이게 한 줄 — 덮어쓰기를 안 켠 맵은 기본값이어야 한다.
             Debug.Log($"[FlappyMapRules] 연속 날갯짓 보상 {flapCombo.Describe()}");
             field.Set(Chaser, ManualDash, MoteCharge, MoteValue, MoteReach, DiveCharge, DiveMinFallRatio, DiveRate, StunLoss, flapCombo);
         }

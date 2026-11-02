@@ -60,7 +60,7 @@ namespace LOP
         public bool Rewards => _step > 0;
 
         /// <summary>
-        /// 마커 값으로 규칙을 만든다. 간격 0이면 <see cref="Off"/>. 간격 음수·표 없음·0~2칸 밖 칸·뒤로 가며 줄어드는 칸·
+        /// 마커 값으로 규칙을 만든다. 간격 0이면 <see cref="Off"/>. 간격 음수·표 없음(null이나 빈 표 — 인스펙터에서 비우면 []다)·0~2칸 밖 칸·뒤로 가며 줄어드는 칸·
         /// 표 끝 칸보다 작은 꼬리면 false와 <see cref="Default"/> — 줄어드는 칸은 "박고 다시 쌓기"가 나아지는 틈이다.
         /// </summary>
         public static bool TryCreate(int step, float[] gains, float tailGain, out FlappyFlapComboRules rules)
@@ -71,7 +71,7 @@ namespace LOP
                 rules = Off;
                 return true;
             }
-            if (step < 0 || gains == null)
+            if (step < 0 || gains == null || gains.Length == 0)
             {
                 return false;
             }
