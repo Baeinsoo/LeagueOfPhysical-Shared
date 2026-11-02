@@ -29,6 +29,13 @@ namespace LOP
             {
                 return false;
             }
+            // 날려지는 중이거나 바닥 없이 떨어지는 중엔 못 쏜다(눌린 입력은 그냥 버려진다).
+            var ground = body.Get<GameFramework.World.GroundState>();
+            if (tick < (body.Get<KnockbackBody>()?.KnockbackEndTick ?? long.MinValue)
+                || (ground != null && !ground.IsGrounded))
+            {
+                return false;
+            }
             if (!input.Fire || gun.Ammo < 1 || tick < gun.CooldownEndTick)
             {
                 return false;

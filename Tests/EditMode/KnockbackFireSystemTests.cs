@@ -87,5 +87,40 @@ namespace LOP.Tests
             Assert.IsFalse(new KnockbackFireSystem(Config).TryFire(body, 10, out _));
             Assert.AreEqual(3, body.Get<KnockbackGun>().Ammo);
         }
+
+        [Test]
+        public void 날림_중엔_쏘지_않는다()
+        {
+            var body = Body();
+            body.Add(new KnockbackBody { KnockbackEndTick = 20 });
+            Aim(body, true);
+            var sys = new KnockbackFireSystem(Config);
+            Assert.IsFalse(sys.TryFire(body, 19, out _));
+            Assert.AreEqual(3, body.Get<KnockbackGun>().Ammo);
+            Assert.AreEqual(0, body.Get<KnockbackGun>().CooldownEndTick);
+        }
+
+        [Test]
+        public void 날림이_끝나면_바로_쏜다()
+        {
+            var body = Body();
+            body.Add(new KnockbackBody { KnockbackEndTick = 20 });
+            Aim(body, true);
+            Assert.IsTrue(new KnockbackFireSystem(Config).TryFire(body, 20, out _));
+        }
+
+        [Test]
+        public void 떨어지는_중엔_쏘지_않는다()
+        {
+            var body = Body();
+            body.Add(new GroundState { IsGrounded = false });
+            Aim(body, true);
+            var sys = new KnockbackFireSystem(Config);
+            Assert.IsFalse(sys.TryFire(body, 10, out _));
+            Assert.AreEqual(3, body.Get<KnockbackGun>().Ammo);
+
+            body.Get<GroundState>().IsGrounded = true;
+            Assert.IsTrue(sys.TryFire(body, 10, out _));
+        }
     }
 }
