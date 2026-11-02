@@ -210,6 +210,38 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 날아가던_두_몸이_부딪히면_연쇄_목록은_비어_있다()
+        {
+            var a = NewBody("a", -0.75f, 0f);
+            var b = NewBody("b", 0f, 0f);
+            var world = MakeWorld(a, b);
+            a.Get<KnockbackBody>().KnockbackEndTick = 100;
+            b.Get<KnockbackBody>().KnockbackEndTick = 100;
+            a.Get<GameFramework.World.Velocity>().Linear = new System.Numerics.Vector3(10f, 0f, 0f);
+            b.Get<GameFramework.World.Velocity>().Linear = new System.Numerics.Vector3(-10f, 0f, 0f);
+
+            world.Tick(1, Dt);
+
+            Assert.AreEqual(0, world.ChainHitsThisTick.Count, "이미 날아가던 몸은 크레딧을 물려받지 않는다");
+        }
+
+        [Test]
+        public void 연쇄로_날아간_몸이_붙은_채_다시_부딪혀도_연쇄_목록에_안_든다()
+        {
+            var a = NewBody("a", -0.75f, 0f);
+            var b = NewBody("b", 0f, 0f);
+            var world = MakeWorld(a, b);
+            a.Get<KnockbackBody>().KnockbackEndTick = 100;
+            a.Get<GameFramework.World.Velocity>().Linear = new System.Numerics.Vector3(10f, 0f, 0f);
+            world.Tick(1, Dt);
+            Assert.AreEqual(1, world.ChainHitsThisTick.Count, "양성 대조 - 첫 틱엔 연쇄로 든다");
+
+            a.Get<GameFramework.World.Velocity>().Linear = new System.Numerics.Vector3(10f, 0f, 0f);
+            world.Tick(2, Dt);
+            Assert.AreEqual(0, world.ChainHitsThisTick.Count, "이미 날아가는 중이라 연쇄가 아니다");
+        }
+
+        [Test]
         public void 부딪혀서_생긴_날림도_되감아_다시_돌려도_같다()
         {
             var a = NewBody("a", -0.75f, 0f);

@@ -174,6 +174,7 @@ namespace LOP
         private readonly List<GameFramework.World.Entity> chainTargets = new List<GameFramework.World.Entity>();
         private readonly List<System.Numerics.Vector3> chainBefore = new List<System.Numerics.Vector3>();
         private readonly List<string> chainSources = new List<string>();
+        private readonly List<bool> chainTargetWasFlying = new List<bool>();
 
         private static UnityEngine.Vector3 ToUnity(System.Numerics.Vector3 v) => new UnityEngine.Vector3(v.X, v.Y, v.Z);
 
@@ -185,6 +186,7 @@ namespace LOP
             chainTargets.Clear();
             chainBefore.Clear();
             chainSources.Clear();
+            chainTargetWasFlying.Clear();
             foreach (var mover in movers)
             {
                 if (mover.Has<KnockbackBody>() == false)
@@ -207,6 +209,7 @@ namespace LOP
                         chainTargets.Add(mover);
                         chainBefore.Add(mover.Get<GameFramework.World.Velocity>().Linear);
                         chainSources.Add(other.Id);
+                        chainTargetWasFlying.Add(IsFlying(mover, tick));
                         break;
                     }
                 }
@@ -225,7 +228,11 @@ namespace LOP
 
                 var body = entity.Get<KnockbackBody>();
                 body.KnockbackEndTick = System.Math.Max(body.KnockbackEndTick, KnockbackRules.StunEndTick(body, tick, config));
-                chainHitsThisTick.Add((entity.Id, chainSources[i]));
+                //  크레딧은 "걷다가 처음 날려진 몸"만 물려받는다. 이미 날아가던 몸의 크레딧(직접 맞음 등)은 지키려고 목록에서 뺀다.
+                if (chainTargetWasFlying[i] == false)
+                {
+                    chainHitsThisTick.Add((entity.Id, chainSources[i]));
+                }
             }
         }
 
