@@ -30,23 +30,23 @@ namespace LOP.Tests
         public void 위험_지대_방식이면_원이_줄어도_칸이_남는다()
         {
             var floor = ShrunkFloor(Hazard, 3f);
-            Assert.IsTrue(floor.IsSolid(0.1f, 0.1f, 300));
-            Assert.IsTrue(floor.IsSolid(12f, 5f, 300));
-            Assert.IsTrue(floor.IsTileSolid(8, 3, 300));
+            Assert.IsTrue(floor.IsSolid(0.1f, 0.1f, 200));
+            Assert.IsTrue(floor.IsSolid(12f, 5f, 200));
+            Assert.IsTrue(floor.IsTileSolid(8, 3, 200));
         }
 
         [Test]
         public void 원_밖_칸은_위험_지대()
         {
             var floor = ShrunkFloor(Hazard, 3f);
-            Assert.IsTrue(floor.InHazard(12f, 5f, 300));
+            Assert.IsTrue(floor.InHazard(12f, 5f, 200));
         }
 
         [Test]
         public void 원_안_칸은_위험_지대가_아니다()
         {
             var floor = ShrunkFloor(Hazard, 11f);
-            Assert.IsFalse(floor.InHazard(0.1f, 0.1f, 300));
+            Assert.IsFalse(floor.InHazard(0.1f, 0.1f, 200));
             Assert.IsFalse(floor.InHazard(0.1f, 0.1f, 0));
         }
 
@@ -56,8 +56,8 @@ namespace LOP.Tests
             var floor = ShrunkFloor(Hazard, 0f);
             foreach (var t in floor.Tiles)
             {
-                Assert.IsTrue(floor.IsTileHazard(t.x, t.z, 300));
-                Assert.IsTrue(floor.IsTileSolid(t.x, t.z, 300));
+                Assert.IsTrue(floor.IsTileHazard(t.x, t.z, 200));
+                Assert.IsTrue(floor.IsTileSolid(t.x, t.z, 200));
             }
         }
 
@@ -81,22 +81,103 @@ namespace LOP.Tests
             }
         }
 
+        //  칸 (10, 3)의 가장 먼 꼭짓점은 원판 중심에서 약 17.56m. 원 반지름이 그 아래로 내려오는 첫 틱이 104다(100틱에 축소 시작, 가운데로 줄어듦).
         [Test]
         public void 위험_지대_깜박임은_위험_지대가_되기_전에_켜진다()
         {
             var floor = ShrunkFloor(Hazard, 3f);
-            long warn = 50;
-            bool any = false;
+            Assert.IsFalse(floor.IsTileHazard(10, 3, 103));
+            Assert.IsTrue(floor.IsTileHazard(10, 3, 104));
+            Assert.IsFalse(floor.IsWarning(10, 3, 53, 50));
+            Assert.IsTrue(floor.IsWarning(10, 3, 54, 50));
+            Assert.IsTrue(floor.IsWarning(10, 3, 103, 50));
+            Assert.IsFalse(floor.IsWarning(10, 3, 104, 50));
+            Assert.IsFalse(floor.IsWarning(0, 0, 54, 50));
+        }
+
+        //  마지막 원이 200틱에 끝난다. 서든데스는 그 뒤 750틱(15초)에 걸쳐 원판 반지름 17m를 0까지 줄인다.
+        [Test]
+        public void 마지막_원_뒤_바깥부터_무너진다()
+        {
+            var floor = ShrunkFloor(Hazard, 3f);
+            Assert.IsTrue(floor.IsTileSolid(10, 3, 200));
+            Assert.IsFalse(floor.IsTileSolid(10, 3, 201));
+            Assert.IsTrue(floor.IsTileSolid(0, 0, 201));
+            Assert.IsTrue(floor.IsTileSolid(0, 0, 500));
+            Assert.IsFalse(floor.IsTileSolid(10, 3, 400));
+        }
+
+        [Test]
+        public void 서든데스_D초_뒤_전부_무너진다()
+        {
+            var floor = ShrunkFloor(Hazard, 3f);
             foreach (var t in floor.Tiles)
             {
-                for (long tick = 100; tick <= 250; tick++)
-                {
-                    bool expected = !floor.IsTileHazard(t.x, t.z, tick) && floor.IsTileHazard(t.x, t.z, tick + warn);
-                    Assert.AreEqual(expected, floor.IsWarning(t.x, t.z, tick, warn));
-                    any |= expected;
-                }
+                Assert.IsFalse(floor.IsTileSolid(t.x, t.z, 200 + 750));
             }
-            Assert.IsTrue(any);
+            Assert.IsTrue(floor.IsTileSolid(0, 0, 200 + 300));
+        }
+
+        [Test]
+        public void 서든데스로_무너질_칸은_미리_깜박인다()
+        {
+            var floor = ShrunkFloor(Hazard, 3f);
+            Assert.IsTrue(floor.IsWarning(10, 3, 200, 50));
+        }
+
+        [Test]
+        public void 단계가_없으면_서든데스도_없다()
+        {
+            var floor = Hazard.CreateFloor();
+            foreach (var t in floor.Tiles)
+            {
+                Assert.IsTrue(floor.IsTileSolid(t.x, t.z, 1000000));
+            }
+        }
+
+        [Test]
+        public void 낭떠러지_방식엔_서든데스가_영향_없다()
+        {
+            var floor = ShrunkFloor(Cliff, 11f);
+            Assert.IsTrue(floor.IsTileSolid(0, 0, 200 + 700));
+        }
+
+        [Test]
+        public void 서든데스로_칸이_무너지면_기둥도_가라앉는다()
+        {
+            var floor = ShrunkFloor(Hazard, 3f);
+            var pillars = new KnockbackPillars(new KnockbackPillarLayout(4, 7f, 0.9f, 3f), floor);
+            Assert.IsTrue(pillars.IsStanding(0, 200));
+            Assert.IsFalse(pillars.IsStanding(0, 200 + 750));
+            long collapse = pillars.CollapseTick(0);
+            Assert.Greater(collapse, 200);
+            Assert.LessOrEqual(collapse, 200 + 750);
+        }
+
+        static KnockbackConfig WithRate(float perSecond)
+            => new KnockbackConfig(120f, 6.2f, 14f, 17f, 1.5f, 0f, 5f, 11f, 30f, 18f, 0.3f, 0.55f, 3, 0.95f, 0.26f, 1.2f, 1, 6f, 0.5f, 0.5f, 0.3f, 0.1f, 0.2f, 0.8f, 5f,
+                new List<MountedArcheryZoneStageConfig>(), null, 1, perSecond, 0.7f);
+
+        [Test]
+        public void 위험도_간격은_가장_가까운_틱으로_반올림한다()
+        {
+            Assert.AreEqual(5, WithRate(10f).HazardDamageIntervalTicks);
+            Assert.AreEqual(2, WithRate(30f).HazardDamageIntervalTicks);
+            Assert.AreEqual(1, WithRate(45f).HazardDamageIntervalTicks);
+            Assert.AreEqual(1, WithRate(100f).HazardDamageIntervalTicks);
+            Assert.AreEqual(0, WithRate(0f).HazardDamageIntervalTicks);
+            Assert.AreEqual(0, WithRate(-3f).HazardDamageIntervalTicks);
+        }
+
+        [Test]
+        public void 카운트다운_중엔_위험도가_오르지_않는다()
+        {
+            var body = NewBody("b", 0f, 0f);
+            var world = MakeWorld(Hazard, ShrunkFloor(Hazard, 0f), body);
+            world.GameplayStartTick = 1000;
+            for (long t = 200; t < 250; t++) world.Tick(t, Dt);
+
+            Assert.AreEqual(0, body.Get<KnockbackBody>().DamagePercent);
         }
 
         static Entity NewBody(string id, float x, float z)
