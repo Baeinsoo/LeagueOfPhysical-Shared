@@ -11,6 +11,10 @@ message KnockbackPlayerWire
 	int32 damage_percent = 3;
 	// 0 = 개인전(팀 없음), 팀전은 1과 2
 	int32 team = 4;
+	// 장외시킨 사람의 entity_id. 자멸이거나 아직 탈락 안 했으면 빈 값
+	string ko_by = 5;
+	// 장외시킨 것이 날아가는 몸에 부딪힌 연쇄(탄이 직접 날린 게 아님)였나
+	bool ko_chain = 6;
 }
 
 // 넉백 판 상태 전체(서버 → 클라). 사건이 아니라 상태로 보낸다 — 끊겼다 돌아온 사람도 받는 즉시 맞춰진다.

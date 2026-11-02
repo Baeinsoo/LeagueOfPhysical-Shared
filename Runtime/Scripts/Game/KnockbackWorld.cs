@@ -67,8 +67,14 @@ namespace LOP
             return Shots.Remove(shooterId, fireTick);
         }
 
+        private readonly List<(string targetId, string sourceId)> chainHitsThisTick = new List<(string, string)>();
+
+        /// <summary>이번 틱에 날아가는 몸에 부딪혀 날림이 걸린 (맞은 몸, 부딪혀 온 몸). 막타 크레딧을 서버가 읽는다. 되감기 저장 대상이 아니다.</summary>
+        public IReadOnlyList<(string targetId, string sourceId)> ChainHitsThisTick => chainHitsThisTick;
+
         protected override void Mutation(long tick, float deltaTime)
         {
+            chainHitsThisTick.Clear();
             //  기둥 몸을 이 틱 모양으로 세운다 — 이동의 충돌 검사(SyncTransforms 뒤)보다 앞이어야 한다.
             pillarColliders?.Apply(tick);
 
@@ -167,6 +173,8 @@ namespace LOP
         //  누가 날아가는 중이었는지는 속도를 푸는 "앞"의 상태로 정한다(푼 뒤엔 서로 얽힌다).
         private readonly List<GameFramework.World.Entity> chainTargets = new List<GameFramework.World.Entity>();
         private readonly List<System.Numerics.Vector3> chainBefore = new List<System.Numerics.Vector3>();
+        private readonly List<string> chainSources = new List<string>();
+        private readonly List<bool> chainTargetWasFlying = new List<bool>();
 
         private static UnityEngine.Vector3 ToUnity(System.Numerics.Vector3 v) => new UnityEngine.Vector3(v.X, v.Y, v.Z);
 
@@ -177,6 +185,8 @@ namespace LOP
         {
             chainTargets.Clear();
             chainBefore.Clear();
+            chainSources.Clear();
+            chainTargetWasFlying.Clear();
             foreach (var mover in movers)
             {
                 if (mover.Has<KnockbackBody>() == false)
@@ -198,6 +208,8 @@ namespace LOP
                     {
                         chainTargets.Add(mover);
                         chainBefore.Add(mover.Get<GameFramework.World.Velocity>().Linear);
+                        chainSources.Add(other.Id);
+                        chainTargetWasFlying.Add(IsFlying(mover, tick));
                         break;
                     }
                 }
@@ -216,6 +228,11 @@ namespace LOP
 
                 var body = entity.Get<KnockbackBody>();
                 body.KnockbackEndTick = System.Math.Max(body.KnockbackEndTick, KnockbackRules.StunEndTick(body, tick, config));
+                //  크레딧은 "걷다가 처음 날려진 몸"만 물려받는다. 이미 날아가던 몸의 크레딧(직접 맞음 등)은 지키려고 목록에서 뺀다.
+                if (chainTargetWasFlying[i] == false)
+                {
+                    chainHitsThisTick.Add((entity.Id, chainSources[i]));
+                }
             }
         }
 
