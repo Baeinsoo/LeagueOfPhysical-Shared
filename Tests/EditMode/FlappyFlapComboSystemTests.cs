@@ -62,16 +62,22 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 마지막_고비_뒤로는_더_주지_않는다()
+        public void 마지막_고비_뒤로는_50마다_반_칸을_다시_준다()
         {
+            //  사용자 결정 11-02 — 100 뒤로 150·200·250…
             var system = System();
             var bird = Bird();
             Flaps(system, bird, 100);
             bird.Get<FlappyDash>().Charge = 0f;
 
-            Flaps(system, bird, 100);
-
-            Assert.AreEqual(0f, Charge(bird));
+            Flaps(system, bird, 49);
+            Assert.AreEqual(0f, Charge(bird), "149");
+            Flaps(system, bird, 1);
+            Assert.AreEqual(0.5f, Charge(bird), "150");
+            Flaps(system, bird, 49);
+            Assert.AreEqual(0.5f, Charge(bird), "199");
+            Flaps(system, bird, 1);
+            Assert.AreEqual(1f, Charge(bird), "200");
             Assert.AreEqual(200, bird.Get<FlappyFlapCombo>().Count, "수는 계속 센다(기록용)");
         }
 

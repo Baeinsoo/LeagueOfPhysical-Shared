@@ -32,6 +32,10 @@ namespace LOP
         /// 10-30 — 10도 조금은 준다, 0.1칸).</summary>
         public static float[] DefaultGains() => new[] { 0.1f, 0.25f, 0.5f, 0.5f };
 
+        /// <summary>마지막 고비 뒤로 이만큼마다 마지막 보상을 다시 준다(사용자 결정 11-02 — 끊지 않는 쪽이 박고 다시 쌓는 쪽보다 늘 낫게).
+        /// 맵 마커 칸이 아니다 — 이미 구운 맵을 다시 굽지 않아도 모든 맵에 같다.</summary>
+        public const int RepeatEvery = 50;
+
         public int Count => _milestones.Length;
 
         /// <summary>
@@ -61,7 +65,7 @@ namespace LOP
             return true;
         }
 
-        /// <summary>연속 수 <paramref name="count"/>가 몇 번째 고비인가(0부터). 고비가 아니면 −1.</summary>
+        /// <summary>연속 수 <paramref name="count"/>가 몇 번째 고비인가(0부터). 정확한 고비만 — 되풀이 자리(150…)는 −1이다(<see cref="RewardIndex"/>).</summary>
         public int MilestoneIndex(int count)
         {
             for (int i = 0; i < _milestones.Length; i++)
@@ -74,14 +78,30 @@ namespace LOP
             return -1;
         }
 
-        /// <summary>연속 수가 <paramref name="count"/>가 되는 날갯짓에 주는 게이지(칸). 고비가 아니면 0.</summary>
-        public float Gain(int count)
+        /// <summary>
+        /// 보상 자리 — 정확한 고비면 그 번호, 마지막 고비 뒤 <see cref="RepeatEvery"/>마다(기본 150·200·250…)는 마지막 고비 번호, 아니면 −1.
+        /// 게이지(<see cref="Gain"/>)와 연출(한마디·고리·화음)이 이것을 본다. 코인·서버 통계는 이것을 안 본다(<c>FlappyComboStatKeys</c>).
+        /// </summary>
+        public int RewardIndex(int count)
         {
             int i = MilestoneIndex(count);
+            if (i >= 0 || _milestones.Length == 0)
+            {
+                return i;
+            }
+            int last = _milestones[_milestones.Length - 1];
+            return count > last && (count - last) % RepeatEvery == 0 ? _milestones.Length - 1 : -1;
+        }
+
+        /// <summary>연속 수가 <paramref name="count"/>가 되는 날갯짓에 주는 게이지(칸). 보상 자리(<see cref="RewardIndex"/>)가 아니면 0.
+        /// 수 하나에 묶인 값이라 되감아 다시 지나도 그 수에 한 번이다.</summary>
+        public float Gain(int count)
+        {
+            int i = RewardIndex(count);
             return i < 0 ? 0f : _gains[i];
         }
 
-        /// <summary>로그 한 줄. 예: "10:+0.1 25:+0.25 50:+0.5 100:+0.5". 보상이 없으면 "없음".</summary>
+        /// <summary>로그 한 줄. 예: "10:+0.1 25:+0.25 50:+0.5 100:+0.5 그뒤50마다:+0.5". 보상이 없으면 "없음".</summary>
         public string Describe()
         {
             if (_milestones.Length == 0)
@@ -99,6 +119,10 @@ namespace LOP
                     .Append(":+")
                     .Append(_gains[i].ToString("0.###", CultureInfo.InvariantCulture));
             }
+            text.Append(" 그뒤")
+                .Append(RepeatEvery.ToString(CultureInfo.InvariantCulture))
+                .Append("마다:+")
+                .Append(_gains[_gains.Length - 1].ToString("0.###", CultureInfo.InvariantCulture));
             return text.ToString();
         }
     }
