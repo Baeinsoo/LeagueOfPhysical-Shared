@@ -17,6 +17,7 @@ namespace LOP
 
         //  코스를 만든 씨앗. 클라는 씨앗을 GameInfo로 늦게 받으므로, 받기 전에 만든 코스는 씨앗이 바뀌면 다시 만든다.
         private ulong courseSeed;
+        private bool seedChangeReported;
 
         /// <summary>이 판의 코스. 맵 규칙이 없거나 잘못됐으면 null — 그동안 월드는 아무것도 안 한다.</summary>
         public CardRushCourse Course { get; private set; }
@@ -39,7 +40,7 @@ namespace LOP
 
         protected override void Mutation(long tick, float deltaTime)
         {
-            EnsureCourse();
+            EnsureCourse(tick);
             if (Course == null)
             {
                 return;
@@ -60,11 +61,22 @@ namespace LOP
             }
         }
 
-        private void EnsureCourse()
+        private void EnsureCourse(long tick)
         {
             ulong value = seed.Value;
             if (Course != null && courseSeed == value)
             {
+                return;
+            }
+            //  출발 뒤엔 갈아 끼우지 않는다 — 선수 상태(칸·시도)가 옛 코스 기준이라 판정이 엉킨다.
+            //  정상 경로에선 서버는 씨앗을 안 바꾸고 클라는 출발 전에 받는다. 여기 오면 버그라 한 번 크게 알린다.
+            if (Course != null && HasStarted(tick))
+            {
+                if (seedChangeReported == false)
+                {
+                    seedChangeReported = true;
+                    UnityEngine.Debug.LogError($"[CardRushWorld] 출발 뒤 매치 씨앗이 바뀌었다({courseSeed} → {value}, 틱 {tick}) — 코스를 그대로 둔다");
+                }
                 return;
             }
             if (Rules.HasRules && Rules.Validate(out _))

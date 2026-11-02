@@ -255,6 +255,22 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 출발_뒤엔_씨앗이_바뀌어도_코스를_안_바꾼다()
+        {
+            //  판 도중에 코스를 갈아 끼우면 선수 상태(칸·시도)는 옛 코스 기준이라 판정이 엉킨다 — 크게 알리고 옛 코스를 지킨다.
+            var seed = new LateSeed { Value = 4242 };
+            var world = new CardRushWorld(new EntityRegistry(), new WorldEventBuffer(), Rules(), seed, timing) { GameplayStartTick = StartTick };
+            world.Tick(StartTick, Dt);
+            var course = world.Course;
+
+            seed.Value = 777;
+            UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Error, new System.Text.RegularExpressions.Regex("CardRushWorld"));
+            world.Tick(StartTick + 1, Dt);
+            world.Tick(StartTick + 2, Dt);   // 한 번만 알린다 — 두 번째 로그가 있으면 LogAssert가 실패시킨다
+            Assert.AreSame(course, world.Course);
+        }
+
+        [Test]
         public void 순위_진행은_판_기준_틱으로_잰다()
         {
             //  서버 절대 틱이 아주 커도(오래 켠 서버) 같은 칸의 이웃 틱이 갈려야 한다 — ForRanking은 13만 틱 안에서만 가른다.
