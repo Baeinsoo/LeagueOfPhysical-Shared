@@ -143,6 +143,61 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 날아가는_몸에_부딪힌_선_몸도_날림_상태가_된다()
+        {
+            var a = NewBody("a", -0.75f, 0f);
+            var b = NewBody("b", 0f, 0f);
+            var world = MakeWorld(a, b);
+            a.Get<KnockbackBody>().KnockbackEndTick = 100;
+            a.Get<GameFramework.World.Velocity>().Linear = new System.Numerics.Vector3(10f, 0f, 0f);
+            b.Get<KnockbackBody>().DamagePercent = 50;
+
+            world.Tick(1, Dt);
+
+            long expected = 1 + Config.Ticks(Config.StunBase + 50 * Config.StunScale);
+            Assert.AreEqual(expected, b.Get<KnockbackBody>().KnockbackEndTick, "부딪힌 몸은 자기 위험도로 날림이 된다");
+            Assert.AreEqual(50, b.Get<KnockbackBody>().DamagePercent, "충돌은 위험도를 올리지 않는다");
+            Assert.AreEqual(100, a.Get<KnockbackBody>().KnockbackEndTick, "이미 더 오래 날던 몸의 끝 틱은 줄지 않는다");
+        }
+
+        [Test]
+        public void 둘_다_걷다_부딪히면_아무도_날림이_아니다()
+        {
+            var a = NewBody("a", -0.75f, 0f);
+            var b = NewBody("b", 0f, 0f);
+            var world = MakeWorld(a, b);
+            a.Get<GameFramework.World.Velocity>().Linear = new System.Numerics.Vector3(10f, 0f, 0f);
+
+            world.Tick(1, Dt);
+
+            Assert.Greater(b.Get<GameFramework.World.Velocity>().Linear.X, 0.1f, "부딪혀서 속도는 넘어가야 시험이 의미 있다");
+            Assert.AreEqual(long.MinValue, a.Get<KnockbackBody>().KnockbackEndTick);
+            Assert.AreEqual(long.MinValue, b.Get<KnockbackBody>().KnockbackEndTick);
+        }
+
+        [Test]
+        public void 부딪혀서_생긴_날림도_되감아_다시_돌려도_같다()
+        {
+            var a = NewBody("a", -0.75f, 0f);
+            var b = NewBody("b", 0f, 0f);
+            var world = MakeWorld(a, b);
+            a.Get<KnockbackBody>().KnockbackEndTick = 100;
+            world.Tick(0, Dt);
+            world.SaveState(0);
+
+            a.Get<GameFramework.World.Velocity>().Linear = new System.Numerics.Vector3(10f, 0f, 0f);
+            world.Tick(1, Dt);
+            long end1 = b.Get<KnockbackBody>().KnockbackEndTick;
+
+            Assert.IsTrue(world.LoadState(0));
+            Assert.AreEqual(long.MinValue, b.Get<KnockbackBody>().KnockbackEndTick);
+            a.Get<GameFramework.World.Velocity>().Linear = new System.Numerics.Vector3(10f, 0f, 0f);
+            world.Tick(1, Dt);
+            Assert.AreEqual(end1, b.Get<KnockbackBody>().KnockbackEndTick);
+            Assert.AreNotEqual(long.MinValue, end1);
+        }
+
+        [Test]
         public void 총과_날림과_탄이_되감아_다시_돌려도_같다()
         {
             var (world, body) = Make(0f);

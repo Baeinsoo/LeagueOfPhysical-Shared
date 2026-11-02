@@ -19,7 +19,11 @@ namespace LOP
                 v.Y,
                 dir.y * strength + v.Z * config.KnockbackCarry);
 
-            body.KnockbackEndTick = tick + config.Ticks(config.StunBase + body.DamagePercent * config.StunScale);
+            body.KnockbackEndTick = StunEndTick(body, tick, config);
         }
+
+        /// <summary>지금 위험도로 날리면 언제까지 날려지는지. 탄에 맞을 때와 몸에 부딪힐 때가 같은 식을 쓴다.</summary>
+        public static long StunEndTick(KnockbackBody body, long tick, KnockbackConfig config)
+            => tick + config.Ticks(config.StunBase + body.DamagePercent * config.StunScale);
     }
 }
