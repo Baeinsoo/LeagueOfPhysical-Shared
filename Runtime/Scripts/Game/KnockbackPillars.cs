@@ -14,29 +14,79 @@ namespace LOP
         private const float StepDegrees = 90f;
 
         private readonly KnockbackFloor floor;
+        private readonly KnockbackPillarLayout layout;
+        private readonly IMatchSeed seed;
         private readonly Vector2[] centers;
+        private ulong syncedSeed;
 
         public int Count => centers.Length;
+        /// <summary>고리를 돌린 각(도). 씨앗이 없으면 0.</summary>
+        public float RotationDegrees
+        {
+            get
+            {
+                Sync();
+                return rotationDegrees;
+            }
+        }
+        private float rotationDegrees;
+        /// <summary>자리가 다시 계산될 때마다 오른다. 자리를 복사해 둔 쪽(콜라이더)이 바뀌었는지 알아보는 표.</summary>
+        public int Version
+        {
+            get
+            {
+                Sync();
+                return version;
+            }
+        }
+        private int version;
         public float Radius { get; }
         public float Height { get; }
 
-        public KnockbackPillars(KnockbackPillarLayout layout, KnockbackFloor floor)
+        /// <param name="seed">주면 판마다 이 씨앗으로 고리를 돌린다. 클라는 씨앗을 늦게 받으므로
+        /// 만들 때 한 번 읽지 않고 쓸 때마다 확인해, 씨앗이 바뀌면 그때 자리를 다시 계산한다.</param>
+        public KnockbackPillars(KnockbackPillarLayout layout, KnockbackFloor floor, IMatchSeed seed = null)
         {
             this.floor = floor;
-            int count = Mathf.Max(0, layout.Count);
-            centers = new Vector2[count];
-            for (int i = 0; i < count; i++)
-            {
-                float angle = (FirstAngleDegrees + StepDegrees * i) * Mathf.Deg2Rad;
-                centers[i] = new Vector2(Mathf.Sin(angle), Mathf.Cos(angle)) * layout.RingRadius;
-            }
+            this.layout = layout;
+            this.seed = seed;
+            centers = new Vector2[Mathf.Max(0, layout.Count)];
             Radius = layout.Radius;
             Height = layout.Height;
+            Recompute(seed?.Value ?? 0UL);
         }
 
-        public Vector2 Center(int i) => centers[i];
+        private void Sync()
+        {
+            if (seed != null && seed.Value != syncedSeed)
+            {
+                Recompute(seed.Value);
+            }
+        }
 
-        public bool IsStanding(int i, long tick) => floor.IsSolid(centers[i].x, centers[i].y, tick);
+        private void Recompute(ulong matchSeed)
+        {
+            syncedSeed = matchSeed;
+            rotationDegrees = seed == null ? 0f : KnockbackMapRandom.PillarRotationDegrees(matchSeed, centers.Length);
+            for (int i = 0; i < centers.Length; i++)
+            {
+                float angle = (FirstAngleDegrees + StepDegrees * i + rotationDegrees) * Mathf.Deg2Rad;
+                centers[i] = new Vector2(Mathf.Sin(angle), Mathf.Cos(angle)) * layout.RingRadius;
+            }
+            version++;
+        }
+
+        public Vector2 Center(int i)
+        {
+            Sync();
+            return centers[i];
+        }
+
+        public bool IsStanding(int i, long tick)
+        {
+            Sync();
+            return floor.IsSolid(centers[i].x, centers[i].y, tick);
+        }
 
         // 원은 줄기만 해서 한번 무너진 바닥은 다시 서지 않는다 — 그래서 이진 탐색이 된다.
         private const long SearchLimitTicks = 1L << 24;
@@ -59,6 +109,7 @@ namespace LOP
         public void CollectStanding(long tick, List<Vector2> into)
         {
             into.Clear();
+            Sync();
             for (int i = 0; i < centers.Length; i++)
             {
                 if (IsStanding(i, tick))
