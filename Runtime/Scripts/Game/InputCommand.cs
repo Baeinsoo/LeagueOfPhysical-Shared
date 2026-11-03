@@ -59,9 +59,12 @@ namespace LOP
         /// <summary>쏜 틱에만 참인 이산 액션이다(<see cref="Release"/>와 같은 짝). 방향은 <see cref="AimYaw"/>에 실린다.</summary>
         public bool Fire { get; set; }
 
+        /// <summary>CardRush: 카드 잡기. 누른 틱에만 참인 이산 액션이다(<see cref="Jump"/>·<see cref="Dash"/>·<see cref="Fire"/>와 같은 짝).</summary>
+        public bool Grab { get; set; }
+
         // 진단 로그가 커맨드를 한 줄로 찍을 때 쓴다. 무엇이 실렸는지는 커맨드 자신이 안다 —
         // 읽는 쪽(넷코드 로그)이 필드를 하나씩 나열하면 그쪽이 게임 내용을 알게 된다.
         public override string ToString()
-            => $"h={Horizontal:F2} v={Vertical:F2} jump={Jump} ability={AbilityId} posture={Posture:F2} glide={Glide} posing={Posing} dash={Dash} aim=({AimYaw:F1},{AimPitch:F1}) draw={Drawing}({DrawRatio:F2}) release={Release} fire={Fire} view={ViewTick}";
+            => $"h={Horizontal:F2} v={Vertical:F2} jump={Jump} ability={AbilityId} posture={Posture:F2} glide={Glide} posing={Posing} dash={Dash} aim=({AimYaw:F1},{AimPitch:F1}) draw={Drawing}({DrawRatio:F2}) release={Release} fire={Fire} grab={Grab} view={ViewTick}";
     }
 }

@@ -45,4 +45,9 @@ message EntitySnap
 	int64 knockback_next_reload_tick = 29;   // 가득이면 long.MaxValue 그대로 싣는다(0이 아니다)
 	int64 knockback_cooldown_end_tick = 30;
 	bool knockback_has_bomb = 31;            // Knockback: 충격파 폭탄을 들고 있나
+	int32 card_step = 32;             // CardRush: 지금 잡으려는 칸. 이 컴포넌트가 없는 게임에선 0이 나가고 아무도 안 읽는다
+	int32 card_attempt = 33;          // CardRush: 이 칸에서 틀린 횟수(시작 색 씨앗)
+	int64 card_move_start_tick = 34;  // CardRush: 마지막으로 맞힌 틱. 0 = 아직 없음
+	int64 card_stun_end_tick = 35;    // CardRush: 틀림 멈춤이 끝나는 절대 틱. 0 = 아직 없음
+	int32 card_streak = 36;           // CardRush: 지금 연속 정타
 }
