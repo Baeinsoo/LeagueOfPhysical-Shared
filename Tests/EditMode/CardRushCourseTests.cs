@@ -4,7 +4,7 @@ namespace LOP.Tests
 {
     public class CardRushCourseTests
     {
-        private static CardRushCourse Make(ulong seed, int steps = 40) => new CardRushCourse(seed, steps, CardRushSections.Default);
+        private static CardRushCourse Make(ulong seed, int steps = 40) => new CardRushCourse(seed, steps);
 
         [Test]
         public void 같은_씨앗은_같은_줄_다른_씨앗은_다른_줄()
@@ -49,18 +49,6 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 구간마다_떠_있는_틱()
-        {
-            var course = Make(1);
-            Assert.AreEqual(20, course.DwellTicks(0));
-            Assert.AreEqual(20, course.DwellTicks(14));
-            Assert.AreEqual(17, course.DwellTicks(15));
-            Assert.AreEqual(17, course.DwellTicks(29));
-            Assert.AreEqual(14, course.DwellTicks(30));
-            Assert.AreEqual(14, course.DwellTicks(39));
-        }
-
-        [Test]
         public void 시작_색은_칸과_시도로_정해진다()
         {
             var a = Make(7); var b = Make(7);
@@ -71,15 +59,6 @@ namespace LOP.Tests
                 attemptMatters |= a.StartColor(step, 0) != a.StartColor(step, 1);
             }
             Assert.IsTrue(attemptMatters);
-        }
-
-        [Test]
-        public void 틀린_구간_표는_거절한다()
-        {
-            Assert.IsFalse(CardRushSections.Validate(new[] { new CardRushSection(1, 0.4f) }, out _));
-            Assert.IsFalse(CardRushSections.Validate(new[] { new CardRushSection(0, 0.4f), new CardRushSection(0, 0.3f) }, out _));
-            Assert.IsFalse(CardRushSections.Validate(new[] { new CardRushSection(0, 0.05f) }, out _));
-            Assert.IsTrue(CardRushSections.Validate(CardRushSections.Default, out _));
         }
     }
 }

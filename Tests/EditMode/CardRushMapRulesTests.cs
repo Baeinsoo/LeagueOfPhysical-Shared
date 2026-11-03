@@ -5,29 +5,27 @@ namespace LOP.Tests
 {
     public class CardRushMapRulesTests
     {
-        private static CardRushMapRulesField Field(int stepCount, CardRushSection[] sections)
+        private static CardRushMapRulesField Field(int stepCount)
         {
             var field = new CardRushMapRulesField();
-            field.Set(CardRushTheme.StoneBridge, stepCount, 2.2f, 2.6f, sections, Vector3.zero, Vector3.forward);
+            field.Set(CardRushTheme.StoneBridge, stepCount, 2.2f, 2.6f, Vector3.zero, Vector3.forward);
             return field;
         }
 
         [Test]
         public void 필드_검증()
         {
-            Assert.IsTrue(Field(40, CardRushSections.Default).Validate(out var ok), ok);
-            Assert.IsTrue(Field(1, CardRushSections.Default).Validate(out _));
-            Assert.IsTrue(Field(200, CardRushSections.Default).Validate(out _));
-            Assert.IsFalse(Field(0, CardRushSections.Default).Validate(out var e0)); Assert.IsNotEmpty(e0);
-            Assert.IsFalse(Field(201, CardRushSections.Default).Validate(out var e201)); Assert.IsNotEmpty(e201);
-            Assert.IsFalse(Field(40, new[] { new CardRushSection(5, 0.4f) }).Validate(out var es)); Assert.IsNotEmpty(es);
-            Assert.IsFalse(Field(40, new CardRushSection[0]).Validate(out _));
+            Assert.IsTrue(Field(40).Validate(out var ok), ok);
+            Assert.IsTrue(Field(1).Validate(out _));
+            Assert.IsTrue(Field(200).Validate(out _));
+            Assert.IsFalse(Field(0).Validate(out var e0)); Assert.IsNotEmpty(e0);
+            Assert.IsFalse(Field(201).Validate(out var e201)); Assert.IsNotEmpty(e201);
         }
 
         [Test]
         public void 비운_필드는_규칙이_없다()
         {
-            var field = Field(40, CardRushSections.Default);
+            var field = Field(40);
             Assert.IsTrue(field.HasRules);
             field.Clear();
             Assert.IsFalse(field.HasRules);
@@ -40,7 +38,7 @@ namespace LOP.Tests
             var field = new CardRushMapRulesField();
             var origin = new Vector3(3f, 1f, -5f);
             var forward = new Vector3(1f, 0.2f, 1f);
-            field.Set(CardRushTheme.DoorDash, 40, 2.2f, 2.6f, CardRushSections.Default, origin, forward);
+            field.Set(CardRushTheme.DoorDash, 40, 2.2f, 2.6f, origin, forward);
             for (int lane = 0; lane < CardRushLanes.MaxLanes; lane++)
             {
                 var want = CardRushLanes.LaneOrigin(origin, forward, 2.6f, lane);
@@ -60,8 +58,6 @@ namespace LOP.Tests
                 Assert.AreEqual(40, rules.stepCount);
                 Assert.AreEqual(2.2f, rules.stepSpacing, 1e-6f);
                 Assert.AreEqual(2.6f, rules.laneSpacing, 1e-6f);
-                CollectionAssert.AreEqual(CardRushSections.Default, rules.sections);
-                Assert.AreNotSame(CardRushSections.Default, rules.sections, "기본 표를 나눠 쓰면 한 마커를 고칠 때 다른 마커도 바뀐다");
 
                 var field = new CardRushMapRulesField();
                 rules.Construct(field);

@@ -5,7 +5,7 @@ namespace LOP.Tests
     public class CardRushJudgeTests
     {
         private const long Start = 1000;
-        private static readonly CardRushCourse course = new CardRushCourse(99, 40, CardRushSections.Default);
+        private static readonly CardRushCourse course = new CardRushCourse(99, 40);
         private static readonly CardRushTiming timing = new CardRushTiming(15, 30);
 
         private static CardRushTapResult Tick(ref CardRushRunnerState s, long t, bool tap)

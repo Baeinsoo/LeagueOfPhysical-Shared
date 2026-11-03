@@ -25,7 +25,7 @@ namespace LOP.Tests
         [Test]
         public void 대기_중엔_뒷면()
         {
-            var course = new CardRushCourse(99, 40, CardRushSections.Default);
+            var course = new CardRushCourse(99, 40);
             var waiting = new CardRushRunnerState { Step = 2, MoveStartTick = 2000 };   // 준비 틱 2015, 아직 안 눌렀다
             Assert.IsFalse(CardRushCard.TryColorAt(waiting, 5000, course, out _));
             Assert.IsFalse(CardRushCard.IsSpinning(waiting));
@@ -35,7 +35,7 @@ namespace LOP.Tests
         [Test]
         public void 시작_틱에_첫_장_26틱마다_다음_색()
         {
-            var course = new CardRushCourse(99, 40, CardRushSections.Default);
+            var course = new CardRushCourse(99, 40);
             var s = new CardRushRunnerState { Step = 4, Attempt = 1, MoveStartTick = 2000, SpinStartTick = 2100 };
             var first = course.StartColor(4, 1);
             Assert.IsTrue(CardRushCard.TryColorAt(s, 2100, course, out var c0)); Assert.AreEqual(first, c0);

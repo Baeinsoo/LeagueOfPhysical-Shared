@@ -79,7 +79,7 @@ namespace LOP
             }
             if (Rules.HasRules && Rules.Validate(out _))
             {
-                Course = new CardRushCourse(value, Rules.StepCount, Rules.Sections);
+                Course = new CardRushCourse(value, Rules.StepCount);
                 courseSeed = value;
             }
         }

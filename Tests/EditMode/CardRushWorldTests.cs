@@ -15,7 +15,7 @@ namespace LOP.Tests
         private static CardRushMapRulesField Rules()
         {
             var field = new CardRushMapRulesField();
-            field.Set(CardRushTheme.StoneBridge, 40, 2.2f, 2.6f, CardRushSections.Default, UnityEngine.Vector3.zero, UnityEngine.Vector3.forward);
+            field.Set(CardRushTheme.StoneBridge, 40, 2.2f, 2.6f, UnityEngine.Vector3.zero, UnityEngine.Vector3.forward);
             return field;
         }
 
@@ -74,11 +74,13 @@ namespace LOP.Tests
             var world = Create(field, out var runner);
             var origin = field.LaneOrigin(3);
 
+            //  대기면 바로 시작하고, 돌면 요구 색이 처음 보이는 틱(시작 뒤)에 던진다.
             for (long t = StartTick; t < StartTick + 200; t++)
             {
                 var s = State(runner);
-                bool want = CardRushCard.TryColorAt(s, t, world.Course, out var shown)
-                            && shown == world.Course.RequiredColor(s.Step);
+                bool want = s.SpinStartTick == 0
+                            || (t > s.SpinStartTick && CardRushCard.TryColorAt(s, t, world.Course, out var shown)
+                                && shown == world.Course.RequiredColor(s.Step));
                 TickWith(world, runner, t, want);
 
                 var after = State(runner);
@@ -89,6 +91,21 @@ namespace LOP.Tests
 
             Assert.GreaterOrEqual(State(runner).Step, 1);
             Assert.AreEqual(0, State(runner).Misses, "요구 색에만 탭했다");
+        }
+
+        [Test]
+        public void 탭이_없어도_6초면_던진다()
+        {
+            var world = Create(Rules(), out var runner);
+            TickWith(world, runner, StartTick, true);   // 시작
+            Assert.AreEqual(StartTick, State(runner).SpinStartTick);
+            for (long t = StartTick + 1; t < StartTick + CardRushCard.WindowTicks; t++) TickWith(world, runner, t, false);
+            Assert.AreEqual(StartTick, State(runner).SpinStartTick, "마감 전엔 그대로 돈다");
+
+            TickWith(world, runner, StartTick + CardRushCard.WindowTicks, false);
+            var s = State(runner);
+            Assert.AreEqual(0, s.SpinStartTick);
+            Assert.IsTrue(s.Step == 1 || s.Misses == 1, "입력 없이 던졌다(맞음 또는 틀림)");
         }
 
         [Test]
@@ -133,19 +150,21 @@ namespace LOP.Tests
         {
             var taps = RandomTaps(1000);
 
-            //  먼저 한 번 돌려 틀림이 처음 나는 틱 w를 찾는다 — 저장 지점은 그 바로 앞 틱이다.
-            //  그래야 복원이 StunEndTick을 빠뜨리면 재생의 w 탭이 "멈춤 중"으로 무시돼 갈린다.
+            //  먼저 한 번 돌려 "칸을 간 뒤, 돌고 있는 카드를 던진" 첫 틱 w를 찾는다 — 저장 지점은 그 바로 앞 틱.
+            //  그래야 복원이 SpinStartTick을 빠뜨리면 재생의 w 탭이 "시작"으로 읽혀 갈린다.
             long w = -1;
             {
                 var probe = Create(Rules(), out var pr);
                 for (int i = 0; i < taps.Length && w < 0; i++)
                 {
-                    int missesBefore = State(pr).Misses;
+                    var before = State(pr);
                     TickWith(probe, pr, StartTick + i, taps[i]);
-                    if (State(pr).Misses > missesBefore && State(pr).Step > 0) w = StartTick + i;
+                    var after = State(pr);
+                    bool thrown = before.SpinStartTick != 0 && after.SpinStartTick == 0;
+                    if (thrown && before.Step > 0 && before.SpinStartTick < StartTick + i - 1) w = StartTick + i;
                 }
             }
-            Assert.Greater(w, StartTick, "입력열에 칸을 간 뒤의 틀림이 있어야 한다");
+            Assert.Greater(w, StartTick, "입력열에 칸을 간 뒤의 던짐이 있어야 한다");
 
             var world = Create(Rules(), out var runner);
             long saveTick = w - 1;
@@ -157,11 +176,12 @@ namespace LOP.Tests
             }
 
             var atSave = State(runner);
+            Assert.AreNotEqual(0, atSave.SpinStartTick, "저장 지점에서 카드가 돌고 있어야 복원을 시험한다");
             for (long t = saveTick + 1; t <= saveTick + replayTicks; t++)
             {
                 TickWith(world, runner, t, taps[t - StartTick]);
                 world.SaveState(t);
-                if (t == w) Assert.AreEqual(atSave.Misses + 1, State(runner).Misses, "저장 바로 다음 틱이 틀림이어야 한다");
+                if (t == w) Assert.AreEqual(0, State(runner).SpinStartTick, "저장 바로 다음 틱이 던짐이어야 한다");
             }
             var liveState = State(runner);
             var livePos = Pos(runner);
@@ -217,10 +237,11 @@ namespace LOP.Tests
             for (long t = 1001; t < 1300 && finishTick < 0; t++)
             {
                 var s = State(runner);
-                bool want = CardRushCard.TryColorAt(s, t, world.Course, out var shown)
-                            && shown == world.Course.RequiredColor(s.Step);
+                bool want = s.SpinStartTick == 0
+                            || (t > s.SpinStartTick && CardRushCard.TryColorAt(s, t, world.Course, out var shown)
+                                && shown == world.Course.RequiredColor(s.Step));
                 TickWith(world, runner, t, want);
-                if (want) finishTick = t;
+                if (State(runner).IsFinished(40)) finishTick = t;
             }
 
             Assert.AreEqual(40, State(runner).Step);
@@ -246,7 +267,7 @@ namespace LOP.Tests
             seed.Value = 4242;
             world.Tick(101, Dt);
             Assert.AreNotSame(early, world.Course);
-            var want = new CardRushCourse(4242, 40, CardRushSections.Default);
+            var want = new CardRushCourse(4242, 40);
             for (int i = 0; i < 40; i++) Assert.AreEqual(want.RequiredColor(i), world.Course.RequiredColor(i), $"step {i}");
 
             var settled = world.Course;
