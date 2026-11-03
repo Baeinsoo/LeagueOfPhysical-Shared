@@ -5,7 +5,7 @@ using UnityEngine.TestTools;
 
 namespace LOP.Tests
 {
-    /// <summary>맵 안의 무작위(기둥 고리 회전, 드럼통 자리)는 씨앗이 같으면 클·서가 같은 값을 낸다.</summary>
+    /// <summary>맵 안의 무작위(기둥 고리 회전)는 씨앗이 같으면 클·서가 같은 값을 낸다.</summary>
     public class KnockbackMapRandomTests
     {
         class FakeSeed : IMatchSeed
@@ -15,7 +15,6 @@ namespace LOP.Tests
 
         static KnockbackFloor Floor() => new KnockbackFloor(23f, 1.5f, 0f);
         static readonly KnockbackPillarLayout Ring4 = new KnockbackPillarLayout(4, 9.5f, 0.9f, 3f);
-        static readonly KnockbackBarrelLayout Four = new KnockbackBarrelLayout(4, 0.55f, 9f, 2.5f, 0.6f, 6f, 1f);
 
         static List<Vector2> Centers(KnockbackPillars p)
         {
@@ -102,91 +101,6 @@ namespace LOP.Tests
                 Assert.AreEqual(pillars.Center(0).x, go.transform.position.x, 1e-4f);
                 Assert.AreEqual(pillars.Center(0).y, go.transform.position.z, 1e-4f);
             }
-        }
-
-        [Test]
-        public void 드럼통_자리는_같은_씨앗이면_같고_다른_씨앗이면_다르다()
-        {
-            var pillars = Centers(new KnockbackPillars(Ring4, Floor(), new FakeSeed { Value = 5UL }));
-            var a = KnockbackMapRandom.BarrelSpawns(5UL, Four, pillars, 0.9f);
-            var b = KnockbackMapRandom.BarrelSpawns(5UL, Four, pillars, 0.9f);
-            var c = KnockbackMapRandom.BarrelSpawns(6UL, Four, pillars, 0.9f);
-            Assert.AreEqual(4, a.Length);
-            bool differs = false;
-            for (int i = 0; i < 4; i++)
-            {
-                Assert.AreEqual(a[i], b[i]);
-                if ((a[i] - c[i]).sqrMagnitude > 1e-4f) differs = true;
-            }
-            Assert.IsTrue(differs);
-        }
-
-        [Test]
-        public void 드럼통은_고리_위에_있고_기둥과_안_겹치며_서로_흩어져_있다()
-        {
-            float zone = 0.9f + 0.55f + 0.3f;
-            for (ulong s = 1; s <= 200; s++)
-            {
-                var pillars = Centers(new KnockbackPillars(Ring4, Floor(), new FakeSeed { Value = s }));
-                var spawns = KnockbackMapRandom.BarrelSpawns(s, Four, pillars, 0.9f);
-                for (int i = 0; i < spawns.Length; i++)
-                {
-                    Assert.AreEqual(9f, spawns[i].magnitude, 1e-3f, $"seed {s} #{i}");
-                    foreach (var p in pillars)
-                    {
-                        Assert.GreaterOrEqual((spawns[i] - p).magnitude, zone - 1e-3f, $"seed {s} #{i}");
-                    }
-                    for (int j = i + 1; j < spawns.Length; j++)
-                    {
-                        Assert.Greater((spawns[i] - spawns[j]).magnitude, 2f * 0.55f, $"seed {s} {i}-{j}");
-                    }
-                }
-            }
-        }
-
-        [Test]
-        public void 드럼통_수가_0이면_자리도_없다()
-        {
-            Assert.AreEqual(0, KnockbackMapRandom.BarrelSpawns(1UL, KnockbackBarrelLayout.None, new List<Vector2>(), 0.9f).Length);
-        }
-
-        [Test]
-        public void 반발과_몸_치기_배율은_0을_그대로_받고_음수만_기본값과_오류_로그다()
-        {
-            var zero = new KnockbackBarrelLayout(4, 0.55f, 9f, 2.5f, 0f, 6f, 0f);
-            Assert.AreEqual(0f, zero.Restitution);
-            Assert.AreEqual(0f, zero.HitScale);
-
-            LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("barrel_restitution"));
-            LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("barrel_hit_scale"));
-            var negative = new KnockbackBarrelLayout(4, 0.55f, 9f, 2.5f, -0.1f, 6f, -1f);
-            Assert.AreEqual(0.6f, negative.Restitution);
-            Assert.AreEqual(1f, negative.HitScale);
-        }
-
-        [Test]
-        public void 드럼통_설정은_개수만_0을_허용하고_나머지_0_이하는_기본값과_오류_로그다()
-        {
-            LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("barrel_radius"));
-            LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("barrel_friction"));
-            var l = new KnockbackBarrelLayout(4, 0f, 9f, -1f, 0.6f, 6f, 1f);
-            Assert.AreEqual(0.55f, l.Radius);
-            Assert.AreEqual(2.5f, l.Friction);
-            Assert.AreEqual(4, l.Count);
-            Assert.AreEqual(0, new KnockbackBarrelLayout(-2, 0.55f, 9f, 2.5f, 0.6f, 6f, 1f).Count);
-        }
-
-        [Test]
-        public void 설정에_드럼통을_안_주면_없고_주면_그대로_읽힌다()
-        {
-            Assert.AreEqual(0, KnockbackBarrelLayout.None.Count);
-            var c = new KnockbackConfig(120f, 6f, 10f, 12f, 2f, 0.5f, 5f, 11f, 30f, 18f, 0.3f, 0.55f, 3, 0.95f, 0.26f, 1.2f, 12, 6f, 0.2f, 0.5f, 0.3f, 0.1f, 0.2f, 0.8f, 8f,
-                new List<MountedArcheryZoneStageConfig>(), barrels: Four);
-            Assert.AreEqual(4, c.Barrels.Count);
-            Assert.AreEqual(9f, c.Barrels.RingRadius);
-            Assert.AreEqual(0.6f, c.Barrels.Restitution);
-            Assert.AreEqual(6f, c.Barrels.ShotImpulse);
-            Assert.AreEqual(1f, c.Barrels.HitScale);
         }
     }
 }

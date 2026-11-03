@@ -8,6 +8,5 @@ namespace LOP
         Item = 3,
         Environment = 4,
         Coin = 5,
-        Barrel = 6,
     }
 }
