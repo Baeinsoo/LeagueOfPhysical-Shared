@@ -45,6 +45,8 @@ namespace LOP
         /// <summary>충격파 폭탄이 터질 때 밀리는 반경(m).</summary>
         public float BlastRadius { get; }
         /// <summary>true면 사거리 끝에 떨어진 탄이 바닥 칸에 금을 낸다(금 가는 바닥 맵).</summary>
+        public const float MinCrackCollapseSeconds = 0.5f;
+
         public bool CrackEnabled { get; }
         /// <summary>금이 몇 번 가면 무너지기 시작하나.</summary>
         public int CrackHitsToCollapse { get; }
@@ -95,6 +97,11 @@ namespace LOP
             CrackEnabled = crackEnabled == 1;
             CrackHitsToCollapse = PositiveOrDefault(crackHitsToCollapse, 2, "crack_hits_to_collapse");
             CrackCollapseSeconds = PositiveOrDefault(crackCollapseSeconds, 1f, "crack_collapse_seconds");
+            if (CrackCollapseSeconds < MinCrackCollapseSeconds)
+            {
+                Debug.LogError($"TbKnockbackConfig crack_collapse_seconds는 {MinCrackCollapseSeconds}초 이상이어야 한다(예고가 왕복 시간보다 길어야 모두가 같은 틱에 안다): {crackCollapseSeconds} - {MinCrackCollapseSeconds}로 올린다");
+                CrackCollapseSeconds = MinCrackCollapseSeconds;
+            }
             EdgeMode = edgeMode;
             HazardDamagePerSecond = hazardDamagePerSecond;
             HazardSpeedScale = hazardSpeedScale;

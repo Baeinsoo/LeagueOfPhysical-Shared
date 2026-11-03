@@ -42,6 +42,14 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 설정_무너지는_시간이_왕복보다_짧으면_하한으로_올리고_오류_로그()
+        {
+            LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("crack_collapse_seconds"));
+            Assert.AreEqual(KnockbackConfig.MinCrackCollapseSeconds, Config(1, 2, 0.1f).CrackCollapseSeconds);
+            Assert.AreEqual(0.5f, Config(1, 2, 0.5f).CrackCollapseSeconds, "대조: 하한 그대로면 로그 없이 통과");
+        }
+
+        [Test]
         public void 설정_켜짐_값이_0과_1이_아니면_끄고_오류_로그()
         {
             LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("crack_enabled"));
