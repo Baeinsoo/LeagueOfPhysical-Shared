@@ -151,6 +151,20 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 반발과_몸_치기_배율은_0을_그대로_받고_음수만_기본값과_오류_로그다()
+        {
+            var zero = new KnockbackBarrelLayout(4, 0.55f, 9f, 2.5f, 0f, 6f, 0f);
+            Assert.AreEqual(0f, zero.Restitution);
+            Assert.AreEqual(0f, zero.HitScale);
+
+            LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("barrel_restitution"));
+            LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("barrel_hit_scale"));
+            var negative = new KnockbackBarrelLayout(4, 0.55f, 9f, 2.5f, -0.1f, 6f, -1f);
+            Assert.AreEqual(0.6f, negative.Restitution);
+            Assert.AreEqual(1f, negative.HitScale);
+        }
+
+        [Test]
         public void 드럼통_설정은_개수만_0을_허용하고_나머지_0_이하는_기본값과_오류_로그다()
         {
             LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("barrel_radius"));

@@ -21,7 +21,15 @@ namespace LOP
 
         public int Count => centers.Length;
         /// <summary>고리를 돌린 각(도). 씨앗이 없으면 0.</summary>
-        public float RotationDegrees { get; private set; }
+        public float RotationDegrees
+        {
+            get
+            {
+                Sync();
+                return rotationDegrees;
+            }
+        }
+        private float rotationDegrees;
         /// <summary>자리가 다시 계산될 때마다 오른다. 자리를 복사해 둔 쪽(콜라이더)이 바뀌었는지 알아보는 표.</summary>
         public int Version
         {
@@ -59,10 +67,10 @@ namespace LOP
         private void Recompute(ulong matchSeed)
         {
             syncedSeed = matchSeed;
-            RotationDegrees = seed == null ? 0f : KnockbackMapRandom.PillarRotationDegrees(matchSeed, centers.Length);
+            rotationDegrees = seed == null ? 0f : KnockbackMapRandom.PillarRotationDegrees(matchSeed, centers.Length);
             for (int i = 0; i < centers.Length; i++)
             {
-                float angle = (FirstAngleDegrees + StepDegrees * i + RotationDegrees) * Mathf.Deg2Rad;
+                float angle = (FirstAngleDegrees + StepDegrees * i + rotationDegrees) * Mathf.Deg2Rad;
                 centers[i] = new Vector2(Mathf.Sin(angle), Mathf.Cos(angle)) * layout.RingRadius;
             }
             version++;

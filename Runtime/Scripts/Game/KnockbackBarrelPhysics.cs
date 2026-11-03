@@ -79,16 +79,5 @@ namespace LOP
             strength = closing * hitScale;
             return true;
         }
-
-        /// <summary>
-        /// 친 뒤 드럼통이 몸 쪽으로 가는 속도를 몸의 새 속도 이하로 줄인다 — 드럼통은 무겁게 계속 가되
-        /// 같은 몸을 매 틱 다시 치지 않게. 몸 쪽 성분만 줄이고 옆 성분은 그대로다.
-        /// </summary>
-        public static Vector2 YieldToBody(Vector2 barrelVelocity, Vector2 direction, float bodyNormalSpeedAfter)
-        {
-            float toward = Vector2.Dot(barrelVelocity, direction);
-            if (toward <= bodyNormalSpeedAfter) return barrelVelocity;
-            return barrelVelocity - direction * (toward - bodyNormalSpeedAfter);
-        }
     }
 }

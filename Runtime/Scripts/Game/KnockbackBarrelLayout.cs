@@ -30,9 +30,17 @@ namespace LOP
             Radius = PositiveOrDefault(radius, 0.55f, "barrel_radius");
             RingRadius = PositiveOrDefault(ringRadius, 9f, "barrel_ring_radius");
             Friction = PositiveOrDefault(friction, 2.5f, "barrel_friction");
-            Restitution = PositiveOrDefault(restitution, 0.6f, "barrel_restitution");
+            Restitution = NonNegativeOrDefault(restitution, 0.6f, "barrel_restitution");
             ShotImpulse = PositiveOrDefault(shotImpulse, 6f, "barrel_shot_impulse");
-            HitScale = PositiveOrDefault(hitScale, 1f, "barrel_hit_scale");
+            HitScale = NonNegativeOrDefault(hitScale, 1f, "barrel_hit_scale");
+        }
+
+        //  0이 의미 있는 값(완전 비탄성, 몸을 안 치는 드럼통)이라 음수만 거른다.
+        private static float NonNegativeOrDefault(float value, float fallback, string column)
+        {
+            if (value >= 0f) return value;
+            Debug.LogError($"TbKnockbackConfig {column}는 0 이상이어야 한다: {value} - {fallback}로 처리한다");
+            return fallback;
         }
 
         private static float PositiveOrDefault(float value, float fallback, string column)

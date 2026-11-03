@@ -91,17 +91,6 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 친_드럼통은_몸의_새_속도보다_몸_쪽으로_빠르지_않다_옆_성분은_그대로()
-        {
-            var v = KnockbackBarrelPhysics.YieldToBody(new Vector2(6f, 2f), Vector2.right, 4f);
-            Assert.AreEqual(4f, v.x, 1e-5f);
-            Assert.AreEqual(2f, v.y, 1e-5f);
-
-            var slower = KnockbackBarrelPhysics.YieldToBody(new Vector2(3f, 0f), Vector2.right, 4f);
-            Assert.AreEqual(3f, slower.x, 1e-5f, "이미 느리면 그대로");
-        }
-
-        [Test]
         public void ApplyPush는_속도와_날림만_넣고_위험도는_안_올린다()
         {
             var config = new KnockbackConfig(120f, 6f, 10f, 12f, 2f, 0.5f, 5f, 11f, 30f, 18f, 0.3f, 0.55f, 3, 0.95f, 0.26f, 1.2f, 12, 6f, 0.2f, 0.5f, 0.3f, 0.1f, 0.2f, 0.8f, 8f,
