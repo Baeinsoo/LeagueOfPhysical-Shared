@@ -44,6 +44,8 @@ namespace LOP
         public float CratePickupRadius { get; }
         /// <summary>충격파 폭탄이 터질 때 밀리는 반경(m).</summary>
         public float BlastRadius { get; }
+        /// <summary>드럼통 설정. 드럼통 없는 맵은 개수 0.</summary>
+        public KnockbackBarrelLayout Barrels { get; }
 
         //  시뮬 틱 간격. 초를 틱으로 바꿀 때 클·서가 같은 값을 쓴다.
         public const float TickInterval = 0.02f;
@@ -76,8 +78,10 @@ namespace LOP
                                float crateIntervalSeconds = 20f,
                                float crateWarnSeconds = 1.5f,
                                float cratePickupRadius = 0.9f,
-                               float blastRadius = 2.5f)
+                               float blastRadius = 2.5f,
+                               KnockbackBarrelLayout barrels = null)
         {
+            Barrels = barrels ?? KnockbackBarrelLayout.None;
             EdgeMode = edgeMode;
             HazardDamagePerSecond = hazardDamagePerSecond;
             HazardSpeedScale = hazardSpeedScale;
