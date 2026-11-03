@@ -56,6 +56,16 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 색을_못_읽으면_던지지_않는다()
+        {
+            //  시작 틱이 미래(깨진 값)라 카드 색이 없다 — 마감 덧셈이 넘쳐 timeUp이 서도 판정하지 않는다.
+            var s = new CardRushRunnerState { SpinStartTick = long.MaxValue - 100 };
+            Assert.IsFalse(CardRushCard.TryColorAt(s, Start + 5, course, out _));
+            Assert.AreEqual(CardRushTapResult.Ignored, Tick(ref s, Start + 5, true));
+            Assert.AreEqual(long.MaxValue - 100, s.SpinStartTick); Assert.AreEqual(0, s.Step); Assert.AreEqual(0, s.StunEndTick);
+        }
+
+        [Test]
         public void 이동_중_멈춤_중_출발_전_탭은_시작도_안_한다()
         {
             var moving = new CardRushRunnerState { Step = 3, MoveStartTick = 2000 };

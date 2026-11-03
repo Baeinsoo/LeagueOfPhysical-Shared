@@ -28,7 +28,9 @@ namespace LOP
             //  같은 틱에 시작과 던짐은 없다 — 시작 다음 틱부터 던질 수 있다(연타 = 첫 장 도박).
             if (timeUp == false && (tapped == false || tick <= s.SpinStartTick)) return CardRushTapResult.Ignored;
 
-            CardRushCard.TryColorAt(s, tick, course, out var shown);
+            //  위 조건이면 늘 색이 보인다. 그래도 못 읽으면(깨진 스냅: 시작 틱이 미래인데 마감 덧셈이 넘쳐 timeUp) 던지지 않는다 —
+            //  안 보인 카드를 기본색으로 판정하면 아무 근거 없이 틀림(또는 맞음)이 된다.
+            if (CardRushCard.TryColorAt(s, tick, course, out var shown) == false) return CardRushTapResult.Ignored;
             s.SpinStartTick = 0;
 
             if (shown == course.RequiredColor(s.Step))
