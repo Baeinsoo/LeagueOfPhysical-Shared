@@ -28,17 +28,20 @@ public static partial class KnockbackStateToCReflection {
           "ZXJjZW50GAMgASgFEgwKBHRlYW0YBCABKAUSDQoFa29fYnkYBSABKAkSEAoI",
           "a29fY2hhaW4YBiABKAgiSQoSS25vY2tiYWNrQ3JhdGVXaXJlEgoKAmlkGAEg",
           "ASgFEhEKCWxhbmRfdGljaxgCIAEoAxIJCgF4GAMgASgCEgkKAXoYBCABKAIi",
-          "rwEKEUtub2NrYmFja1N0YXRlVG9DEg8KB3ZlcnNpb24YASABKAUSJQoHcGxh",
-          "eWVycxgCIAMoCzIULktub2NrYmFja1BsYXllcldpcmUSKgoLem9uZV9zdGFn",
-          "ZXMYAyADKAsyFS5Nb3VudGVkWm9uZVN0YWdlV2lyZRISCgp0ZWFtX2NvdW50",
-          "GAQgASgFEiIKBWNyYXRlGAUgASgLMhMuS25vY2tiYWNrQ3JhdGVXaXJlYgZw",
-          "cm90bzM="));
+          "SQoSS25vY2tiYWNrQ3JhY2tXaXJlEgwKBHRpbGUYASABKAUSDgoGY3JhY2tz",
+          "GAIgASgFEhUKDWNvbGxhcHNlX3RpY2sYAyABKAMi1AEKEUtub2NrYmFja1N0",
+          "YXRlVG9DEg8KB3ZlcnNpb24YASABKAUSJQoHcGxheWVycxgCIAMoCzIULktu",
+          "b2NrYmFja1BsYXllcldpcmUSKgoLem9uZV9zdGFnZXMYAyADKAsyFS5Nb3Vu",
+          "dGVkWm9uZVN0YWdlV2lyZRISCgp0ZWFtX2NvdW50GAQgASgFEiIKBWNyYXRl",
+          "GAUgASgLMhMuS25vY2tiYWNrQ3JhdGVXaXJlEiMKBmNyYWNrcxgGIAMoCzIT",
+          "Lktub2NrYmFja0NyYWNrV2lyZWIGcHJvdG8z"));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::MountedArcheryStateToCReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
           new pbr::GeneratedClrTypeInfo(typeof(global::KnockbackPlayerWire), global::KnockbackPlayerWire.Parser, new[]{ "EntityId", "EliminatedTick", "DamagePercent", "Team", "KoBy", "KoChain" }, null, null, null, null),
           new pbr::GeneratedClrTypeInfo(typeof(global::KnockbackCrateWire), global::KnockbackCrateWire.Parser, new[]{ "Id", "LandTick", "X", "Z" }, null, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::KnockbackStateToC), global::KnockbackStateToC.Parser, new[]{ "Version", "Players", "ZoneStages", "TeamCount", "Crate" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::KnockbackCrackWire), global::KnockbackCrackWire.Parser, new[]{ "Tile", "Cracks", "CollapseTick" }, null, null, null, null),
+          new pbr::GeneratedClrTypeInfo(typeof(global::KnockbackStateToC), global::KnockbackStateToC.Parser, new[]{ "Version", "Players", "ZoneStages", "TeamCount", "Crate", "Cracks" }, null, null, null, null)
         }));
   }
   #endregion
@@ -756,6 +759,284 @@ public sealed partial class KnockbackCrateWire : pb::IMessage<KnockbackCrateWire
 }
 
 /// <summary>
+/// 금 간 바닥 칸 하나. 칸 번호는 바닥 칸 목록(Tiles) 순서다.
+/// </summary>
+[global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+public sealed partial class KnockbackCrackWire : pb::IMessage<KnockbackCrackWire>
+#if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    , pb::IBufferMessage
+#endif
+{
+  private static readonly pb::MessageParser<KnockbackCrackWire> _parser = new pb::MessageParser<KnockbackCrackWire>(() => new KnockbackCrackWire());
+  private pb::UnknownFieldSet _unknownFields;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public static pb::MessageParser<KnockbackCrackWire> Parser { get { return _parser; } }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public static pbr::MessageDescriptor Descriptor {
+    get { return global::KnockbackStateToCReflection.Descriptor.MessageTypes[2]; }
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  pbr::MessageDescriptor pb::IMessage.Descriptor {
+    get { return Descriptor; }
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public KnockbackCrackWire() {
+    OnConstruction();
+  }
+
+  partial void OnConstruction();
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public KnockbackCrackWire(KnockbackCrackWire other) : this() {
+    tile_ = other.tile_;
+    cracks_ = other.cracks_;
+    collapseTick_ = other.collapseTick_;
+    _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public KnockbackCrackWire Clone() {
+    return new KnockbackCrackWire(this);
+  }
+
+  /// <summary>Field number for the "tile" field.</summary>
+  public const int TileFieldNumber = 1;
+  private int tile_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Tile {
+    get { return tile_; }
+    set {
+      tile_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "cracks" field.</summary>
+  public const int CracksFieldNumber = 2;
+  private int cracks_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Cracks {
+    get { return cracks_; }
+    set {
+      cracks_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "collapse_tick" field.</summary>
+  public const int CollapseTickFieldNumber = 3;
+  private long collapseTick_;
+  /// <summary>
+  /// 무너지는 틱. 아직 정해지지 않았으면 -1
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long CollapseTick {
+    get { return collapseTick_; }
+    set {
+      collapseTick_ = value;
+    }
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public override bool Equals(object other) {
+    return Equals(other as KnockbackCrackWire);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public bool Equals(KnockbackCrackWire other) {
+    if (ReferenceEquals(other, null)) {
+      return false;
+    }
+    if (ReferenceEquals(other, this)) {
+      return true;
+    }
+    if (Tile != other.Tile) return false;
+    if (Cracks != other.Cracks) return false;
+    if (CollapseTick != other.CollapseTick) return false;
+    return Equals(_unknownFields, other._unknownFields);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public override int GetHashCode() {
+    int hash = 1;
+    if (Tile != 0) hash ^= Tile.GetHashCode();
+    if (Cracks != 0) hash ^= Cracks.GetHashCode();
+    if (CollapseTick != 0L) hash ^= CollapseTick.GetHashCode();
+    if (_unknownFields != null) {
+      hash ^= _unknownFields.GetHashCode();
+    }
+    return hash;
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public override string ToString() {
+    return pb::JsonFormatter.ToDiagnosticString(this);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public void WriteTo(pb::CodedOutputStream output) {
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    output.WriteRawMessage(this);
+  #else
+    if (Tile != 0) {
+      output.WriteRawTag(8);
+      output.WriteInt32(Tile);
+    }
+    if (Cracks != 0) {
+      output.WriteRawTag(16);
+      output.WriteInt32(Cracks);
+    }
+    if (CollapseTick != 0L) {
+      output.WriteRawTag(24);
+      output.WriteInt64(CollapseTick);
+    }
+    if (_unknownFields != null) {
+      _unknownFields.WriteTo(output);
+    }
+  #endif
+  }
+
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+    if (Tile != 0) {
+      output.WriteRawTag(8);
+      output.WriteInt32(Tile);
+    }
+    if (Cracks != 0) {
+      output.WriteRawTag(16);
+      output.WriteInt32(Cracks);
+    }
+    if (CollapseTick != 0L) {
+      output.WriteRawTag(24);
+      output.WriteInt64(CollapseTick);
+    }
+    if (_unknownFields != null) {
+      _unknownFields.WriteTo(ref output);
+    }
+  }
+  #endif
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int CalculateSize() {
+    int size = 0;
+    if (Tile != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Tile);
+    }
+    if (Cracks != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Cracks);
+    }
+    if (CollapseTick != 0L) {
+      size += 1 + pb::CodedOutputStream.ComputeInt64Size(CollapseTick);
+    }
+    if (_unknownFields != null) {
+      size += _unknownFields.CalculateSize();
+    }
+    return size;
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public void MergeFrom(KnockbackCrackWire other) {
+    if (other == null) {
+      return;
+    }
+    if (other.Tile != 0) {
+      Tile = other.Tile;
+    }
+    if (other.Cracks != 0) {
+      Cracks = other.Cracks;
+    }
+    if (other.CollapseTick != 0L) {
+      CollapseTick = other.CollapseTick;
+    }
+    _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public void MergeFrom(pb::CodedInputStream input) {
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    input.ReadRawMessage(this);
+  #else
+    uint tag;
+    while ((tag = input.ReadTag()) != 0) {
+    if ((tag & 7) == 4) {
+      // Abort on any end group tag.
+      return;
+    }
+    switch(tag) {
+        default:
+          _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+          break;
+        case 8: {
+          Tile = input.ReadInt32();
+          break;
+        }
+        case 16: {
+          Cracks = input.ReadInt32();
+          break;
+        }
+        case 24: {
+          CollapseTick = input.ReadInt64();
+          break;
+        }
+      }
+    }
+  #endif
+  }
+
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+    uint tag;
+    while ((tag = input.ReadTag()) != 0) {
+    if ((tag & 7) == 4) {
+      // Abort on any end group tag.
+      return;
+    }
+    switch(tag) {
+        default:
+          _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+          break;
+        case 8: {
+          Tile = input.ReadInt32();
+          break;
+        }
+        case 16: {
+          Cracks = input.ReadInt32();
+          break;
+        }
+        case 24: {
+          CollapseTick = input.ReadInt64();
+          break;
+        }
+      }
+    }
+  }
+  #endif
+
+}
+
+/// <summary>
 /// 넉백 판 상태 전체(서버 → 클라). 사건이 아니라 상태로 보낸다 — 끊겼다 돌아온 사람도 받는 즉시 맞춰진다.
 /// @auto_generate
 /// </summary>
@@ -774,7 +1055,7 @@ public sealed partial class KnockbackStateToC : pb::IMessage<KnockbackStateToC>
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public static pbr::MessageDescriptor Descriptor {
-    get { return global::KnockbackStateToCReflection.Descriptor.MessageTypes[2]; }
+    get { return global::KnockbackStateToCReflection.Descriptor.MessageTypes[3]; }
   }
 
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -799,6 +1080,7 @@ public sealed partial class KnockbackStateToC : pb::IMessage<KnockbackStateToC>
     zoneStages_ = other.zoneStages_.Clone();
     teamCount_ = other.teamCount_;
     crate_ = other.crate_ != null ? other.crate_.Clone() : null;
+    cracks_ = other.cracks_.Clone();
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -878,6 +1160,20 @@ public sealed partial class KnockbackStateToC : pb::IMessage<KnockbackStateToC>
     }
   }
 
+  /// <summary>Field number for the "cracks" field.</summary>
+  public const int CracksFieldNumber = 6;
+  private static readonly pb::FieldCodec<global::KnockbackCrackWire> _repeated_cracks_codec
+      = pb::FieldCodec.ForMessage(50, global::KnockbackCrackWire.Parser);
+  private readonly pbc::RepeatedField<global::KnockbackCrackWire> cracks_ = new pbc::RepeatedField<global::KnockbackCrackWire>();
+  /// <summary>
+  /// 금이 가기 시작한 칸들(금 가는 바닥 맵만).
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public pbc::RepeatedField<global::KnockbackCrackWire> Cracks {
+    get { return cracks_; }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -898,6 +1194,7 @@ public sealed partial class KnockbackStateToC : pb::IMessage<KnockbackStateToC>
     if(!zoneStages_.Equals(other.zoneStages_)) return false;
     if (TeamCount != other.TeamCount) return false;
     if (!object.Equals(Crate, other.Crate)) return false;
+    if(!cracks_.Equals(other.cracks_)) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -910,6 +1207,7 @@ public sealed partial class KnockbackStateToC : pb::IMessage<KnockbackStateToC>
     hash ^= zoneStages_.GetHashCode();
     if (TeamCount != 0) hash ^= TeamCount.GetHashCode();
     if (crate_ != null) hash ^= Crate.GetHashCode();
+    hash ^= cracks_.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -942,6 +1240,7 @@ public sealed partial class KnockbackStateToC : pb::IMessage<KnockbackStateToC>
       output.WriteRawTag(42);
       output.WriteMessage(Crate);
     }
+    cracks_.WriteTo(output, _repeated_cracks_codec);
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -966,6 +1265,7 @@ public sealed partial class KnockbackStateToC : pb::IMessage<KnockbackStateToC>
       output.WriteRawTag(42);
       output.WriteMessage(Crate);
     }
+    cracks_.WriteTo(ref output, _repeated_cracks_codec);
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -987,6 +1287,7 @@ public sealed partial class KnockbackStateToC : pb::IMessage<KnockbackStateToC>
     if (crate_ != null) {
       size += 1 + pb::CodedOutputStream.ComputeMessageSize(Crate);
     }
+    size += cracks_.CalculateSize(_repeated_cracks_codec);
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
     }
@@ -1013,6 +1314,7 @@ public sealed partial class KnockbackStateToC : pb::IMessage<KnockbackStateToC>
       }
       Crate.MergeFrom(other.Crate);
     }
+    cracks_.Add(other.cracks_);
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
 
@@ -1055,6 +1357,10 @@ public sealed partial class KnockbackStateToC : pb::IMessage<KnockbackStateToC>
           input.ReadMessage(Crate);
           break;
         }
+        case 50: {
+          cracks_.AddEntriesFrom(input, _repeated_cracks_codec);
+          break;
+        }
       }
     }
   #endif
@@ -1095,6 +1401,10 @@ public sealed partial class KnockbackStateToC : pb::IMessage<KnockbackStateToC>
             Crate = new global::KnockbackCrateWire();
           }
           input.ReadMessage(Crate);
+          break;
+        }
+        case 50: {
+          cracks_.AddEntriesFrom(ref input, _repeated_cracks_codec);
           break;
         }
       }

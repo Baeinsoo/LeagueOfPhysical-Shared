@@ -26,6 +26,15 @@ message KnockbackCrateWire
 	float z = 4;
 }
 
+// 금 간 바닥 칸 하나. 칸 번호는 바닥 칸 목록(Tiles) 순서다.
+message KnockbackCrackWire
+{
+	int32 tile = 1;
+	int32 cracks = 2;
+	// 무너지는 틱. 아직 정해지지 않았으면 -1
+	int64 collapse_tick = 3;
+}
+
 // 넉백 판 상태 전체(서버 → 클라). 사건이 아니라 상태로 보낸다 — 끊겼다 돌아온 사람도 받는 즉시 맞춰진다.
 // @auto_generate
 message KnockbackStateToC
@@ -39,4 +48,6 @@ message KnockbackStateToC
 	int32 team_count = 4;
 	// 지금 상자. 없으면 비어 있다(메시지가 없음).
 	KnockbackCrateWire crate = 5;
+	// 금이 가기 시작한 칸들(금 가는 바닥 맵만).
+	repeated KnockbackCrackWire cracks = 6;
 }
