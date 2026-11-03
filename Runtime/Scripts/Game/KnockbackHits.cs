@@ -35,6 +35,19 @@ namespace LOP
             long tick, KnockbackConfig cfg, float dt)
         {
             var hits = new List<(KnockbackShot, string)>();
+            Find(shots, targets, standingPillars, pillarRadius, tick, cfg, dt, hits);
+            return hits;
+        }
+
+        /// <summary>같은 판정을 주어진 목록에 담는다(목록은 먼저 비운다). 매 틱 도는 곳이 새 목록을 만들지 않게.</summary>
+        public static void Find(
+            IReadOnlyList<KnockbackShot> shots,
+            IReadOnlyList<(string id, Vector2 position)> targets,
+            IReadOnlyList<Vector2> standingPillars, float pillarRadius,
+            long tick, KnockbackConfig cfg, float dt,
+            List<(KnockbackShot shot, string victimId)> hits)
+        {
+            hits.Clear();
             float reach = cfg.HitRadius + cfg.ShotRadius;
             float pillarReach = pillarRadius + cfg.ShotRadius;
             for (int i = 0; i < shots.Count; i++)
@@ -76,7 +89,6 @@ namespace LOP
                     hits.Add((shot, victim));
                 }
             }
-            return hits;
         }
     }
 }

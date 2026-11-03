@@ -21,7 +21,18 @@ namespace LOP.Tests
             new List<MountedArcheryZoneStageConfig>());
 
         readonly Dictionary<string, int> teams = new Dictionary<string, int>();
+        KnockbackConfig cfg = C;
+        bool teamMatch;
         KnockbackPillarColliders pillarColliders;
+
+        //  NUnit은 한 묶음의 시험이 같은 인스턴스를 쓴다 — 시험마다 바꾸는 값은 처음으로 돌린다.
+        [SetUp]
+        public void ResetFixture()
+        {
+            teams.Clear();
+            cfg = C;
+            teamMatch = false;
+        }
 
         [TearDown]
         public void DisposePillarColliders()
@@ -52,18 +63,18 @@ namespace LOP.Tests
         {
             var registry = new EntityRegistry();
             foreach (var b in bodies) { registry.Add(b); }
-            var floor = C.CreateFloor();
+            var floor = cfg.CreateFloor();
             if (pillars != null)
             {
                 pillarColliders = new KnockbackPillarColliders(pillars);
             }
             return new KnockbackWorld(registry, new WorldEventBuffer(),
-                C.CreateMoveSystem(floor, new FlappyWorldFixture.NeverHit(), ~0),
+                cfg.CreateMoveSystem(floor, new FlappyWorldFixture.NeverHit(), ~0),
                 new FlappyWorldFixture.NoopMotionBridge(), floor,
-                new KnockbackFireSystem(C),
-                new BodyCollisionSystem(BodySizes.CharacterRadius, BodySizes.CharacterHeight, C.BodyRestitution, new Vector3(1, 0, 1)),
-                C, pillars, pillars != null ? pillarColliders : null,
-                predict ? new KnockbackOwnHitPrediction(id => teams.TryGetValue(id, out var t) ? t : 0) : null)
+                new KnockbackFireSystem(cfg),
+                new BodyCollisionSystem(BodySizes.CharacterRadius, BodySizes.CharacterHeight, cfg.BodyRestitution, new Vector3(1, 0, 1)),
+                cfg, pillars, pillars != null ? pillarColliders : null,
+                predict ? new KnockbackOwnHitPrediction(id => teams.TryGetValue(id, out var t) ? t : 0, teamMatch) : null)
             { GameplayStartTick = 0 };
         }
 
@@ -224,7 +235,7 @@ namespace LOP.Tests
             var (late, lateMe, _) = ClientWorld();
             Run(late, 1, now);
             Assert.AreEqual(0, lateMe.Get<KnockbackBody>().DamagePercent, "아직 모르면 안 맞았다");
-            Assert.IsTrue(late.IngestRemoteShot(Shot(), out long? replayFrom));
+            Assert.IsTrue(late.IngestRemoteShot(Shot(), long.MinValue, out long? replayFrom));
             Assert.AreEqual(expected - 1, replayFrom, "맞은 틱 바로 앞 상태로 되감으라고 알려 준다");
 
             //  기존 되감기 그대로: 그 틱 상태를 불러 지금까지 다시 돌린다.
@@ -254,7 +265,7 @@ namespace LOP.Tests
                 if (t >= expected) world.SaveState(t);
             }
 
-            Assert.IsTrue(world.IngestRemoteShot(Shot(), out long? replayFrom));
+            Assert.IsTrue(world.IngestRemoteShot(Shot(), long.MinValue, out long? replayFrom));
             Assert.IsNull(replayFrom, "되감을 상태가 없으면 되감지 않는다");
             Run(world, now + 1, now + 40);
             Assert.AreEqual(0, me.Get<KnockbackBody>().DamagePercent, "서버 결과를 기다린다");
@@ -262,7 +273,7 @@ namespace LOP.Tests
             //  양성 대조 — 앞 틱이 저장돼 있으면 되감으라고 한다.
             var (world2, _, _) = ClientWorld();
             Run(world2, 1, now);
-            Assert.IsTrue(world2.IngestRemoteShot(Shot(), out long? replayFrom2));
+            Assert.IsTrue(world2.IngestRemoteShot(Shot(), long.MinValue, out long? replayFrom2));
             Assert.AreEqual(expected - 1, replayFrom2);
         }
 
@@ -339,6 +350,151 @@ namespace LOP.Tests
             world.Shots.Add(Shot());
             Run(world, 1, 60);
             Assert.AreEqual(0, me.Get<KnockbackBody>().DamagePercent);
+        }
+
+        //  ---- 리뷰 지적(predict-review) ----
+
+        [Test]
+        public void 서버가_내_맞음을_확인해도_맞기_전으로_되감으면_다시_맞는다()
+        {
+            long expected = ExpectedHitTick(new Vector2(5f, 0f));
+            long now = expected + 8;
+            var (world, me, _) = ClientWorld();
+            world.IngestRemoteShot(Shot());
+            Run(world, 1, now);
+            Assert.AreEqual(12, me.Get<KnockbackBody>().DamagePercent);
+
+            //  서버 맞음 사건: 이 탄이 내 몸을 맞혔다.
+            world.RemoveShot("foe", FireTick, hitOwnBody: true);
+            //  같은 프레임에 맞기 전 앵커의 스냅 되감기.
+            Assert.IsTrue(world.LoadState(expected - 3));
+            Run(world, expected - 2, now);
+
+            Assert.AreEqual(12, me.Get<KnockbackBody>().DamagePercent, "서버가 확인한 맞음을 재생이 지우면 안 된다");
+            Assert.IsFalse(world.IngestRemoteShot(Shot()), "재전송은 여전히 받지 않는다");
+        }
+
+        [Test]
+        public void 남이_맞았다는_서버_사건이면_되감아도_내_예측을_되살리지_않는다()
+        {
+            long expected = ExpectedHitTick(new Vector2(5f, 0f));
+            long now = expected + 8;
+            var (world, me, _) = ClientWorld();
+            world.IngestRemoteShot(Shot());
+            Run(world, 1, now);
+
+            //  서버는 다른 몸이 맞았다고 한다 — 내 예측은 틀렸고, 앞으로 되감는 재생도 다시 맞히면 안 된다.
+            world.RemoveShot("foe", FireTick);
+            Assert.IsTrue(world.LoadState(expected - 3));
+            Run(world, expected - 2, now);
+            Assert.AreEqual(0, me.Get<KnockbackBody>().DamagePercent);
+        }
+
+        [Test]
+        public void 서버가_확정한_틱까지는_늦은_탄을_훑지_않는다()
+        {
+            long expected = ExpectedHitTick(new Vector2(5f, 0f));
+            long now = expected + 8;
+            var (world, me, _) = ClientWorld();
+            Run(world, 1, now);
+
+            //  맞은 틱까지 서버가 이미 확정했다 — 맞았으면 서버 값에 들어 있다. 낡은 예측 자리로 되감지 않는다.
+            Assert.IsTrue(world.IngestRemoteShot(Shot(), expected, out long? replayFrom));
+            Assert.IsNull(replayFrom);
+
+            //  양성 대조 — 확정이 맞은 틱 바로 앞까지면 되감는다.
+            var (world2, _, _) = ClientWorld();
+            Run(world2, 1, now);
+            Assert.IsTrue(world2.IngestRemoteShot(Shot(), expected - 1, out long? replayFrom2));
+            Assert.AreEqual(expected - 1, replayFrom2);
+        }
+
+        [Test]
+        public void 같은_틱_두_발은_장부_순서대로_적용되고_되감아도_같다()
+        {
+            long expected = ExpectedHitTick(new Vector2(5f, 0f));
+            //  같은 틱에 내 몸에 닿는 두 발: 원점에서 +x, (5, -5)에서 +z. 쏜 사람 이름순(foeA → foeB)으로 장부에 선다.
+            var b = new KnockbackShot("foeB", FireTick, new Vector2(5f, -5f), Vector2.up);
+            var a = new KnockbackShot("foeA", FireTick, Vector2.zero, Vector2.right);
+            var (world, me, _) = ClientWorld();
+            world.IngestRemoteShot(b);
+            world.IngestRemoteShot(a);
+            Run(world, 1, expected);
+
+            var body = me.Get<KnockbackBody>();
+            Assert.AreEqual(24, body.DamagePercent, "두 발 모두 같은 틱에 맞아야 시험이 의미 있다");
+            var v = me.Get<GameFramework.World.Velocity>().Linear;
+            //  foeA 먼저(12%: +x 8.44), 그다음 foeB(24%: +z 9.88, 앞 속도의 0.2를 남김).
+            Assert.AreEqual(8.44f * 0.2f, v.X, 1e-4f);
+            Assert.AreEqual(7f + 24 * 0.12f, v.Z, 1e-4f);
+
+            Assert.IsTrue(world.LoadState(expected - 3));
+            Run(world, expected - 2, expected);
+            var v2 = me.Get<GameFramework.World.Velocity>().Linear;
+            Assert.AreEqual(v, v2, "되감아도 같은 순서로 적용된다");
+        }
+
+        [Test]
+        public void 팀전에서_팀을_모르면_예측하지_않는다()
+        {
+            teamMatch = true;
+            var (world, me, _) = ClientWorld();
+            world.IngestRemoteShot(Shot());
+            Run(world, 1, 60);
+            Assert.AreEqual(0, me.Get<KnockbackBody>().DamagePercent, "팀을 모르면 아군 탄일 수도 있다");
+
+            //  양성 대조 — 팀을 알면(서로 다른 팀) 예측한다.
+            teams["me"] = 1;
+            teams["foe"] = 2;
+            var (world2, me2, _) = ClientWorld();
+            world2.IngestRemoteShot(Shot());
+            Run(world2, 1, 60);
+            Assert.AreEqual(12, me2.Get<KnockbackBody>().DamagePercent);
+        }
+
+        [Test]
+        public void 폭탄_반경_밖이면_서버처럼_밀지_않고_그림은_서버_확인까지_남긴다()
+        {
+            //  반경이 몸에 닿는 거리(0.88 m)보다 작다 — 서버 Explode는 아무도 밀지 않는다.
+            cfg = new KnockbackConfig(120f, 6.2f, 14f, 17f, 1.5f, 0f, 5f, 11f,
+                17f, 13f, 0.28f, 0.6f, 3, 0.95f, 0.26f, 1.2f, 12, 7f, 0.12f, 0.2f, 0.18f, 0.006f, 1.6f, 0.8f, 5f,
+                new List<MountedArcheryZoneStageConfig>(), blastRadius: 0.1f);
+            var (world, me, _) = ClientWorld();
+            world.IngestRemoteShot(Shot(bomb: true));
+            Run(world, 1, 60);
+
+            Assert.AreEqual(0, me.Get<KnockbackBody>().DamagePercent);
+            Assert.AreEqual(System.Numerics.Vector3.Zero, me.Get<GameFramework.World.Velocity>().Linear);
+            Assert.AreEqual(0, world.Shots.Shots.Count, "직격한 폭탄은 터져 장부에서 빠진다");
+
+            var pending = new List<(KnockbackShot, long)>();
+            long hit = ExpectedHitTick(new Vector2(5f, 0f));
+            world.CollectPendingPredictedBombs(hit + 5, 30, pending);
+            Assert.AreEqual(1, pending.Count, "서버 터짐이 오기 전까지 그림은 남는다");
+            world.CollectPendingPredictedBombs(hit + 31, 30, pending);
+            Assert.AreEqual(0, pending.Count, "서버가 안 알려 주면 정한 시간 뒤 걷는다");
+            world.RemoveShot("foe", FireTick, hitOwnBody: true);
+            world.CollectPendingPredictedBombs(hit + 5, 30, pending);
+            Assert.AreEqual(0, pending.Count, "서버가 확인하면 걷는다");
+        }
+
+        [Test]
+        public void 훑는_틱에_내_저장이_빠졌으면_예측하지_않는다()
+        {
+            long expected = ExpectedHitTick(new Vector2(5f, 0f));
+            long now = expected + 8;
+            var (world, me, _) = ClientWorld();
+            for (long t = 1; t <= now; t++)
+            {
+                world.Tick(t, Dt);
+                if (t != expected - 4) world.SaveState(t);
+            }
+
+            Assert.IsTrue(world.IngestRemoteShot(Shot(), long.MinValue, out long? replayFrom));
+            Assert.IsNull(replayFrom, "근거가 빠진 틱을 '안 맞음'으로 치고 지나가면 서버보다 늦은 틱에 맞음을 만들 수 있다");
+            Assert.IsTrue(world.LoadState(expected - 2));
+            Run(world, expected - 1, now);
+            Assert.AreEqual(0, me.Get<KnockbackBody>().DamagePercent, "예측하지 않는 탄으로 남는다");
         }
     }
 }

@@ -62,15 +62,18 @@ namespace LOP
         }
 
         /// <summary>서버가 알려 준 남의 탄을 장부에 넣는다. 이미 있으면 false.</summary>
-        public bool IngestRemoteShot(in KnockbackShot shot) => IngestRemoteShot(shot, out _);
+        public bool IngestRemoteShot(in KnockbackShot shot) => IngestRemoteShot(shot, long.MinValue, out _);
 
         /// <summary>
         /// 서버가 알려 준 남의 탄을 장부에 넣는다. 이미 알던 탄이면 false.
         /// 내 몸 맞음을 예측하는 월드(클라)에서는, 이 탄이 이미 지나간 틱에 내 몸에 닿았어야 했으면
         /// <paramref name="replayFrom"/>에 "이 틱 상태로 되감아 다시 계산하라"를 돌려준다 — 되감기 재생 중
-        /// 맞음 판정이 그 틱에 맞음을 넣는다. 그 틱이 저장 범위 밖이면 이 탄은 예측하지 않고 서버 결과를 기다린다.
+        /// 맞음 판정이 그 틱에 맞음을 넣는다.
+        /// <paramref name="confirmedTick"/>은 서버 스냅으로 이미 확정된 마지막 틱이다. 그 틱까지 닿았어야 했으면 그 맞음은
+        /// 서버 값이 이미 정했으므로 되감지 않고 이 탄은 예측하지 않는다(낡은 예측 자리로 확정된 과거를 다시 쓰지 않게).
+        /// 되감을 상태가 없을 때도 이 탄은 예측하지 않고 서버 결과를 기다린다.
         /// </summary>
-        public bool IngestRemoteShot(in KnockbackShot shot, out long? replayFrom)
+        public bool IngestRemoteShot(in KnockbackShot shot, long confirmedTick, out long? replayFrom)
         {
             replayFrom = null;
             var key = (shot.ShooterId, shot.FireTick);
@@ -84,18 +87,27 @@ namespace LOP
                 return false;
             }
 
-            if (ownHit != null && TryFindPastOwnHit(shot, out long hitTick, out string bodyId))
+            if (ownHit == null)
             {
-                long anchor = hitTick - 1;
-                if (saved.TryGet(anchor, out var anchorState) && anchorState.Bodies.ContainsKey(bodyId)
-                    && TryGetSavedMotion(anchor, bodyId, out _))
-                {
-                    replayFrom = anchor;
-                }
-                else
-                {
+                return true;
+            }
+            switch (FindPastOwnHit(shot, confirmedTick, out long hitTick, out string bodyId))
+            {
+                case PastHit.Found:
+                    long anchor = hitTick - 1;
+                    if (saved.TryGet(anchor, out var anchorState) && anchorState.Bodies.ContainsKey(bodyId)
+                        && TryGetSavedMotion(anchor, bodyId, out _))
+                    {
+                        replayFrom = anchor;
+                    }
+                    else
+                    {
+                        unpredictedShots.Add(key);
+                    }
+                    break;
+                case PastHit.Unknown:
                     unpredictedShots.Add(key);
-                }
+                    break;
             }
             return true;
         }
@@ -108,14 +120,40 @@ namespace LOP
         private readonly Dictionary<(string shooterId, long fireTick), (KnockbackShot shot, long hitTick)> predictedHits
             = new Dictionary<(string, long), (KnockbackShot, long)>();
 
-        //  맞았어야 할 틱이 저장 범위 밖이라 예측하지 않는 남의 탄. 서버 결과를 기다린다.
+        //  예측을 판단할 근거(되감을 저장 상태)가 없는 남의 탄. 서버 결과를 기다린다.
         private readonly HashSet<(string shooterId, long fireTick)> unpredictedShots = new HashSet<(string, long)>();
 
-        public bool RemoveShot(string shooterId, long fireTick)
+        /// <summary>서버가 확정해 지운 탄을 장부에서 뺀다.</summary>
+        /// <param name="hitOwnBody">
+        /// 서버가 "이 탄이 내 몸(예측하는 몸)을 맞혔다"고 알렸으면 true. 그때는 예측 기록을 남겨, 맞은 틱보다 앞으로
+        /// 되감는 서버 스냅 재생이 같은 맞음을 다시 넣게 한다(서버가 확인한 맞음을 재생이 지우지 않게).
+        /// </param>
+        public bool RemoveShot(string shooterId, long fireTick, bool hitOwnBody = false)
         {
             removedShots.Add((shooterId, fireTick));
-            predictedHits.Remove((shooterId, fireTick));
+            if (hitOwnBody == false)
+            {
+                predictedHits.Remove((shooterId, fireTick));
+            }
             return Shots.Remove(shooterId, fireTick);
+        }
+
+        /// <summary>
+        /// 내 몸에 직접 맞았다고 예측해 장부에서 뺀 폭탄 중, 서버가 아직 확정하지 않은 것(맞은 틱이 maxAgeTicks 안).
+        /// 탄 그림이 서버 터짐 사건이 올 때까지 맞은 자리에 붙들어 두는 데 쓴다.
+        /// </summary>
+        public void CollectPendingPredictedBombs(long tick, long maxAgeTicks, List<(KnockbackShot shot, long hitTick)> into)
+        {
+            into.Clear();
+            foreach (var pair in predictedHits)
+            {
+                var hit = pair.Value;
+                if (hit.shot.IsBomb && removedShots.Contains(pair.Key) == false
+                    && hit.hitTick <= tick && tick - hit.hitTick <= maxAgeTicks)
+                {
+                    into.Add(hit);
+                }
+            }
         }
 
         private readonly List<(string targetId, string sourceId)> chainHitsThisTick = new List<(string, string)>();
@@ -197,7 +235,8 @@ namespace LOP
         private readonly List<(string id, UnityEngine.Vector2 position)> ownHitTarget = new List<(string, UnityEngine.Vector2)>(1);
         private readonly List<(string id, UnityEngine.Vector2 position, int team)> ownHitBlastBody = new List<(string, UnityEngine.Vector2, int)>(1);
         private readonly KnockbackShot[] ownHitShot = new KnockbackShot[1];
-        private readonly List<KnockbackShot> ownHitScratch = new List<KnockbackShot>();
+        private readonly List<(KnockbackShot shot, string victimId)> ownHitFound = new List<(KnockbackShot, string)>(1);
+        private readonly List<(string, long)> ownHitKeys = new List<(string, long)>();
 
         //  내 몸이 남의 탄에 맞는 것을 미리 적용한다(클라만 — 서버는 KnockbackHitSystem이 판정한다).
         //  서버가 이동이 다 끝난 뒤(End) 맞음을 넣으므로 같은 자리인 Detection에서, 서버와 같은 식으로 한다.
@@ -234,16 +273,21 @@ namespace LOP
                 }
 
                 var position = new UnityEngine.Vector2(transform.Position.X, transform.Position.Z);
-                ownHitScratch.Clear();
-                ownHitScratch.AddRange(Shots.Shots);
-                foreach (var shot in ownHitScratch)
+                //  장부 순서(발사 틱, 쏜 사람)대로 — 서버도 같은 순서로 적용한다. 맞힌 탄은 빼므로 그때는 칸을 넘기지 않는다.
+                var shots = Shots.Shots;
+                for (int i = 0; i < shots.Count;)
                 {
+                    var shot = shots[i];
                     if (HitsOwnBody(shot, entity.Id, position, tick, deltaTime) == false)
                     {
+                        i++;
                         continue;
                     }
 
-                    KnockbackRules.ApplyHit(body, velocity, OwnHitDirection(shot, entity.Id, position, tick, deltaTime), tick, config, deltaTime);
+                    if (TryOwnHitDirection(shot, entity.Id, position, tick, deltaTime, out var direction))
+                    {
+                        KnockbackRules.ApplyHit(body, velocity, direction, tick, config, deltaTime);
+                    }
                     Shots.Remove(shot.ShooterId, shot.FireTick);
                     predictedHits[(shot.ShooterId, shot.FireTick)] = (shot, tick);
                 }
@@ -264,11 +308,21 @@ namespace LOP
 
         //  서버 KnockbackHitSystem.FindHits와 같은 판정을 이 몸 하나에 대해: 같은 팀 탄은 지나가고, 기둥이 먼저면 안 맞는다.
         //  남의 몸은 표적에 넣지 않는다 — 남의 몸이 탄을 먼저 막는 일은 서버만 안다(스냅샷 보정이 고친다).
+        //  팀전인데 팀을 아직 모르면 판정하지 않는다(아군 탄을 맞음으로 넣지 않게).
         private bool HitsOwnBody(in KnockbackShot shot, string bodyId, UnityEngine.Vector2 position, long tick, float deltaTime)
         {
             if (shot.ShooterId == bodyId || tick < shot.FireTick
-                || unpredictedShots.Contains((shot.ShooterId, shot.FireTick))
-                || KnockbackTeams.SameTeam(ownHit.TeamOf(shot.ShooterId), ownHit.TeamOf(bodyId)))
+                || unpredictedShots.Contains((shot.ShooterId, shot.FireTick)))
+            {
+                return false;
+            }
+            int shooterTeam = ownHit.TeamOf(shot.ShooterId);
+            int bodyTeam = ownHit.TeamOf(bodyId);
+            if (ownHit.TeamMatch && (shooterTeam == 0 || bodyTeam == 0))
+            {
+                return false;
+            }
+            if (KnockbackTeams.SameTeam(shooterTeam, bodyTeam))
             {
                 return false;
             }
@@ -276,23 +330,27 @@ namespace LOP
             ownHitTarget.Clear();
             ownHitTarget.Add((bodyId, position));
             ownHitShot[0] = shot;
-            return KnockbackHits.Find(ownHitShot, ownHitTarget, ownHitPillars, pillars?.Radius ?? 0f, tick, config, deltaTime).Count > 0;
+            KnockbackHits.Find(ownHitShot, ownHitTarget, ownHitPillars, pillars?.Radius ?? 0f, tick, config, deltaTime, ownHitFound);
+            return ownHitFound.Count > 0;
         }
 
-        //  보통 탄은 탄 방향, 폭탄은 서버처럼 몸에 닿은 자리에서 터져 그 자리 → 몸 방향으로 민다.
+        //  보통 탄은 탄 방향, 폭탄은 서버처럼 몸에 닿은 자리에서 터져 그 자리 → 몸 방향으로 민다. 반경 밖이면 서버처럼 밀지 않는다.
         //  폭탄이 기둥·사거리 끝·남의 몸에서 터져 반경으로 미는 것은 예측하지 않는다(서버만 그 순서를 안다).
-        private UnityEngine.Vector2 OwnHitDirection(in KnockbackShot shot, string bodyId, UnityEngine.Vector2 position, long tick, float deltaTime)
+        private bool TryOwnHitDirection(in KnockbackShot shot, string bodyId, UnityEngine.Vector2 position, long tick, float deltaTime,
+                                        out UnityEngine.Vector2 direction)
         {
             if (shot.IsBomb == false)
             {
-                return shot.Direction;
+                direction = shot.Direction;
+                return true;
             }
 
             var center = KnockbackHits.HitPoint(shot, position, tick, config, deltaTime);
             ownHitBlastBody.Clear();
             ownHitBlastBody.Add((bodyId, position, ownHit.TeamOf(bodyId)));
             var pushes = KnockbackBlast.Resolve(center, shot.Direction, config.BlastRadius, ownHitBlastBody, shot.ShooterId, ownHit.TeamOf(shot.ShooterId));
-            return pushes.Count > 0 ? pushes[0].direction : shot.Direction;
+            direction = pushes.Count > 0 ? pushes[0].direction : default;
+            return pushes.Count > 0;
         }
 
         //  되감기가 닿을 수 없을 만큼 오래된 기록은 버린다.
@@ -309,41 +367,70 @@ namespace LOP
                         ownHitKeys.Add(pair.Key);
                     }
                 }
-                foreach (var key in ownHitKeys)
+                for (int i = 0; i < ownHitKeys.Count; i++)
                 {
-                    predictedHits.Remove(key);
+                    predictedHits.Remove(ownHitKeys[i]);
                 }
             }
-            unpredictedShots.RemoveWhere(k => k.fireTick < oldest);
+            if (unpredictedShots.Count > 0)
+            {
+                ownHitKeys.Clear();
+                foreach (var key in unpredictedShots)
+                {
+                    if (key.fireTick < oldest)
+                    {
+                        ownHitKeys.Add(key);
+                    }
+                }
+                for (int i = 0; i < ownHitKeys.Count; i++)
+                {
+                    unpredictedShots.Remove(ownHitKeys[i]);
+                }
+            }
         }
 
-        private readonly List<(string, long)> ownHitKeys = new List<(string, long)>();
+        private enum PastHit { None, Found, Unknown }
 
-        //  이미 저장된(지나간) 틱 중 이 탄이 예측하는 내 몸에 처음 닿는 틱을 찾는다. 그 틱에 몸이 있던 자리는 저장본에서 읽는다 —
+        //  저장된(지나간) 틱 중 이 탄이 예측하는 내 몸에 처음 닿는 틱을 찾는다. 그 틱에 몸이 있던 자리는 저장본에서 읽는다 —
         //  저장은 이동이 끝난 뒤라 Detection이 본 자리와 같다. 다 쓴 탄·기둥에 막힌 탄은 그 틱에서 멈춘다(월드가 지우는 차례와 같다).
-        private bool TryFindPastOwnHit(in KnockbackShot shot, out long hitTick, out string bodyId)
+        //  탄은 사거리만큼만 날아가므로 훑는 틱 수는 탄 수명(사거리를 틱당 거리로 나눈 만큼)을 넘지 않는다.
+        //  서버가 확정한 틱(confirmedTick) 이하에서 닿으면 그 맞음은 서버가 이미 정했다(맞았으면 서버 값에 들어 있고, 그 앞 저장 자리는
+        //  보정 전이라 믿을 수 없다) — 이 탄은 예측하지 않고 서버를 따른다(Unknown). 그 뒤에 닿아야 되감기를 청한다.
+        //  예측하는 몸의 저장이 빠진 틱(첫 저장 뒤)을 만나도 판단할 근거가 없으므로 Unknown이다.
+        private PastHit FindPastOwnHit(in KnockbackShot shot, long confirmedTick, out long hitTick, out string bodyId)
         {
             hitTick = 0;
             bodyId = null;
             if (LatestSavedTick is not long latest)
             {
-                return false;
+                return PastHit.None;
             }
 
             float dt = KnockbackConfig.TickInterval;
             long start = System.Math.Max(shot.FireTick, GameplayStartTick);
+            if (FirstSavedTick is long first)
+            {
+                start = System.Math.Max(start, first);   // 그 앞은 내가 아직 판에 없던 틱이다
+            }
             for (long t = start; t <= latest; t++)
             {
                 if (shot.IsSpent(t, config.ShotSpeed, config.ShotRange, dt))
                 {
-                    return false;
+                    return PastHit.None;
                 }
 
                 CollectPillars(t);
                 foreach (var entity in EntityRegistry.All)
                 {
-                    if (entity.Has<GameFramework.World.Simulated>() == false || entity.Has<KnockbackBody>() == false
-                        || TryGetSavedMotion(t, entity.Id, out var motion) == false || motion.Position.Y < StandingMinY)
+                    if (entity.Has<GameFramework.World.Simulated>() == false || entity.Has<KnockbackBody>() == false)
+                    {
+                        continue;
+                    }
+                    if (TryGetSavedMotion(t, entity.Id, out var motion) == false)
+                    {
+                        return PastHit.Unknown;
+                    }
+                    if (motion.Position.Y < StandingMinY)
                     {
                         continue;
                     }
@@ -351,16 +438,16 @@ namespace LOP
                     {
                         hitTick = t;
                         bodyId = entity.Id;
-                        return true;
+                        return t <= confirmedTick ? PastHit.Unknown : PastHit.Found;
                     }
                 }
 
                 if (BlockedByPillar(shot, t, dt))
                 {
-                    return false;
+                    return PastHit.None;
                 }
             }
-            return false;
+            return PastHit.None;
         }
 
         private bool BlockedByPillar(in KnockbackShot shot, long tick, float dt)
@@ -635,11 +722,15 @@ namespace LOP
     {
         private readonly System.Func<string, int> teamOf;
 
-        /// <param name="teamOf">몸 id → 팀(0 = 팀 없음). 같은 팀 탄은 지나가게 할 때 쓴다.</param>
-        public KnockbackOwnHitPrediction(System.Func<string, int> teamOf)
+        /// <param name="teamOf">몸 id → 팀(0 = 팀 없음·모름). 같은 팀 탄은 지나가게 할 때 쓴다.</param>
+        /// <param name="teamMatch">팀전이면 true — 쏜 사람이나 내 몸의 팀을 아직 모르면 예측하지 않는다.</param>
+        public KnockbackOwnHitPrediction(System.Func<string, int> teamOf, bool teamMatch = false)
         {
             this.teamOf = teamOf;
+            TeamMatch = teamMatch;
         }
+
+        public bool TeamMatch { get; }
 
         public int TeamOf(string entityId) => teamOf?.Invoke(entityId) ?? 0;
     }
