@@ -11,6 +11,7 @@ namespace LOP
         private readonly KnockbackPillars pillars;
         private readonly GameObject[] objects;
         private readonly CapsuleCollider[] colliders;
+        private int placedVersion;
 
         public KnockbackPillarColliders(KnockbackPillars pillars)
         {
@@ -19,9 +20,7 @@ namespace LOP
             colliders = new CapsuleCollider[pillars.Count];
             for (int i = 0; i < pillars.Count; i++)
             {
-                var center = pillars.Center(i);
                 var go = new GameObject($"KnockbackPillar_{i}") { layer = 0 };
-                go.transform.position = new Vector3(center.x, 0f, center.y);
                 var capsule = go.AddComponent<CapsuleCollider>();
                 capsule.direction = 1;
                 capsule.radius = pillars.Radius;
@@ -31,10 +30,26 @@ namespace LOP
                 objects[i] = go;
                 colliders[i] = capsule;
             }
+            Place();
+        }
+
+        //  클라는 씨앗을 늦게 받아 기둥 자리가 바뀔 수 있다 - 바뀐 걸 알면 몸도 새 자리로 옮긴다.
+        private void Place()
+        {
+            for (int i = 0; i < objects.Length; i++)
+            {
+                var center = pillars.Center(i);
+                objects[i].transform.position = new Vector3(center.x, 0f, center.y);
+            }
+            placedVersion = pillars.Version;
         }
 
         public void Apply(long tick)
         {
+            if (pillars.Version != placedVersion)
+            {
+                Place();
+            }
             for (int i = 0; i < colliders.Length; i++)
             {
                 bool on = pillars.IsStanding(i, tick);
