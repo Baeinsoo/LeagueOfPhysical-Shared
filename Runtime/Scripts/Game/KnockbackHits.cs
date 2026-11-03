@@ -20,6 +20,14 @@ namespace LOP
             to = shot.PositionWithinRange(tick, cfg.ShotSpeed, cfg.ShotRange, dt);
         }
 
+        /// <summary>탄이 그 틱 선분에서 몸의 원(몸 + 탄 반지름)에 처음 닿은 자리. 폭탄이 몸에 맞아 터지는 자리다.</summary>
+        public static Vector2 HitPoint(in KnockbackShot shot, Vector2 bodyPosition, long tick, KnockbackConfig cfg, float dt)
+        {
+            Segment(shot, tick, cfg, dt, out var from, out var to);
+            KnockbackHitTest.SegmentHitsCircle(from, to, bodyPosition, cfg.HitRadius + cfg.ShotRadius, out float t);
+            return Vector2.Lerp(from, to, t);
+        }
+
         public static List<(KnockbackShot shot, string victimId)> Find(
             IReadOnlyList<KnockbackShot> shots,
             IReadOnlyList<(string id, Vector2 position)> targets,
@@ -27,6 +35,19 @@ namespace LOP
             long tick, KnockbackConfig cfg, float dt)
         {
             var hits = new List<(KnockbackShot, string)>();
+            Find(shots, targets, standingPillars, pillarRadius, tick, cfg, dt, hits);
+            return hits;
+        }
+
+        /// <summary>같은 판정을 주어진 목록에 담는다(목록은 먼저 비운다). 매 틱 도는 곳이 새 목록을 만들지 않게.</summary>
+        public static void Find(
+            IReadOnlyList<KnockbackShot> shots,
+            IReadOnlyList<(string id, Vector2 position)> targets,
+            IReadOnlyList<Vector2> standingPillars, float pillarRadius,
+            long tick, KnockbackConfig cfg, float dt,
+            List<(KnockbackShot shot, string victimId)> hits)
+        {
+            hits.Clear();
             float reach = cfg.HitRadius + cfg.ShotRadius;
             float pillarReach = pillarRadius + cfg.ShotRadius;
             for (int i = 0; i < shots.Count; i++)
@@ -68,7 +89,6 @@ namespace LOP
                     hits.Add((shot, victim));
                 }
             }
-            return hits;
         }
     }
 }
