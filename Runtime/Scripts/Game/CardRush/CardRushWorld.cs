@@ -51,11 +51,9 @@ namespace LOP
             {
                 var runner = entity.Get<CardRushRunner>();
                 var input = entity.Get<InputBuffer>()?.Current;
-                if (input != null && input.Grab)
-                {
-                    //  출발 전·뒷면 탭은 Grab 안에서 무시된다.
-                    CardRushJudge.Grab(ref runner.State, tick, GameplayStartTick, Course, Timing);
-                }
+                bool tapped = input != null && input.Grab;
+                //  탭이 없어도 매 틱 부른다 — 6초 자동 던짐이 여기서 난다(서버와 내 예측이 같은 틱에).
+                CardRushJudge.Advance(ref runner.State, tick, tapped, GameplayStartTick, Course, Timing);
                 //  출발 전에도 적는다 — 출발선에 세운다.
                 WritePose(entity, runner, tick);
             }

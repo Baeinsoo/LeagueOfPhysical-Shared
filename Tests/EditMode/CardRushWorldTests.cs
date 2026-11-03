@@ -77,7 +77,7 @@ namespace LOP.Tests
             for (long t = StartTick; t < StartTick + 200; t++)
             {
                 var s = State(runner);
-                bool want = CardRushCard.TryColorAt(s, t, StartTick, world.Course, timing.MoveTicks, out var shown)
+                bool want = CardRushCard.TryColorAt(s, t, world.Course, out var shown)
                             && shown == world.Course.RequiredColor(s.Step);
                 TickWith(world, runner, t, want);
 
@@ -217,7 +217,7 @@ namespace LOP.Tests
             for (long t = 1001; t < 1300 && finishTick < 0; t++)
             {
                 var s = State(runner);
-                bool want = CardRushCard.TryColorAt(s, t, StartTick, world.Course, timing.MoveTicks, out var shown)
+                bool want = CardRushCard.TryColorAt(s, t, world.Course, out var shown)
                             && shown == world.Course.RequiredColor(s.Step);
                 TickWith(world, runner, t, want);
                 if (want) finishTick = t;
