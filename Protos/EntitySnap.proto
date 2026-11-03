@@ -50,4 +50,5 @@ message EntitySnap
 	int64 card_move_start_tick = 34;  // CardRush: 마지막으로 맞힌 틱. 0 = 아직 없음
 	int64 card_stun_end_tick = 35;    // CardRush: 틀림 멈춤이 끝나는 절대 틱. 0 = 아직 없음
 	int32 card_streak = 36;           // CardRush: 지금 연속 정타
+	int64 card_spin_start_tick = 37;  // CardRush: 카드가 돌기 시작한 틱(첫 탭). 0 = 대기(뒷면) 또는 다른 모드
 }

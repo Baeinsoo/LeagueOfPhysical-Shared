@@ -7,6 +7,7 @@ namespace LOP
         public int Attempt;         // 이 칸에서 틀린 횟수 — 시작 색 씨앗
         public long MoveStartTick;  // 마지막으로 맞힌 틱(완주 틱도 이것). 0 = 아직 없음
         public long StunEndTick;    // 마지막 틀림의 멈춤이 끝나는 틱. 0 = 아직 없음
+        public long SpinStartTick;  // 카드가 돌기 시작한 틱(첫 탭). 0 = 대기(뒷면) — 아직 안 눌렀거나 방금 던졌다
         public int Streak;
         public int BestStreak;
         public int Misses;

@@ -10,6 +10,8 @@ namespace LOP
     ///
     /// <para><see cref="FlappyMapRules"/>와 같은 이유로 <b>공용 패키지</b>에 있다: 맵 씬은 클라에서 만들고 서버가 읽는데,
     /// 스크립트가 한쪽에만 있으면 반대쪽에서 missing script가 되고 그 빈 컴포넌트가 씬 주입을 끊는다.</para>
+    ///
+    /// <para>옛 씬에 남은 <c>sections</c> 직렬화 값은 유니티가 무시한다 — 씬을 다시 굽지 않아도 된다.</para>
     /// </summary>
     // 이 표시가 없으면 유니티는 플레이 중이 아닐 때 OnDestroy 같은 생명주기 함수를 불러 주지 않는다.
     [ExecuteAlways]
@@ -27,19 +29,16 @@ namespace LOP
         /// <summary>레인 사이 거리(m). 늘 8레인 기준으로 놓는다.</summary>
         public float laneSpacing = 2.6f;
 
-        /// <summary>구간 표 — 이 칸부터 한 색이 떠 있는 시간.</summary>
-        public CardRushSection[] sections = (CardRushSection[])CardRushSections.Default.Clone();
-
         private CardRushMapRulesField field;
 
         [Inject]
         public void Construct(CardRushMapRulesField field)
         {
             this.field = field;
-            field.Set(theme, stepCount, stepSpacing, laneSpacing, sections, transform.position, transform.forward);
+            field.Set(theme, stepCount, stepSpacing, laneSpacing, transform.position, transform.forward);
             if (field.Validate(out var error))
             {
-                Debug.Log($"[CardRushMapRules] {theme} 칸 {stepCount} 간격 {stepSpacing} 레인 {laneSpacing} 구간 {sections.Length}");
+                Debug.Log($"[CardRushMapRules] {theme} 칸 {stepCount} 간격 {stepSpacing} 레인 {laneSpacing}");
             }
             else
             {
@@ -60,7 +59,7 @@ namespace LOP
         private void OnValidate()
         {
             var probe = new CardRushMapRulesField();
-            probe.Set(theme, stepCount, stepSpacing, laneSpacing, sections, transform.position, transform.forward);
+            probe.Set(theme, stepCount, stepSpacing, laneSpacing, transform.position, transform.forward);
             if (probe.Validate(out var error))
             {
                 return;
