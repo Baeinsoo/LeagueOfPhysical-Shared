@@ -9,7 +9,8 @@ namespace LOP
     /// </summary>
     public sealed class KnockbackFloor
     {
-        readonly HashSet<(int x, int z)> set = new HashSet<(int x, int z)>();
+        // 칸 좌표 -> 칸 번호(tiles 안의 순서). 칸 번호는 클·서가 같은 식으로 만들어 같다.
+        readonly Dictionary<(int x, int z), int> indexOf = new Dictionary<(int x, int z), int>();
         readonly List<(int x, int z)> tiles = new List<(int x, int z)>();
 
         public float TileSize { get; }
@@ -20,10 +21,19 @@ namespace LOP
 
         readonly float arenaRadius;
         readonly long suddenDeathTicks;
+        readonly long crackWarningTicks;
+
+        /// <summary>무너지는 틱이 없는 칸의 값.</summary>
+        public const long NoCollapse = long.MaxValue;
+
+        // 서버가 알린 "이 칸이 무너지는 틱". 칸 번호로 찾는다. 서버 사실이라 되감기 저장 대상이 아니다(틱의 함수라 되감아도 그 틱 그대로).
+        long[] collapseTicks;
 
         /// <param name="suddenDeathTicks">위험 지대 방식에서 마지막 원이 다 줄어든 뒤, 바깥부터 전부 무너지기까지 걸리는 틱. 0이면 서든데스 없음.</param>
-        public KnockbackFloor(float arenaRadius, float tileSize, float holeRadius, bool hazardEdge = false, long suddenDeathTicks = 0)
+        /// <param name="crackWarningTicks">금이 간 칸이 무너지기 전에 깜박이는 틱. 0이면 이 규칙으론 깜박이지 않는다.</param>
+        public KnockbackFloor(float arenaRadius, float tileSize, float holeRadius, bool hazardEdge = false, long suddenDeathTicks = 0, long crackWarningTicks = 0)
         {
+            this.crackWarningTicks = crackWarningTicks;
             HazardEdge = hazardEdge;
             this.arenaRadius = arenaRadius;
             this.suddenDeathTicks = suddenDeathTicks;
@@ -40,14 +50,46 @@ namespace LOP
                     float d = Mathf.Sqrt(cx * cx + cz * cz);
                     if (d <= arenaRadius && d >= holeRadius)
                     {
-                        set.Add((x, z));
+                        indexOf.Add((x, z), tiles.Count);
                         tiles.Add((x, z));
                     }
                 }
             }
+            collapseTicks = new long[tiles.Count];
+            ClearCollapses();
         }
 
-        public bool HasTile(int x, int z) => set.Contains((x, z));
+        public bool HasTile(int x, int z) => indexOf.ContainsKey((x, z));
+
+        /// <summary>칸 좌표의 칸 번호. 원판에 없으면 -1.</summary>
+        public int TileIndex(int x, int z) => indexOf.TryGetValue((x, z), out int i) ? i : -1;
+
+        /// <summary>그 점 아래 칸의 번호. 원판 밖(구멍 포함)이면 -1.</summary>
+        public int TileIndexAt(float x, float z)
+        {
+            var (tx, tz) = TileAt(x, z, TileSize);
+            return TileIndex(tx, tz);
+        }
+
+        /// <summary>
+        /// 칸이 tick부터 무너진다는 서버 사실을 넣는다. 이미 더 이른 틱이 있으면 그대로 둔다(더 이른 무너짐이 이긴다).
+        /// </summary>
+        public void SetCollapseTick(int tileIndex, long tick)
+        {
+            if (tileIndex < 0 || tileIndex >= collapseTicks.Length)
+                throw new System.ArgumentOutOfRangeException(nameof(tileIndex), tileIndex, "칸 번호가 원판 밖이다");
+            if (tick < collapseTicks[tileIndex]) collapseTicks[tileIndex] = tick;
+        }
+
+        /// <summary>그 칸이 무너지는 틱. 없으면 NoCollapse.</summary>
+        public long CollapseTickOf(int tileIndex)
+            => tileIndex >= 0 && tileIndex < collapseTicks.Length ? collapseTicks[tileIndex] : NoCollapse;
+
+        /// <summary>서버가 알린 무너짐을 모두 지운다(새 상태를 처음부터 다시 넣을 때).</summary>
+        public void ClearCollapses()
+        {
+            for (int i = 0; i < collapseTicks.Length; i++) collapseTicks[i] = NoCollapse;
+        }
 
         public static (int x, int z) TileAt(float x, float z, float tileSize)
             => (Mathf.FloorToInt(x / tileSize), Mathf.FloorToInt(z / tileSize));
@@ -78,7 +120,8 @@ namespace LOP
         /// <summary>칸 번호(미터 아님)로 묻는다. 월드 좌표는 IsSolid(float, float, tick)를 쓴다.</summary>
         public bool IsTileSolid(int tx, int tz, long tick)
         {
-            if (!HasTile(tx, tz)) return false;
+            if (!indexOf.TryGetValue((tx, tz), out int index)) return false;
+            if (tick >= collapseTicks[index]) return false;
             if (HazardEdge) return !SuddenDeathCollapsed(tx, tz, tick);
             return TileInsideCircle(tx, tz, tick);
         }
@@ -124,6 +167,17 @@ namespace LOP
 
         /// <summary>x, z는 칸 번호. 지금은 바닥인데 warningTicks 뒤엔 무너져 있는 칸(위험 지대 방식은 위험 지대가 되거나 서든데스로 무너지는 칸) — 깜박이는 그림용.</summary>
         public bool IsWarning(int x, int z, long tick, long warningTicks)
+            => IsCrackWarning(x, z, tick) || IsRuleWarning(x, z, tick, warningTicks);
+
+        // 금이 간 칸이 무너지기 전 crackWarningTicks 동안.
+        bool IsCrackWarning(int x, int z, long tick)
+        {
+            if (crackWarningTicks <= 0 || !indexOf.TryGetValue((x, z), out int index)) return false;
+            long at = collapseTicks[index];
+            return at != NoCollapse && tick < at && tick >= at - crackWarningTicks && IsTileSolid(x, z, tick);
+        }
+
+        bool IsRuleWarning(int x, int z, long tick, long warningTicks)
             => HazardEdge
                 ? IsTileSolid(x, z, tick)
                     && ((!IsTileHazard(x, z, tick) && IsTileHazard(x, z, tick + warningTicks)) || !IsTileSolid(x, z, tick + warningTicks))

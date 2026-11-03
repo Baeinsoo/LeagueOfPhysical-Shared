@@ -44,6 +44,12 @@ namespace LOP
         public float CratePickupRadius { get; }
         /// <summary>충격파 폭탄이 터질 때 밀리는 반경(m).</summary>
         public float BlastRadius { get; }
+        /// <summary>true면 사거리 끝에 떨어진 탄이 바닥 칸에 금을 낸다(금 가는 바닥 맵).</summary>
+        public bool CrackEnabled { get; }
+        /// <summary>금이 몇 번 가면 무너지기 시작하나.</summary>
+        public int CrackHitsToCollapse { get; }
+        /// <summary>마지막 금이 간 뒤 칸이 무너지기까지(깜박이는 예고 시간).</summary>
+        public float CrackCollapseSeconds { get; }
 
         //  시뮬 틱 간격. 초를 틱으로 바꿀 때 클·서가 같은 값을 쓴다.
         public const float TickInterval = 0.02f;
@@ -76,8 +82,19 @@ namespace LOP
                                float crateIntervalSeconds = 20f,
                                float crateWarnSeconds = 1.5f,
                                float cratePickupRadius = 0.9f,
-                               float blastRadius = 2.5f)
+                               float blastRadius = 2.5f,
+                               int crackEnabled = 0,
+                               int crackHitsToCollapse = 2,
+                               float crackCollapseSeconds = 1f)
         {
+            if (crackEnabled != 0 && crackEnabled != 1)
+            {
+                Debug.LogError($"TbKnockbackConfig crack_enabled는 0 또는 1이어야 한다: {crackEnabled} - 0(끔)으로 처리한다");
+                crackEnabled = 0;
+            }
+            CrackEnabled = crackEnabled == 1;
+            CrackHitsToCollapse = PositiveOrDefault(crackHitsToCollapse, 2, "crack_hits_to_collapse");
+            CrackCollapseSeconds = PositiveOrDefault(crackCollapseSeconds, 1f, "crack_collapse_seconds");
             EdgeMode = edgeMode;
             HazardDamagePerSecond = hazardDamagePerSecond;
             HazardSpeedScale = hazardSpeedScale;
@@ -116,6 +133,13 @@ namespace LOP
         }
 
         //  0 이하면 상자가 안 주워지거나 일정이 꼬이므로 기본값으로 쓴다. 클·서가 같은 생성자를 지나 같은 값이 된다.
+        private static int PositiveOrDefault(int value, int fallback, string column)
+        {
+            if (value > 0) return value;
+            Debug.LogError($"TbKnockbackConfig {column}는 0보다 커야 한다: {value} - {fallback}로 처리한다");
+            return fallback;
+        }
+
         private static float PositiveOrDefault(float value, float fallback, string column)
         {
             if (value > 0f) return value;
@@ -129,6 +153,7 @@ namespace LOP
         public int CrateFirstTicks => Ticks(CrateFirstSeconds);
         public int CrateIntervalTicks => Ticks(CrateIntervalSeconds);
         public int CrateWarnTicks => Ticks(CrateWarnSeconds);
+        public int CrackCollapseTicks => Ticks(CrackCollapseSeconds);
 
         /// <summary>위험 지대에서 위험도가 1 오르는 간격(틱). 0이면 오르지 않는다.</summary>
         public int HazardDamageIntervalTicks => HazardDamagePerSecond > 0f
@@ -141,7 +166,7 @@ namespace LOP
         public long MatchDurationTicks(float tickInterval)
             => (long)System.Math.Round(MatchDurationSeconds / tickInterval);
 
-        public KnockbackFloor CreateFloor() => new KnockbackFloor(ArenaRadius, TileSize, HoleRadius, EdgeMode == 1, Ticks(SuddenDeathSeconds));
+        public KnockbackFloor CreateFloor() => new KnockbackFloor(ArenaRadius, TileSize, HoleRadius, EdgeMode == 1, Ticks(SuddenDeathSeconds), CrackEnabled ? CrackCollapseTicks : 0);
 
         //  바닥은 월드와 이동 시스템이 같은 한 개를 나눠 쓴다(칸이 무너지면 둘이 같은 상태를 봐야 한다).
         public KnockbackMoveSystem CreateMoveSystem(KnockbackFloor floor, GameFramework.Physics.ICollisionQuery query, int layerMask)
