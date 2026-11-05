@@ -74,15 +74,20 @@ namespace LOP.Tests
         [Test]
         public void 설정_시간()
         {
-            var config = new CardRushConfig(120, 0.3f, 0.6f, 4, 0.22f, 0.4f, 0.04f, 0.06f);
+            //  옛 Timing은 3차 Task 7까지 2차 값 상수로 남는다(표에서 열이 빠졌다).
+            var config = Config(0.22f, 0.4f, 4);
             Assert.AreEqual(15, config.Timing.MoveTicks);
             Assert.AreEqual(30, config.Timing.StunTicks);
             Assert.AreEqual(6000, config.MatchDurationTicks);
             Assert.AreEqual(4, config.MinLanes);
-            Assert.AreEqual(0.06f, config.BotMissChance, 1e-6f);
-            Assert.Throws<System.ArgumentException>(() => new CardRushConfig(120, 0.3f, 0.6f, 4, 0.5f, 0.4f, 0.04f, 0.06f));
-            Assert.Throws<System.ArgumentOutOfRangeException>(() => new CardRushConfig(120, 0.3f, 0.6f, 0, 0.22f, 0.4f, 0.04f, 0.06f));
-            Assert.Throws<System.ArgumentOutOfRangeException>(() => new CardRushConfig(120, 0.3f, 0.6f, 9, 0.22f, 0.4f, 0.04f, 0.06f));
+            Assert.AreEqual(0.06f, config.BotHesitateChance, 1e-6f);
+            Assert.Throws<System.ArgumentException>(() => Config(0.5f, 0.4f, 4));
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => Config(0.22f, 0.4f, 0));
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => Config(0.22f, 0.4f, 9));
         }
+
+        private static CardRushConfig Config(float reactMin, float reactMax, int minLanes)
+            => new CardRushConfig(120, minLanes, 140, 11, 19, 0.5f, 28, 48, 1.2f, 1.39f, 0.7f, 2.77f, 1f,
+                                  reactMin, reactMax, 0.04f, 0.06f, 0.5f);
     }
 }
