@@ -41,5 +41,9 @@ namespace LOP
         public UnityEngine.Vector3 LaneOrigin;
         /// <summary>0~7. 첫 장 씨앗이라 클·서가 같은 식으로 구한다. 스폰 때 정해져 되감기 대상이 아니다.</summary>
         public int Lane;
+        /// <summary>
+        /// 맵 규칙보다 먼저 생긴 몸(비정상 순서)이라 레인을 아직 못 정했다 — 월드가 규칙을 받으면 <see cref="LaneOrigin"/>(받은 자리)로 다시 구한다.
+        /// </summary>
+        public bool LanePending;
     }
 }

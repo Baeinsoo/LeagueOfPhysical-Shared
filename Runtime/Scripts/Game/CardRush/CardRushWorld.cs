@@ -62,6 +62,13 @@ namespace LOP
             foreach (var entity in runners)
             {
                 var runner = entity.Get<CardRushRunner>();
+                if (runner.LanePending && Rules.HasRules)
+                {
+                    //  규칙보다 먼저 생긴 몸 — 받은 자리(옆 거리)로 이제 레인을 정한다. 0으로 두면 첫 장이 서버와 영영 갈린다.
+                    runner.Lane = CardRushLanes.LaneIndexOf(Rules, runner.LaneOrigin);
+                    runner.LaneOrigin = Rules.LaneOrigin(runner.Lane);
+                    runner.LanePending = false;
+                }
                 var input = entity.Get<InputBuffer>()?.Current;
                 bool tapped = input != null && input.Grab;
                 //  탭이 없어도 매 틱 부른다 — 달리기·굴러오는 것·구역이 탭과 상관없이 같은 틱에 일어난다(서버와 내 예측이 같게).
@@ -95,7 +102,8 @@ namespace LOP
                 Course = new CardRushCourse(value, LegacyCourseSteps);
                 courseSeed = value;
                 //  클·서가 같은 줄을 쓰는지(마스터데이터·Shared가 갈렸는지) 두 로그를 맞대어 본다.
-                UnityEngine.Debug.Log($"[CardRushWorld] 코스 지문 {Track.Fingerprint:X16} 장애물 {Track.Obstacles.Count} 구역 {Track.Zones.Count} 길이 {Track.TrackMm} (씨앗 {value})");
+                //  씨앗 0은 클라가 GameInfo를 받기 전에 임시로 만든 코스라 안 찍는다(맞대 볼 때 헷갈린다).
+                if (value != 0) UnityEngine.Debug.Log($"[CardRushWorld] 코스 지문 {Track.Fingerprint:X16} 장애물 {Track.Obstacles.Count} 구역 {Track.Zones.Count} 길이 {Track.TrackMm} (씨앗 {value})");
             }
         }
 

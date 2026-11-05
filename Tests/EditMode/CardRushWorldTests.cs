@@ -278,6 +278,57 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 씨앗이_오기_전엔_지문을_안_찍는다()
+        {
+            //  클라는 씨앗 0으로 먼저 코스를 만든다 — 그 지문까지 찍으면 서버 로그와 맞대 볼 때 헷갈린다. 진짜 씨앗일 때 한 번만.
+            var seed = new LateSeed();
+            var world = Create(Rules(), out _, seed);
+            int logs = 0;
+            UnityEngine.Application.LogCallback count = (message, _, type) =>
+            {
+                if (type == UnityEngine.LogType.Log && message.Contains("코스 지문")) logs++;
+            };
+            UnityEngine.Application.logMessageReceived += count;
+            try
+            {
+                world.Tick(100, Dt);
+                world.Tick(101, Dt);
+                Assert.AreEqual(0, logs, "씨앗 0");
+                seed.Value = 4242;
+                world.Tick(102, Dt);
+                world.Tick(103, Dt);
+                Assert.AreEqual(1, logs, "진짜 씨앗에서 한 번");
+            }
+            finally
+            {
+                UnityEngine.Application.logMessageReceived -= count;
+            }
+        }
+
+        [Test]
+        public void 규칙보다_먼저_생긴_몸은_규칙이_오면_레인을_다시_구한다()
+        {
+            //  맵이 몸보다 늦은 비정상 순서 — 받은 자리를 출발점으로 쓴 몸이 레인 0으로 굳으면 첫 장이 서버와 영영 갈린다.
+            var field = new CardRushMapRulesField();
+            var world = Create(field, out var runner);
+            var r = runner.Get<CardRushRunner>();
+            var real = Rules();
+            var received = real.LaneOrigin(5) + UnityEngine.Vector3.forward * 30f;
+            r.Lane = 0;
+            r.LaneOrigin = received;
+            r.LanePending = true;
+
+            world.Tick(StartTick - 2, Dt);
+            Assert.IsTrue(r.LanePending, "규칙이 없으면 그대로 기다린다");
+
+            field.Set(CardRushTheme.StoneBridge, 40, 2.2f, 2.6f, new UnityEngine.Vector3(5f, 0f, -3f), UnityEngine.Vector3.forward);
+            world.Tick(StartTick - 1, Dt);
+            Assert.AreEqual(5, r.Lane);
+            Assert.AreEqual(real.LaneOrigin(5), r.LaneOrigin);
+            Assert.IsFalse(r.LanePending);
+        }
+
+        [Test]
         public void 순위_진행은_간_거리()
         {
             var world = Create(Rules(), out _);
