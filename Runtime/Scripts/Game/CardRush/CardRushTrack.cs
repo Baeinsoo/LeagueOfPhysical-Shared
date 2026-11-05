@@ -59,7 +59,7 @@ namespace LOP
         public int TrackMm { get; }
         public IReadOnlyList<CardRushObstacle> Obstacles => obstacles;
         public IReadOnlyList<CardRushZone> Zones => zones;
-        /// <summary>장애물·구역 줄 전체의 해시 — 클·서가 로그로 찍어 마스터데이터가 갈렸는지 본다.</summary>
+        /// <summary>장애물·구역 줄 전체 + 첫 장 표본의 해시 — 클·서가 로그로 찍어 마스터데이터나 Shared가 갈렸는지 본다.</summary>
         public ulong Fingerprint { get; }
 
         public CardRushTrack(ulong matchSeed, in CardRushTuning tuning)
@@ -68,7 +68,7 @@ namespace LOP
             TrackMm = tuning.TrackMm;
             obstacles = BuildObstacles(matchSeed, tuning);
             zones = BuildZones(matchSeed, tuning, obstacles);
-            Fingerprint = ComputeFingerprint(obstacles, zones);
+            Fingerprint = ComputeFingerprint(obstacles, zones, this);
         }
 
         private CardRushTrack(int trackMm, CardRushObstacle[] obstacles, CardRushZone[] zones, ulong matchSeed)
@@ -77,7 +77,7 @@ namespace LOP
             TrackMm = trackMm;
             this.obstacles = obstacles;
             this.zones = zones;
-            Fingerprint = ComputeFingerprint(obstacles, zones);
+            Fingerprint = ComputeFingerprint(obstacles, zones, this);
         }
 
         /// <summary>시험이 장애물·구역을 손으로 놓는다. 첫 장은 씨앗에서 그대로 나온다.</summary>
@@ -153,7 +153,10 @@ namespace LOP
             return farthest;
         }
 
-        private static ulong ComputeFingerprint(CardRushObstacle[] obstacles, CardRushZone[] zones)
+        //  첫 장 표본 크기 — 모든 레인 × 쓴 횟수 앞 몇 번. 첫 장 식(솔트·Combine 순서)이 클·서에서 다르면 지문이 갈린다.
+        private const int FingerprintFirstCardUses = 4;
+
+        private static ulong ComputeFingerprint(CardRushObstacle[] obstacles, CardRushZone[] zones, CardRushTrack track)
         {
             ulong h = FingerprintSalt;
             for (int i = 0; i < obstacles.Length; i++)
@@ -169,6 +172,9 @@ namespace LOP
                 h = Hashing.Combine(h, (ulong)zones[i].ToMm);
                 h = Hashing.Combine(h, (ulong)zones[i].WarnTicks);
             }
+            for (int lane = 0; lane < CardRushLanes.MaxLanes; lane++)
+                for (int n = 0; n < FingerprintFirstCardUses; n++)
+                    h = Hashing.Combine(h, (ulong)(int)track.FirstCard(lane, n));
             return h;
         }
     }

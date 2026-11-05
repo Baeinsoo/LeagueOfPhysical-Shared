@@ -156,6 +156,7 @@ namespace LOP.Tests
 
         [TestCase(CardRushRules.SmashReachMm + 1)]
         [TestCase(3000)]
+        [TestCase(-CardRushRules.SmashBackMm)]
         public void 손_밖_빨강은_헛방이고_번호_그대로(int distance)
         {
             var r = new Rig(Track(new[] { Barricade(9000) }), pos: 9000 - distance);
@@ -316,6 +317,36 @@ namespace LOP.Tests
             Assert.AreEqual(0, r.S.StunEndTick);
             Assert.AreEqual(0, r.S.Hits);
             Assert.AreEqual(1, r.S.CleanStreak);
+        }
+
+        [TestCase(CardRushRules.BlockTicks, CardRushZoneEvent.Hit)]
+        [TestCase(CardRushRules.BlockTicks - 1, CardRushZoneEvent.Held)]
+        public void 방패는_쓴_틱부터_50틱_전까지만_버틴다(int usedBeforeBoom, CardRushZoneEvent expected)
+        {
+            //  방패 창 = [사용, 사용 + 50). 터지는 틱이 정확히 사용 + 50이면 이미 내렸다.
+            var r = new Rig(Track(zones: new[] { Zone(10000, 10500, 20000) }), pos: 9990);
+            r.Tick();
+            long boom = r.S.ZoneTick + 60;
+            while (r.Now < boom - usedBeforeBoom) r.Tick();
+            r.Use(CardColor.Yellow);
+            r.RunUntil(x => x.S.ZoneEvent != 0, 60);
+            Assert.AreEqual(boom, r.S.ZoneEventTick);
+            Assert.AreEqual((int)expected, r.S.ZoneEvent);
+        }
+
+        [TestCase(CardRushRules.BlockTicks - 1, CardRushObstacleEvent.Blocked)]
+        [TestCase(CardRushRules.BlockTicks, CardRushObstacleEvent.Tumbled)]
+        public void 방패_끝_틱에_닿는_굴러오는_것은_꽈당(int contactAfterUse, CardRushObstacleEvent expected)
+        {
+            //  방패 중엔 서 있으니 굴러오는 것만 38 mm씩 온다 — 접촉이 정확히 그 틱에 오게 자리를 고른다.
+            const int pos = 13000;
+            int at = pos + CardRushRules.RollerContactMm + CardRushRules.RollerMmPerTick * contactAfterUse;
+            var r = new Rig(Track(new[] { Roller(at) }), pos: pos);
+            r.S.ObstacleTick = r.Now;   // 이미 풀렸다
+            long used = r.Use(CardColor.Yellow);
+            r.RunUntil(x => x.S.ObstacleEvent != 0, 80);
+            Assert.AreEqual(used + contactAfterUse, r.S.ObstacleEventTick);
+            Assert.AreEqual((int)expected, r.S.ObstacleEvent);
         }
 
         [Test]

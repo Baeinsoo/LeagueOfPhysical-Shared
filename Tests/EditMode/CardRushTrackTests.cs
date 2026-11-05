@@ -173,6 +173,29 @@ namespace LOP.Tests
         };
 
         [Test]
+        public void 첫_장_뽑는_식은_계약이다()
+        {
+            //  구현 첫 통과 때 나온 값을 적어 고정한다 — 솔트 문자열이나 lane·쓴 횟수의 Combine 순서를 바꾸면 클·서가 다른 카드를 본다.
+            var track = Make(42);
+            var expected = new[,] { { 0, 0, 0, 2 }, { 2, 1, 0, 2 }, { 1, 0, 2, 1 } };
+            for (int lane = 0; lane < 3; lane++)
+                for (int n = 0; n < 4; n++)
+                    Assert.AreEqual(expected[lane, n], (int)track.FirstCard(lane, n), $"lane {lane} n {n}");
+        }
+
+        [Test]
+        public void 지문은_첫_장_씨앗도_담는다()
+        {
+            //  줄이 같아도 첫 장이 다르면 지문이 달라야 클·서 Shared가 갈린 것을 로그로 잡는다.
+            var obstacles = new[] { new CardRushObstacle(CardRushObstacleKind.Barricade, 8000, 0) };
+            var zones = new[] { new CardRushZone(14000, 15000, 18000, 70) };
+            var a = CardRushTrack.ForTests(140000, obstacles, zones, 1);
+            var b = CardRushTrack.ForTests(140000, obstacles, zones, 2);
+            Assert.AreNotEqual(a.Fingerprint, b.Fingerprint);
+            Assert.AreEqual(a.Fingerprint, CardRushTrack.ForTests(140000, obstacles, zones, 1).Fingerprint);
+        }
+
+        [Test]
         public void 첫_장은_레인과_쓴_횟수로_결정된다()
         {
             var a = Make(7); var b = Make(7);
