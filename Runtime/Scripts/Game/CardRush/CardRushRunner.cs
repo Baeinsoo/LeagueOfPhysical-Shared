@@ -12,6 +12,25 @@ namespace LOP
         public int BestStreak;
         public int Misses;
 
+        //  3차(장애물 레이스) 칸 — 위 옛 칸(Step·Attempt·MoveStartTick·Streak·BestStreak·Misses)은 3차 Task 7에서 지운다.
+        //  SpinStartTick·StunEndTick은 3차도 같이 쓴다: 카드가 (다시) 도는 틱 = 마지막 사용 + 쿨다운 / 기절이 끝나는 틱.
+        public int PosMm;               // 출발선에서 앞으로 간 거리(mm). 정수라 클·서가 같다
+        public int UseCount;            // 카드를 쓴 횟수 — 다음 첫 장의 씨앗
+        public long DashStartTick;      // 대시를 쓴 틱. 0 = 대시 중 아님
+        public long BlockEndTick;       // 방패가 끝나는 틱. 0 = 없음
+        public int ObstacleIndex;       // 지금 상대하는 장애물 번호(코스 장애물 줄)
+        public long ObstacleTick;       // 바리케이드면 닿은 틱, 굴러오는 것이면 굴러오기 시작한 틱. 0 = 아직
+        public int ZoneIndex;           // 지금 상대하는 구역 번호(코스 구역 줄)
+        public long ZoneTick;           // 그 구역의 경고가 켜진 틱. 0 = 아직
+        public int ObstacleEvent;       // 마지막 장애물 결과(CardRushObstacleEvent) — 그림·소리용
+        public long ObstacleEventTick;
+        public int ZoneEvent;           // 마지막 구역 결과(CardRushZoneEvent)
+        public long ZoneEventTick;
+        public long FinishTick;         // 완주 틱. 0 = 아직
+        public int CleanStreak;         // 지금 연속 무사 통과
+        public int BestCleanStreak;     // 이 판 최고(서버 통계·기록) — 와이어에 없다
+        public int Hits;                // 이 판 맞은 수(서버 통계) — 와이어에 없다
+
         public bool IsFinished(int stepCount) => Step >= stepCount;
     }
 
@@ -20,5 +39,7 @@ namespace LOP
         public CardRushRunnerState State;
         /// <summary>스폰 때 정해지는 레인 출발점. 안 바뀌어 되감기 대상이 아니다.</summary>
         public UnityEngine.Vector3 LaneOrigin;
+        /// <summary>0~7. 첫 장 씨앗이라 클·서가 같은 식으로 구한다. 스폰 때 정해져 되감기 대상이 아니다.</summary>
+        public int Lane;
     }
 }
