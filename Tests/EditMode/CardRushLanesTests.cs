@@ -13,6 +13,23 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void LaneIndexOf는_출발점과_앞으로_간_자리에서_같은_레인()
+        {
+            //  비스듬한 맵 — 옆 거리만 보고 앞뒤(간 거리)·높이는 버려야 한다.
+            var rules = new CardRushMapRulesField();
+            var forward = new UnityEngine.Vector3(1f, 0f, 2f);
+            rules.Set(CardRushTheme.StoneBridge, 40, 2.2f, 2.6f, new UnityEngine.Vector3(5f, 1f, -3f), forward);
+            for (int lane = 0; lane < CardRushLanes.MaxLanes; lane++)
+            {
+                var origin = rules.LaneOrigin(lane);
+                Assert.AreEqual(lane, CardRushLanes.LaneIndexOf(rules, origin), $"레인 {lane} 출발점");
+                var ahead = CardRushLanes.PositionAt(origin, forward, 50_000) + UnityEngine.Vector3.up * 0.7f;
+                Assert.AreEqual(lane, CardRushLanes.LaneIndexOf(rules, ahead), $"레인 {lane} 앞 50 m");
+            }
+            Assert.AreEqual(0, CardRushLanes.LaneIndexOf(new CardRushMapRulesField(), UnityEngine.Vector3.one), "규칙이 없으면 0");
+        }
+
+        [Test]
         public void 이동_중엔_고르게_멈춤_중엔_제자리()
         {
             var s = new CardRushRunnerState { Step = 5, MoveStartTick = 1000 };
