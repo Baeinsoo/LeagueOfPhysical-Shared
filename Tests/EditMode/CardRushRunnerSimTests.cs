@@ -162,11 +162,26 @@ namespace LOP.Tests
             var r = new Rig(Track(new[] { Barricade(9000) }), pos: 9000 - distance);
             long used = r.Use(CardColor.Red);
             Assert.AreEqual(0, r.S.ObstacleIndex);
-            Assert.AreEqual((int)CardRushObstacleEvent.Whiff, r.S.ObstacleEvent);
-            Assert.AreEqual(used, r.S.ObstacleEventTick);
+            Assert.AreEqual((int)CardRushObstacleEvent.None, r.S.ObstacleEvent, "헛방은 장애물 결과 칸에 안 적는다");
+            Assert.AreEqual(0, r.S.ObstacleEventTick);
+            Assert.AreEqual(used, r.S.WhiffTick);
             Assert.AreEqual(1, r.S.UseCount, "헛방도 카드를 쓴 것");
             Assert.AreEqual(used + CardRushRules.CooldownTicks, r.S.SpinStartTick);
             Assert.AreEqual(0, r.S.CleanStreak);
+        }
+
+        //  리뷰 I1: 바리케이드가 올라간 바로 다음 틱의 빨강은 손 닿는 것이 없어 헛방이다 — 올라감 결과(그림·소리)를 지우면 안 된다.
+        [Test]
+        public void 올라감_직후_헛방해도_올라감_결과는_그대로()
+        {
+            var r = new Rig(Track(new[] { Barricade(5000), Barricade(30000) }), pos: 3000);
+            r.RunUntil(x => x.S.ObstacleEvent == (int)CardRushObstacleEvent.Lifted, 400);
+            long lifted = r.S.ObstacleEventTick;
+            long used = r.Use(CardColor.Red);
+            Assert.AreEqual((int)CardRushObstacleEvent.Lifted, r.S.ObstacleEvent);
+            Assert.AreEqual(lifted, r.S.ObstacleEventTick);
+            Assert.AreEqual(used, r.S.WhiffTick);
+            Assert.AreEqual(1, r.S.ObstacleIndex);
         }
 
         // ── 굴러오는 것 ──

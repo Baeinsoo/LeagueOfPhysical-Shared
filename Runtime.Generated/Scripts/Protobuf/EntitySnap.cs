@@ -24,7 +24,7 @@ public static partial class EntitySnapReflection {
         string.Concat(
           "ChBFbnRpdHlTbmFwLnByb3RvGhJQcm90b1ZlY3RvcjMucHJvdG8aHVByb3Rv",
           "TW90aW9uQ29udHJpYnV0aW9uLnByb3RvGhdQcm90b0FjdGl2ZUVmZmVjdC5w",
-          "cm90byLjCQoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
+          "cm90byL8CQoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
           "aXRpb24YAiABKAsyDS5Qcm90b1ZlY3RvcjMSHwoIcm90YXRpb24YAyABKAsy",
           "DS5Qcm90b1ZlY3RvcjMSHwoIdmVsb2NpdHkYBCABKAsyDS5Qcm90b1ZlY3Rv",
           "cjMSDgoGbWF4X0hQGAUgASgFEhIKCmN1cnJlbnRfSFAYBiABKAUSNgoUbW90",
@@ -51,12 +51,12 @@ public static partial class EntitySnapReflection {
           "EiAKGGNhcmRfb2JzdGFjbGVfZXZlbnRfdGljaxgvIAEoAxIXCg9jYXJkX3pv",
           "bmVfZXZlbnQYMCABKAUSHAoUY2FyZF96b25lX2V2ZW50X3RpY2sYMSABKAMS",
           "GAoQY2FyZF9maW5pc2hfdGljaxgyIAEoAxIZChFjYXJkX2NsZWFuX3N0cmVh",
-          "axgzIAEoBUoECAwQDUoECA0QDkoECCAQIUoECCEQIkoECCIQI0oECCQQJWIG",
-          "cHJvdG8z"));
+          "axgzIAEoBRIXCg9jYXJkX3doaWZmX3RpY2sYNCABKANKBAgMEA1KBAgNEA5K",
+          "BAggECFKBAghECJKBAgiECNKBAgkECViBnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::ProtoVector3Reflection.Descriptor, global::ProtoMotionContributionReflection.Descriptor, global::ProtoActiveEffectReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick", "PostureAxis", "Gliding", "Stamina", "EmergencyRemaining", "DashEndTick", "DashCharge", "TeleportCount", "FinishPlacement", "Score", "FlapCombo", "KnockbackEndTick", "DamagePercent", "KnockbackAmmo", "KnockbackNextReloadTick", "KnockbackCooldownEndTick", "KnockbackHasBomb", "CardStunEndTick", "CardSpinStartTick", "CardPosMm", "CardUseCount", "CardDashStartTick", "CardBlockEndTick", "CardObstacleIndex", "CardObstacleTick", "CardZoneIndex", "CardZoneTick", "CardObstacleEvent", "CardObstacleEventTick", "CardZoneEvent", "CardZoneEventTick", "CardFinishTick", "CardCleanStreak" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick", "PostureAxis", "Gliding", "Stamina", "EmergencyRemaining", "DashEndTick", "DashCharge", "TeleportCount", "FinishPlacement", "Score", "FlapCombo", "KnockbackEndTick", "DamagePercent", "KnockbackAmmo", "KnockbackNextReloadTick", "KnockbackCooldownEndTick", "KnockbackHasBomb", "CardStunEndTick", "CardSpinStartTick", "CardPosMm", "CardUseCount", "CardDashStartTick", "CardBlockEndTick", "CardObstacleIndex", "CardObstacleTick", "CardZoneIndex", "CardZoneTick", "CardObstacleEvent", "CardObstacleEventTick", "CardZoneEvent", "CardZoneEventTick", "CardFinishTick", "CardCleanStreak", "CardWhiffTick" }, null, null, null, null)
         }));
   }
   #endregion
@@ -143,6 +143,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     cardZoneEventTick_ = other.cardZoneEventTick_;
     cardFinishTick_ = other.cardFinishTick_;
     cardCleanStreak_ = other.cardCleanStreak_;
+    cardWhiffTick_ = other.cardWhiffTick_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -795,6 +796,21 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
   }
 
+  /// <summary>Field number for the "card_whiff_tick" field.</summary>
+  public const int CardWhiffTickFieldNumber = 52;
+  private long cardWhiffTick_;
+  /// <summary>
+  /// CardRush: 마지막 헛방 틱(손 닿는 장애물 없이 빨강). 0 = 없음 — 장애물 결과 칸을 덮지 않는다
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long CardWhiffTick {
+    get { return cardWhiffTick_; }
+    set {
+      cardWhiffTick_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -855,6 +871,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (CardZoneEventTick != other.CardZoneEventTick) return false;
     if (CardFinishTick != other.CardFinishTick) return false;
     if (CardCleanStreak != other.CardCleanStreak) return false;
+    if (CardWhiffTick != other.CardWhiffTick) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -907,6 +924,7 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (CardZoneEventTick != 0L) hash ^= CardZoneEventTick.GetHashCode();
     if (CardFinishTick != 0L) hash ^= CardFinishTick.GetHashCode();
     if (CardCleanStreak != 0) hash ^= CardCleanStreak.GetHashCode();
+    if (CardWhiffTick != 0L) hash ^= CardWhiffTick.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -1099,6 +1117,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(152, 3);
       output.WriteInt32(CardCleanStreak);
     }
+    if (CardWhiffTick != 0L) {
+      output.WriteRawTag(160, 3);
+      output.WriteInt64(CardWhiffTick);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -1283,6 +1305,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(152, 3);
       output.WriteInt32(CardCleanStreak);
     }
+    if (CardWhiffTick != 0L) {
+      output.WriteRawTag(160, 3);
+      output.WriteInt64(CardWhiffTick);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -1423,6 +1449,9 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
     if (CardCleanStreak != 0) {
       size += 2 + pb::CodedOutputStream.ComputeInt32Size(CardCleanStreak);
+    }
+    if (CardWhiffTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(CardWhiffTick);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -1575,6 +1604,9 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
     if (other.CardCleanStreak != 0) {
       CardCleanStreak = other.CardCleanStreak;
+    }
+    if (other.CardWhiffTick != 0L) {
+      CardWhiffTick = other.CardWhiffTick;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -1784,6 +1816,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
           CardCleanStreak = input.ReadInt32();
           break;
         }
+        case 416: {
+          CardWhiffTick = input.ReadInt64();
+          break;
+        }
       }
     }
   #endif
@@ -1990,6 +2026,10 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
         }
         case 408: {
           CardCleanStreak = input.ReadInt32();
+          break;
+        }
+        case 416: {
+          CardWhiffTick = input.ReadInt64();
           break;
         }
       }

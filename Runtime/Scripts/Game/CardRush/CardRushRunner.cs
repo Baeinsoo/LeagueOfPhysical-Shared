@@ -22,10 +22,11 @@ namespace LOP
         public long ObstacleTick;       // 바리케이드면 닿은 틱, 굴러오는 것이면 굴러오기 시작한 틱. 0 = 아직
         public int ZoneIndex;           // 지금 상대하는 구역 번호(코스 구역 줄)
         public long ZoneTick;           // 그 구역의 경고가 켜진 틱. 0 = 아직
-        public int ObstacleEvent;       // 마지막 장애물 결과(CardRushObstacleEvent) — 그림·소리용
+        public int ObstacleEvent;       // 마지막으로 치운 장애물의 결과(CardRushObstacleEvent) — 그림·소리용. 헛방은 여기 안 적는다
         public long ObstacleEventTick;
         public int ZoneEvent;           // 마지막 구역 결과(CardRushZoneEvent)
         public long ZoneEventTick;
+        public long WhiffTick;          // 마지막 헛방 틱. 0 = 없음 — 결과 칸과 따로 둬야 막음·올라감 직후 헛방이 그 결과를 안 지운다
         public long FinishTick;         // 완주 틱. 0 = 아직
         public int CleanStreak;         // 지금 연속 무사 통과
         public int BestCleanStreak;     // 이 판 최고(서버 통계·기록) — 와이어에 없다

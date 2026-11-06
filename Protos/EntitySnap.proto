@@ -62,4 +62,5 @@ message EntitySnap
 	int64 card_zone_event_tick = 49;
 	int64 card_finish_tick = 50;      // CardRush: 완주 틱. 0 = 아직
 	int32 card_clean_streak = 51;     // CardRush: 지금 연속 무사 통과
+	int64 card_whiff_tick = 52;       // CardRush: 마지막 헛방 틱(손 닿는 장애물 없이 빨강). 0 = 없음 — 장애물 결과 칸을 덮지 않는다
 }

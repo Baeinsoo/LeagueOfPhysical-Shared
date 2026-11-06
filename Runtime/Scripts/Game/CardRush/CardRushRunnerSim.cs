@@ -59,9 +59,8 @@ namespace LOP
                     }
                     else
                     {
-                        //  헛방 — 장애물 번호는 그대로, 그림·소리만 안다.
-                        s.ObstacleEvent = (int)CardRushObstacleEvent.Whiff;
-                        s.ObstacleEventTick = tick;
+                        //  헛방 — 장애물 번호·결과 칸은 그대로(직전에 치운 장애물의 결과를 지우지 않게), 그림·소리만 안다.
+                        s.WhiffTick = tick;
                     }
                     break;
                 case CardColor.Yellow:
