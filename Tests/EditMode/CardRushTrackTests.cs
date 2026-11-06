@@ -44,6 +44,29 @@ namespace LOP.Tests
             Assert.AreNotEqual(a.Fingerprint, CardRushTrack.ForTests(140000, obstacles, new[] { new CardRushZone(14000, 15000, 18000, 69) }, 1).Fingerprint);
         }
 
+        //  최종 리뷰 m4: 줄이 같아도 벌(기다림·밀림·기절)이 클·서에서 다르면 첫 바리케이드·꽈당부터 끝없이 보정한다 — 지문이 달라야 로그로 잡힌다.
+        [TestCase("barricadeWait")]
+        [TestCase("rollKnock")]
+        [TestCase("rollStun")]
+        [TestCase("zoneKnock")]
+        [TestCase("zoneStun")]
+        public void 지문은_벌_튜닝이_다르면_다르다(string field)
+        {
+            var d = CardRushTestTuning.Default;
+            var other = new CardRushTuning(d.TrackMm, d.ObstacleGapMinMm, d.ObstacleGapMaxMm, d.BarricadePermille,
+                d.ZoneGapMinMm, d.ZoneGapMaxMm,
+                d.BarricadeWaitTicks + (field == "barricadeWait" ? 1 : 0),
+                d.RollKnockMm + (field == "rollKnock" ? 1 : 0),
+                d.RollStunTicks + (field == "rollStun" ? 1 : 0),
+                d.ZoneKnockMm + (field == "zoneKnock" ? 1 : 0),
+                d.ZoneStunTicks + (field == "zoneStun" ? 1 : 0));
+            var a = new CardRushTrack(12345, d);
+            var b = new CardRushTrack(12345, other);
+            CollectionAssert.AreEqual(a.Obstacles.ToArray(), b.Obstacles.ToArray(), "줄은 같다 — 벌만 다르다");
+            CollectionAssert.AreEqual(a.Zones.ToArray(), b.Zones.ToArray());
+            Assert.AreNotEqual(a.Fingerprint, b.Fingerprint);
+        }
+
         [Test]
         public void 장애물_간격은_min_max_안()
         {

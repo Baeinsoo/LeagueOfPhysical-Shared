@@ -241,24 +241,41 @@ namespace LOP.Tests
         private sealed class LateSeed : IMatchSeed { public ulong Value { get; set; } }
 
         [Test]
-        public void 씨앗이_늦게_오면_코스를_다시_만든다()
+        public void 씨앗이_오기_전엔_코스를_안_만든다()
         {
-            //  클라는 씨앗을 GameInfo로 늦게 받는다 — 받기 전(0)에 만든 코스로 판을 돌면 서버와 장애물이 갈린다.
+            //  클라는 씨앗을 GameInfo로 늦게 받는다 — 받기 전(0)엔 코스가 없다. 씨앗 0 코스로 판을 돌면 서버와 장애물이 갈린다.
             var seed = new LateSeed();
             var world = Create(Rules(), out _, seed);
 
             world.Tick(100, Dt);
-            var early = world.Track;
-            Assert.IsNotNull(early);
+            Assert.IsNull(world.Track, "씨앗 0 = 아직 모른다");
 
             seed.Value = 4242;
             world.Tick(101, Dt);
-            Assert.AreNotSame(early, world.Track);
+            Assert.IsNotNull(world.Track);
             Assert.AreEqual(new CardRushTrack(4242, config.Tuning).Fingerprint, world.Track.Fingerprint);
 
             var settled = world.Track;
             world.Tick(102, Dt);
             Assert.AreSame(settled, world.Track, "씨앗이 그대로면 다시 만들지 않는다");
+        }
+
+        //  재접속 순서: MatchStartToC(출발 틱)가 GameInfoToC(씨앗)보다 먼저 오고 그 사이 틱이 돈다.
+        //  씨앗 0 코스를 그때 만들면 "출발 뒤엔 안 바꾼다" 가드에 굳어 판 내내 장애물 줄이 서버와 다르다.
+        [Test]
+        public void 재접속에_출발_틱이_씨앗보다_먼저_와도_진짜_씨앗으로_코스를_만든다()
+        {
+            var seed = new LateSeed();
+            var world = Create(Rules(), out var runner, seed);
+
+            for (long t = StartTick; t < StartTick + 5; t++) TickWith(world, runner, t, false);
+            Assert.IsNull(world.Track, "씨앗 전엔 출발 뒤라도 코스가 없다");
+
+            seed.Value = 4242;
+            TickWith(world, runner, StartTick + 5, false);   // 출발 뒤 — 가드가 있어도 처음 만드는 코스는 막지 않는다(에러 로그 없음)
+            Assert.IsNotNull(world.Track);
+            Assert.AreEqual(new CardRushTrack(4242, config.Tuning).Fingerprint, world.Track.Fingerprint);
+            Assert.Greater(State(runner).PosMm, 0, "코스가 생기면 그 틱부터 달린다");
         }
 
         [Test]
@@ -325,6 +342,29 @@ namespace LOP.Tests
             world.Tick(StartTick - 1, Dt);
             Assert.AreEqual(5, r.Lane);
             Assert.AreEqual(real.LaneOrigin(5), r.LaneOrigin);
+            Assert.IsFalse(r.LanePending);
+        }
+
+        //  최종 리뷰 m3: 남의 몸(클라에서 Simulated가 없다)도 규칙이 오면 레인을 다시 구해야 한다 — 레인은 상태가 아니라 스폰 메타다.
+        [Test]
+        public void 규칙보다_먼저_생긴_남의_몸도_레인을_다시_구한다()
+        {
+            var field = new CardRushMapRulesField();
+            var world = Create(field, out _);
+            var real = Rules();
+            var other = new Entity("runner-2");
+            other.Add(new Transform());
+            var r = new CardRushRunner { Lane = 0, LaneOrigin = real.LaneOrigin(6) + UnityEngine.Vector3.forward * 40f, LanePending = true };
+            other.Add(r);
+            world.EntityRegistry.Add(other);
+
+            world.Tick(StartTick - 2, Dt);
+            Assert.IsTrue(r.LanePending, "규칙이 없으면 그대로 기다린다");
+
+            field.Set(CardRushTheme.StoneBridge, 2.6f, new UnityEngine.Vector3(5f, 0f, -3f), UnityEngine.Vector3.forward);
+            world.Tick(StartTick - 1, Dt);
+            Assert.AreEqual(6, r.Lane);
+            Assert.AreEqual(real.LaneOrigin(6), r.LaneOrigin);
             Assert.IsFalse(r.LanePending);
         }
 

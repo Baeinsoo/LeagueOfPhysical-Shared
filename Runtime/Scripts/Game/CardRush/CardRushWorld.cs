@@ -16,11 +16,11 @@ namespace LOP
 
         private readonly List<GameFramework.World.Entity> runners = new List<GameFramework.World.Entity>();
 
-        //  코스를 만든 씨앗. 클라는 씨앗을 GameInfo로 늦게 받으므로, 받기 전에 만든 코스는 씨앗이 바뀌면 다시 만든다.
+        //  코스를 만든 씨앗. 클라는 씨앗을 GameInfo로 늦게 받으므로 받기 전(0)엔 코스를 만들지 않는다.
         private ulong courseSeed;
         private bool seedChangeReported;
 
-        /// <summary>이 판의 코스(장애물·구역 줄·첫 장). 맵 규칙이 없으면 null — 그동안 월드는 아무것도 안 한다.</summary>
+        /// <summary>이 판의 코스(장애물·구역 줄·첫 장). 맵 규칙이나 매치 씨앗이 아직 없으면 null — 그동안 월드는 아무것도 안 한다.</summary>
         public CardRushTrack Track { get; private set; }
 
         public CardRushTuning Tuning { get; }
@@ -41,6 +41,8 @@ namespace LOP
 
         protected override void Mutation(long tick, float deltaTime)
         {
+            //  레인은 코스(씨앗)를 기다리지 않는다 — 규칙만 있으면 정한다.
+            ResolvePendingLanes();
             EnsureCourse(tick);
             if (Track == null)
             {
@@ -51,13 +53,6 @@ namespace LOP
             foreach (var entity in runners)
             {
                 var runner = entity.Get<CardRushRunner>();
-                if (runner.LanePending && Rules.HasRules)
-                {
-                    //  규칙보다 먼저 생긴 몸 — 받은 자리(옆 거리)로 이제 레인을 정한다. 0으로 두면 첫 장이 서버와 영영 갈린다.
-                    runner.Lane = CardRushLanes.LaneIndexOf(Rules, runner.LaneOrigin);
-                    runner.LaneOrigin = Rules.LaneOrigin(runner.Lane);
-                    runner.LanePending = false;
-                }
                 var input = entity.Get<InputBuffer>()?.Current;
                 bool tapped = input != null && input.Grab;
                 //  탭이 없어도 매 틱 부른다 — 달리기·굴러오는 것·구역이 탭과 상관없이 같은 틱에 일어난다(서버와 내 예측이 같게).
@@ -67,9 +62,30 @@ namespace LOP
             }
         }
 
+        //  규칙보다 먼저 생긴 몸 — 받은 자리(옆 거리)로 이제 레인을 정한다. 0으로 두면 첫 장이 서버와 영영 갈린다.
+        //  남의 몸(클라에선 Simulated가 없다)도 한다 — 레인은 예측 상태가 아니라 스폰 메타라 머리 위 카드·장애물 그림이 이것을 쓴다(최종 리뷰 m3).
+        private void ResolvePendingLanes()
+        {
+            if (Rules.HasRules == false) return;
+            foreach (var entity in EntityRegistry.All)
+            {
+                var runner = entity.Get<CardRushRunner>();
+                if (runner == null || runner.LanePending == false) continue;
+                runner.Lane = CardRushLanes.LaneIndexOf(Rules, runner.LaneOrigin);
+                runner.LaneOrigin = Rules.LaneOrigin(runner.Lane);
+                runner.LanePending = false;
+            }
+        }
+
         private void EnsureCourse(long tick)
         {
             ulong value = seed.Value;
+            //  씨앗 0 = 아직 모른다(클라는 GameInfo로 늦게 받는다). 재접속 땐 출발 틱이 씨앗보다 먼저 와서, 그때 씨앗 0 코스를 만들면
+            //  아래 "출발 뒤엔 안 바꾼다"에 걸려 판 내내 장애물 줄이 서버와 다르다 — 진짜 씨앗이 올 때까지 코스를 만들지 않는다.
+            if (value == 0)
+            {
+                return;
+            }
             if (Track != null && courseSeed == value)
             {
                 return;
@@ -89,9 +105,8 @@ namespace LOP
             {
                 Track = new CardRushTrack(value, Tuning);
                 courseSeed = value;
-                //  클·서가 같은 줄을 쓰는지(마스터데이터·Shared가 갈렸는지) 두 로그를 맞대어 본다.
-                //  씨앗 0은 클라가 GameInfo를 받기 전에 임시로 만든 코스라 안 찍는다(맞대 볼 때 헷갈린다).
-                if (value != 0) UnityEngine.Debug.Log($"[CardRushWorld] 코스 지문 {Track.Fingerprint:X16} 장애물 {Track.Obstacles.Count} 구역 {Track.Zones.Count} 길이 {Track.TrackMm} (씨앗 {value})");
+                //  클·서가 같은 줄·같은 벌을 쓰는지(마스터데이터·Shared가 갈렸는지) 두 로그를 맞대어 본다.
+                UnityEngine.Debug.Log($"[CardRushWorld] 코스 지문 {Track.Fingerprint:X16} 장애물 {Track.Obstacles.Count} 구역 {Track.Zones.Count} 길이 {Track.TrackMm} (씨앗 {value})");
             }
         }
 

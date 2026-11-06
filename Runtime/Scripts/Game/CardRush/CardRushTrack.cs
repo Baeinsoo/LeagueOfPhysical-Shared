@@ -59,7 +59,10 @@ namespace LOP
         public int TrackMm { get; }
         public IReadOnlyList<CardRushObstacle> Obstacles => obstacles;
         public IReadOnlyList<CardRushZone> Zones => zones;
-        /// <summary>장애물·구역 줄 전체 + 첫 장 표본의 해시 — 클·서가 로그로 찍어 마스터데이터나 Shared가 갈렸는지 본다.</summary>
+        /// <summary>
+        /// 장애물·구역 줄 전체 + 첫 장 표본 + 판정이 쓰는 튜닝 값 전부의 해시 — 클·서가 로그로 찍어 마스터데이터나 Shared가 갈렸는지 본다.
+        /// 벌(기다림·밀림·기절)은 줄을 안 바꾸지만 갈리면 끝없이 보정하므로 함께 섞는다(최종 리뷰 m4).
+        /// </summary>
         public ulong Fingerprint { get; }
 
         public CardRushTrack(ulong matchSeed, in CardRushTuning tuning)
@@ -68,7 +71,7 @@ namespace LOP
             TrackMm = tuning.TrackMm;
             obstacles = BuildObstacles(matchSeed, tuning);
             zones = BuildZones(matchSeed, tuning, obstacles);
-            Fingerprint = ComputeFingerprint(obstacles, zones, this);
+            Fingerprint = ComputeFingerprint(obstacles, zones, this, tuning);
         }
 
         private CardRushTrack(int trackMm, CardRushObstacle[] obstacles, CardRushZone[] zones, ulong matchSeed)
@@ -77,7 +80,7 @@ namespace LOP
             TrackMm = trackMm;
             this.obstacles = obstacles;
             this.zones = zones;
-            Fingerprint = ComputeFingerprint(obstacles, zones, this);
+            Fingerprint = ComputeFingerprint(obstacles, zones, this, default);
         }
 
         /// <summary>시험이 장애물·구역을 손으로 놓는다. 첫 장은 씨앗에서 그대로 나온다.</summary>
@@ -156,9 +159,21 @@ namespace LOP
         //  첫 장 표본 크기 — 모든 레인 × 쓴 횟수 앞 몇 번. 첫 장 식(솔트·Combine 순서)이 클·서에서 다르면 지문이 갈린다.
         private const int FingerprintFirstCardUses = 4;
 
-        private static ulong ComputeFingerprint(CardRushObstacle[] obstacles, CardRushZone[] zones, CardRushTrack track)
+        private static ulong ComputeFingerprint(CardRushObstacle[] obstacles, CardRushZone[] zones, CardRushTrack track, in CardRushTuning t)
         {
             ulong h = FingerprintSalt;
+            //  시뮬이 읽는 튜닝 칸 전부 — 새 칸을 CardRushTuning에 더하면 여기도 더한다.
+            h = Hashing.Combine(h, (ulong)t.TrackMm);
+            h = Hashing.Combine(h, (ulong)t.ObstacleGapMinMm);
+            h = Hashing.Combine(h, (ulong)t.ObstacleGapMaxMm);
+            h = Hashing.Combine(h, (ulong)t.BarricadePermille);
+            h = Hashing.Combine(h, (ulong)t.ZoneGapMinMm);
+            h = Hashing.Combine(h, (ulong)t.ZoneGapMaxMm);
+            h = Hashing.Combine(h, (ulong)t.BarricadeWaitTicks);
+            h = Hashing.Combine(h, (ulong)t.RollKnockMm);
+            h = Hashing.Combine(h, (ulong)t.RollStunTicks);
+            h = Hashing.Combine(h, (ulong)t.ZoneKnockMm);
+            h = Hashing.Combine(h, (ulong)t.ZoneStunTicks);
             for (int i = 0; i < obstacles.Length; i++)
             {
                 h = Hashing.Combine(h, (ulong)(int)obstacles[i].Kind);
