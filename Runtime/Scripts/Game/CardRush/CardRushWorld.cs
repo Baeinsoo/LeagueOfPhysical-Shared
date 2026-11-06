@@ -25,17 +25,7 @@ namespace LOP
 
         public CardRushTuning Tuning { get; }
 
-        /// <summary>
-        /// 옛(2차) 문 코스 — 판정에 안 쓴다. 옛 그림·봇이 컴파일되게만 40칸으로 고정해 만든다. 3차 Task 7에서 지움.
-        /// </summary>
-        public CardRushCourse Course { get; private set; }
-
-        /// <summary>옛 칸 이동·멈춤 틱 — 판정에 안 쓴다. 3차 Task 7에서 지움.</summary>
-        public CardRushTiming Timing { get; }
-
         public CardRushMapRulesField Rules { get; }
-
-        private const int LegacyCourseSteps = 40;
 
         public CardRushWorld(GameFramework.World.EntityRegistry entityRegistry,
                              GameFramework.World.WorldEventBuffer eventBuffer,
@@ -47,7 +37,6 @@ namespace LOP
             Rules = rules;
             this.seed = seed;
             Tuning = config.Tuning;
-            Timing = config.Timing;
         }
 
         protected override void Mutation(long tick, float deltaTime)
@@ -99,7 +88,6 @@ namespace LOP
             if (Rules.HasRules)
             {
                 Track = new CardRushTrack(value, Tuning);
-                Course = new CardRushCourse(value, LegacyCourseSteps);
                 courseSeed = value;
                 //  클·서가 같은 줄을 쓰는지(마스터데이터·Shared가 갈렸는지) 두 로그를 맞대어 본다.
                 //  씨앗 0은 클라가 GameInfo를 받기 전에 임시로 만든 코스라 안 찍는다(맞대 볼 때 헷갈린다).

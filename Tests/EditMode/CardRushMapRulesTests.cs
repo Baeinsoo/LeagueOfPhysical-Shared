@@ -5,27 +5,27 @@ namespace LOP.Tests
 {
     public class CardRushMapRulesTests
     {
-        private static CardRushMapRulesField Field(int stepCount)
+        private static CardRushMapRulesField Field(float laneSpacing)
         {
             var field = new CardRushMapRulesField();
-            field.Set(CardRushTheme.StoneBridge, stepCount, 2.2f, 2.6f, Vector3.zero, Vector3.forward);
+            field.Set(CardRushTheme.DoorDash, laneSpacing, Vector3.zero, Vector3.forward);
             return field;
         }
 
         [Test]
-        public void 필드_검증()
+        public void 필드_검증은_레인_간격이_0보다_커야_통과()
         {
-            Assert.IsTrue(Field(40).Validate(out var ok), ok);
-            Assert.IsTrue(Field(1).Validate(out _));
-            Assert.IsTrue(Field(200).Validate(out _));
-            Assert.IsFalse(Field(0).Validate(out var e0)); Assert.IsNotEmpty(e0);
-            Assert.IsFalse(Field(201).Validate(out var e201)); Assert.IsNotEmpty(e201);
+            Assert.IsTrue(Field(2.6f).Validate(out var ok), ok);
+            Assert.IsTrue(Field(0.01f).Validate(out _));
+            Assert.IsFalse(Field(0f).Validate(out var e0)); Assert.IsNotEmpty(e0);
+            Assert.IsFalse(Field(-1f).Validate(out var eNeg)); Assert.IsNotEmpty(eNeg);
+            Assert.IsFalse(Field(float.NaN).Validate(out _), "NaN도 막는다");
         }
 
         [Test]
         public void 비운_필드는_규칙이_없다()
         {
-            var field = Field(40);
+            var field = Field(2.6f);
             Assert.IsTrue(field.HasRules);
             field.Clear();
             Assert.IsFalse(field.HasRules);
@@ -38,7 +38,7 @@ namespace LOP.Tests
             var field = new CardRushMapRulesField();
             var origin = new Vector3(3f, 1f, -5f);
             var forward = new Vector3(1f, 0.2f, 1f);
-            field.Set(CardRushTheme.DoorDash, 40, 2.2f, 2.6f, origin, forward);
+            field.Set(CardRushTheme.DoorDash, 2.6f, origin, forward);
             for (int lane = 0; lane < CardRushLanes.MaxLanes; lane++)
             {
                 var want = CardRushLanes.LaneOrigin(origin, forward, 2.6f, lane);
@@ -55,15 +55,13 @@ namespace LOP.Tests
             {
                 var rules = go.AddComponent<CardRushMapRules>();
                 Assert.AreEqual(CardRushTheme.StoneBridge, rules.theme);
-                Assert.AreEqual(40, rules.stepCount);
-                Assert.AreEqual(2.2f, rules.stepSpacing, 1e-6f);
                 Assert.AreEqual(2.6f, rules.laneSpacing, 1e-6f);
 
                 var field = new CardRushMapRulesField();
                 rules.Construct(field);
                 Assert.IsTrue(field.HasRules);
                 Assert.IsTrue(field.Validate(out var error), error);
-                Assert.AreEqual(40, field.StepCount);
+                Assert.AreEqual(2.6f, field.LaneSpacing, 1e-6f);
             }
             finally
             {
@@ -74,10 +72,7 @@ namespace LOP.Tests
         [Test]
         public void 설정_시간()
         {
-            //  옛 Timing은 3차 Task 7까지 2차 값 상수로 남는다(표에서 열이 빠졌다).
             var config = Config(0.22f, 0.4f, 4);
-            Assert.AreEqual(15, config.Timing.MoveTicks);
-            Assert.AreEqual(30, config.Timing.StunTicks);
             Assert.AreEqual(6000, config.MatchDurationTicks);
             Assert.AreEqual(4, config.MinLanes);
             Assert.AreEqual(0.06f, config.BotHesitateChance, 1e-6f);

@@ -3,17 +3,8 @@ namespace LOP
     /// <summary>선수 하나의 카드 러시 상태. 되감기 저장 단위 그대로라 값 복사로 저장·복원한다.</summary>
     public struct CardRushRunnerState
     {
-        public int Step;            // 지금 잡으려는 칸(0부터). StepCount면 완주
-        public int Attempt;         // 이 칸에서 틀린 횟수 — 시작 색 씨앗
-        public long MoveStartTick;  // 마지막으로 맞힌 틱(완주 틱도 이것). 0 = 아직 없음
-        public long StunEndTick;    // 마지막 틀림의 멈춤이 끝나는 틱. 0 = 아직 없음
-        public long SpinStartTick;  // 카드가 돌기 시작한 틱(첫 탭). 0 = 대기(뒷면) — 아직 안 눌렀거나 방금 던졌다
-        public int Streak;
-        public int BestStreak;
-        public int Misses;
-
-        //  3차(장애물 레이스) 칸 — 위 옛 칸(Step·Attempt·MoveStartTick·Streak·BestStreak·Misses)은 3차 Task 7에서 지운다.
-        //  SpinStartTick·StunEndTick은 3차도 같이 쓴다: 카드가 (다시) 도는 틱 = 마지막 사용 + 쿨다운 / 기절이 끝나는 틱.
+        public long StunEndTick;        // 기절이 끝나는 틱. 0 = 아직 없음
+        public long SpinStartTick;      // 카드가 다시 도는 틱(마지막 사용 + 쿨다운). 0 = 아직 안 썼다 — 출발 틱부터 돈다
         public int PosMm;               // 출발선에서 앞으로 간 거리(mm). 정수라 클·서가 같다
         public int UseCount;            // 카드를 쓴 횟수 — 다음 첫 장의 씨앗
         public long DashStartTick;      // 대시를 쓴 틱. 0 = 대시 중 아님
@@ -31,8 +22,6 @@ namespace LOP
         public int CleanStreak;         // 지금 연속 무사 통과
         public int BestCleanStreak;     // 이 판 최고(서버 통계·기록) — 와이어에 없다
         public int Hits;                // 이 판 맞은 수(서버 통계) — 와이어에 없다
-
-        public bool IsFinished(int stepCount) => Step >= stepCount;
     }
 
     public sealed class CardRushRunner : GameFramework.World.Component

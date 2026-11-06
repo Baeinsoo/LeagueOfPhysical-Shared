@@ -20,7 +20,7 @@ namespace LOP.Tests
         private static CardRushMapRulesField Rules(UnityEngine.Vector3 forward)
         {
             var field = new CardRushMapRulesField();
-            field.Set(CardRushTheme.StoneBridge, 40, 2.2f, 2.6f, new UnityEngine.Vector3(5f, 0f, -3f), forward);
+            field.Set(CardRushTheme.StoneBridge, 2.6f, new UnityEngine.Vector3(5f, 0f, -3f), forward);
             return field;
         }
 
@@ -321,7 +321,7 @@ namespace LOP.Tests
             world.Tick(StartTick - 2, Dt);
             Assert.IsTrue(r.LanePending, "규칙이 없으면 그대로 기다린다");
 
-            field.Set(CardRushTheme.StoneBridge, 40, 2.2f, 2.6f, new UnityEngine.Vector3(5f, 0f, -3f), UnityEngine.Vector3.forward);
+            field.Set(CardRushTheme.StoneBridge, 2.6f, new UnityEngine.Vector3(5f, 0f, -3f), UnityEngine.Vector3.forward);
             world.Tick(StartTick - 1, Dt);
             Assert.AreEqual(5, r.Lane);
             Assert.AreEqual(real.LaneOrigin(5), r.LaneOrigin);

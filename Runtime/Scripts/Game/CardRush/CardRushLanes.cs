@@ -17,17 +17,6 @@ namespace LOP
             return marker + right * ((lane - (MaxLanes - 1) * 0.5f) * laneSpacing);
         }
 
-        /// <summary>칸 단위 진행. 이동 중엔 앞 칸에서 지금 칸으로 고르게 간다.</summary>
-        public static float Progress(in CardRushRunnerState s, long tick, int moveTicks)
-        {
-            if (s.MoveStartTick != 0 && tick >= s.MoveStartTick && tick < s.MoveStartTick + moveTicks)
-                return (s.Step - 1) + (float)(tick - s.MoveStartTick) / moveTicks;
-            return s.Step;
-        }
-
-        public static UnityEngine.Vector3 PositionAt(UnityEngine.Vector3 laneOrigin, UnityEngine.Vector3 forward, float stepSpacing, float progress)
-            => laneOrigin + Flat(forward) * (stepSpacing * progress);
-
         /// <summary>레인 출발점에서 앞으로 posMm 간 자리.</summary>
         public static UnityEngine.Vector3 PositionAt(UnityEngine.Vector3 laneOrigin, UnityEngine.Vector3 forward, int posMm)
             => laneOrigin + Flat(forward) * (posMm / 1000f);

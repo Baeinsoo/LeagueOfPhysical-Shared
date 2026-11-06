@@ -27,12 +27,6 @@ namespace LOP
 
         public CardRushTuning Tuning { get; }
 
-        /// <summary>
-        /// 옛 칸 이동·틀림 멈춤 틱 — 표에서 열이 빠져 2차 값 그대로 둔다. 옛 판정 코드가 컴파일되게만 남긴 것.
-        /// 3차 Task 7에서 지움.
-        /// </summary>
-        public CardRushTiming Timing { get; } = new CardRushTiming(15, 30);
-
         public long MatchDurationTicks => CardRushTiming.Ticks(MatchDurationSeconds);
 
         public CardRushConfig(float matchDurationSeconds, int minLanes, float trackLengthM,
