@@ -16,6 +16,7 @@ message EntitySnap
 	int64 ability_end_tick  = 10;   // 시전이 끝나는 절대 틱(= RecoveryEndTick)
 	repeated ProtoActiveEffect status_effects = 11;
 	reserved 12, 13;                // 옛 bool stunned / invulnerable — 남은 시간을 못 담아 은퇴
+	reserved 32, 33, 34, 36;        // 옛 card_step·card_attempt·card_move_start_tick·card_streak — 카드 러시 3차에 뜻이 사라져 은퇴(다른 뜻으로 다시 쓰지 않는다)
 	int64 stun_end_tick = 14;       // Flappy: 멈춤이 풀리는 절대 틱. 0 = 안 멈춤
 	int64 invuln_end_tick = 15;     // Flappy: 다시 안 걸리는 구간이 끝나는 절대 틱. 0 = 아님
 	float posture_axis = 16;        // Skydive: 0 = 대자, 1 = 다이브
@@ -45,10 +46,21 @@ message EntitySnap
 	int64 knockback_next_reload_tick = 29;   // 가득이면 long.MaxValue 그대로 싣는다(0이 아니다)
 	int64 knockback_cooldown_end_tick = 30;
 	bool knockback_has_bomb = 31;            // Knockback: 충격파 폭탄을 들고 있나
-	int32 card_step = 32;             // CardRush: 지금 잡으려는 칸. 이 컴포넌트가 없는 게임에선 0이 나가고 아무도 안 읽는다
-	int32 card_attempt = 33;          // CardRush: 이 칸에서 틀린 횟수(시작 색 씨앗)
-	int64 card_move_start_tick = 34;  // CardRush: 마지막으로 맞힌 틱. 0 = 아직 없음
-	int64 card_stun_end_tick = 35;    // CardRush: 틀림 멈춤이 끝나는 절대 틱. 0 = 아직 없음
-	int32 card_streak = 36;           // CardRush: 지금 연속 정타
-	int64 card_spin_start_tick = 37;  // CardRush: 카드가 돌기 시작한 틱(첫 탭). 0 = 대기(뒷면) 또는 다른 모드
+	int64 card_stun_end_tick = 35;    // CardRush: 기절(꽈당·으악)이 끝나는 절대 틱. 0 = 없음. 이 컴포넌트가 없는 게임에선 0이 나가고 아무도 안 읽는다
+	int64 card_spin_start_tick = 37;  // CardRush: 카드가 (다시) 도는 틱 = 마지막 사용 + 쿨다운. 0 = 아직 안 씀
+	int32 card_pos_mm = 38;           // CardRush: 출발선에서 간 거리(mm)
+	int32 card_use_count = 39;        // CardRush: 카드 쓴 횟수(첫 장 씨앗)
+	int64 card_dash_start_tick = 40;  // CardRush: 대시를 쓴 틱. 0 = 대시 중 아님
+	int64 card_block_end_tick = 41;   // CardRush: 방패가 끝나는 틱. 0 = 없음
+	int32 card_obstacle_index = 42;   // CardRush: 지금 상대하는 장애물 번호
+	int64 card_obstacle_tick = 43;    // CardRush: 바리케이드 닿은 틱 / 굴러오기 시작한 틱. 0 = 아직
+	int32 card_zone_index = 44;       // CardRush: 지금 상대하는 구역 번호
+	int64 card_zone_tick = 45;        // CardRush: 구역 경고가 켜진 틱. 0 = 아직
+	int32 card_obstacle_event = 46;   // CardRush: 마지막 장애물 결과(CardRushObstacleEvent)
+	int64 card_obstacle_event_tick = 47;
+	int32 card_zone_event = 48;       // CardRush: 마지막 구역 결과(CardRushZoneEvent)
+	int64 card_zone_event_tick = 49;
+	int64 card_finish_tick = 50;      // CardRush: 완주 틱. 0 = 아직
+	int32 card_clean_streak = 51;     // CardRush: 지금 연속 무사 통과
+	int64 card_whiff_tick = 52;       // CardRush: 마지막 헛방 틱(손 닿는 장애물 없이 빨강). 0 = 없음 — 장애물 결과 칸을 덮지 않는다
 }

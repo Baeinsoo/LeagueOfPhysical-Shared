@@ -24,7 +24,7 @@ public static partial class EntitySnapReflection {
         string.Concat(
           "ChBFbnRpdHlTbmFwLnByb3RvGhJQcm90b1ZlY3RvcjMucHJvdG8aHVByb3Rv",
           "TW90aW9uQ29udHJpYnV0aW9uLnByb3RvGhdQcm90b0FjdGl2ZUVmZmVjdC5w",
-          "cm90byKqBwoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
+          "cm90byL8CQoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
           "aXRpb24YAiABKAsyDS5Qcm90b1ZlY3RvcjMSHwoIcm90YXRpb24YAyABKAsy",
           "DS5Qcm90b1ZlY3RvcjMSHwoIdmVsb2NpdHkYBCABKAsyDS5Qcm90b1ZlY3Rv",
           "cjMSDgoGbWF4X0hQGAUgASgFEhIKCmN1cnJlbnRfSFAYBiABKAUSNgoUbW90",
@@ -41,15 +41,22 @@ public static partial class EntitySnapReflection {
           "IAEoAxIWCg5kYW1hZ2VfcGVyY2VudBgbIAEoBRIWCg5rbm9ja2JhY2tfYW1t",
           "bxgcIAEoBRIiChprbm9ja2JhY2tfbmV4dF9yZWxvYWRfdGljaxgdIAEoAxIj",
           "Chtrbm9ja2JhY2tfY29vbGRvd25fZW5kX3RpY2sYHiABKAMSGgoSa25vY2ti",
-          "YWNrX2hhc19ib21iGB8gASgIEhEKCWNhcmRfc3RlcBggIAEoBRIUCgxjYXJk",
-          "X2F0dGVtcHQYISABKAUSHAoUY2FyZF9tb3ZlX3N0YXJ0X3RpY2sYIiABKAMS",
-          "GgoSY2FyZF9zdHVuX2VuZF90aWNrGCMgASgDEhMKC2NhcmRfc3RyZWFrGCQg",
-          "ASgFEhwKFGNhcmRfc3Bpbl9zdGFydF90aWNrGCUgASgDSgQIDBANSgQIDRAO",
-          "YgZwcm90bzM="));
+          "YWNrX2hhc19ib21iGB8gASgIEhoKEmNhcmRfc3R1bl9lbmRfdGljaxgjIAEo",
+          "AxIcChRjYXJkX3NwaW5fc3RhcnRfdGljaxglIAEoAxITCgtjYXJkX3Bvc19t",
+          "bRgmIAEoBRIWCg5jYXJkX3VzZV9jb3VudBgnIAEoBRIcChRjYXJkX2Rhc2hf",
+          "c3RhcnRfdGljaxgoIAEoAxIbChNjYXJkX2Jsb2NrX2VuZF90aWNrGCkgASgD",
+          "EhsKE2NhcmRfb2JzdGFjbGVfaW5kZXgYKiABKAUSGgoSY2FyZF9vYnN0YWNs",
+          "ZV90aWNrGCsgASgDEhcKD2NhcmRfem9uZV9pbmRleBgsIAEoBRIWCg5jYXJk",
+          "X3pvbmVfdGljaxgtIAEoAxIbChNjYXJkX29ic3RhY2xlX2V2ZW50GC4gASgF",
+          "EiAKGGNhcmRfb2JzdGFjbGVfZXZlbnRfdGljaxgvIAEoAxIXCg9jYXJkX3pv",
+          "bmVfZXZlbnQYMCABKAUSHAoUY2FyZF96b25lX2V2ZW50X3RpY2sYMSABKAMS",
+          "GAoQY2FyZF9maW5pc2hfdGljaxgyIAEoAxIZChFjYXJkX2NsZWFuX3N0cmVh",
+          "axgzIAEoBRIXCg9jYXJkX3doaWZmX3RpY2sYNCABKANKBAgMEA1KBAgNEA5K",
+          "BAggECFKBAghECJKBAgiECNKBAgkECViBnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::ProtoVector3Reflection.Descriptor, global::ProtoMotionContributionReflection.Descriptor, global::ProtoActiveEffectReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick", "PostureAxis", "Gliding", "Stamina", "EmergencyRemaining", "DashEndTick", "DashCharge", "TeleportCount", "FinishPlacement", "Score", "FlapCombo", "KnockbackEndTick", "DamagePercent", "KnockbackAmmo", "KnockbackNextReloadTick", "KnockbackCooldownEndTick", "KnockbackHasBomb", "CardStep", "CardAttempt", "CardMoveStartTick", "CardStunEndTick", "CardStreak", "CardSpinStartTick" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick", "PostureAxis", "Gliding", "Stamina", "EmergencyRemaining", "DashEndTick", "DashCharge", "TeleportCount", "FinishPlacement", "Score", "FlapCombo", "KnockbackEndTick", "DamagePercent", "KnockbackAmmo", "KnockbackNextReloadTick", "KnockbackCooldownEndTick", "KnockbackHasBomb", "CardStunEndTick", "CardSpinStartTick", "CardPosMm", "CardUseCount", "CardDashStartTick", "CardBlockEndTick", "CardObstacleIndex", "CardObstacleTick", "CardZoneIndex", "CardZoneTick", "CardObstacleEvent", "CardObstacleEventTick", "CardZoneEvent", "CardZoneEventTick", "CardFinishTick", "CardCleanStreak", "CardWhiffTick" }, null, null, null, null)
         }));
   }
   #endregion
@@ -120,12 +127,23 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     knockbackNextReloadTick_ = other.knockbackNextReloadTick_;
     knockbackCooldownEndTick_ = other.knockbackCooldownEndTick_;
     knockbackHasBomb_ = other.knockbackHasBomb_;
-    cardStep_ = other.cardStep_;
-    cardAttempt_ = other.cardAttempt_;
-    cardMoveStartTick_ = other.cardMoveStartTick_;
     cardStunEndTick_ = other.cardStunEndTick_;
-    cardStreak_ = other.cardStreak_;
     cardSpinStartTick_ = other.cardSpinStartTick_;
+    cardPosMm_ = other.cardPosMm_;
+    cardUseCount_ = other.cardUseCount_;
+    cardDashStartTick_ = other.cardDashStartTick_;
+    cardBlockEndTick_ = other.cardBlockEndTick_;
+    cardObstacleIndex_ = other.cardObstacleIndex_;
+    cardObstacleTick_ = other.cardObstacleTick_;
+    cardZoneIndex_ = other.cardZoneIndex_;
+    cardZoneTick_ = other.cardZoneTick_;
+    cardObstacleEvent_ = other.cardObstacleEvent_;
+    cardObstacleEventTick_ = other.cardObstacleEventTick_;
+    cardZoneEvent_ = other.cardZoneEvent_;
+    cardZoneEventTick_ = other.cardZoneEventTick_;
+    cardFinishTick_ = other.cardFinishTick_;
+    cardCleanStreak_ = other.cardCleanStreak_;
+    cardWhiffTick_ = other.cardWhiffTick_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -544,56 +562,11 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
   }
 
-  /// <summary>Field number for the "card_step" field.</summary>
-  public const int CardStepFieldNumber = 32;
-  private int cardStep_;
-  /// <summary>
-  /// CardRush: 지금 잡으려는 칸. 이 컴포넌트가 없는 게임에선 0이 나가고 아무도 안 읽는다
-  /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public int CardStep {
-    get { return cardStep_; }
-    set {
-      cardStep_ = value;
-    }
-  }
-
-  /// <summary>Field number for the "card_attempt" field.</summary>
-  public const int CardAttemptFieldNumber = 33;
-  private int cardAttempt_;
-  /// <summary>
-  /// CardRush: 이 칸에서 틀린 횟수(시작 색 씨앗)
-  /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public int CardAttempt {
-    get { return cardAttempt_; }
-    set {
-      cardAttempt_ = value;
-    }
-  }
-
-  /// <summary>Field number for the "card_move_start_tick" field.</summary>
-  public const int CardMoveStartTickFieldNumber = 34;
-  private long cardMoveStartTick_;
-  /// <summary>
-  /// CardRush: 마지막으로 맞힌 틱. 0 = 아직 없음
-  /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public long CardMoveStartTick {
-    get { return cardMoveStartTick_; }
-    set {
-      cardMoveStartTick_ = value;
-    }
-  }
-
   /// <summary>Field number for the "card_stun_end_tick" field.</summary>
   public const int CardStunEndTickFieldNumber = 35;
   private long cardStunEndTick_;
   /// <summary>
-  /// CardRush: 틀림 멈춤이 끝나는 절대 틱. 0 = 아직 없음
+  /// CardRush: 기절(꽈당·으악)이 끝나는 절대 틱. 0 = 없음. 이 컴포넌트가 없는 게임에선 0이 나가고 아무도 안 읽는다
   /// </summary>
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -604,26 +577,11 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
   }
 
-  /// <summary>Field number for the "card_streak" field.</summary>
-  public const int CardStreakFieldNumber = 36;
-  private int cardStreak_;
-  /// <summary>
-  /// CardRush: 지금 연속 정타
-  /// </summary>
-  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-  public int CardStreak {
-    get { return cardStreak_; }
-    set {
-      cardStreak_ = value;
-    }
-  }
-
   /// <summary>Field number for the "card_spin_start_tick" field.</summary>
   public const int CardSpinStartTickFieldNumber = 37;
   private long cardSpinStartTick_;
   /// <summary>
-  /// CardRush: 카드가 돌기 시작한 틱(첫 탭). 0 = 대기(뒷면) 또는 다른 모드
+  /// CardRush: 카드가 (다시) 도는 틱 = 마지막 사용 + 쿨다운. 0 = 아직 안 씀
   /// </summary>
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -631,6 +589,225 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     get { return cardSpinStartTick_; }
     set {
       cardSpinStartTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "card_pos_mm" field.</summary>
+  public const int CardPosMmFieldNumber = 38;
+  private int cardPosMm_;
+  /// <summary>
+  /// CardRush: 출발선에서 간 거리(mm)
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int CardPosMm {
+    get { return cardPosMm_; }
+    set {
+      cardPosMm_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "card_use_count" field.</summary>
+  public const int CardUseCountFieldNumber = 39;
+  private int cardUseCount_;
+  /// <summary>
+  /// CardRush: 카드 쓴 횟수(첫 장 씨앗)
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int CardUseCount {
+    get { return cardUseCount_; }
+    set {
+      cardUseCount_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "card_dash_start_tick" field.</summary>
+  public const int CardDashStartTickFieldNumber = 40;
+  private long cardDashStartTick_;
+  /// <summary>
+  /// CardRush: 대시를 쓴 틱. 0 = 대시 중 아님
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long CardDashStartTick {
+    get { return cardDashStartTick_; }
+    set {
+      cardDashStartTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "card_block_end_tick" field.</summary>
+  public const int CardBlockEndTickFieldNumber = 41;
+  private long cardBlockEndTick_;
+  /// <summary>
+  /// CardRush: 방패가 끝나는 틱. 0 = 없음
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long CardBlockEndTick {
+    get { return cardBlockEndTick_; }
+    set {
+      cardBlockEndTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "card_obstacle_index" field.</summary>
+  public const int CardObstacleIndexFieldNumber = 42;
+  private int cardObstacleIndex_;
+  /// <summary>
+  /// CardRush: 지금 상대하는 장애물 번호
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int CardObstacleIndex {
+    get { return cardObstacleIndex_; }
+    set {
+      cardObstacleIndex_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "card_obstacle_tick" field.</summary>
+  public const int CardObstacleTickFieldNumber = 43;
+  private long cardObstacleTick_;
+  /// <summary>
+  /// CardRush: 바리케이드 닿은 틱 / 굴러오기 시작한 틱. 0 = 아직
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long CardObstacleTick {
+    get { return cardObstacleTick_; }
+    set {
+      cardObstacleTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "card_zone_index" field.</summary>
+  public const int CardZoneIndexFieldNumber = 44;
+  private int cardZoneIndex_;
+  /// <summary>
+  /// CardRush: 지금 상대하는 구역 번호
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int CardZoneIndex {
+    get { return cardZoneIndex_; }
+    set {
+      cardZoneIndex_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "card_zone_tick" field.</summary>
+  public const int CardZoneTickFieldNumber = 45;
+  private long cardZoneTick_;
+  /// <summary>
+  /// CardRush: 구역 경고가 켜진 틱. 0 = 아직
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long CardZoneTick {
+    get { return cardZoneTick_; }
+    set {
+      cardZoneTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "card_obstacle_event" field.</summary>
+  public const int CardObstacleEventFieldNumber = 46;
+  private int cardObstacleEvent_;
+  /// <summary>
+  /// CardRush: 마지막 장애물 결과(CardRushObstacleEvent)
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int CardObstacleEvent {
+    get { return cardObstacleEvent_; }
+    set {
+      cardObstacleEvent_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "card_obstacle_event_tick" field.</summary>
+  public const int CardObstacleEventTickFieldNumber = 47;
+  private long cardObstacleEventTick_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long CardObstacleEventTick {
+    get { return cardObstacleEventTick_; }
+    set {
+      cardObstacleEventTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "card_zone_event" field.</summary>
+  public const int CardZoneEventFieldNumber = 48;
+  private int cardZoneEvent_;
+  /// <summary>
+  /// CardRush: 마지막 구역 결과(CardRushZoneEvent)
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int CardZoneEvent {
+    get { return cardZoneEvent_; }
+    set {
+      cardZoneEvent_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "card_zone_event_tick" field.</summary>
+  public const int CardZoneEventTickFieldNumber = 49;
+  private long cardZoneEventTick_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long CardZoneEventTick {
+    get { return cardZoneEventTick_; }
+    set {
+      cardZoneEventTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "card_finish_tick" field.</summary>
+  public const int CardFinishTickFieldNumber = 50;
+  private long cardFinishTick_;
+  /// <summary>
+  /// CardRush: 완주 틱. 0 = 아직
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long CardFinishTick {
+    get { return cardFinishTick_; }
+    set {
+      cardFinishTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "card_clean_streak" field.</summary>
+  public const int CardCleanStreakFieldNumber = 51;
+  private int cardCleanStreak_;
+  /// <summary>
+  /// CardRush: 지금 연속 무사 통과
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int CardCleanStreak {
+    get { return cardCleanStreak_; }
+    set {
+      cardCleanStreak_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "card_whiff_tick" field.</summary>
+  public const int CardWhiffTickFieldNumber = 52;
+  private long cardWhiffTick_;
+  /// <summary>
+  /// CardRush: 마지막 헛방 틱(손 닿는 장애물 없이 빨강). 0 = 없음 — 장애물 결과 칸을 덮지 않는다
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long CardWhiffTick {
+    get { return cardWhiffTick_; }
+    set {
+      cardWhiffTick_ = value;
     }
   }
 
@@ -678,12 +855,23 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (KnockbackNextReloadTick != other.KnockbackNextReloadTick) return false;
     if (KnockbackCooldownEndTick != other.KnockbackCooldownEndTick) return false;
     if (KnockbackHasBomb != other.KnockbackHasBomb) return false;
-    if (CardStep != other.CardStep) return false;
-    if (CardAttempt != other.CardAttempt) return false;
-    if (CardMoveStartTick != other.CardMoveStartTick) return false;
     if (CardStunEndTick != other.CardStunEndTick) return false;
-    if (CardStreak != other.CardStreak) return false;
     if (CardSpinStartTick != other.CardSpinStartTick) return false;
+    if (CardPosMm != other.CardPosMm) return false;
+    if (CardUseCount != other.CardUseCount) return false;
+    if (CardDashStartTick != other.CardDashStartTick) return false;
+    if (CardBlockEndTick != other.CardBlockEndTick) return false;
+    if (CardObstacleIndex != other.CardObstacleIndex) return false;
+    if (CardObstacleTick != other.CardObstacleTick) return false;
+    if (CardZoneIndex != other.CardZoneIndex) return false;
+    if (CardZoneTick != other.CardZoneTick) return false;
+    if (CardObstacleEvent != other.CardObstacleEvent) return false;
+    if (CardObstacleEventTick != other.CardObstacleEventTick) return false;
+    if (CardZoneEvent != other.CardZoneEvent) return false;
+    if (CardZoneEventTick != other.CardZoneEventTick) return false;
+    if (CardFinishTick != other.CardFinishTick) return false;
+    if (CardCleanStreak != other.CardCleanStreak) return false;
+    if (CardWhiffTick != other.CardWhiffTick) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -720,12 +908,23 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (KnockbackNextReloadTick != 0L) hash ^= KnockbackNextReloadTick.GetHashCode();
     if (KnockbackCooldownEndTick != 0L) hash ^= KnockbackCooldownEndTick.GetHashCode();
     if (KnockbackHasBomb != false) hash ^= KnockbackHasBomb.GetHashCode();
-    if (CardStep != 0) hash ^= CardStep.GetHashCode();
-    if (CardAttempt != 0) hash ^= CardAttempt.GetHashCode();
-    if (CardMoveStartTick != 0L) hash ^= CardMoveStartTick.GetHashCode();
     if (CardStunEndTick != 0L) hash ^= CardStunEndTick.GetHashCode();
-    if (CardStreak != 0) hash ^= CardStreak.GetHashCode();
     if (CardSpinStartTick != 0L) hash ^= CardSpinStartTick.GetHashCode();
+    if (CardPosMm != 0) hash ^= CardPosMm.GetHashCode();
+    if (CardUseCount != 0) hash ^= CardUseCount.GetHashCode();
+    if (CardDashStartTick != 0L) hash ^= CardDashStartTick.GetHashCode();
+    if (CardBlockEndTick != 0L) hash ^= CardBlockEndTick.GetHashCode();
+    if (CardObstacleIndex != 0) hash ^= CardObstacleIndex.GetHashCode();
+    if (CardObstacleTick != 0L) hash ^= CardObstacleTick.GetHashCode();
+    if (CardZoneIndex != 0) hash ^= CardZoneIndex.GetHashCode();
+    if (CardZoneTick != 0L) hash ^= CardZoneTick.GetHashCode();
+    if (CardObstacleEvent != 0) hash ^= CardObstacleEvent.GetHashCode();
+    if (CardObstacleEventTick != 0L) hash ^= CardObstacleEventTick.GetHashCode();
+    if (CardZoneEvent != 0) hash ^= CardZoneEvent.GetHashCode();
+    if (CardZoneEventTick != 0L) hash ^= CardZoneEventTick.GetHashCode();
+    if (CardFinishTick != 0L) hash ^= CardFinishTick.GetHashCode();
+    if (CardCleanStreak != 0) hash ^= CardCleanStreak.GetHashCode();
+    if (CardWhiffTick != 0L) hash ^= CardWhiffTick.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -854,29 +1053,73 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(248, 1);
       output.WriteBool(KnockbackHasBomb);
     }
-    if (CardStep != 0) {
-      output.WriteRawTag(128, 2);
-      output.WriteInt32(CardStep);
-    }
-    if (CardAttempt != 0) {
-      output.WriteRawTag(136, 2);
-      output.WriteInt32(CardAttempt);
-    }
-    if (CardMoveStartTick != 0L) {
-      output.WriteRawTag(144, 2);
-      output.WriteInt64(CardMoveStartTick);
-    }
     if (CardStunEndTick != 0L) {
       output.WriteRawTag(152, 2);
       output.WriteInt64(CardStunEndTick);
     }
-    if (CardStreak != 0) {
-      output.WriteRawTag(160, 2);
-      output.WriteInt32(CardStreak);
-    }
     if (CardSpinStartTick != 0L) {
       output.WriteRawTag(168, 2);
       output.WriteInt64(CardSpinStartTick);
+    }
+    if (CardPosMm != 0) {
+      output.WriteRawTag(176, 2);
+      output.WriteInt32(CardPosMm);
+    }
+    if (CardUseCount != 0) {
+      output.WriteRawTag(184, 2);
+      output.WriteInt32(CardUseCount);
+    }
+    if (CardDashStartTick != 0L) {
+      output.WriteRawTag(192, 2);
+      output.WriteInt64(CardDashStartTick);
+    }
+    if (CardBlockEndTick != 0L) {
+      output.WriteRawTag(200, 2);
+      output.WriteInt64(CardBlockEndTick);
+    }
+    if (CardObstacleIndex != 0) {
+      output.WriteRawTag(208, 2);
+      output.WriteInt32(CardObstacleIndex);
+    }
+    if (CardObstacleTick != 0L) {
+      output.WriteRawTag(216, 2);
+      output.WriteInt64(CardObstacleTick);
+    }
+    if (CardZoneIndex != 0) {
+      output.WriteRawTag(224, 2);
+      output.WriteInt32(CardZoneIndex);
+    }
+    if (CardZoneTick != 0L) {
+      output.WriteRawTag(232, 2);
+      output.WriteInt64(CardZoneTick);
+    }
+    if (CardObstacleEvent != 0) {
+      output.WriteRawTag(240, 2);
+      output.WriteInt32(CardObstacleEvent);
+    }
+    if (CardObstacleEventTick != 0L) {
+      output.WriteRawTag(248, 2);
+      output.WriteInt64(CardObstacleEventTick);
+    }
+    if (CardZoneEvent != 0) {
+      output.WriteRawTag(128, 3);
+      output.WriteInt32(CardZoneEvent);
+    }
+    if (CardZoneEventTick != 0L) {
+      output.WriteRawTag(136, 3);
+      output.WriteInt64(CardZoneEventTick);
+    }
+    if (CardFinishTick != 0L) {
+      output.WriteRawTag(144, 3);
+      output.WriteInt64(CardFinishTick);
+    }
+    if (CardCleanStreak != 0) {
+      output.WriteRawTag(152, 3);
+      output.WriteInt32(CardCleanStreak);
+    }
+    if (CardWhiffTick != 0L) {
+      output.WriteRawTag(160, 3);
+      output.WriteInt64(CardWhiffTick);
     }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
@@ -998,29 +1241,73 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(248, 1);
       output.WriteBool(KnockbackHasBomb);
     }
-    if (CardStep != 0) {
-      output.WriteRawTag(128, 2);
-      output.WriteInt32(CardStep);
-    }
-    if (CardAttempt != 0) {
-      output.WriteRawTag(136, 2);
-      output.WriteInt32(CardAttempt);
-    }
-    if (CardMoveStartTick != 0L) {
-      output.WriteRawTag(144, 2);
-      output.WriteInt64(CardMoveStartTick);
-    }
     if (CardStunEndTick != 0L) {
       output.WriteRawTag(152, 2);
       output.WriteInt64(CardStunEndTick);
     }
-    if (CardStreak != 0) {
-      output.WriteRawTag(160, 2);
-      output.WriteInt32(CardStreak);
-    }
     if (CardSpinStartTick != 0L) {
       output.WriteRawTag(168, 2);
       output.WriteInt64(CardSpinStartTick);
+    }
+    if (CardPosMm != 0) {
+      output.WriteRawTag(176, 2);
+      output.WriteInt32(CardPosMm);
+    }
+    if (CardUseCount != 0) {
+      output.WriteRawTag(184, 2);
+      output.WriteInt32(CardUseCount);
+    }
+    if (CardDashStartTick != 0L) {
+      output.WriteRawTag(192, 2);
+      output.WriteInt64(CardDashStartTick);
+    }
+    if (CardBlockEndTick != 0L) {
+      output.WriteRawTag(200, 2);
+      output.WriteInt64(CardBlockEndTick);
+    }
+    if (CardObstacleIndex != 0) {
+      output.WriteRawTag(208, 2);
+      output.WriteInt32(CardObstacleIndex);
+    }
+    if (CardObstacleTick != 0L) {
+      output.WriteRawTag(216, 2);
+      output.WriteInt64(CardObstacleTick);
+    }
+    if (CardZoneIndex != 0) {
+      output.WriteRawTag(224, 2);
+      output.WriteInt32(CardZoneIndex);
+    }
+    if (CardZoneTick != 0L) {
+      output.WriteRawTag(232, 2);
+      output.WriteInt64(CardZoneTick);
+    }
+    if (CardObstacleEvent != 0) {
+      output.WriteRawTag(240, 2);
+      output.WriteInt32(CardObstacleEvent);
+    }
+    if (CardObstacleEventTick != 0L) {
+      output.WriteRawTag(248, 2);
+      output.WriteInt64(CardObstacleEventTick);
+    }
+    if (CardZoneEvent != 0) {
+      output.WriteRawTag(128, 3);
+      output.WriteInt32(CardZoneEvent);
+    }
+    if (CardZoneEventTick != 0L) {
+      output.WriteRawTag(136, 3);
+      output.WriteInt64(CardZoneEventTick);
+    }
+    if (CardFinishTick != 0L) {
+      output.WriteRawTag(144, 3);
+      output.WriteInt64(CardFinishTick);
+    }
+    if (CardCleanStreak != 0) {
+      output.WriteRawTag(152, 3);
+      output.WriteInt32(CardCleanStreak);
+    }
+    if (CardWhiffTick != 0L) {
+      output.WriteRawTag(160, 3);
+      output.WriteInt64(CardWhiffTick);
     }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
@@ -1115,23 +1402,56 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (KnockbackHasBomb != false) {
       size += 2 + 1;
     }
-    if (CardStep != 0) {
-      size += 2 + pb::CodedOutputStream.ComputeInt32Size(CardStep);
-    }
-    if (CardAttempt != 0) {
-      size += 2 + pb::CodedOutputStream.ComputeInt32Size(CardAttempt);
-    }
-    if (CardMoveStartTick != 0L) {
-      size += 2 + pb::CodedOutputStream.ComputeInt64Size(CardMoveStartTick);
-    }
     if (CardStunEndTick != 0L) {
       size += 2 + pb::CodedOutputStream.ComputeInt64Size(CardStunEndTick);
     }
-    if (CardStreak != 0) {
-      size += 2 + pb::CodedOutputStream.ComputeInt32Size(CardStreak);
-    }
     if (CardSpinStartTick != 0L) {
       size += 2 + pb::CodedOutputStream.ComputeInt64Size(CardSpinStartTick);
+    }
+    if (CardPosMm != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(CardPosMm);
+    }
+    if (CardUseCount != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(CardUseCount);
+    }
+    if (CardDashStartTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(CardDashStartTick);
+    }
+    if (CardBlockEndTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(CardBlockEndTick);
+    }
+    if (CardObstacleIndex != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(CardObstacleIndex);
+    }
+    if (CardObstacleTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(CardObstacleTick);
+    }
+    if (CardZoneIndex != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(CardZoneIndex);
+    }
+    if (CardZoneTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(CardZoneTick);
+    }
+    if (CardObstacleEvent != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(CardObstacleEvent);
+    }
+    if (CardObstacleEventTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(CardObstacleEventTick);
+    }
+    if (CardZoneEvent != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(CardZoneEvent);
+    }
+    if (CardZoneEventTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(CardZoneEventTick);
+    }
+    if (CardFinishTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(CardFinishTick);
+    }
+    if (CardCleanStreak != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(CardCleanStreak);
+    }
+    if (CardWhiffTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(CardWhiffTick);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -1237,23 +1557,56 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (other.KnockbackHasBomb != false) {
       KnockbackHasBomb = other.KnockbackHasBomb;
     }
-    if (other.CardStep != 0) {
-      CardStep = other.CardStep;
-    }
-    if (other.CardAttempt != 0) {
-      CardAttempt = other.CardAttempt;
-    }
-    if (other.CardMoveStartTick != 0L) {
-      CardMoveStartTick = other.CardMoveStartTick;
-    }
     if (other.CardStunEndTick != 0L) {
       CardStunEndTick = other.CardStunEndTick;
     }
-    if (other.CardStreak != 0) {
-      CardStreak = other.CardStreak;
-    }
     if (other.CardSpinStartTick != 0L) {
       CardSpinStartTick = other.CardSpinStartTick;
+    }
+    if (other.CardPosMm != 0) {
+      CardPosMm = other.CardPosMm;
+    }
+    if (other.CardUseCount != 0) {
+      CardUseCount = other.CardUseCount;
+    }
+    if (other.CardDashStartTick != 0L) {
+      CardDashStartTick = other.CardDashStartTick;
+    }
+    if (other.CardBlockEndTick != 0L) {
+      CardBlockEndTick = other.CardBlockEndTick;
+    }
+    if (other.CardObstacleIndex != 0) {
+      CardObstacleIndex = other.CardObstacleIndex;
+    }
+    if (other.CardObstacleTick != 0L) {
+      CardObstacleTick = other.CardObstacleTick;
+    }
+    if (other.CardZoneIndex != 0) {
+      CardZoneIndex = other.CardZoneIndex;
+    }
+    if (other.CardZoneTick != 0L) {
+      CardZoneTick = other.CardZoneTick;
+    }
+    if (other.CardObstacleEvent != 0) {
+      CardObstacleEvent = other.CardObstacleEvent;
+    }
+    if (other.CardObstacleEventTick != 0L) {
+      CardObstacleEventTick = other.CardObstacleEventTick;
+    }
+    if (other.CardZoneEvent != 0) {
+      CardZoneEvent = other.CardZoneEvent;
+    }
+    if (other.CardZoneEventTick != 0L) {
+      CardZoneEventTick = other.CardZoneEventTick;
+    }
+    if (other.CardFinishTick != 0L) {
+      CardFinishTick = other.CardFinishTick;
+    }
+    if (other.CardCleanStreak != 0) {
+      CardCleanStreak = other.CardCleanStreak;
+    }
+    if (other.CardWhiffTick != 0L) {
+      CardWhiffTick = other.CardWhiffTick;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -1399,28 +1752,72 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
           KnockbackHasBomb = input.ReadBool();
           break;
         }
-        case 256: {
-          CardStep = input.ReadInt32();
-          break;
-        }
-        case 264: {
-          CardAttempt = input.ReadInt32();
-          break;
-        }
-        case 272: {
-          CardMoveStartTick = input.ReadInt64();
-          break;
-        }
         case 280: {
           CardStunEndTick = input.ReadInt64();
           break;
         }
-        case 288: {
-          CardStreak = input.ReadInt32();
-          break;
-        }
         case 296: {
           CardSpinStartTick = input.ReadInt64();
+          break;
+        }
+        case 304: {
+          CardPosMm = input.ReadInt32();
+          break;
+        }
+        case 312: {
+          CardUseCount = input.ReadInt32();
+          break;
+        }
+        case 320: {
+          CardDashStartTick = input.ReadInt64();
+          break;
+        }
+        case 328: {
+          CardBlockEndTick = input.ReadInt64();
+          break;
+        }
+        case 336: {
+          CardObstacleIndex = input.ReadInt32();
+          break;
+        }
+        case 344: {
+          CardObstacleTick = input.ReadInt64();
+          break;
+        }
+        case 352: {
+          CardZoneIndex = input.ReadInt32();
+          break;
+        }
+        case 360: {
+          CardZoneTick = input.ReadInt64();
+          break;
+        }
+        case 368: {
+          CardObstacleEvent = input.ReadInt32();
+          break;
+        }
+        case 376: {
+          CardObstacleEventTick = input.ReadInt64();
+          break;
+        }
+        case 384: {
+          CardZoneEvent = input.ReadInt32();
+          break;
+        }
+        case 392: {
+          CardZoneEventTick = input.ReadInt64();
+          break;
+        }
+        case 400: {
+          CardFinishTick = input.ReadInt64();
+          break;
+        }
+        case 408: {
+          CardCleanStreak = input.ReadInt32();
+          break;
+        }
+        case 416: {
+          CardWhiffTick = input.ReadInt64();
           break;
         }
       }
@@ -1567,28 +1964,72 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
           KnockbackHasBomb = input.ReadBool();
           break;
         }
-        case 256: {
-          CardStep = input.ReadInt32();
-          break;
-        }
-        case 264: {
-          CardAttempt = input.ReadInt32();
-          break;
-        }
-        case 272: {
-          CardMoveStartTick = input.ReadInt64();
-          break;
-        }
         case 280: {
           CardStunEndTick = input.ReadInt64();
           break;
         }
-        case 288: {
-          CardStreak = input.ReadInt32();
-          break;
-        }
         case 296: {
           CardSpinStartTick = input.ReadInt64();
+          break;
+        }
+        case 304: {
+          CardPosMm = input.ReadInt32();
+          break;
+        }
+        case 312: {
+          CardUseCount = input.ReadInt32();
+          break;
+        }
+        case 320: {
+          CardDashStartTick = input.ReadInt64();
+          break;
+        }
+        case 328: {
+          CardBlockEndTick = input.ReadInt64();
+          break;
+        }
+        case 336: {
+          CardObstacleIndex = input.ReadInt32();
+          break;
+        }
+        case 344: {
+          CardObstacleTick = input.ReadInt64();
+          break;
+        }
+        case 352: {
+          CardZoneIndex = input.ReadInt32();
+          break;
+        }
+        case 360: {
+          CardZoneTick = input.ReadInt64();
+          break;
+        }
+        case 368: {
+          CardObstacleEvent = input.ReadInt32();
+          break;
+        }
+        case 376: {
+          CardObstacleEventTick = input.ReadInt64();
+          break;
+        }
+        case 384: {
+          CardZoneEvent = input.ReadInt32();
+          break;
+        }
+        case 392: {
+          CardZoneEventTick = input.ReadInt64();
+          break;
+        }
+        case 400: {
+          CardFinishTick = input.ReadInt64();
+          break;
+        }
+        case 408: {
+          CardCleanStreak = input.ReadInt32();
+          break;
+        }
+        case 416: {
+          CardWhiffTick = input.ReadInt64();
           break;
         }
       }
