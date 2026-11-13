@@ -4,11 +4,12 @@ namespace LOP
     public struct CardRushRunnerState
     {
         public long StunEndTick;        // 기절이 끝나는 틱. 0 = 아직 없음
-        public long SpinStartTick;      // 카드가 다시 도는 틱(마지막 사용 + 쿨다운). 0 = 아직 안 썼다 — 출발 틱부터 돈다
+        public long SpinStartTick;      // 돌리기를 다시 시작할 수 있는 틱(마지막 사용 + 쿨다운). 0 = 아직 안 썼다 — 출발 틱부터 가능
         public int PosMm;               // 출발선에서 앞으로 간 거리(mm). 정수라 클·서가 같다
         public int UseCount;            // 카드를 쓴 횟수 — 다음 첫 장의 씨앗
         public long DashStartTick;      // 대시를 쓴 틱. 0 = 대시 중 아님
-        public long LockTick;           // 카드를 잡은 틱. 0 = 잡지 않음(돈다)
+        public long RollStartTick;      // 카드가 돌기 시작한 틱. 0 = 안 돈다(평소 뒷면) — 도는 색의 기준
+        public long LockTick;           // 카드를 잡은 틱. 0 = 잡지 않음
         public long ExpireTick;         // 잡은 카드가 마지막으로 사라진 틱. 0 = 없음 — 그림·소리용
         public long JumpStartTick;      // 점프를 시작한 틱. 0 = 땅
         public long ShotTick;           // 투사체를 던진 틱. 0 = 날고 있는 투사체 없음

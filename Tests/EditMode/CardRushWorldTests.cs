@@ -98,6 +98,7 @@ namespace LOP.Tests
             }
             Assert.Greater(saveTick, StartTick, "잡은 채로 투사체가 나는 틱에 닿아야 한다");
             var atSave = State(runner);
+            Assert.AreNotEqual(0, atSave.RollStartTick, "잡은 카드도 돌기 시작한 틱(색 기준)을 지닌 채 저장된다");
 
             //  되감기 저장은 128틱까지라 그 안에서 재생한다.
             var taps = Taps(120, 7, rate: 0.3);
