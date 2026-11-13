@@ -1,6 +1,6 @@
 namespace LOP
 {
-    /// <summary>카드 색. 늘 빨 → 노 → 파 순으로 돈다 = 부수기 · 방패 · 대시. 노랑은 금빛으로 그린다.</summary>
+    /// <summary>카드 색. 늘 빨 → 노 → 파 순으로 돈다 = 던지기 · 점프 · 대시. 노랑은 금빛으로 그린다.</summary>
     public enum CardColor { Red = 0, Yellow = 1, Blue = 2 }
 
     public static class CardColors

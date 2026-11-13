@@ -16,7 +16,7 @@ message EntitySnap
 	int64 ability_end_tick  = 10;   // 시전이 끝나는 절대 틱(= RecoveryEndTick)
 	repeated ProtoActiveEffect status_effects = 11;
 	reserved 12, 13;                // 옛 bool stunned / invulnerable — 남은 시간을 못 담아 은퇴
-	reserved 32, 33, 34, 36;        // 옛 card_step·card_attempt·card_move_start_tick·card_streak — 카드 러시 3차에 뜻이 사라져 은퇴(다른 뜻으로 다시 쓰지 않는다)
+	reserved 32, 33, 34, 36, 41;    // 옛 card_step·card_attempt·card_move_start_tick·card_streak(3차)·card_block_end_tick(4차, 방패 삭제) — 뜻이 사라져 은퇴(다른 뜻으로 다시 쓰지 않는다)
 	int64 stun_end_tick = 14;       // Flappy: 멈춤이 풀리는 절대 틱. 0 = 안 멈춤
 	int64 invuln_end_tick = 15;     // Flappy: 다시 안 걸리는 구간이 끝나는 절대 틱. 0 = 아님
 	float posture_axis = 16;        // Skydive: 0 = 대자, 1 = 다이브
@@ -51,7 +51,6 @@ message EntitySnap
 	int32 card_pos_mm = 38;           // CardRush: 출발선에서 간 거리(mm)
 	int32 card_use_count = 39;        // CardRush: 카드 쓴 횟수(첫 장 씨앗)
 	int64 card_dash_start_tick = 40;  // CardRush: 대시를 쓴 틱. 0 = 대시 중 아님
-	int64 card_block_end_tick = 41;   // CardRush: 방패가 끝나는 틱. 0 = 없음
 	int32 card_obstacle_index = 42;   // CardRush: 지금 상대하는 장애물 번호
 	int64 card_obstacle_tick = 43;    // CardRush: 바리케이드 닿은 틱 / 굴러오기 시작한 틱. 0 = 아직
 	int32 card_zone_index = 44;       // CardRush: 지금 상대하는 구역 번호
@@ -62,5 +61,10 @@ message EntitySnap
 	int64 card_zone_event_tick = 49;
 	int64 card_finish_tick = 50;      // CardRush: 완주 틱. 0 = 아직
 	int32 card_clean_streak = 51;     // CardRush: 지금 연속 무사 통과
-	int64 card_whiff_tick = 52;       // CardRush: 마지막 헛방 틱(손 닿는 장애물 없이 빨강). 0 = 없음 — 장애물 결과 칸을 덮지 않는다
+	int64 card_whiff_tick = 52;       // CardRush: 투사체가 꺼진 틱(헛방 포함). 0 = 없음 — 장애물 결과 칸을 덮지 않는다
+	int64 card_lock_tick = 53;        // CardRush: 카드를 잡은 틱. 0 = 돈다
+	int64 card_expire_tick = 54;      // CardRush: 잡은 카드가 마지막으로 사라진 틱. 0 = 없음
+	int64 card_jump_start_tick = 55;  // CardRush: 점프 시작 틱. 0 = 땅
+	int64 card_shot_tick = 56;        // CardRush: 날고 있는 투사체를 던진 틱. 0 = 없음
+	int32 card_shot_from_mm = 57;     // CardRush: 투사체 출발 자리(mm)
 }

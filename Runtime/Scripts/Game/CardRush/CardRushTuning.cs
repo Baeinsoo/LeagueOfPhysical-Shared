@@ -17,11 +17,14 @@ namespace LOP
         public readonly int RollStunTicks;
         public readonly int ZoneKnockMm;
         public readonly int ZoneStunTicks;
+        public readonly int PitPermille;
+        public readonly int PitStunTicks;
 
         /// <summary>검증은 <see cref="CardRushConfig"/>가 한다 — 시험은 손으로 고른 값을 바로 넣는다.</summary>
         public CardRushTuning(int trackMm, int obstacleGapMinMm, int obstacleGapMaxMm, int barricadePermille,
                               int zoneGapMinMm, int zoneGapMaxMm, int barricadeWaitTicks,
-                              int rollKnockMm, int rollStunTicks, int zoneKnockMm, int zoneStunTicks)
+                              int rollKnockMm, int rollStunTicks, int zoneKnockMm, int zoneStunTicks,
+                              int pitPermille, int pitStunTicks)
         {
             TrackMm = trackMm;
             ObstacleGapMinMm = obstacleGapMinMm;
@@ -34,6 +37,8 @@ namespace LOP
             RollStunTicks = rollStunTicks;
             ZoneKnockMm = zoneKnockMm;
             ZoneStunTicks = zoneStunTicks;
+            PitPermille = pitPermille;
+            PitStunTicks = pitStunTicks;
         }
 
         //  float 곱은 7.98f × 1000 같은 값이 7979.99…로 떨어질 수 있어 double로 곱하고 반올림을 고정한다.

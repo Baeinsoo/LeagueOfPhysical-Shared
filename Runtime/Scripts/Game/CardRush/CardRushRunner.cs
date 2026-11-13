@@ -8,7 +8,11 @@ namespace LOP
         public int PosMm;               // 출발선에서 앞으로 간 거리(mm). 정수라 클·서가 같다
         public int UseCount;            // 카드를 쓴 횟수 — 다음 첫 장의 씨앗
         public long DashStartTick;      // 대시를 쓴 틱. 0 = 대시 중 아님
-        public long BlockEndTick;       // 방패가 끝나는 틱. 0 = 없음
+        public long LockTick;           // 카드를 잡은 틱. 0 = 잡지 않음(돈다)
+        public long ExpireTick;         // 잡은 카드가 마지막으로 사라진 틱. 0 = 없음 — 그림·소리용
+        public long JumpStartTick;      // 점프를 시작한 틱. 0 = 땅
+        public long ShotTick;           // 투사체를 던진 틱. 0 = 날고 있는 투사체 없음
+        public int ShotFromMm;          // 투사체가 출발한 자리(mm)
         public int ObstacleIndex;       // 지금 상대하는 장애물 번호(코스 장애물 줄)
         public long ObstacleTick;       // 바리케이드면 닿은 틱, 굴러오는 것이면 굴러오기 시작한 틱. 0 = 아직
         public int ZoneIndex;           // 지금 상대하는 구역 번호(코스 구역 줄)
@@ -17,7 +21,7 @@ namespace LOP
         public long ObstacleEventTick;
         public int ZoneEvent;           // 마지막 구역 결과(CardRushZoneEvent)
         public long ZoneEventTick;
-        public long WhiffTick;          // 마지막 헛방 틱. 0 = 없음 — 결과 칸과 따로 둬야 막음·올라감 직후 헛방이 그 결과를 안 지운다
+        public long WhiffTick;          // 투사체가 아무것도 못 맞히고 사거리 끝에서 꺼진 틱. 0 = 없음 — 결과 칸과 따로 둬야 직전 결과를 안 지운다
         public long FinishTick;         // 완주 틱. 0 = 아직
         public int CleanStreak;         // 지금 연속 무사 통과
         public int BestCleanStreak;     // 이 판 최고(서버 통계·기록) — 와이어에 없다

@@ -83,6 +83,6 @@ namespace LOP.Tests
 
         private static CardRushConfig Config(float reactMin, float reactMax, int minLanes)
             => new CardRushConfig(120, minLanes, 140, 11, 19, 0.5f, 28, 48, 1.2f, 1.39f, 0.7f, 2.77f, 1f,
-                                  reactMin, reactMax, 0.04f, 0.06f, 0.5f);
+                                  reactMin, reactMax, 0.04f, 0.06f, 0.5f, 0.35f, 0.8f);
     }
 }
