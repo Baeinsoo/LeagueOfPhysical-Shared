@@ -81,58 +81,69 @@ namespace LOP.Tests
         [Test]
         public void 라이브와_재생이_같다()
         {
-            //  저장 지점 = 바리케이드에 닿은 뒤·올라가기 전. 그래야 복원이 ObstacleTick(닿은 틱)을 빠뜨리면 올라가는 틱이 갈린다.
-            //  닿기 전에도 이 탭 열을 그대로 써서 카드·대시 상태가 섞여 있게 한다.
-            var taps = Taps(2000, 7);
+            //  저장 지점 = 카드를 잡은 뒤·투사체가 날고 있는 동안. 그래야 복원이 잡은 틱이나 투사체 칸을 빠뜨리면 재생이 갈린다
+            //  (잡은 틱을 잃으면 다음 탭이 쓰기 대신 잡기가 된다).
             var world = Create(Rules(), out var runner);
             world.Tick(StartTick - 1, Dt);   // 코스를 만든다
-            var track = world.Track;
-            Assert.IsNotNull(track);
+            Assert.IsNotNull(world.Track);
 
+            //  막 누르면 잡고 → 다음 틱에 쓰고 → 쿨다운 뒤 또 잡는다. 빨강을 던진 뒤 다시 잡은 틱이 저장 지점이다.
             long saveTick = -1;
-            for (long t = StartTick; t < StartTick + taps.Length && saveTick < 0; t++)
+            for (long t = StartTick; t < StartTick + 3000 && saveTick < 0; t++)
             {
-                TickWith(world, runner, t, taps[t - StartTick]);
+                TickWith(world, runner, t, true);
                 world.SaveState(t);
                 var s = State(runner);
-                if (s.ObstacleTick != 0 && s.ObstacleIndex < track.Obstacles.Count
-                    && track.Obstacles[s.ObstacleIndex].Kind == CardRushObstacleKind.Barricade)
-                {
-                    saveTick = t;
-                }
+                if (s.LockTick != 0 && s.ShotTick != 0) saveTick = t;
             }
-            Assert.Greater(saveTick, StartTick, "탭 열이 바리케이드에 닿아야 한다");
+            Assert.Greater(saveTick, StartTick, "잡은 채로 투사체가 나는 틱에 닿아야 한다");
             var atSave = State(runner);
-            int barricade = atSave.ObstacleIndex;
-            Assert.Greater(atSave.UseCount, 0, "저장 지점에 카드 쓴 기록이 있어야 복원을 시험한다");
 
-            //  닿은 뒤엔 올라갈 때까지 안 누른다(빨강으로 부수면 닿은 틱이 판정에서 빠진다) — 그 뒤엔 다시 섞어 누른다.
-            const int replayTicks = 120;
-            bool[] after = new bool[replayTicks + 1];
-            for (int i = 1; i <= replayTicks; i++)
-                after[i] = i > config.Tuning.BarricadeWaitTicks && taps[(saveTick - StartTick + i) % taps.Length];
-            for (int i = 1; i <= replayTicks; i++)
+            //  되감기 저장은 128틱까지라 그 안에서 재생한다.
+            var taps = Taps(120, 7, rate: 0.3);
+            taps[0] = true;   // 저장 직후 첫 탭 = 잡은 카드 쓰기
+            for (int i = 0; i < taps.Length; i++)
             {
-                TickWith(world, runner, saveTick + i, after[i]);
-                world.SaveState(saveTick + i);
+                TickWith(world, runner, saveTick + 1 + i, taps[i]);
+                world.SaveState(saveTick + 1 + i);
             }
             var live = State(runner);
             var livePos = Pos(runner);
-            Assert.Greater(live.ObstacleIndex, barricade, "저장 뒤에 바리케이드를 넘어야 한다");
-            Assert.Greater(live.UseCount, atSave.UseCount, "저장 뒤에도 카드를 써야 한다");
+            Assert.GreaterOrEqual(live.UseCount, atSave.UseCount + 2, "저장 뒤에도 카드를 써야 한다");
 
             Assert.IsTrue(world.LoadState(saveTick));
             Assert.AreEqual(atSave, State(runner), "불러오면 저장 틱의 상태");
             Assert.IsTrue(world.TryGetSaved(saveTick, runner.Id, out var saved));
             Assert.AreEqual(atSave, saved);
 
-            for (int i = 1; i <= replayTicks; i++)
+            for (int i = 0; i < taps.Length; i++)
             {
-                TickWith(world, runner, saveTick + i, after[i]);
-                world.SaveState(saveTick + i);
+                TickWith(world, runner, saveTick + 1 + i, taps[i]);
+                world.SaveState(saveTick + 1 + i);
             }
             Assert.AreEqual(live, State(runner), "라이브 == 재생");
             Assert.AreEqual(livePos, Pos(runner));
+        }
+
+        [Test]
+        public void 공중이면_자리에_점프_높이가_든다()
+        {
+            var world = Create(Rules(), out var runner);
+            world.Tick(StartTick - 1, Dt);
+            var origin = Rules().LaneOrigin(Lane);
+            var r = runner.Get<CardRushRunner>();
+            long jump = StartTick + 10;
+            r.State = new CardRushRunnerState { PosMm = 1000, JumpStartTick = jump };
+            for (long t = jump; t < jump + CardRushRules.JumpTicks; t++)
+            {
+                TickWith(world, runner, t, false);
+                int k = (int)(t - jump + 1);
+                float want = origin.y + (k < CardRushRules.JumpTicks ? CardRushRules.JumpHeightAt(k) / 1000f : 0f);
+                Assert.AreEqual(want, Pos(runner).Y, 1e-4f, $"k={k}");
+            }
+            Assert.AreEqual(0, State(runner).JumpStartTick, "40틱째에 내려앉았다");
+            Assert.AreEqual(origin.y, Pos(runner).Y, 1e-4f, "땅이면 높이 0");
+            Assert.Greater(CardRushRules.JumpHeightAt(CardRushRules.JumpTicks / 2), 0);
         }
 
         [Test]

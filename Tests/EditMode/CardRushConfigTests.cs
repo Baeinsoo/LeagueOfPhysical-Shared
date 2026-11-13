@@ -7,13 +7,13 @@ namespace LOP.Tests
         //  시작 값(spec §6.1) — 인수 하나만 바꿔 검증을 본다.
         private static CardRushConfig Make(float track = 140f, float obstacleMin = 11f, float obstacleMax = 19f, float barricadeShare = 0.5f,
                                            float zoneMin = 28f, float zoneMax = 48f, float reactMin = 0.22f, float reactMax = 0.40f,
-                                           float rollKnock = 1.39f)
+                                           float rollKnock = 1.39f, float pitShare = 0.35f, float pitStun = 0.8f)
             => new CardRushConfig(matchDurationSeconds: 120f, minLanes: 4, trackLengthM: track,
                                   obstacleGapMinM: obstacleMin, obstacleGapMaxM: obstacleMax, barricadeShare: barricadeShare,
                                   zoneGapMinM: zoneMin, zoneGapMaxM: zoneMax, barricadeWaitSeconds: 1.2f,
                                   rollKnockM: rollKnock, rollStunSeconds: 0.7f, zoneKnockM: 2.77f, zoneStunSeconds: 1.0f,
                                   botReactMinSeconds: reactMin, botReactMaxSeconds: reactMax, botReactExtraSeconds: 0.20f,
-                                  botHesitateChance: 0.02f, botFreeDashChance: 0.5f);
+                                  botHesitateChance: 0.02f, botFreeDashChance: 0.5f, pitShare: pitShare, pitStunSeconds: pitStun);
 
         [Test]
         public void 시작_값은_mm와_틱으로_한_번_바뀐다()
@@ -30,6 +30,8 @@ namespace LOP.Tests
             Assert.AreEqual(35, t.RollStunTicks);
             Assert.AreEqual(2770, t.ZoneKnockMm);
             Assert.AreEqual(50, t.ZoneStunTicks);
+            Assert.AreEqual(350, t.PitPermille);
+            Assert.AreEqual(40, t.PitStunTicks);
         }
 
         [Test]
@@ -41,13 +43,15 @@ namespace LOP.Tests
             Assert.AreEqual(0.20f, c.BotReactExtraSeconds, 1e-6f);
             Assert.AreEqual(0.02f, c.BotHesitateChance, 1e-6f);
             Assert.AreEqual(0.5f, c.BotFreeDashChance, 1e-6f);
+            Assert.AreEqual(0.35f, c.PitShare, 1e-6f);
+            Assert.AreEqual(0.8f, c.PitStunSeconds, 1e-6f);
         }
 
         [Test]
-        public void 장애물_간격_최소가_7_99m보다_작으면_예외()
+        public void 장애물_간격_최소가_9_39m보다_작으면_예외()
         {
-            Assert.Throws<System.ArgumentOutOfRangeException>(() => Make(obstacleMin: 7.98f));
-            Assert.DoesNotThrow(() => Make(obstacleMin: 7.99f));
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => Make(obstacleMin: 9.38f));
+            Assert.DoesNotThrow(() => Make(obstacleMin: 9.39f));
         }
 
         [Test]
@@ -75,8 +79,30 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 구덩이_비율은_0_1이고_바리케이드와_합이_1_이하()
+        {
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => Make(pitShare: -0.1f));
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => Make(pitShare: 1.1f));
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => Make(barricadeShare: 0.7f, pitShare: 0.35f));
+            Assert.DoesNotThrow(() => Make(barricadeShare: 0.35f, pitShare: 0.65f), "합이 정확히 1이면 된다(굴러오는 것 없음)");
+            Assert.DoesNotThrow(() => Make(barricadeShare: 0f, pitShare: 0f));
+        }
+
+        [Test]
         public void 벌은_0보다_커야()
-            => Assert.Throws<System.ArgumentOutOfRangeException>(() => Make(rollKnock: 0f));
+        {
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => Make(rollKnock: 0f));
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => Make(pitStun: 0f));
+        }
+
+        [Test]
+        public void 구덩이_칸은_생략하면_시작_값()
+        {
+            //  4차 Task 1 동안 클·서가 옛 생성자로 부른다 — 끝 두 칸을 빼면 시작 값.
+            var c = new CardRushConfig(120f, 4, 140f, 11f, 19f, 0.5f, 28f, 48f, 1.2f, 1.39f, 0.7f, 2.77f, 1f, 0.22f, 0.40f, 0.20f, 0.02f, 0.5f);
+            Assert.AreEqual(350, c.Tuning.PitPermille);
+            Assert.AreEqual(40, c.Tuning.PitStunTicks);
+        }
 
         [Test]
         public void 봇_반응_최소가_최대보다_크면_예외()

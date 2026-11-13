@@ -24,6 +24,8 @@ namespace LOP
         public float BotReactExtraSeconds { get; }
         public float BotHesitateChance { get; }
         public float BotFreeDashChance { get; }
+        public float PitShare { get; }
+        public float PitStunSeconds { get; }
 
         public CardRushTuning Tuning { get; }
 
@@ -34,7 +36,8 @@ namespace LOP
                               float zoneGapMinM, float zoneGapMaxM, float barricadeWaitSeconds,
                               float rollKnockM, float rollStunSeconds, float zoneKnockM, float zoneStunSeconds,
                               float botReactMinSeconds, float botReactMaxSeconds, float botReactExtraSeconds,
-                              float botHesitateChance, float botFreeDashChance)
+                              float botHesitateChance, float botFreeDashChance,
+                              float pitShare = 0.35f, float pitStunSeconds = 0.8f)
         {
             if (minLanes < 1 || minLanes > CardRushLanes.MaxLanes)
                 throw new System.ArgumentOutOfRangeException(nameof(minLanes), $"레인 수는 1~{CardRushLanes.MaxLanes}이어야 한다");
@@ -62,12 +65,19 @@ namespace LOP
 
             if (!(barricadeShare >= 0f && barricadeShare <= 1f))
                 throw new System.ArgumentOutOfRangeException(nameof(barricadeShare), $"바리케이드 비율은 0~1이어야 한다 — 지금 {barricadeShare}");
+            if (!(pitShare >= 0f && pitShare <= 1f))
+                throw new System.ArgumentOutOfRangeException(nameof(pitShare), $"구덩이 비율은 0~1이어야 한다 — 지금 {pitShare}");
+            //  천분율로 더한다 — float 0.35 + 0.65가 1을 살짝 넘어 멀쩡한 표를 거절하지 않게.
+            if (CardRushTuning.Permille(barricadeShare) + CardRushTuning.Permille(pitShare) > 1000)
+                throw new System.ArgumentOutOfRangeException(nameof(pitShare),
+                    $"바리케이드 + 구덩이 비율은 1 이하여야 한다(나머지가 굴러오는 것) — 지금 {barricadeShare} + {pitShare}");
 
             if (!(barricadeWaitSeconds > 0f)) throw new System.ArgumentOutOfRangeException(nameof(barricadeWaitSeconds), "바리케이드 기다림은 0보다 커야 한다");
             if (!(rollKnockM > 0f)) throw new System.ArgumentOutOfRangeException(nameof(rollKnockM), "꽈당 밀림은 0보다 커야 한다");
             if (!(rollStunSeconds > 0f)) throw new System.ArgumentOutOfRangeException(nameof(rollStunSeconds), "꽈당 기절은 0보다 커야 한다");
             if (!(zoneKnockM > 0f)) throw new System.ArgumentOutOfRangeException(nameof(zoneKnockM), "으악 밀림은 0보다 커야 한다");
             if (!(zoneStunSeconds > 0f)) throw new System.ArgumentOutOfRangeException(nameof(zoneStunSeconds), "으악 기절은 0보다 커야 한다");
+            if (!(pitStunSeconds > 0f)) throw new System.ArgumentOutOfRangeException(nameof(pitStunSeconds), "풍덩 기절은 0보다 커야 한다");
 
             MatchDurationSeconds = matchDurationSeconds;
             MinLanes = minLanes;
@@ -87,6 +97,8 @@ namespace LOP
             BotReactExtraSeconds = botReactExtraSeconds;
             BotHesitateChance = botHesitateChance;
             BotFreeDashChance = botFreeDashChance;
+            PitShare = pitShare;
+            PitStunSeconds = pitStunSeconds;
 
             Tuning = new CardRushTuning(
                 trackMm: trackMm,
@@ -95,7 +107,8 @@ namespace LOP
                 zoneGapMinMm: zoneMin, zoneGapMaxMm: zoneMax,
                 barricadeWaitTicks: CardRushTiming.Ticks(barricadeWaitSeconds),
                 rollKnockMm: CardRushTuning.Mm(rollKnockM), rollStunTicks: CardRushTiming.Ticks(rollStunSeconds),
-                zoneKnockMm: CardRushTuning.Mm(zoneKnockM), zoneStunTicks: CardRushTiming.Ticks(zoneStunSeconds));
+                zoneKnockMm: CardRushTuning.Mm(zoneKnockM), zoneStunTicks: CardRushTiming.Ticks(zoneStunSeconds),
+                pitPermille: CardRushTuning.Permille(pitShare), pitStunTicks: CardRushTiming.Ticks(pitStunSeconds));
         }
     }
 }

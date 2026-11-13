@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace LOP
 {
     /// <summary>
-    /// 카드 러시의 시뮬 코어(3차 장애물 레이스). 물리 없이 선수 상태(<see cref="CardRushRunnerState"/>) 하나로 판정하고,
+    /// 카드 러시의 시뮬 코어(장애물 레이스, 4차 잡고 쓰기). 물리 없이 선수 상태(<see cref="CardRushRunnerState"/>) 하나로 판정하고,
     /// 자리는 그 상태(<see cref="CardRushRunnerState.PosMm"/>)에서 계산해 적는다.
     /// 되감기 상태는 선수 상태 값 하나뿐이다 — 자리·결승 틱은 불러온 뒤 상태에서 다시 적는다.
     /// </summary>
@@ -130,6 +130,9 @@ namespace LOP
             if (transform != null)
             {
                 var p = CardRushLanes.PositionAt(runner.LaneOrigin, Rules.Forward, runner.State.PosMm);
+                //  공중이면 높이를 자리에 넣는다 — 판정엔 안 쓰지만 남의 몸 보간이 점프를 그대로 보인다.
+                if (CardRushRunnerSim.IsAirborne(runner.State))
+                    p.y += CardRushRules.JumpHeightAt((int)(tick - runner.State.JumpStartTick + 1)) / 1000f;
                 transform.Position = new System.Numerics.Vector3(p.x, p.y, p.z);
             }
 

@@ -9,7 +9,8 @@ namespace LOP.Tests
         public static CardRushTuning Default => new CardRushTuning(
             trackMm: 140000, obstacleGapMinMm: 11000, obstacleGapMaxMm: 19000, barricadePermille: 500,
             zoneGapMinMm: 28000, zoneGapMaxMm: 48000, barricadeWaitTicks: 60,
-            rollKnockMm: 1390, rollStunTicks: 35, zoneKnockMm: 2770, zoneStunTicks: 50);
+            rollKnockMm: 1390, rollStunTicks: 35, zoneKnockMm: 2770, zoneStunTicks: 50,
+            pitPermille: 350, pitStunTicks: 40);
     }
 
     public class CardRushTrackTests
@@ -42,6 +43,11 @@ namespace LOP.Tests
             var a = CardRushTrack.ForTests(140000, obstacles, zones, 1);
             Assert.AreNotEqual(a.Fingerprint, CardRushTrack.ForTests(140000, moved, zones, 1).Fingerprint);
             Assert.AreNotEqual(a.Fingerprint, CardRushTrack.ForTests(140000, obstacles, new[] { new CardRushZone(14000, 15000, 18000, 69) }, 1).Fingerprint);
+
+            var pit = new[] { new CardRushObstacle(CardRushObstacleKind.Pit, 8000, 0, 1200) };
+            var widerPit = new[] { new CardRushObstacle(CardRushObstacleKind.Pit, 8000, 0, 1201) };
+            Assert.AreNotEqual(CardRushTrack.ForTests(140000, pit, zones, 1).Fingerprint,
+                               CardRushTrack.ForTests(140000, widerPit, zones, 1).Fingerprint, "구덩이 폭도 지문에 든다");
         }
 
         //  최종 리뷰 m4: 줄이 같아도 벌(기다림·밀림·기절)이 클·서에서 다르면 첫 바리케이드·꽈당부터 끝없이 보정한다 — 지문이 달라야 로그로 잡힌다.
@@ -50,6 +56,7 @@ namespace LOP.Tests
         [TestCase("rollStun")]
         [TestCase("zoneKnock")]
         [TestCase("zoneStun")]
+        [TestCase("pitStun")]
         public void 지문은_벌_튜닝이_다르면_다르다(string field)
         {
             var d = CardRushTestTuning.Default;
@@ -59,7 +66,9 @@ namespace LOP.Tests
                 d.RollKnockMm + (field == "rollKnock" ? 1 : 0),
                 d.RollStunTicks + (field == "rollStun" ? 1 : 0),
                 d.ZoneKnockMm + (field == "zoneKnock" ? 1 : 0),
-                d.ZoneStunTicks + (field == "zoneStun" ? 1 : 0));
+                d.ZoneStunTicks + (field == "zoneStun" ? 1 : 0),
+                d.PitPermille,
+                d.PitStunTicks + (field == "pitStun" ? 1 : 0));
             var a = new CardRushTrack(12345, d);
             var b = new CardRushTrack(12345, other);
             CollectionAssert.AreEqual(a.Obstacles.ToArray(), b.Obstacles.ToArray(), "줄은 같다 — 벌만 다르다");
@@ -68,23 +77,58 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 장애물_간격은_min_max_안()
+        public void 장애물_간격은_min_max_안_세_종류가_다_나온다()
         {
             var t = CardRushTestTuning.Default;
-            bool sawBoth = false;
+            bool sawAll = false;
             for (ulong seed = 1; seed <= 200; seed++)
             {
                 var o = Make(seed).Obstacles;
                 Assert.Greater(o.Count, 3, $"seed {seed}");
-                for (int i = 1; i < o.Count; i++)
+                for (int i = 0; i < o.Count; i++)
                 {
-                    int gap = o[i].AtMm - o[i - 1].AtMm;
-                    Assert.That(gap, Is.InRange(t.ObstacleGapMinMm, t.ObstacleGapMaxMm), $"seed {seed} #{i}");
                     Assert.That(o[i].Variant, Is.InRange(0, 2));
+                    if (i > 0) Assert.That(o[i].AtMm - o[i - 1].AtMm, Is.InRange(t.ObstacleGapMinMm, t.ObstacleGapMaxMm), $"seed {seed} #{i}");
                 }
-                sawBoth |= o.Any(x => x.Kind == CardRushObstacleKind.Barricade) && o.Any(x => x.Kind == CardRushObstacleKind.Roller);
+                sawAll |= o.Any(x => x.Kind == CardRushObstacleKind.Barricade) && o.Any(x => x.Kind == CardRushObstacleKind.Roller)
+                          && o.Any(x => x.Kind == CardRushObstacleKind.Pit);
             }
-            Assert.IsTrue(sawBoth);
+            Assert.IsTrue(sawAll);
+        }
+
+        [Test]
+        public void 구덩이_비율과_폭()
+        {
+            int pits = 0, all = 0;
+            for (ulong seed = 1; seed <= 200; seed++)
+            {
+                foreach (var o in Make(seed).Obstacles)
+                {
+                    all++;
+                    if (o.Kind == CardRushObstacleKind.Pit)
+                    {
+                        pits++;
+                        Assert.That(o.WidthMm, Is.InRange(CardRushRules.PitWidthMinMm, CardRushRules.PitWidthMaxMm), $"seed {seed}");
+                        Assert.AreEqual(o.AtMm + o.WidthMm, o.EndMm);
+                    }
+                    else
+                    {
+                        Assert.AreEqual(0, o.WidthMm, "구덩이가 아니면 폭 0");
+                    }
+                }
+            }
+            double share = (double)pits / all;
+            Assert.That(share, Is.InRange(0.30, 0.40), $"구덩이 {pits}/{all} — 표는 350‰");
+        }
+
+        [Test]
+        public void 구덩이_비율_0이면_구덩이가_없다()
+        {
+            var d = CardRushTestTuning.Default;
+            var noPit = new CardRushTuning(d.TrackMm, d.ObstacleGapMinMm, d.ObstacleGapMaxMm, d.BarricadePermille, d.ZoneGapMinMm, d.ZoneGapMaxMm,
+                d.BarricadeWaitTicks, d.RollKnockMm, d.RollStunTicks, d.ZoneKnockMm, d.ZoneStunTicks, pitPermille: 0, pitStunTicks: d.PitStunTicks);
+            for (ulong seed = 1; seed <= 50; seed++)
+                Assert.IsFalse(new CardRushTrack(seed, noPit).Obstacles.Any(o => o.Kind == CardRushObstacleKind.Pit), $"seed {seed}");
         }
 
         [Test]
@@ -96,7 +140,7 @@ namespace LOP.Tests
                 Assert.AreEqual(CardRushRules.FirstObstacleMm, track.Obstacles[0].AtMm, $"seed {seed}");
                 Assert.GreaterOrEqual(track.Zones[0].TriggerMm, CardRushRules.FirstZoneMm, $"seed {seed}");
             }
-            //  밀리지 않은 첫 구역은 정확히 14 m에서 켜진다 — 50개 중 적어도 하나.
+            //  틈이 넉넉하면 첫 구역은 정확히 14 m에서 켜진다 — 50개 중 적어도 하나.
             Assert.IsTrue(Enumerable.Range(1, 50).Any(i => Make((ulong)i).Zones[0].TriggerMm == CardRushRules.FirstZoneMm));
         }
 
@@ -113,9 +157,10 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 구역_바닥_안에_바리케이드가_없다()
+        public void 구역_안과_구역_끝_3m_안엔_장애물이_없다()
         {
-            //  바리케이드 앞에 서는 자리(At − 490)가 구역 판정 범위 [From − 280, To + 280] 안이면 갇힌 채 맞는다(답이 노랑 하나뿐).
+            //  방패가 없어 구역에서 다른 장애물을 만나면 답이 둘 필요하다. 장애물이 선수와 얽히는 구간:
+            //  바리케이드 = 앞에 서는 자리 ~ 그 자리, 구덩이 = 빈 바닥, 굴러오는 것 = 풀리는 자리(7 m 앞) ~ 그 자리.
             int zonesSeen = 0;
             for (ulong seed = 1; seed <= 200; seed++)
             {
@@ -123,11 +168,17 @@ namespace LOP.Tests
                 foreach (var z in track.Zones)
                 {
                     zonesSeen++;
-                    foreach (var b in track.Obstacles.Where(o => o.Kind == CardRushObstacleKind.Barricade))
+                    int lo = z.FromMm - CardRushRules.ZoneMarginMm, hi = z.ToMm + CardRushRules.ZoneEscapeSlackMm;
+                    Assert.GreaterOrEqual(z.TriggerMm, 0);
+                    foreach (var o in track.Obstacles)
                     {
-                        int stop = b.AtMm - CardRushRules.BarricadeStopMm;
-                        Assert.IsFalse(stop >= z.FromMm - CardRushRules.ZoneMarginMm && stop <= z.ToMm + CardRushRules.ZoneMarginMm,
-                            $"seed {seed} 구역 [{z.FromMm}, {z.ToMm}] 바리케이드 {b.AtMm}");
+                        int from = o.Kind == CardRushObstacleKind.Barricade ? o.AtMm - CardRushRules.BarricadeStopMm
+                                 : o.Kind == CardRushObstacleKind.Roller ? o.AtMm - CardRushRules.RollerRevealMm
+                                 : o.AtMm;
+                        int to = o.EndMm;
+                        Assert.IsFalse(from <= hi && to >= lo, $"seed {seed} 구역 [{z.FromMm}, {z.ToMm}] 장애물 {o.Kind} {o.AtMm}~{o.EndMm}");
+                        //  켜진 동안 지나는 곳(트리거 ~ 구역)에도 없다 — 바리케이드 앞에 갇힌 채 터지지 않게.
+                        Assert.IsFalse(from <= z.FromMm && to >= z.TriggerMm, $"seed {seed} 트리거 {z.TriggerMm} 장애물 {o.Kind} {o.AtMm}");
                     }
                 }
             }
@@ -135,7 +186,7 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 경고는_75에서_45로_줄고_뒤_4분의1은_45()
+        public void 경고는_90에서_60으로_줄고_뒤_4분의1은_60()
         {
             var t = CardRushTestTuning.Default;
             long ramp = (long)t.TrackMm * 3 / 4;
@@ -152,9 +203,8 @@ namespace LOP.Tests
                 }
             }
             Assert.IsTrue(sawLate, "뒤 4분의 1의 구역이 하나는 있어야 한다");
-            //  첫 구역(14 m)의 경고: 75 − 30 × 14000 / 105000 = 71
-            Assert.AreEqual(71, CardRushRules.ZoneWarnStartTicks - (CardRushRules.ZoneWarnStartTicks - CardRushRules.ZoneWarnEndTicks) * 14000 / 105000);
-            Assert.IsTrue(Enumerable.Range(1, 50).Select(i => Make((ulong)i).Zones[0]).Any(z => z.TriggerMm == 14000 && z.WarnTicks == 71));
+            //  14 m에서 켜지는 구역의 경고: 90 − 30 × 14000 / 105000 = 86
+            Assert.AreEqual(86, CardRushRules.ZoneWarnStartTicks - (CardRushRules.ZoneWarnStartTicks - CardRushRules.ZoneWarnEndTicks) * 14000 / 105000);
         }
 
         [Test]
@@ -177,22 +227,22 @@ namespace LOP.Tests
         [Test]
         public void 뽑는_순서는_계약이다()
         {
-            //  구현 첫 통과 때 나온 값을 적어 고정한다(바꾸면 옛 클라와 줄이 갈린다).
+            //  4차 구현 첫 통과 때 나온 값을 적어 고정한다(바꾸면 옛 클라와 줄이 갈린다).
             var track = Make(42);
-            var obstacles = track.Obstacles.Take(6).Select(o => ((int)o.Kind, o.AtMm, o.Variant)).ToArray();
+            var obstacles = track.Obstacles.Take(6).Select(o => ((int)o.Kind, o.AtMm, o.Variant, o.WidthMm)).ToArray();
             var zones = track.Zones.Take(3).Select(z => (z.TriggerMm, z.FromMm, z.ToMm, z.WarnTicks)).ToArray();
             CollectionAssert.AreEqual(ExpectedObstacles, obstacles);
             CollectionAssert.AreEqual(ExpectedZones, zones);
         }
 
-        private static readonly (int, int, int)[] ExpectedObstacles =
+        private static readonly (int, int, int, int)[] ExpectedObstacles =
         {
-            (0, 8000, 2), (0, 26935, 0), (0, 42053, 1), (0, 53663, 0), (1, 71010, 2), (0, 89623, 0),
+            (0, 8000, 2, 0), (0, 26935, 0, 0), (0, 42053, 1, 0), (0, 53663, 0, 0), (2, 71010, 2, 1318), (0, 87027, 1, 0),
         };
 
         private static readonly (int, int, int, int)[] ExpectedZones =
         {
-            (14000, 15049, 18076, 71), (46170, 46665, 51192, 62), (95382, 96339, 99088, 48),
+            (14000, 14838, 16977, 86), (45071, 45687, 47673, 78), (91863, 92251, 94746, 64),
         };
 
         [Test]
