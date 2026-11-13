@@ -39,6 +39,7 @@ namespace LOP.Tests
             Assert.AreEqual(G + 5, s.RollStartTick);
             Assert.AreEqual(0, s.LockTick, "시작한 틱엔 잡지 않는다");
             Assert.IsTrue(CardRushCard.CardAt(s, G + 5, G, 0, EmptyTrack, out _));
+            Assert.IsFalse(CardRushCard.CardAt(s, G + 4, G, 0, EmptyTrack, out _), "시작 전 틱을 물으면 뒷면(첫 장이 미리 보이지 않는다)");
         }
 
         [Test]

@@ -29,7 +29,8 @@ namespace LOP
                 color = SpinColor(s, s.LockTick, gameplayStartTick, lane, track);
                 return true;
             }
-            if (s.RollStartTick == 0) return false;
+            //  돌기 시작 전 틱엔 카드가 없다(뒷면) — 지난 틱을 물어도 첫 장이 미리 보이지 않게.
+            if (s.RollStartTick == 0 || tick < s.RollStartTick) return false;
             color = SpinColor(s, tick, gameplayStartTick, lane, track);
             return true;
         }
