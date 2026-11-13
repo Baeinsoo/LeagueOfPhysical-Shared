@@ -11,6 +11,7 @@ namespace LOP
         public const int CooldownTicks = 20;         // 쓰고 쉬는 0.4초
         public const int DashTicks = 14;
         public const int DashMm = 3120;
+        public const int RollMaxTicks = 300;         // 돌기 시작해 6초 안에 안 고르면 그때 색을 자동으로 잡는다
         public const int LockHoldTicks = 250;        // 잡은 카드가 남는 5초 — 지나면 사라진다
         public const int ShotMmPerTick = 300;        // 투사체 15 m/s
         public const int ShotRangeMm = 8000;         // 굴러오는 것이 풀리는 7 m보다 길어 풀리자마자 맞힐 수 있다

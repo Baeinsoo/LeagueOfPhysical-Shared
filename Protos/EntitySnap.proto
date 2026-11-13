@@ -47,7 +47,7 @@ message EntitySnap
 	int64 knockback_cooldown_end_tick = 30;
 	bool knockback_has_bomb = 31;            // Knockback: 충격파 폭탄을 들고 있나
 	int64 card_stun_end_tick = 35;    // CardRush: 기절(꽈당·으악)이 끝나는 절대 틱. 0 = 없음. 이 컴포넌트가 없는 게임에선 0이 나가고 아무도 안 읽는다
-	int64 card_spin_start_tick = 37;  // CardRush: 카드가 (다시) 도는 틱 = 마지막 사용 + 쿨다운. 0 = 아직 안 씀
+	int64 card_spin_start_tick = 37;  // CardRush: 돌리기를 다시 시작할 수 있는 틱 = 마지막 사용 + 쿨다운. 0 = 아직 안 씀
 	int32 card_pos_mm = 38;           // CardRush: 출발선에서 간 거리(mm)
 	int32 card_use_count = 39;        // CardRush: 카드 쓴 횟수(첫 장 씨앗)
 	int64 card_dash_start_tick = 40;  // CardRush: 대시를 쓴 틱. 0 = 대시 중 아님
@@ -62,9 +62,10 @@ message EntitySnap
 	int64 card_finish_tick = 50;      // CardRush: 완주 틱. 0 = 아직
 	int32 card_clean_streak = 51;     // CardRush: 지금 연속 무사 통과
 	int64 card_whiff_tick = 52;       // CardRush: 투사체가 꺼진 틱(헛방 포함). 0 = 없음 — 장애물 결과 칸을 덮지 않는다
-	int64 card_lock_tick = 53;        // CardRush: 카드를 잡은 틱. 0 = 돈다
+	int64 card_lock_tick = 53;        // CardRush: 카드를 잡은 틱. 0 = 잡지 않음
 	int64 card_expire_tick = 54;      // CardRush: 잡은 카드가 마지막으로 사라진 틱. 0 = 없음
 	int64 card_jump_start_tick = 55;  // CardRush: 점프 시작 틱. 0 = 땅
 	int64 card_shot_tick = 56;        // CardRush: 날고 있는 투사체를 던진 틱. 0 = 없음
 	int32 card_shot_from_mm = 57;     // CardRush: 투사체 출발 자리(mm)
+	int64 card_roll_start_tick = 58;  // CardRush: 카드가 돌기 시작한 틱. 0 = 안 돈다(평소 뒷면)
 }

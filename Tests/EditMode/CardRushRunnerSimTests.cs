@@ -47,7 +47,7 @@ namespace LOP.Tests
                 S.LockTick = Now - 1;
                 int first = (int)Track.FirstCard(Lane, S.UseCount);
                 int offset = ((int)color - first + CardColors.Count) % CardColors.Count;
-                S.SpinStartTick = S.LockTick - (long)offset * CardRushRules.CardDwellTicks;
+                S.RollStartTick = S.LockTick - (long)offset * CardRushRules.CardDwellTicks;
                 Assert.IsTrue(CardRushCard.CardAt(S, Now, G, Lane, Track, out var held));
                 Assert.AreEqual(color, held);
             }
@@ -654,25 +654,30 @@ namespace LOP.Tests
             long used = r.Use(CardColor.Blue);
             while (r.Now < used + CardRushRules.CooldownTicks) r.Tick(true);
             Assert.AreEqual(1, r.S.UseCount);
+            Assert.AreEqual(0, r.S.RollStartTick, "쿨다운 중 탭은 시작도 안 한다");
             Assert.AreEqual(0, r.S.LockTick, "쿨다운 중 탭은 안 잡는다");
             r.Tick();
-            Assert.AreEqual(0, r.S.LockTick, "쌓아 둔 탭이 쿨다운 끝에 나가지 않는다");
+            Assert.AreEqual(0, r.S.RollStartTick, "쌓아 둔 탭이 쿨다운 끝에 나가지 않는다");
             r.Tick(true);
-            Assert.AreEqual(r.Now - 1, r.S.LockTick, "쿨다운 뒤 첫 탭은 잡기");
+            Assert.AreEqual(r.Now - 1, r.S.RollStartTick, "쿨다운 뒤 첫 탭은 시작");
+            Assert.AreEqual(0, r.S.LockTick);
             Assert.AreEqual(1, r.S.UseCount);
         }
 
         [Test]
-        public void 막누르면_잡고_다음_틱에_쓴다()
+        public void 막누르면_시작_잡기_쓰기를_틱마다_한_번씩()
         {
             var r = new Rig(Track(), pos: 1000);
             r.Tick(true);
-            Assert.AreEqual(G, r.S.LockTick);
+            Assert.AreEqual(G, r.S.RollStartTick);
+            Assert.AreEqual(0, r.S.LockTick);
+            r.Tick(true);
+            Assert.AreEqual(G + 1, r.S.LockTick);
             Assert.AreEqual(0, r.S.UseCount);
             r.Tick(true);
             Assert.AreEqual(0, r.S.LockTick);
             Assert.AreEqual(1, r.S.UseCount);
-            Assert.AreEqual(G + 1 + CardRushRules.CooldownTicks, r.S.SpinStartTick);
+            Assert.AreEqual(G + 2 + CardRushRules.CooldownTicks, r.S.SpinStartTick);
         }
 
         // ── 성질 ──
@@ -745,6 +750,7 @@ namespace LOP.Tests
 
         private static bool YellowOnly(in CardRushRunnerState s, long tick, CardRushTrack track)
         {
+            if (CardRushCard.CanStart(s, tick, G)) return true;
             if (CardRushCard.CanLock(s, tick, G))
                 return CardRushCard.CardAt(s, tick, G, 0, track, out var seen) && seen == CardColor.Yellow;
             if (!CardRushCard.CanUse(s, tick, G, 0, track) || s.ObstacleIndex >= track.Obstacles.Count) return false;
@@ -761,6 +767,7 @@ namespace LOP.Tests
         private static bool ReaderTaps(in CardRushRunnerState s, long tick, CardRushTrack track)
         {
             CardColor? want = Want(s, tick, track, out bool useNow);
+            if (CardRushCard.CanStart(s, tick, G)) return true;
             if (CardRushCard.CanLock(s, tick, G))
                 return want != null && CardRushCard.CardAt(s, tick, G, 0, track, out var seen) && seen == want;
             if (!CardRushCard.CanUse(s, tick, G, 0, track) || !CardRushCard.CardAt(s, tick, G, 0, track, out var held)) return false;

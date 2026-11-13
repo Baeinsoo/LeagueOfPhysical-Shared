@@ -1,7 +1,7 @@
 namespace LOP
 {
     /// <summary>
-    /// 선수 한 명의 한 틱(4차 spec §3.3) — 탭이 없어도 매 틱, 잡은 카드 사라짐 → 탭(잡기/쓰기) → 바리케이드 올라감 → 이동 → 투사체
+    /// 선수 한 명의 한 틱(4차 spec §3.3) — 탭이 없어도 매 틱, 잡은 카드 사라짐 → 자동 잡기 → 탭(시작/잡기/쓰기) → 바리케이드 올라감 → 이동 → 투사체
     /// → 막힘 → 구덩이 → 굴러오는 것 → 구역 → 완주 순서.
     /// 그 선수 상태 + 코스 + 그 틱 탭만 본다(남과 얽히지 않는다). 정수만 써서 서버와 내 예측이 같은 틱에 같은 상태를 낸다.
     /// </summary>
@@ -17,9 +17,14 @@ namespace LOP
                 s.ExpireTick = tick;
                 ReleaseCard(ref s, tick);
             }
+            if (CardRushCard.RollExpired(s, tick)) s.LockTick = tick;
             if (tapped)
             {
-                if (CardRushCard.CanLock(s, tick, g))
+                if (CardRushCard.CanStart(s, tick, g))
+                {
+                    s.RollStartTick = tick;
+                }
+                else if (CardRushCard.CanLock(s, tick, g))
                 {
                     s.LockTick = tick;
                 }
@@ -82,6 +87,7 @@ namespace LOP
         private static void ReleaseCard(ref CardRushRunnerState s, long tick)
         {
             s.LockTick = 0;
+            s.RollStartTick = 0;
             s.UseCount += 1;
             s.SpinStartTick = tick + CardRushRules.CooldownTicks;
         }
