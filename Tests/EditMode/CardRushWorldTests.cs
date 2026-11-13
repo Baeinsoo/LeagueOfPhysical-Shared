@@ -13,7 +13,7 @@ namespace LOP.Tests
 
         //  spec §6.1 시작 값 — 마스터데이터가 바뀌어도 이 시험의 코스는 그대로다.
         private static readonly CardRushConfig config =
-            new CardRushConfig(120, 4, 140, 11, 19, 0.5f, 28, 48, 1.2f, 1.39f, 0.7f, 2.77f, 1f, 0.22f, 0.40f, 0.20f, 0.02f, 0.5f);
+            new CardRushConfig(120, 4, 140, 11, 19, 0.5f, 28, 48, 1.2f, 1.39f, 0.7f, 2.77f, 1f, 0.22f, 0.40f, 0.20f, 0.02f, 0.5f, 0.35f, 0.8f);
 
         private sealed class FixedSeed : IMatchSeed { public ulong Value => 4242; }
 

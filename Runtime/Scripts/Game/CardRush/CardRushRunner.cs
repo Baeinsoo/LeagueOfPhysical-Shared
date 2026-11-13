@@ -8,7 +8,6 @@ namespace LOP
         public int PosMm;               // 출발선에서 앞으로 간 거리(mm). 정수라 클·서가 같다
         public int UseCount;            // 카드를 쓴 횟수 — 다음 첫 장의 씨앗
         public long DashStartTick;      // 대시를 쓴 틱. 0 = 대시 중 아님
-        public long BlockEndTick;       // 4차엔 안 씀(방패가 없다) — 와이어 정리 때 지움. 시뮬은 읽지도 쓰지도 않는다
         public long LockTick;           // 카드를 잡은 틱. 0 = 잡지 않음(돈다)
         public long ExpireTick;         // 잡은 카드가 마지막으로 사라진 틱. 0 = 없음 — 그림·소리용
         public long JumpStartTick;      // 점프를 시작한 틱. 0 = 땅

@@ -99,7 +99,7 @@ namespace LOP.Tests
         public void 구덩이_칸은_생략하면_시작_값()
         {
             //  4차 Task 1 동안 클·서가 옛 생성자로 부른다 — 끝 두 칸을 빼면 시작 값.
-            var c = new CardRushConfig(120f, 4, 140f, 11f, 19f, 0.5f, 28f, 48f, 1.2f, 1.39f, 0.7f, 2.77f, 1f, 0.22f, 0.40f, 0.20f, 0.02f, 0.5f);
+            var c = new CardRushConfig(120f, 4, 140f, 11f, 19f, 0.5f, 28f, 48f, 1.2f, 1.39f, 0.7f, 2.77f, 1f, 0.22f, 0.40f, 0.20f, 0.02f, 0.5f, 0.35f, 0.8f);
             Assert.AreEqual(350, c.Tuning.PitPermille);
             Assert.AreEqual(40, c.Tuning.PitStunTicks);
         }

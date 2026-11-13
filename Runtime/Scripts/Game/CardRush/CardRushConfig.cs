@@ -37,7 +37,7 @@ namespace LOP
                               float rollKnockM, float rollStunSeconds, float zoneKnockM, float zoneStunSeconds,
                               float botReactMinSeconds, float botReactMaxSeconds, float botReactExtraSeconds,
                               float botHesitateChance, float botFreeDashChance,
-                              float pitShare = 0.35f, float pitStunSeconds = 0.8f)
+                              float pitShare, float pitStunSeconds)
         {
             if (minLanes < 1 || minLanes > CardRushLanes.MaxLanes)
                 throw new System.ArgumentOutOfRangeException(nameof(minLanes), $"레인 수는 1~{CardRushLanes.MaxLanes}이어야 한다");
