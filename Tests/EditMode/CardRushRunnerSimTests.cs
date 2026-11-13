@@ -819,5 +819,16 @@ namespace LOP.Tests
                      : CardRushRunnerSim.TryFront(s, tick, track, out int front) ? front : o.AtMm;
             return near - s.PosMm > CardRushRules.DashMm + 2400;
         }
+
+        [Test]
+        public void 완주하면_날고_있던_투사체를_지운다()
+        {
+            var r = new Rig(Track(trackMm: 40000), pos: 40000 - 400);
+            r.Use(CardColor.Red);
+            Assert.AreNotEqual(0, r.S.ShotTick);
+            r.RunUntil(x => x.S.FinishTick != 0, 40);
+            Assert.AreEqual(0, r.S.ShotTick, "결승을 넘었으면 투사체는 없다");
+            Assert.AreEqual(0, r.S.ShotFromMm);
+        }
     }
 }

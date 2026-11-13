@@ -32,7 +32,7 @@ namespace LOP
         public const int ZoneEscapeSlackMm = 3000;   // 구역 끝 뒤 이만큼은 다음 장애물이 끼지 않는다
         public const int FirstObstacleMm = 8000, FirstZoneMm = 14000, FinishClearMm = 5000;
         //  한 레인에 살아 있는 장애물이 늘 하나이려면 — 바리케이드 앞에 서 있는 동안 다음 것이 풀리지 않아야 하고, 구덩이 폭만큼 더 띄운다.
-        //  투사체 사거리 + 출발 자리(8.3 m)보다 길어 다음 장애물은 늘 사거리 밖이다.
+        //  투사체는 지금 장애물만 본다 — 구덩이 먼 가장자리에서 던지면 다음 장애물이 사거리 안일 수 있어도 판정은 그대로다(spec "구현 중 바뀐 것").
         public const int MinObstacleGapMm = RollerRevealMm + BarricadeStopMm + 500 + PitWidthMaxMm;
         public const int MinTrackMm = 40000, MaxTrackMm = 190000;   // 맵 복도가 205 m까지다
         public const int MinZoneGapMm = 5000;

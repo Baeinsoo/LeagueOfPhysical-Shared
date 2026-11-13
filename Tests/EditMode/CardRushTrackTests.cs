@@ -288,5 +288,29 @@ namespace LOP.Tests
             Assert.IsTrue(laneMatters);
             Assert.IsTrue(countMatters);
         }
+
+        [Test]
+        public void 구덩이_바로_뒤_구역은_밀려나도_구덩이_위로_돌아가지_않는다()
+        {
+            var t = CardRushTestTuning.Default;
+            int checkedZones = 0;
+            for (ulong seed = 1; seed <= 400; seed++)
+            {
+                var track = new CardRushTrack(seed, t);
+                var obs = track.Obstacles.ToArray();
+                foreach (var z in track.Zones.ToArray())
+                {
+                    for (int i = 0; i < obs.Length; i++)
+                    {
+                        if (obs[i].Kind != CardRushObstacleKind.Pit || obs[i].EndMm > z.TriggerMm) continue;
+                        if (i + 1 < obs.Length && obs[i + 1].AtMm < z.TriggerMm) continue;
+                        checkedZones++;
+                        int worst = z.FromMm - CardRushRules.ZoneMarginMm - t.ZoneKnockMm;
+                        Assert.GreaterOrEqual(worst, obs[i].EndMm, $"씨앗 {seed}: 구역에 맞아 밀려나면 구덩이 위로 돌아간다");
+                    }
+                }
+            }
+            Assert.Greater(checkedZones, 20, "구덩이 뒤 구역이 충분히 표본에 든다");
+        }
     }
 }

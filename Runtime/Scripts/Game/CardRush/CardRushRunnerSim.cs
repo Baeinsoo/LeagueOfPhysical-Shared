@@ -40,6 +40,9 @@ namespace LOP
             {
                 s.PosMm = track.TrackMm;
                 s.FinishTick = tick;
+                //  완주 뒤엔 Step이 멈춰 투사체를 끌 데가 없다 — 날던 것은 여기서 지운다.
+                s.ShotTick = 0;
+                s.ShotFromMm = 0;
             }
         }
 

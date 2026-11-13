@@ -142,6 +142,9 @@ namespace LOP
 
                 int ahead = rng.Range(CardRushRules.ZoneAheadMinMm, CardRushRules.ZoneAheadMaxMm + 1);
                 int len = rng.Range(CardRushRules.ZoneLengthMinMm, CardRushRules.ZoneLengthMaxMm + 1);
+                //  구덩이 바로 뒤 구역에 맞아 밀려나도(구역 밀어내는 거리) 넘은 구덩이 위로 돌아가지 않게 — 구덩이 먼 가장자리 + 밀어내는 거리 뒤부터 놓는다.
+                if (i > 0 && obstacles[i - 1].Kind == CardRushObstacleKind.Pit)
+                    start = System.Math.Max(start, obstacles[i - 1].EndMm + t.ZoneKnockMm);
                 int trigger = System.Math.Max(start, want);
                 int from = trigger + ahead;
                 int to = from + len;
