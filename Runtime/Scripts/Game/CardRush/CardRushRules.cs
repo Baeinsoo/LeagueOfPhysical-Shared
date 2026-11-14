@@ -20,7 +20,7 @@ namespace LOP
         public const int JumpMmPerTick = 80;         // 공중에서 4 m/s — 40틱에 3.2 m(달리기와 같은 4/3배)
         public const int JumpHeightMm = 1000;        // 그림·자리 높이. 판정엔 안 쓴다
         public const int PitWidthMinMm = 1000, PitWidthMaxMm = 1400;
-        public const int PitBackMm = 1500;           // 빠지면 구덩이 앞 가장자리에서 이만큼 뒤에서 다시
+        public const int PitBackMm = 2000;           // 빠지면 구덩이 앞 가장자리에서 이만큼 뒤에서 다시(달리기와 같은 4/3배)
         public const int BarricadeStopMm = 490;
         public const int RollerMmPerTick = 38;       // 1.90 m/s
         public const int RollerRevealMm = 7000;      // 내 앞 이 거리에서 굴러오기 시작한다

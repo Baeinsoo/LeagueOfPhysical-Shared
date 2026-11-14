@@ -60,6 +60,13 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 구덩이에서_다시_뛰면_구덩이까지_4차와_같은_41틱이_넘게_남는다()
+        {
+            //  4.2차 리뷰: 달리기만 빨라지고 되돌림 거리가 그대로면 노랑을 고를 시간이 42틱 → 31틱으로 준다.
+            Assert.GreaterOrEqual(CardRushRules.PitBackMm / CardRushRules.RunMmPerTick, 41);
+        }
+
+        [Test]
         public void 가장_짧은_경고와_가장_긴_구역에서도_대시로_빠져나간다()
         {
             //  경고 동안 달린 거리 + 대시가 달리기보다 더 가는 거리 ≥ 앞 거리 + 길이 + 판정 여유 (spec §2).
