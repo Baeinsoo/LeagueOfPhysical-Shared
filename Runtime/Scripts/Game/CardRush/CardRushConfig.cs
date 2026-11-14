@@ -71,6 +71,9 @@ namespace LOP
             if (CardRushTuning.Permille(barricadeShare) + CardRushTuning.Permille(pitShare) > 1000)
                 throw new System.ArgumentOutOfRangeException(nameof(pitShare),
                     $"바리케이드 + 구덩이 비율은 1 이하여야 한다(나머지가 굴러오는 것) — 지금 {barricadeShare} + {pitShare}");
+            //  4.2차부터 장애물은 바리케이드·구덩이 둘의 비로만 뽑는다 — 둘 다 0이면 뽑을 것이 없다.
+            if (CardRushTuning.Permille(barricadeShare) + CardRushTuning.Permille(pitShare) == 0)
+                throw new System.ArgumentOutOfRangeException(nameof(pitShare), "바리케이드 + 구덩이 비율이 0이면 장애물을 뽑을 수 없다");
 
             if (!(barricadeWaitSeconds > 0f)) throw new System.ArgumentOutOfRangeException(nameof(barricadeWaitSeconds), "바리케이드 기다림은 0보다 커야 한다");
             if (!(rollKnockM > 0f)) throw new System.ArgumentOutOfRangeException(nameof(rollKnockM), "꽈당 밀림은 0보다 커야 한다");

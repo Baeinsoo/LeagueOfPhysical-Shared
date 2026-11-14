@@ -85,7 +85,8 @@ namespace LOP.Tests
             Assert.Throws<System.ArgumentOutOfRangeException>(() => Make(pitShare: 1.1f));
             Assert.Throws<System.ArgumentOutOfRangeException>(() => Make(barricadeShare: 0.7f, pitShare: 0.35f));
             Assert.DoesNotThrow(() => Make(barricadeShare: 0.35f, pitShare: 0.65f), "합이 정확히 1이면 된다(굴러오는 것 없음)");
-            Assert.DoesNotThrow(() => Make(barricadeShare: 0f, pitShare: 0f));
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => Make(barricadeShare: 0f, pitShare: 0f), "4.2차: 둘의 비로 뽑으니 둘 다 0이면 안 된다");
+            Assert.DoesNotThrow(() => Make(barricadeShare: 0f, pitShare: 0.2f));
         }
 
         [Test]

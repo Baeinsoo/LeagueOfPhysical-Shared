@@ -43,7 +43,7 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 시작한_틱부터_첫_장_23틱마다_다음_색()
+        public void 시작한_틱부터_첫_장_23틱마다_다음_장()
         {
             var s = new CardRushRunnerState();
             const int lane = 3;
@@ -52,9 +52,11 @@ namespace LOP.Tests
             var first = EmptyTrack.FirstCard(lane, 0);
             Assert.AreEqual(first, ColorAt(s, start, lane));
             Assert.AreEqual(first, ColorAt(s, start + 22, lane));
-            Assert.AreEqual(CardColors.Next(first), ColorAt(s, start + 23, lane));
-            Assert.AreEqual(CardColors.Next(CardColors.Next(first)), ColorAt(s, start + 46, lane));
-            Assert.AreEqual(first, ColorAt(s, start + 69, lane), "세 장이면 한 바퀴");
+            //  4.2차: 다음 장은 무작위(바로 앞 장과는 다른 색) — 코스의 줄(CardOf)을 그대로 따른다.
+            Assert.AreEqual(EmptyTrack.CardOf(lane, 0, 1), ColorAt(s, start + 23, lane));
+            Assert.AreNotEqual(first, ColorAt(s, start + 23, lane), "넘기면 색이 바뀐다");
+            Assert.AreEqual(EmptyTrack.CardOf(lane, 0, 2), ColorAt(s, start + 46, lane));
+            Assert.AreEqual(EmptyTrack.CardOf(lane, 0, 3), ColorAt(s, start + 69, lane));
             Assert.AreEqual(CardRushCard.SpinColor(s, start + 46, G, lane, EmptyTrack), ColorAt(s, start + 46, lane));
         }
 

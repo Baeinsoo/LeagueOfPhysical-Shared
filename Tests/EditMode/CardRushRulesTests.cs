@@ -7,9 +7,14 @@ namespace LOP.Tests
         //  시안 1 u = 레인 75 u ↔ 2.6 m. 이 시험이 시안 값과 정수 규칙을 묶는다 — 상수를 고치면 여기서 이유를 다시 쓴다.
         private const double MmPerUnit = 2600.0 / 75.0;
 
+        //  4.2차: 사용자 "달리기를 좀 더 빠르게" — 시안 52 u/초(1.8 m/s)의 4/3배, 대시·점프도 같은 배율.
         [Test]
-        public void 달리기는_시안_52u_초()
-            => Assert.AreEqual((int)System.Math.Round(52 * MmPerUnit * CardRushTiming.TickInterval), CardRushRules.RunMmPerTick);
+        public void 달리기는_시안_52u_초의_4_3배()
+        {
+            Assert.AreEqual((int)System.Math.Round(52 * MmPerUnit * CardRushTiming.TickInterval) * 4 / 3, CardRushRules.RunMmPerTick);
+            Assert.AreEqual(2400, CardRushRules.RunMmPerTick * 50, "초속 2.4 m");
+            Assert.AreEqual(3120 * 4 / 3, CardRushRules.DashMm);
+        }
 
         [Test]
         public void 시간_상수는_초에서_틱_규칙_그대로()
@@ -23,11 +28,12 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 투사체는_15m_초_점프는_3m_초로_2_4m()
+        public void 투사체는_15m_초_점프는_4m_초로_3_2m()
         {
             Assert.AreEqual(15000, CardRushRules.ShotMmPerTick * 50);
-            Assert.AreEqual(3000, CardRushRules.JumpMmPerTick * 50);
-            Assert.AreEqual(2400, CardRushRules.JumpMmPerTick * CardRushRules.JumpTicks);
+            Assert.AreEqual(4000, CardRushRules.JumpMmPerTick * 50);
+            Assert.AreEqual(3200, CardRushRules.JumpMmPerTick * CardRushRules.JumpTicks);
+            Assert.Greater(CardRushRules.JumpMmPerTick, CardRushRules.RunMmPerTick, "점프가 달리기보다 빠르다");
         }
 
         [Test]
