@@ -45,8 +45,13 @@ namespace LOP.Tests
             {
                 Assert.AreEqual(0, S.LockTick, "이미 잡은 카드가 있다");
                 S.LockTick = Now - 1;
-                int first = (int)Track.FirstCard(Lane, S.UseCount);
-                int offset = ((int)color - first + CardColors.Count) % CardColors.Count;
+                //  4.2차: 도는 색이 무작위라 그 색이 처음 나오는 장을 찾는다(자동 잡기 전까지의 장 안에서).
+                int offset = 0;
+                while (Track.CardOf(Lane, S.UseCount, offset) != color)
+                {
+                    offset++;
+                    Assert.Less(offset * CardRushRules.CardDwellTicks, CardRushRules.RollMaxTicks, $"{color}이 도는 줄에 없다");
+                }
                 S.RollStartTick = S.LockTick - (long)offset * CardRushRules.CardDwellTicks;
                 Assert.IsTrue(CardRushCard.CardAt(S, Now, G, Lane, Track, out var held));
                 Assert.AreEqual(color, held);
@@ -88,7 +93,7 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 대시는_14틱에_3120mm()
+        public void 대시는_14틱에_DashMm()
         {
             var r = new Rig(Track(), pos: 1000);
             int before = r.S.PosMm;
@@ -221,7 +226,7 @@ namespace LOP.Tests
         [Test]
         public void 굴러오는_것과_같은_틱이면_투사체가_이긴다()
         {
-            //  이 틱: 몸 p + 36, 굴러오는 것 p + 300 → 264 mm(닿음). 투사체 출발 자리 p + 300 ≥ 앞면(맞음). 둘 다면 부숨이다.
+            //  이 틱: 몸 p + 48, 굴러오는 것 p + 300 − 38 → 214 mm(닿음). 투사체 출발 자리 p + 300 ≥ 앞면(맞음). 둘 다면 부숨이다.
             const int p = 13000;
             var r = new Rig(Track(new[] { Roller(p + CardRushRules.ShotStartAheadMm) }), pos: p);
             r.S.ObstacleTick = r.Now;
@@ -262,7 +267,7 @@ namespace LOP.Tests
         // ── 점프 ──
 
         [Test]
-        public void 점프는_40틱에_2400mm_마지막_틱에_내려앉는다()
+        public void 점프는_40틱에_3200mm_마지막_틱에_내려앉는다()
         {
             var r = new Rig(Track(), pos: 5000);
             long t0 = r.Use(CardColor.Yellow);
@@ -273,10 +278,10 @@ namespace LOP.Tests
             Assert.AreEqual(5000 + CardRushRules.JumpMmPerTick * (CardRushRules.JumpTicks - 1), r.S.PosMm);
             Assert.IsTrue(CardRushRunnerSim.IsAirborne(r.S));
             r.Tick();
-            Assert.AreEqual(5000 + 2400, r.S.PosMm);
+            Assert.AreEqual(5000 + 3200, r.S.PosMm);
             Assert.AreEqual(0, r.S.JumpStartTick, "40틱째에 내려앉는다");
             r.Tick();
-            Assert.AreEqual(5000 + 2400 + CardRushRules.RunMmPerTick, r.S.PosMm, "다시 달린다");
+            Assert.AreEqual(5000 + 3200 + CardRushRules.RunMmPerTick, r.S.PosMm, "다시 달린다");
         }
 
         [Test]
@@ -291,13 +296,13 @@ namespace LOP.Tests
             Assert.AreEqual(pos + CardRushRules.JumpMmPerTick, r.S.PosMm);
         }
 
-        //  뛰는 자리(쓴 틱 직전 자리)가 (먼 가장자리 − 2400, 앞 가장자리) 안이면 넘는다.
+        //  뛰는 자리(쓴 틱 직전 자리)가 (먼 가장자리 − 3200, 앞 가장자리) 안이면 넘는다.
         [TestCase(1000, -1, CardRushObstacleEvent.Jumped)]
         [TestCase(1400, -1, CardRushObstacleEvent.Jumped)]
-        [TestCase(1000, 1000 - 2400 + 1, CardRushObstacleEvent.Jumped)]
-        [TestCase(1400, 1400 - 2400 + 1, CardRushObstacleEvent.Jumped)]
-        [TestCase(1000, 1000 - 2400, CardRushObstacleEvent.Fell)]
-        [TestCase(1400, 1400 - 2400, CardRushObstacleEvent.Fell)]
+        [TestCase(1000, 1000 - 3200 + 1, CardRushObstacleEvent.Jumped)]
+        [TestCase(1400, 1400 - 3200 + 1, CardRushObstacleEvent.Jumped)]
+        [TestCase(1000, 1000 - 3200, CardRushObstacleEvent.Fell)]
+        [TestCase(1400, 1400 - 3200, CardRushObstacleEvent.Fell)]
         [TestCase(1200, -2000, CardRushObstacleEvent.Fell)]
         public void 구덩이는_창_안에서_뛰면_넘고_밖이면_빠진다(int width, int jumpFromRelAt, CardRushObstacleEvent expected)
         {
@@ -587,7 +592,7 @@ namespace LOP.Tests
         [Test]
         public void 구역은_한_번만_터진다()
         {
-            var r = new Rig(Track(zones: new[] { Zone(10000, 10500, 20000) }), pos: 9990);
+            var r = new Rig(Track(zones: new[] { Zone(10000, 10500, 20000, warn: 45) }), pos: 9990);
             r.RunUntil(x => x.S.ZoneEvent != 0);
             Assert.Less(r.S.PosMm, 10000, "밀려서 트리거 뒤로 왔다 — 다시 켜지면 안 된다");
             r.Ticks(300);

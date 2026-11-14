@@ -9,11 +9,11 @@ namespace LOP
         public static long SpinBase(in CardRushRunnerState s, long gameplayStartTick)
             => s.SpinStartTick != 0 ? s.SpinStartTick : gameplayStartTick;
 
-        /// <summary>도는 카드가 그 틱에 보일 색 — 돌기 시작한 틱(RollStartTick)부터 한 장씩 넘긴다. 돌고 있지 않으면 의미 없는 값이라 부르는 쪽이 거른다.</summary>
+        /// <summary>도는 카드가 그 틱에 보일 색 — 돌기 시작한 틱(RollStartTick)부터 한 장씩 무작위로 넘긴다(4.2차). 돌고 있지 않으면 의미 없는 값이라 부르는 쪽이 거른다.</summary>
         public static CardColor SpinColor(in CardRushRunnerState s, long tick, long gameplayStartTick, int lane, CardRushTrack track)
         {
             long turns = System.Math.Max(0, tick - s.RollStartTick) / CardRushRules.CardDwellTicks;
-            return (CardColor)(((int)track.FirstCard(lane, s.UseCount) + (int)(turns % CardColors.Count)) % CardColors.Count);
+            return track.CardOf(lane, s.UseCount, turns);
         }
 
         /// <summary>

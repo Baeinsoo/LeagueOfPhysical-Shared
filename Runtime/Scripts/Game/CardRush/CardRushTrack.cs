@@ -53,14 +53,8 @@ namespace LOP
     public sealed class CardRushTrack
     {
         public static readonly ulong ObstacleSalt = Hashing.Fnv1a64("card-rush-obstacles");
-        public static readonly ulong ZoneSalt = Hashing.Fnv1a64("card-rush-zones");
         public static readonly ulong FirstCardSalt = Hashing.Fnv1a64("card-rush-first-card");
         private static readonly ulong FingerprintSalt = Hashing.Fnv1a64("card-rush-track");
-
-        //  구역은 장애물 사이 빈 틈에만 놓는다 — 앞 장애물 끝 뒤 이만큼부터, 다음 장애물 이만큼 앞까지(굴러오는 것은 풀리는 자리 앞까지).
-        private const int ZoneAfterObstacleMm = 500;
-        private const int ZoneBeforeObstacleMm = 1500;
-        private const int ZoneBeforeRollerMm = CardRushRules.RollerRevealMm + 500;
 
         private readonly CardRushObstacle[] obstacles;
         private readonly CardRushZone[] zones;
@@ -80,7 +74,8 @@ namespace LOP
             seed = matchSeed;
             TrackMm = tuning.TrackMm;
             obstacles = BuildObstacles(matchSeed, tuning);
-            zones = BuildZones(matchSeed, tuning, obstacles);
+            //  4.2차: 굴러오는 것·빨간 바닥은 뺐다(노랑 방패 시절 장애물) — 바리케이드·구덩이만 나온다. 판정 코드는 시험용 코스를 위해 남는다.
+            zones = new CardRushZone[0];
             Fingerprint = ComputeFingerprint(obstacles, zones, this, tuning);
         }
 
@@ -98,11 +93,22 @@ namespace LOP
             => new CardRushTrack(trackMm, (CardRushObstacle[])obstacles.Clone(), (CardRushZone[])zones.Clone(), matchSeed);
 
         /// <summary>(레인, 쓴 횟수)마다 따로 — 앞사람 카드로 내 다음 첫 장을 읽을 수 없다.</summary>
-        public CardColor FirstCard(int lane, int useCount)
+        public CardColor FirstCard(int lane, int useCount) => CardOf(lane, useCount, 0);
+
+        /// <summary>
+        /// 돌기 시작해 turn장째 넘긴 카드 — 장마다 무작위지만 바로 앞 장과 같은 색은 안 나온다(같은 색이 이어지면 넘어간 줄 모른다).
+        /// (레인, 쓴 횟수)마다 한 줄을 처음부터 뽑아 내려간다. 자동 잡기(RollMaxTicks)가 있어 한 줄은 열몇 장을 넘지 않는다.
+        /// </summary>
+        public CardColor CardOf(int lane, int useCount, long turn)
         {
             var rng = new DeterministicRandom(
                 Hashing.Combine(Hashing.Combine(Hashing.Combine(seed, FirstCardSalt), (ulong)lane), (ulong)useCount));
-            return (CardColor)rng.Range(0, CardColors.Count);
+            int color = rng.Range(0, CardColors.Count);
+            for (long i = 0; i < turn; i++)
+            {
+                color = (color + 1 + rng.Range(0, CardColors.Count - 1)) % CardColors.Count;
+            }
+            return (CardColor)color;
         }
 
         private static CardRushObstacle[] BuildObstacles(ulong matchSeed, in CardRushTuning t)
@@ -112,49 +118,13 @@ namespace LOP
             int at = CardRushRules.FirstObstacleMm;
             while (at < t.TrackMm - CardRushRules.FinishClearMm)
             {
-                int r = rng.Range(0, 1000);
-                var kind = r < t.BarricadePermille ? CardRushObstacleKind.Barricade
-                         : r < t.BarricadePermille + t.PitPermille ? CardRushObstacleKind.Pit
-                         : CardRushObstacleKind.Roller;
+                //  바리케이드 : 구덩이 = 표의 두 몫의 비. 굴러오는 것 몫(나머지)은 4.2차에 쓰지 않는다.
+                int r = rng.Range(0, t.BarricadePermille + t.PitPermille);
+                var kind = r < t.BarricadePermille ? CardRushObstacleKind.Barricade : CardRushObstacleKind.Pit;
                 int variant = rng.Range(0, 3);
                 int width = kind == CardRushObstacleKind.Pit ? rng.Range(CardRushRules.PitWidthMinMm, CardRushRules.PitWidthMaxMm + 1) : 0;
                 list.Add(new CardRushObstacle(kind, at, variant, width));
                 at += rng.Range(t.ObstacleGapMinMm, t.ObstacleGapMaxMm + 1);
-            }
-            return list.ToArray();
-        }
-
-        private static CardRushZone[] BuildZones(ulong matchSeed, in CardRushTuning t, CardRushObstacle[] obstacles)
-        {
-            //  방패가 없어 구역이 다른 장애물과 겹치면 답이 둘 필요하다 — 장애물 사이 틈 하나에 구역 하나까지만 놓는다.
-            var list = new List<CardRushZone>();
-            var rng = new DeterministicRandom(Hashing.Combine(matchSeed, ZoneSalt));
-            long ramp = (long)t.TrackMm * 3 / 4;
-            int limit = t.TrackMm - CardRushRules.FinishClearMm;
-            int want = CardRushRules.FirstZoneMm;
-            for (int i = 0; i <= obstacles.Length; i++)
-            {
-                int start = (i == 0 ? 0 : obstacles[i - 1].EndMm) + ZoneAfterObstacleMm;
-                int end = i == obstacles.Length ? limit
-                        : obstacles[i].AtMm - (obstacles[i].Kind == CardRushObstacleKind.Roller ? ZoneBeforeRollerMm : ZoneBeforeObstacleMm);
-                //  들어갈 자리가 없으면 난수를 안 뽑고 다음 틈으로 — 뽑는 순서가 계약이다.
-                if (want > end - CardRushRules.ZoneEscapeSlackMm) continue;
-
-                int ahead = rng.Range(CardRushRules.ZoneAheadMinMm, CardRushRules.ZoneAheadMaxMm + 1);
-                int len = rng.Range(CardRushRules.ZoneLengthMinMm, CardRushRules.ZoneLengthMaxMm + 1);
-                //  구덩이 바로 뒤 구역에 맞아 밀려나도(구역 밀어내는 거리) 넘은 구덩이 위로 돌아가지 않게 — 구덩이 먼 가장자리 + 밀어내는 거리 뒤부터 놓는다.
-                if (i > 0 && obstacles[i - 1].Kind == CardRushObstacleKind.Pit)
-                    start = System.Math.Max(start, obstacles[i - 1].EndMm + t.ZoneKnockMm);
-                int trigger = System.Math.Max(start, want);
-                int from = trigger + ahead;
-                int to = from + len;
-                if (to + CardRushRules.ZoneEscapeSlackMm > end) continue;
-
-                //  경고는 코스 앞 3/4에 걸쳐 90 → 60틱 — 같은 자리면 누구에게나 같은 경고(시간으로 줄이면 뒤처진 사람이 손해).
-                int warn = (int)(CardRushRules.ZoneWarnStartTicks
-                                 - (long)(CardRushRules.ZoneWarnStartTicks - CardRushRules.ZoneWarnEndTicks) * System.Math.Min(trigger, ramp) / ramp);
-                list.Add(new CardRushZone(trigger, from, to, warn));
-                want = to + rng.Range(t.ZoneGapMinMm, t.ZoneGapMaxMm + 1);
             }
             return list.ToArray();
         }

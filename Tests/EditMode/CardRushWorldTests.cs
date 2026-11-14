@@ -186,7 +186,7 @@ namespace LOP.Tests
                 Assert.AreEqual(want.y, Pos(runner).Y, 1e-4f, $"tick {t}");
                 Assert.AreEqual(want.z, Pos(runner).Z, 1e-4f, $"tick {t}");
             }
-            Assert.AreEqual(50 * CardRushRules.RunMmPerTick, State(runner).PosMm, "첫 장애물 전엔 한 틱에 36 mm");
+            Assert.AreEqual(50 * CardRushRules.RunMmPerTick, State(runner).PosMm, "첫 장애물 전엔 한 틱에 RunMmPerTick");
         }
 
         [Test]
@@ -196,7 +196,7 @@ namespace LOP.Tests
             world.Tick(StartTick - 1, Dt);
             var track = world.Track;
             var r = runner.Get<CardRushRunner>();
-            //  장애물·구역을 다 넘긴 결승 100 mm 앞 — 36 mm씩 세 틱째에 들어온다.
+            //  장애물·구역을 다 넘긴 결승 100 mm 앞 — 48 mm씩 세 틱째에 들어온다.
             r.State = new CardRushRunnerState
             {
                 PosMm = track.TrackMm - 100, ObstacleIndex = track.Obstacles.Count, ZoneIndex = track.Zones.Count,

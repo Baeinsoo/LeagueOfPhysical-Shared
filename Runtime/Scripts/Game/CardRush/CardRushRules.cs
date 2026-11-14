@@ -6,21 +6,21 @@ namespace LOP
     /// </summary>
     public static class CardRushRules
     {
-        public const int RunMmPerTick = 36;          // 1.80 m/s
+        public const int RunMmPerTick = 48;          // 2.40 m/s — 4.2차에 1.8 m/s에서 4/3배
         public const int CardDwellTicks = 23;        // 한 장 0.46초
         public const int CooldownTicks = 20;         // 쓰고 쉬는 0.4초
         public const int DashTicks = 14;
-        public const int DashMm = 3120;
+        public const int DashMm = 4160;              // 달리기와 같은 4/3배
         public const int RollMaxTicks = 300;         // 돌기 시작해 6초 안에 안 고르면 그때 색을 자동으로 잡는다
         public const int LockHoldTicks = 250;        // 잡은 카드가 남는 5초 — 지나면 사라진다
         public const int ShotMmPerTick = 300;        // 투사체 15 m/s
         public const int ShotRangeMm = 8000;         // 굴러오는 것이 풀리는 7 m보다 길어 풀리자마자 맞힐 수 있다
         public const int ShotStartAheadMm = 300;     // 손에서 떠나는 자리(몸 앞)
         public const int JumpTicks = 40;             // 0.8초
-        public const int JumpMmPerTick = 60;         // 공중에서 3 m/s — 40틱에 2.4 m
+        public const int JumpMmPerTick = 80;         // 공중에서 4 m/s — 40틱에 3.2 m(달리기와 같은 4/3배)
         public const int JumpHeightMm = 1000;        // 그림·자리 높이. 판정엔 안 쓴다
         public const int PitWidthMinMm = 1000, PitWidthMaxMm = 1400;
-        public const int PitBackMm = 1500;           // 빠지면 구덩이 앞 가장자리에서 이만큼 뒤에서 다시
+        public const int PitBackMm = 2000;           // 빠지면 구덩이 앞 가장자리에서 이만큼 뒤에서 다시(달리기와 같은 4/3배)
         public const int BarricadeStopMm = 490;
         public const int RollerMmPerTick = 38;       // 1.90 m/s
         public const int RollerRevealMm = 7000;      // 내 앞 이 거리에서 굴러오기 시작한다
