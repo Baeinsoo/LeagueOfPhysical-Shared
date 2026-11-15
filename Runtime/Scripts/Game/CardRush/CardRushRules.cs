@@ -37,7 +37,8 @@ namespace LOP
         public const int GoblinMmPerTick = 40;       // 2 m/s — 달리기보다 느려 계속 가까워진다
         public const int GoblinLifeTicks = 150;      // 3초 안에 못 잡으면 사라진다
         public const int GoblinGapMm = 9000;         // 고블린 뒤 다음 장애물까지 — 사는 동안 달리고 대시해도 닿지 않게
-        public const int GoblinPermille = 150;       // 장애물 자리마다 고블린이 나올 몫
+        public const int GoblinsPerTrack = 5;        // 4.5차: 코스를 이만큼 구간으로 나눠 구간마다 정확히 한 마리 — 운에 따라 0~1마리만 나오던 것을 없앤다
+        public const int MaxSameKindRun = 2;         // 같은 장애물은 이만큼까지만 잇는다 — 구덩이만 셋이면 파랑만 기다리게 된다
         //  다음 장애물 앞면에서 이 거리 안에 들면 고블린이 비킨다 — 바리케이드 정지선 + 한 틱에 가장 많이 가는 대시 첫 걸음보다 길다.
         public const int GoblinYieldMm = BarricadeStopMm + 1000;
         public const int RushMmPerTick = 96;         // 골드 러시 4.8 m/s — 달리기의 1.6배
