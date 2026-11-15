@@ -113,18 +113,24 @@ namespace LOP
             var rng = new DeterministicRandom(Hashing.Combine(matchSeed, ObstacleSalt));
             int at = CardRushRules.FirstObstacleMm;
             int end = t.TrackMm - CardRushRules.FinishClearMm;
-            //  고블린은 구간마다 한 마리 — 구간 가운데 절반 안의 무작위 자리를 넘는 첫 장애물 자리에 넣는다.
+            //  고블린은 구간마다 한 마리 — 구간 안 무작위 자리를 넘는 첫 장애물 자리에 넣는다. 자리는 구간 끝에서 (빈터 + 최대 간격)을 남기고 뽑아
+            //  다음 구간 고블린 목표에 닿기 전에 빈터가 끝난다.
             //  구간은 끝에서 최대 간격 하나를 빼고 나눈다 — 마지막 고블린 자리가 결승 앞 빈터로 밀려 빠지지 않게.
-            int section = (end - at - t.ObstacleGapMaxMm) / CardRushRules.GoblinsPerTrack;
-            var goblinAt = new int[CardRushRules.GoblinsPerTrack];
+            //  짧은 코스는 고블린 뒤 빈터(GoblinGapMm)와 장애물 하나가 들어갈 만큼만 넣는다(4.5차 리뷰 I1).
+            int usable = System.Math.Max(0, end - at - t.ObstacleGapMaxMm);
+            int goblins = System.Math.Min(CardRushRules.GoblinsPerTrack, usable / (CardRushRules.GoblinGapMm + t.ObstacleGapMaxMm));
+            int section = goblins > 0 ? usable / goblins : 0;
+            var goblinAt = new int[goblins];
             for (int k = 0; k < goblinAt.Length; k++)
-                goblinAt[k] = at + section * k + section / 4 + rng.Range(0, section / 2 + 1);
+                goblinAt[k] = at + section * k + rng.Range(0, section - CardRushRules.GoblinGapMm - t.ObstacleGapMaxMm + 1);
             int nextGoblin = 0, run = 0;
             var last = CardRushObstacleKind.Goblin;
             while (at < end)
             {
                 //  고블린 자리는 그 칸을 통째로 쓰고 뒤를 GoblinGapMm 띄운다 — 사는 동안 다음 장애물에 닿지 않게.
-                if (nextGoblin < goblinAt.Length && at >= goblinAt[nextGoblin])
+                //  고블린끼리는 붙이지 않는다 — 사이에 장애물이 하나는 있어야 앞 고블린이 다음 고블린 앞에서 비키지 않는다.
+                bool afterGoblin = list.Count > 0 && list[list.Count - 1].Kind == CardRushObstacleKind.Goblin;
+                if (nextGoblin < goblinAt.Length && at >= goblinAt[nextGoblin] && !afterGoblin)
                 {
                     list.Add(new CardRushObstacle(CardRushObstacleKind.Goblin, at, 0));
                     at += CardRushRules.GoblinGapMm;

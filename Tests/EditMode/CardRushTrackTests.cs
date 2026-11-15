@@ -111,24 +111,59 @@ namespace LOP.Tests
             Assert.IsTrue(afterGoblin, "고블린 뒤 간격을 한 번도 못 봤다");
         }
 
-        //  4.5차: 확률이면 다섯 판 중 한 판쯤 0~1마리였다(사용자 "금카 한 번 나오는거야") — 이제 판마다 정확히 GoblinsPerTrack마리, 구간마다 하나.
+        //  4.5차: 확률이면 다섯 판 중 한 판쯤 0~1마리였다(사용자 "금카 한 번 나오는거야") — 이제 판마다 정해진 수, 구간마다 하나.
         [Test]
-        public void 고블린은_판마다_정확히_다섯_마리_구간마다_하나씩_폭이_없다()
+        public void 고블린은_판마다_정해진_수_구간마다_하나씩_폭이_없다()
         {
             var t = CardRushTestTuning.Default;
-            int start = CardRushRules.FirstObstacleMm, end = t.TrackMm - CardRushRules.FinishClearMm;
-            int section = (end - start - t.ObstacleGapMaxMm) / CardRushRules.GoblinsPerTrack;
+            int start = CardRushRules.FirstObstacleMm;
+            int usable = t.TrackMm - CardRushRules.FinishClearMm - start - t.ObstacleGapMaxMm;
+            int count = System.Math.Min(CardRushRules.GoblinsPerTrack, usable / (CardRushRules.GoblinGapMm + t.ObstacleGapMaxMm));
+            Assert.Greater(count, 1, "시험 표가 고블린을 여럿 넣을 만큼 길다");
+            int section = usable / count;
             for (ulong seed = 1; seed <= 200; seed++)
             {
                 var goblins = Make(seed).Obstacles.Where(x => x.Kind == CardRushObstacleKind.Goblin).ToArray();
-                Assert.AreEqual(CardRushRules.GoblinsPerTrack, goblins.Length, $"seed {seed}");
+                Assert.AreEqual(count, goblins.Length, $"seed {seed}");
                 for (int k = 0; k < goblins.Length; k++)
                 {
                     Assert.AreEqual(0, goblins[k].WidthMm, "고블린은 폭이 없다");
-                    //  구간 가운데 절반에서 고르고 그 뒤 첫 장애물 자리라 구간 시작보다 앞이 아니고, 다음 구간 끝을 넘지 않는다.
-                    Assert.GreaterOrEqual(goblins[k].AtMm, start + section * k + section / 4, $"seed {seed} #{k}");
-                    Assert.Less(goblins[k].AtMm, start + section * k + section * 3 / 4 + t.ObstacleGapMaxMm + 1, $"seed {seed} #{k}");
+                    Assert.GreaterOrEqual(goblins[k].AtMm, start + section * k, $"seed {seed} #{k}");
+                    Assert.LessOrEqual(goblins[k].AtMm, start + section * (k + 1) - CardRushRules.GoblinGapMm + t.ObstacleGapMaxMm, $"seed {seed} #{k}");
                 }
+            }
+        }
+
+        [Test]
+        public void 출시_표면_고블린은_정확히_다섯()
+        {
+            var d = CardRushTestTuning.Default;
+            var t = new CardRushTuning(180000, 6500, 9500, 350, d.ZoneGapMinMm, d.ZoneGapMaxMm, d.BarricadeWaitTicks,
+                                       d.RollKnockMm, d.RollStunTicks, d.ZoneKnockMm, d.ZoneStunTicks, 200, d.PitStunTicks);
+            for (ulong seed = 1; seed <= 200; seed++)
+                Assert.AreEqual(5, new CardRushTrack(seed, t).Obstacles.Count(x => x.Kind == CardRushObstacleKind.Goblin), $"seed {seed}");
+        }
+
+        //  4.5차 리뷰 I1: 짧은 코스·넓은 간격에선 다섯을 다 못 넣는다 — 들어갈 만큼만, 고블린끼리 붙지 않고, 결승 앞 빈터 안에.
+        [TestCase(40000, 6000, 6000)]
+        [TestCase(60000, 6000, 6000)]
+        [TestCase(40000, 6000, 30000)]
+        [TestCase(190000, 6000, 40000)]
+        [TestCase(180000, 6500, 9500)]
+        public void 짧은_코스나_넓은_간격에도_고블린은_붙지_않고_들어갈_만큼만(int trackMm, int gapMin, int gapMax)
+        {
+            var d = CardRushTestTuning.Default;
+            var t = new CardRushTuning(trackMm, gapMin, gapMax, d.BarricadePermille, d.ZoneGapMinMm, d.ZoneGapMaxMm, d.BarricadeWaitTicks,
+                                       d.RollKnockMm, d.RollStunTicks, d.ZoneKnockMm, d.ZoneStunTicks, d.PitPermille, d.PitStunTicks);
+            int usable = System.Math.Max(0, trackMm - CardRushRules.FinishClearMm - CardRushRules.FirstObstacleMm - gapMax);
+            int expected = System.Math.Min(CardRushRules.GoblinsPerTrack, usable / (CardRushRules.GoblinGapMm + gapMax));
+            for (ulong seed = 1; seed <= 50; seed++)
+            {
+                var o = new CardRushTrack(seed, t).Obstacles;
+                Assert.AreEqual(expected, o.Count(x => x.Kind == CardRushObstacleKind.Goblin), $"seed {seed}");
+                for (int i = 1; i < o.Count; i++)
+                    Assert.IsFalse(o[i].Kind == CardRushObstacleKind.Goblin && o[i - 1].Kind == CardRushObstacleKind.Goblin, $"seed {seed} #{i} 고블린 연달아");
+                Assert.IsTrue(o.All(x => x.AtMm < trackMm - CardRushRules.FinishClearMm), $"seed {seed} 결승 앞 빈터 밖");
             }
         }
 
