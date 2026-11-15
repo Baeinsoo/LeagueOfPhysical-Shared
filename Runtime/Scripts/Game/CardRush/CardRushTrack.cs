@@ -112,18 +112,34 @@ namespace LOP
             var list = new List<CardRushObstacle>();
             var rng = new DeterministicRandom(Hashing.Combine(matchSeed, ObstacleSalt));
             int at = CardRushRules.FirstObstacleMm;
-            while (at < t.TrackMm - CardRushRules.FinishClearMm)
+            int end = t.TrackMm - CardRushRules.FinishClearMm;
+            //  고블린은 구간마다 한 마리 — 구간 가운데 절반 안의 무작위 자리를 넘는 첫 장애물 자리에 넣는다.
+            //  구간은 끝에서 최대 간격 하나를 빼고 나눈다 — 마지막 고블린 자리가 결승 앞 빈터로 밀려 빠지지 않게.
+            int section = (end - at - t.ObstacleGapMaxMm) / CardRushRules.GoblinsPerTrack;
+            var goblinAt = new int[CardRushRules.GoblinsPerTrack];
+            for (int k = 0; k < goblinAt.Length; k++)
+                goblinAt[k] = at + section * k + section / 4 + rng.Range(0, section / 2 + 1);
+            int nextGoblin = 0, run = 0;
+            var last = CardRushObstacleKind.Goblin;
+            while (at < end)
             {
                 //  고블린 자리는 그 칸을 통째로 쓰고 뒤를 GoblinGapMm 띄운다 — 사는 동안 다음 장애물에 닿지 않게.
-                if (rng.Range(0, 1000) < CardRushRules.GoblinPermille)
+                if (nextGoblin < goblinAt.Length && at >= goblinAt[nextGoblin])
                 {
                     list.Add(new CardRushObstacle(CardRushObstacleKind.Goblin, at, 0));
                     at += CardRushRules.GoblinGapMm;
+                    nextGoblin += 1;
                     continue;
                 }
                 //  바리케이드 : 구덩이 = 표의 두 몫의 비. 굴러오는 것 몫(나머지)은 4.2차에 쓰지 않는다.
                 int r = rng.Range(0, t.BarricadePermille + t.PitPermille);
                 var kind = r < t.BarricadePermille ? CardRushObstacleKind.Barricade : CardRushObstacleKind.Pit;
+                //  고블린을 사이에 둬도 같은 종류가 이어진 것으로 센다 — 카드 하나만 기다리는 구간을 막는다. 다른 종류의 몫이 0인 표는 그대로 둔다.
+                int otherShare = kind == CardRushObstacleKind.Barricade ? t.PitPermille : t.BarricadePermille;
+                if (kind == last && run >= CardRushRules.MaxSameKindRun && otherShare > 0)
+                    kind = kind == CardRushObstacleKind.Barricade ? CardRushObstacleKind.Pit : CardRushObstacleKind.Barricade;
+                run = kind == last ? run + 1 : 1;
+                last = kind;
                 int variant = rng.Range(0, 3);
                 int width = kind == CardRushObstacleKind.Pit ? rng.Range(CardRushRules.PitWidthMinMm, CardRushRules.PitWidthMaxMm + 1) : 0;
                 list.Add(new CardRushObstacle(kind, at, variant, width));

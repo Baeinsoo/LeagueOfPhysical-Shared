@@ -111,32 +111,39 @@ namespace LOP.Tests
             Assert.IsTrue(afterGoblin, "고블린 뒤 간격을 한 번도 못 봤다");
         }
 
+        //  4.5차: 확률이면 다섯 판 중 한 판쯤 0~1마리였다(사용자 "금카 한 번 나오는거야") — 이제 판마다 정확히 GoblinsPerTrack마리, 구간마다 하나.
         [Test]
-        public void 고블린은_장애물_자리마다_15퍼센트쯤_나오고_폭이_없다()
+        public void 고블린은_판마다_정확히_다섯_마리_구간마다_하나씩_폭이_없다()
         {
-            int goblins = 0, all = 0;
+            var t = CardRushTestTuning.Default;
+            int start = CardRushRules.FirstObstacleMm, end = t.TrackMm - CardRushRules.FinishClearMm;
+            int section = (end - start - t.ObstacleGapMaxMm) / CardRushRules.GoblinsPerTrack;
             for (ulong seed = 1; seed <= 200; seed++)
             {
-                foreach (var o in Make(seed).Obstacles)
+                var goblins = Make(seed).Obstacles.Where(x => x.Kind == CardRushObstacleKind.Goblin).ToArray();
+                Assert.AreEqual(CardRushRules.GoblinsPerTrack, goblins.Length, $"seed {seed}");
+                for (int k = 0; k < goblins.Length; k++)
                 {
-                    all++;
-                    if (o.Kind != CardRushObstacleKind.Goblin) continue;
-                    goblins++;
-                    Assert.AreEqual(0, o.WidthMm, "고블린은 폭이 없다");
+                    Assert.AreEqual(0, goblins[k].WidthMm, "고블린은 폭이 없다");
+                    //  구간 가운데 절반에서 고르고 그 뒤 첫 장애물 자리라 구간 시작보다 앞이 아니고, 다음 구간 끝을 넘지 않는다.
+                    Assert.GreaterOrEqual(goblins[k].AtMm, start + section * k + section / 4, $"seed {seed} #{k}");
+                    Assert.Less(goblins[k].AtMm, start + section * k + section * 3 / 4 + t.ObstacleGapMaxMm + 1, $"seed {seed} #{k}");
                 }
             }
-            Assert.Greater(goblins, 0, "고블린이 한 번도 안 나왔다");
-            Assert.That((double)goblins / all, Is.InRange(0.10, 0.20), $"고블린 {goblins}/{all} — GoblinPermille 150");
         }
 
         [Test]
-        public void 고블린_몫이_0이_아니면_씨앗을_바꿔도_고블린이_섞여_나온다()
+        public void 같은_장애물은_세_번_넘게_잇지_않는다_고블린을_사이에_둬도()
         {
-            int seedsWithGoblin = 0;
-            for (ulong seed = 1; seed <= 50; seed++)
-                if (Make(seed).Obstacles.Any(x => x.Kind == CardRushObstacleKind.Goblin)) seedsWithGoblin++;
-            Assert.Greater(seedsWithGoblin, 10, "한 판에 고블린이 아예 없는 씨앗만 나온다");
-            Assert.Less(seedsWithGoblin, 50, "모든 판에 고블린이 있으면 확률이 아니다");
+            bool sawPair = false;
+            for (ulong seed = 1; seed <= 200; seed++)
+            {
+                var kinds = Make(seed).Obstacles.Where(x => x.Kind != CardRushObstacleKind.Goblin).Select(x => x.Kind).ToArray();
+                for (int i = 2; i < kinds.Length; i++)
+                    Assert.IsFalse(kinds[i] == kinds[i - 1] && kinds[i] == kinds[i - 2], $"seed {seed} #{i} — {kinds[i]} 세 번 연속");
+                for (int i = 1; i < kinds.Length; i++) sawPair |= kinds[i] == kinds[i - 1];
+            }
+            Assert.IsTrue(sawPair, "두 번 연속은 나온다 — 막은 것이 셋째부터인지 본다");
         }
 
         [Test]
@@ -162,7 +169,8 @@ namespace LOP.Tests
                 }
             }
             double share = (double)pits / all;
-            Assert.That(share, Is.InRange(0.36, 0.46), $"구덩이 {pits}/{all}(고블린 제외) — 바리케이드 500 : 구덩이 350 → 41%");
+            //  같은 종류 셋째를 다른 종류로 바꿔 흔한 쪽(바리케이드)이 줄어든다 — 41% → 47%쯤.
+            Assert.That(share, Is.InRange(0.42, 0.52), $"구덩이 {pits}/{all}(고블린 제외) — 바리케이드 500 : 구덩이 350, 세 번 연속 금지 → 47%");
         }
 
         [Test]
