@@ -47,6 +47,9 @@ namespace LOP.Tests
         {
             //  대시 첫 걸음이 가장 크다 — 그래도 구덩이를 한 틱에 건너뛰면 안 된다.
             Assert.Less(CardRushRules.DashOffset(1), CardRushRules.PitWidthMinMm);
+            //  고블린이 비키는 거리는 바리케이드 정지선보다 한 틱 걸음 이상 앞이어야 비킨 틱에 정지선을 못 넘는다.
+            Assert.Greater(CardRushRules.GoblinYieldMm - CardRushRules.BarricadeStopMm, CardRushRules.DashOffset(1));
+            Assert.Greater(CardRushRules.GoblinYieldMm - CardRushRules.BarricadeStopMm, CardRushRules.RushMmPerTick);
             Assert.Less(CardRushRules.RunMmPerTick, CardRushRules.PitWidthMinMm);
             Assert.Less(CardRushRules.RushMmPerTick, CardRushRules.PitWidthMinMm, "러시 중에도 한 틱에 구덩이를 건너뛰지 않는다");
         }

@@ -2,7 +2,7 @@ namespace LOP
 {
     /// <summary>
     /// 선수 한 명의 한 틱(4차 spec §3.3) — 탭이 없어도 매 틱, 잡은 카드 사라짐 → 자동 잡기 → 탭(시작/잡기/쓰기) → 바리케이드 올라감 → 이동 → 투사체
-    /// → 막힘 → 구덩이 → 굴러오는 것 → 고블린 → 구역 → 완주 순서.
+    /// → 고블린 → 막힘 → 구덩이 → 굴러오는 것 → 구역 → 완주 순서.
     /// 그 선수 상태 + 코스 + 그 틱 탭만 본다(남과 얽히지 않는다). 정수만 써서 서버와 내 예측이 같은 틱에 같은 상태를 낸다.
     /// </summary>
     public static class CardRushRunnerSim
@@ -37,10 +37,11 @@ namespace LOP
             LiftBarricade(ref s, tick, track, t);
             Move(ref s, tick);
             Shot(ref s, tick, track);
+            //  고블린이 먼저 — 다음 장애물 앞에서 비키면 같은 틱에 그 장애물을 판정한다.
+            Goblin(ref s, tick, track);
             StopAtBarricade(ref s, tick, track);
             Pit(ref s, tick, track, t);
             Rollers(ref s, tick, track, t);
-            Goblin(ref s, tick, track);
             Zones(ref s, tick, track, t);
             if (s.PosMm >= track.TrackMm)
             {
@@ -231,7 +232,11 @@ namespace LOP
             var o = track.Obstacles[s.ObstacleIndex];
             if (o.Kind != CardRushObstacleKind.Goblin) return;
             if (s.ObstacleTick == 0 && s.PosMm >= o.AtMm - CardRushRules.GoblinRevealMm) s.ObstacleTick = tick;
-            if (s.ObstacleTick != 0 && tick - s.ObstacleTick >= CardRushRules.GoblinLifeTicks)
+            //  장애물은 한 번에 하나만 본다 — 러시·대시로 다음 장애물 앞까지 오면 고블린이 3초를 다 못 살아도 비켜야
+            //  그 장애물을 지나치지 않는다(4.4차 리뷰 C1).
+            bool nextIsNear = s.ObstacleIndex + 1 < track.Obstacles.Count
+                              && s.PosMm >= track.Obstacles[s.ObstacleIndex + 1].AtMm - CardRushRules.GoblinYieldMm;
+            if ((s.ObstacleTick != 0 && tick - s.ObstacleTick >= CardRushRules.GoblinLifeTicks) || nextIsNear)
                 Clear(ref s, tick, CardRushObstacleEvent.Escaped);
         }
 

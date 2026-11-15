@@ -502,6 +502,40 @@ namespace LOP.Tests
             Assert.AreEqual(before + CardRushRules.RushMmPerTick, r.S.PosMm, "쓴 틱부터 러시 속도");
         }
 
+        //  4.4차 리뷰 C1: 고블린이 사는 3초 동안 다음 장애물 판정이 멈추면, 러시·대시로 다음 바리케이드를 지나쳤다가
+        //  고블린이 사라지는 틱에 정지선으로 몇 m 끌려온다. 몸이 다음 장애물 앞에 오면 고블린이 그 자리를 비켜야 한다.
+        [Test]
+        public void 고블린이_살아_있어도_다음_바리케이드_앞에서는_멈추고_뒤로_끌려가지_않는다()
+        {
+            const int at = 20000;
+            var bar = Barricade(at + CardRushRules.GoblinGapMm);
+            var r = new Rig(Track(new[] { Goblin(at), bar }), pos: at - CardRushRules.GoblinRevealMm - 1);
+            r.S.RushEndTick = G + 100000;   // 앞 고블린의 러시가 남아 있다 — 150틱에 14.4 m를 간다
+            int prev = r.S.PosMm, stop = bar.AtMm - CardRushRules.BarricadeStopMm;
+            for (int i = 0; i < CardRushRules.GoblinLifeTicks + 20; i++)
+            {
+                r.Tick();
+                Assert.GreaterOrEqual(r.S.PosMm, prev, $"틱 {i}: 뒤로 끌려가지 않는다");
+                Assert.LessOrEqual(r.S.PosMm, stop, $"틱 {i}: 정지선을 넘지 않는다");
+                prev = r.S.PosMm;
+            }
+            Assert.AreEqual(stop, r.S.PosMm, "바리케이드 앞에 섰다");
+            Assert.AreEqual(1, r.S.ObstacleIndex, "고블린은 비켰다(놓침)");
+        }
+
+        [Test]
+        public void 고블린이_살아_있어도_다음_구덩이는_그대로_판정한다()
+        {
+            const int at = 20000;
+            //  코스는 GoblinGapMm를 띄우지만 판정은 그 간격에 기대지 않아야 한다 — 고블린이 사는 동안 다 지나칠 거리에 둔다.
+            var pit = Pit(at + 7000, 1000);
+            var r = new Rig(Track(new[] { Goblin(at), pit }), pos: at - CardRushRules.GoblinRevealMm - 1);
+            r.S.RushEndTick = G + 100000;
+            for (int i = 0; i < CardRushRules.GoblinLifeTicks + 20 && r.S.ObstacleEvent != (int)CardRushObstacleEvent.Fell; i++) r.Tick();
+            Assert.AreEqual((int)CardRushObstacleEvent.Fell, r.S.ObstacleEvent, "대시 없이 달려 들어가면 빠진다 — 공짜 통과가 아니다");
+            Assert.AreEqual(pit.AtMm - CardRushRules.PitBackMm, r.S.PosMm);
+        }
+
         [Test]
         public void 러시_중엔_틱마다_96mm_끝나면_다시_60mm()
         {
