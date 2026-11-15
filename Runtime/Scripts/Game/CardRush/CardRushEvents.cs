@@ -8,6 +8,7 @@ namespace LOP
         Lifted = 3,
         Blocked = 4,    // 은퇴(3차 방패)
         Tumbled = 5, Jumped = 6, Fell = 7,
+        Caught = 8, Escaped = 9,    // 황금 고블린을 잡음 / 놓침
     }
 
     /// <summary>마지막 구역 결과 — 피함·으악. 와이어 값이라 번호를 바꾸지 않는다.</summary>

@@ -15,6 +15,7 @@ namespace LOP.Tests
         private static CardRushObstacle Barricade(int at) => new CardRushObstacle(CardRushObstacleKind.Barricade, at, 0);
         private static CardRushObstacle Roller(int at) => new CardRushObstacle(CardRushObstacleKind.Roller, at, 0);
         private static CardRushObstacle Pit(int at, int width) => new CardRushObstacle(CardRushObstacleKind.Pit, at, 0, width);
+        private static CardRushObstacle Goblin(int at) => new CardRushObstacle(CardRushObstacleKind.Goblin, at, 0);
 
         //  사거리 끝까지 가는 틱 수 — 8000 / 300을 올림.
         private const int ShotFlightTicks = (CardRushRules.ShotRangeMm + CardRushRules.ShotMmPerTick - 1) / CardRushRules.ShotMmPerTick;
@@ -45,7 +46,7 @@ namespace LOP.Tests
             {
                 Assert.AreEqual(0, S.LockTick, "이미 잡은 카드가 있다");
                 S.LockTick = Now - 1;
-                //  4.2차: 도는 색이 무작위라 그 색이 처음 나오는 장을 찾는다(자동 잡기 전까지의 장 안에서).
+                //  첫 장이 무작위라 그 색이 처음 나오는 장을 찾는다(자동 잡기 전까지의 장 안에서).
                 int offset = 0;
                 while (Track.CardOf(Lane, S.UseCount, offset) != color)
                 {
@@ -84,11 +85,12 @@ namespace LOP.Tests
         // ── 달리기·대시 ──
 
         [Test]
-        public void 탭이_없으면_틱마다_36mm_달린다()
+        public void 탭이_없으면_틱마다_RunMmPerTick_달린다()
         {
             var s = new CardRushRunnerState();
             var track = Track();
             for (long t = G; t < G + 10; t++) CardRushRunnerSim.Step(ref s, t, false, G, 0, track, Tuning);
+            Assert.AreEqual(10 * 60, s.PosMm, "틱마다 60 mm");
             Assert.AreEqual(10 * CardRushRules.RunMmPerTick, s.PosMm);
         }
 
@@ -217,8 +219,10 @@ namespace LOP.Tests
             r.RunUntil(x => x.S.ObstacleEvent != 0, 40);
             Assert.AreEqual((int)CardRushObstacleEvent.Smashed, r.S.ObstacleEvent);
             int distance = at - (pos + CardRushRules.ShotStartAheadMm);
-            Assert.AreEqual(t0 + (distance + CardRushRules.ShotMmPerTick - 1) / CardRushRules.ShotMmPerTick, r.S.ObstacleEventTick,
-                "서 있는 자리로 맞았다(굴러오기 시작했다면 더 일찍 맞는다)");
+            //  던지는 동안 몸이 풀리는 자리(7 m 앞)를 지나 굴러오기 시작하므로 서 있는 자리 기준 틱보다 같거나 일찍 맞는다.
+            long standingHit = t0 + (distance + CardRushRules.ShotMmPerTick - 1) / CardRushRules.ShotMmPerTick;
+            Assert.LessOrEqual(r.S.ObstacleEventTick, standingHit);
+            Assert.Greater(r.S.ObstacleEventTick, t0);
             Assert.AreEqual(0, r.S.Hits);
             Assert.AreEqual(0, r.S.StunEndTick);
         }
@@ -226,7 +230,7 @@ namespace LOP.Tests
         [Test]
         public void 굴러오는_것과_같은_틱이면_투사체가_이긴다()
         {
-            //  이 틱: 몸 p + 48, 굴러오는 것 p + 300 − 38 → 214 mm(닿음). 투사체 출발 자리 p + 300 ≥ 앞면(맞음). 둘 다면 부숨이다.
+            //  이 틱: 몸 p + 60, 굴러오는 것 p + 300 − 38 → 202 mm(닿음). 투사체 출발 자리 p + 300 ≥ 앞면(맞음). 둘 다면 부숨이다.
             const int p = 13000;
             var r = new Rig(Track(new[] { Roller(p + CardRushRules.ShotStartAheadMm) }), pos: p);
             r.S.ObstacleTick = r.Now;
@@ -264,78 +268,79 @@ namespace LOP.Tests
             Assert.Greater(r.S.WhiffTick, first + ShotFlightTicks);
         }
 
-        // ── 점프 ──
+        // ── 대시와 구덩이 ──
 
+        //  대시는 쓴 틱부터 DashMm를 간다 — 시작 자리 p에서 p + DashMm에 내려앉는다. 중간엔 구덩이를 지난다.
         [Test]
-        public void 점프는_40틱에_3200mm_마지막_틱에_내려앉는다()
+        public void 대시로_구덩이를_넘는다_앞_가장자리_바로_앞에서도([Values(1000, 1400)] int width, [Range(0, 3600, 50)] int before)
         {
-            var r = new Rig(Track(), pos: 5000);
-            long t0 = r.Use(CardColor.Yellow);
-            Assert.AreEqual(t0, r.S.JumpStartTick);
-            Assert.IsTrue(CardRushRunnerSim.IsAirborne(r.S));
-            Assert.AreEqual(5000 + CardRushRules.JumpMmPerTick, r.S.PosMm, "쓴 틱부터 뛴다");
-            r.Ticks(CardRushRules.JumpTicks - 2);
-            Assert.AreEqual(5000 + CardRushRules.JumpMmPerTick * (CardRushRules.JumpTicks - 1), r.S.PosMm);
-            Assert.IsTrue(CardRushRunnerSim.IsAirborne(r.S));
-            r.Tick();
-            Assert.AreEqual(5000 + 3200, r.S.PosMm);
-            Assert.AreEqual(0, r.S.JumpStartTick, "40틱째에 내려앉는다");
-            r.Tick();
-            Assert.AreEqual(5000 + 3200 + CardRushRules.RunMmPerTick, r.S.PosMm, "다시 달린다");
-        }
-
-        [Test]
-        public void 점프는_대시를_끊는다()
-        {
-            var r = new Rig(Track(), pos: 1000);
+            const int at = 20000;
+            var r = new Rig(Track(new[] { Pit(at, width) }), pos: at - 1 - before);
             r.Use(CardColor.Blue);
-            int pos = r.S.PosMm;
-            long jump = r.Use(CardColor.Yellow);
-            Assert.AreEqual(0, r.S.DashStartTick);
-            Assert.AreEqual(jump, r.S.JumpStartTick);
-            Assert.AreEqual(pos + CardRushRules.JumpMmPerTick, r.S.PosMm);
+            r.RunUntil(x => x.S.ObstacleEvent != 0, 60);
+            Assert.AreEqual((int)CardRushObstacleEvent.Jumped, r.S.ObstacleEvent, "빠지지 않고 넘었다");
+            Assert.AreEqual(1, r.S.ObstacleIndex);
+            Assert.AreEqual(0, r.S.Hits, "한 번도 안 빠졌다");
+            Assert.AreEqual(1, r.S.CleanStreak);
+            Assert.AreEqual(0, r.S.StunEndTick);
+            Assert.Greater(r.S.PosMm, at + width);
         }
 
-        //  뛰는 자리(쓴 틱 직전 자리)가 (먼 가장자리 − 3200, 앞 가장자리) 안이면 넘는다.
-        [TestCase(1000, -1, CardRushObstacleEvent.Jumped)]
-        [TestCase(1400, -1, CardRushObstacleEvent.Jumped)]
-        [TestCase(1000, 1000 - 3200 + 1, CardRushObstacleEvent.Jumped)]
-        [TestCase(1400, 1400 - 3200 + 1, CardRushObstacleEvent.Jumped)]
-        [TestCase(1000, 1000 - 3200, CardRushObstacleEvent.Fell)]
-        [TestCase(1400, 1400 - 3200, CardRushObstacleEvent.Fell)]
-        [TestCase(1200, -2000, CardRushObstacleEvent.Fell)]
-        public void 구덩이는_창_안에서_뛰면_넘고_밖이면_빠진다(int width, int jumpFromRelAt, CardRushObstacleEvent expected)
+        //  내려앉는 자리(시작 + DashMm)가 구덩이 안이면 마지막 틱에 땅으로 보고 빠진다.
+        [TestCase(1200, 0)]
+        [TestCase(1200, 600)]
+        [TestCase(1200, 1200)]
+        [TestCase(1000, 1000)]
+        public void 대시가_구덩이_안에서_끝나면_빠진다(int width, int landingRelAt)
         {
             const int at = 20000;
-            var r = new Rig(Track(new[] { Pit(at, width) }), pos: at + jumpFromRelAt);
-            long t0 = r.Use(CardColor.Yellow);
+            var r = new Rig(Track(new[] { Pit(at, width) }), pos: at + landingRelAt - CardRushRules.DashMm);
+            long t0 = r.Use(CardColor.Blue);
             r.RunUntil(x => x.S.ObstacleEvent != 0, 60);
-            Assert.AreEqual((int)expected, r.S.ObstacleEvent);
-            if (expected == CardRushObstacleEvent.Jumped)
-            {
-                Assert.AreEqual(1, r.S.ObstacleIndex);
-                Assert.AreEqual(0, r.S.Hits);
-                Assert.AreEqual(1, r.S.CleanStreak);
-            }
-            else
-            {
-                Assert.AreEqual(t0 + CardRushRules.JumpTicks - 1, r.S.ObstacleEventTick, "내려앉은 틱에 빠진다");
-                Assert.AreEqual(0, r.S.ObstacleIndex);
-                Assert.AreEqual(1, r.S.Hits);
-            }
+            Assert.AreEqual((int)CardRushObstacleEvent.Fell, r.S.ObstacleEvent);
+            Assert.AreEqual(t0 + CardRushRules.DashTicks - 1, r.S.ObstacleEventTick, "내려앉은 틱에 빠진다");
+            Assert.AreEqual(at - CardRushRules.PitBackMm, r.S.PosMm);
+            Assert.AreEqual(0, r.S.ObstacleIndex, "다시 넘어야 한다");
+            Assert.AreEqual(1, r.S.Hits);
         }
 
         [Test]
-        public void 땅에서_구덩이에_들어가면_1_5m_뒤에서_기절_번호_그대로()
+        public void 대시가_구덩이_앞에서_끝나면_이어_달려_빠진다()
         {
             const int at = 20000;
-            var r = new Rig(Track(new[] { Pit(at, 1200) }), pos: at - 50);
+            var r = new Rig(Track(new[] { Pit(at, 1200) }), pos: at - 1000 - CardRushRules.DashMm);
+            r.Use(CardColor.Blue);
+            r.Ticks(CardRushRules.DashTicks - 1);
+            Assert.AreEqual(0, r.S.DashStartTick, "대시가 끝났다");
+            Assert.AreEqual(0, r.S.ObstacleEvent, "대시는 구덩이 앞에 내려앉았다");
+            Assert.AreEqual(at - 1000, r.S.PosMm);
+            r.RunUntil(x => x.S.ObstacleEvent != 0, 60);
+            Assert.AreEqual((int)CardRushObstacleEvent.Fell, r.S.ObstacleEvent, "대시가 끝나면 다시 구덩이에 빠진다");
+        }
+
+        [Test]
+        public void 대시_없이_달려_들어가면_빠진다_노랑과_빨강은_구덩이를_못_넘는다([Values(CardColor.Red, CardColor.Yellow)] CardColor color)
+        {
+            const int at = 20000;
+            var r = new Rig(Track(new[] { Pit(at, 1200) }), pos: at - 1000);
+            r.Use(color);
+            r.RunUntil(x => x.S.ObstacleEvent != 0, 60);
+            Assert.AreEqual((int)CardRushObstacleEvent.Fell, r.S.ObstacleEvent);
+            Assert.AreEqual(1, r.S.Hits);
+        }
+
+        [Test]
+        public void 땅에서_구덩이에_들어가면_2_5m_뒤에서_기절_번호_그대로()
+        {
+            const int at = 20000;
+            var r = new Rig(Track(new[] { Pit(at, 1200) }), pos: at - 100);
             r.Tick();
             Assert.AreEqual(0, r.S.ObstacleEvent, "아직 앞");
             r.Tick();
             long fell = r.Now - 1;
             Assert.AreEqual((int)CardRushObstacleEvent.Fell, r.S.ObstacleEvent);
             Assert.AreEqual(fell, r.S.ObstacleEventTick);
+            Assert.AreEqual(at - 2500, r.S.PosMm);
             Assert.AreEqual(at - CardRushRules.PitBackMm, r.S.PosMm);
             Assert.AreEqual(fell + Tuning.PitStunTicks, r.S.StunEndTick);
             Assert.AreEqual(0, r.S.ObstacleIndex, "다시 넘어야 한다");
@@ -345,7 +350,7 @@ namespace LOP.Tests
             while (r.Now < fell + Tuning.PitStunTicks) r.Tick();
             Assert.AreEqual(at - CardRushRules.PitBackMm, r.S.PosMm, "기절 중엔 서 있다");
             r.RunUntil(x => x.S.Hits == 2, 200);
-            Assert.AreEqual((int)CardRushObstacleEvent.Fell, r.S.ObstacleEvent, "안 뛰면 또 빠진다");
+            Assert.AreEqual((int)CardRushObstacleEvent.Fell, r.S.ObstacleEvent, "안 피하면 또 빠진다");
         }
 
         [Test]
@@ -358,83 +363,241 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 대시로_구덩이를_건너뛸_수_없다([Range(0, 3600, 50)] int before)
-        {
-            const int at = 20000;
-            var r = new Rig(Track(new[] { Pit(at, CardRushRules.PitWidthMinMm) }), pos: at - 1 - before);
-            r.Use(CardColor.Blue);
-            r.RunUntil(x => x.S.ObstacleEvent != 0, 200);
-            Assert.AreEqual((int)CardRushObstacleEvent.Fell, r.S.ObstacleEvent);
-        }
-
-        [Test]
-        public void 바리케이드는_못_넘는다_부딪혀_내려앉는다()
+        public void 바리케이드는_대시로도_못_넘는다_부딪혀_멈춘다()
         {
             const int at = 20000;
             int stop = at - CardRushRules.BarricadeStopMm;
             var r = new Rig(Track(new[] { Barricade(at) }), pos: stop - 1000);
-            long t0 = r.Use(CardColor.Yellow);
+            long t0 = r.Use(CardColor.Blue);
             r.RunUntil(x => x.S.ObstacleTick != 0, 40);
-            Assert.Less(r.S.ObstacleTick, t0 + CardRushRules.JumpTicks - 1, "공중에서 부딪혔다");
+            Assert.Less(r.S.ObstacleTick, t0 + CardRushRules.DashTicks - 1, "대시 도중에 부딪혔다");
             Assert.AreEqual(stop, r.S.PosMm);
-            Assert.AreEqual(0, r.S.JumpStartTick);
+            Assert.AreEqual(0, r.S.DashStartTick);
             Assert.AreEqual(0, r.S.ObstacleIndex);
             r.Tick();
             Assert.AreEqual(stop, r.S.PosMm, "바리케이드 앞에 서 있다");
         }
 
         [Test]
-        public void 공중이면_굴러오는_것을_넘는다()
+        public void 대시_중이면_굴러오는_것을_넘는다()
         {
-            //  공중에선 몸 60 + 굴러오는 것 38 = 98 mm씩 가까워진다 — 열 틱째쯤 닿게 놓는다.
+            //  대시 중에 닿으면 꽈당이 아니라 넘은 것(Jumped) — 옛 점프와 같은 취급.
             const int p = 13000;
             var r = new Rig(Track(new[] { Roller(p + CardRushRules.RollerContactMm + 98 * 10) }), pos: p);
             r.S.ObstacleTick = r.Now;
-            long t0 = r.Use(CardColor.Yellow);
+            r.Use(CardColor.Blue);
             r.RunUntil(x => x.S.ObstacleEvent != 0, 40);
             Assert.AreEqual((int)CardRushObstacleEvent.Jumped, r.S.ObstacleEvent);
-            Assert.Less(r.S.ObstacleEventTick, t0 + CardRushRules.JumpTicks - 1);
             Assert.AreEqual(1, r.S.ObstacleIndex);
             Assert.AreEqual(0, r.S.Hits);
             Assert.AreEqual(0, r.S.StunEndTick);
             Assert.AreEqual(1, r.S.CleanStreak);
         }
 
-        [TestCase(CardColor.Yellow)]
-        [TestCase(CardColor.Blue)]
-        public void 공중에선_노랑_파랑_탭을_버리고_잡은_카드는_남는다(CardColor color)
-        {
-            var r = new Rig(Track(), pos: 5000);
-            long jump = r.Use(CardColor.Yellow);
-            r.Ticks(5);
-            r.Arm(color);
-            long held = r.S.LockTick;
-            r.Tick(true);
-            Assert.AreEqual(held, r.S.LockTick, "잡은 카드가 그대로 남는다");
-            Assert.AreEqual(1, r.S.UseCount);
-            Assert.AreEqual(jump, r.S.JumpStartTick, "공중 점프 없음");
-            Assert.AreEqual(0, r.S.DashStartTick, "공중 대시 없음");
-
-            r.RunUntil(x => !CardRushRunnerSim.IsAirborne(x.S), 40);
-            long used = r.Now;
-            r.Tick(true);
-            Assert.AreEqual(0, r.S.LockTick);
-            Assert.AreEqual(2, r.S.UseCount);
-            if (color == CardColor.Blue) Assert.AreEqual(used, r.S.DashStartTick, "내려앉으면 쓴다");
-            else Assert.AreEqual(used, r.S.JumpStartTick, "내려앉으면 쓴다");
-        }
-
         [Test]
-        public void 공중에서도_빨강은_던진다()
+        public void 대시_중에도_다음_카드를_쓴다_빨강은_던진다()
         {
             var r = new Rig(Track(), pos: 5000);
-            r.Use(CardColor.Yellow);
+            long dash = r.Use(CardColor.Blue);
             r.Ticks(5);
             int pos = r.S.PosMm;
             long thrown = r.Use(CardColor.Red);
             Assert.AreEqual(thrown, r.S.ShotTick);
             Assert.AreEqual(pos + CardRushRules.ShotStartAheadMm, r.S.ShotFromMm);
-            Assert.IsTrue(CardRushRunnerSim.IsAirborne(r.S));
+            Assert.AreEqual(dash, r.S.DashStartTick, "대시는 그대로 이어진다");
+            Assert.AreEqual(2, r.S.UseCount);
+        }
+
+        [Test]
+        public void 대시_중에_파랑을_또_쓰면_대시를_새로_시작한다()
+        {
+            var r = new Rig(Track(), pos: 5000);
+            r.Use(CardColor.Blue);
+            r.Ticks(5);
+            long second = r.Use(CardColor.Blue);
+            Assert.AreEqual(second, r.S.DashStartTick);
+        }
+
+        // ── 황금 고블린 ──
+
+        [Test]
+        public void 고블린은_5m_앞에서_나타난다_그전엔_없다()
+        {
+            const int at = 20000;
+            int reveal = at - CardRushRules.GoblinRevealMm;
+            var r = new Rig(Track(new[] { Goblin(at) }), pos: reveal - 3 * CardRushRules.RunMmPerTick + 1);
+            r.Ticks(2);
+            Assert.AreEqual(0, r.S.ObstacleTick, "아직 5 m 밖");
+            Assert.Less(r.S.PosMm, reveal);
+            r.Tick();
+            Assert.AreEqual(r.Now - 1, r.S.ObstacleTick, "나타난 틱");
+            Assert.GreaterOrEqual(r.S.PosMm, reveal);
+            Assert.AreEqual(0, r.S.ObstacleIndex, "나타났을 뿐 아직 지금 장애물");
+            Assert.AreEqual(0, r.S.ObstacleEvent);
+        }
+
+        [Test]
+        public void 고블린_자리는_나타난_틱부터_틱마다_40mm씩_달아난다()
+        {
+            var o = Goblin(20000);
+            Assert.AreEqual(20000, CardRushRunnerSim.GoblinPos(o, 500, 500));
+            Assert.AreEqual(20000 + 40 * 10, CardRushRunnerSim.GoblinPos(o, 500, 510));
+            Assert.AreEqual(20000 + 40 * 150, CardRushRunnerSim.GoblinPos(o, 500, 650));
+        }
+
+        [Test]
+        public void 고블린은_나타나고_정확히_150틱째에_놓친다()
+        {
+            var r = new Rig(Track(new[] { Goblin(20000) }), pos: 15000 - 1);
+            r.S.CleanStreak = 2;
+            r.S.BestCleanStreak = 2;
+            r.Tick();
+            long reveal = r.S.ObstacleTick;
+            Assert.AreEqual(r.Now - 1, reveal);
+            r.Ticks(CardRushRules.GoblinLifeTicks - 1);
+            Assert.AreEqual(reveal + CardRushRules.GoblinLifeTicks - 1, r.Now - 1);
+            Assert.AreEqual(0, r.S.ObstacleIndex, "149틱째까지는 산다");
+            Assert.AreEqual(0, r.S.ObstacleEvent);
+            r.Tick();
+            Assert.AreEqual(reveal + CardRushRules.GoblinLifeTicks, r.Now - 1);
+            Assert.AreEqual(1, r.S.ObstacleIndex, "150틱째에 사라진다");
+            Assert.AreEqual((int)CardRushObstacleEvent.Escaped, r.S.ObstacleEvent);
+            Assert.AreEqual(9, r.S.ObstacleEvent, "와이어 값");
+            Assert.AreEqual(reveal + CardRushRules.GoblinLifeTicks, r.S.ObstacleEventTick);
+            Assert.AreEqual(0, r.S.ObstacleTick);
+            Assert.AreEqual(0, r.S.RushEndTick, "놓치면 러시도 없다");
+            Assert.AreEqual(0, r.S.Hits);
+            Assert.AreEqual(2, r.S.CleanStreak, "놓침은 연속 무사 통과를 건드리지 않는다");
+            Assert.AreEqual(2, r.S.BestCleanStreak);
+        }
+
+        //  나타난 지 elapsed틱에 잡으면 150 − 100·elapsed/150 (정수 나눗셈) — 바로 150, 사라지는 틱 50.
+        [TestCase(0, 1, 150)]
+        [TestCase(30, 31, 130)]
+        [TestCase(74, 75, 100)]
+        [TestCase(100, 101, 83)]
+        [TestCase(148, 149, 51)]
+        [TestCase(149, 150, 50)]
+        public void 고블린을_노랑으로_잡으면_빨리_잡을수록_러시가_길다(int waitTicks, int elapsed, int expectedRush)
+        {
+            const int at = 20000;
+            var r = new Rig(Track(new[] { Goblin(at) }), pos: at - CardRushRules.GoblinRevealMm - 1);
+            r.S.CleanStreak = 3;
+            r.Tick();
+            long reveal = r.S.ObstacleTick;
+            Assert.AreNotEqual(0, reveal);
+            r.Ticks(waitTicks);
+            int before = r.S.PosMm;
+            long t0 = r.Use(CardColor.Yellow);
+            Assert.AreEqual(reveal + elapsed, t0, "쓴 틱 = 나타난 틱 + 경과");
+            Assert.AreEqual(expectedRush, CardRushRunnerSim.RushTicksFor(elapsed));
+            Assert.AreEqual(t0 + expectedRush, r.S.RushEndTick);
+            Assert.AreEqual((int)CardRushObstacleEvent.Caught, r.S.ObstacleEvent);
+            Assert.AreEqual(8, r.S.ObstacleEvent, "와이어 값");
+            Assert.AreEqual(t0, r.S.ObstacleEventTick);
+            Assert.AreEqual(1, r.S.ObstacleIndex);
+            Assert.AreEqual(0, r.S.ObstacleTick);
+            Assert.AreEqual(0, r.S.Hits);
+            Assert.AreEqual(3, r.S.CleanStreak, "잡음은 연속 무사 통과를 건드리지 않는다");
+            Assert.AreEqual(before + CardRushRules.RushMmPerTick, r.S.PosMm, "쓴 틱부터 러시 속도");
+        }
+
+        [Test]
+        public void 러시_중엔_틱마다_96mm_끝나면_다시_60mm()
+        {
+            const int at = 20000;
+            var r = new Rig(Track(new[] { Goblin(at) }), pos: at - CardRushRules.GoblinRevealMm - 1);
+            r.Tick();
+            long reveal = r.S.ObstacleTick;
+            int before = r.S.PosMm;
+            long t0 = r.Use(CardColor.Yellow);
+            int rush = CardRushRunnerSim.RushTicksFor(t0 - reveal);
+            Assert.AreEqual(150, rush, "바로 잡았다");
+            Assert.IsTrue(CardRushRunnerSim.IsRushing(r.S, t0));
+            r.Ticks(rush - 1);
+            Assert.AreEqual(before + 96 * rush, r.S.PosMm, "러시 동안 96 mm씩");
+            Assert.IsTrue(CardRushRunnerSim.IsRushing(r.S, r.Now - 1), "마지막 러시 틱");
+            Assert.IsFalse(CardRushRunnerSim.IsRushing(r.S, r.Now), "RushEndTick 틱부터 러시가 아니다");
+            r.Tick();
+            Assert.AreEqual(before + 96 * rush + 60, r.S.PosMm, "러시가 끝나면 다시 60 mm");
+            r.Tick();
+            Assert.AreEqual(before + 96 * rush + 120, r.S.PosMm);
+        }
+
+        [Test]
+        public void 러시여도_바리케이드는_못_넘는다()
+        {
+            //  러시는 달리기 속도만 바꾼다 — 바리케이드 앞에서 멈추는 건 그대로다.
+            const int at = 20000;
+            int stop = at - CardRushRules.BarricadeStopMm;
+            var r = new Rig(Track(new[] { Barricade(at) }), pos: stop - 100);
+            r.S.RushEndTick = r.Now + 500;
+            r.Tick();
+            r.Tick();
+            Assert.AreEqual(stop, r.S.PosMm, "러시여도 바리케이드를 못 넘는다");
+        }
+
+        [Test]
+        public void 노랑이어도_고블린이_없으면_헛손질이다()
+        {
+            var empty = new Rig(Track(), pos: 5000);
+            empty.Use(CardColor.Yellow);
+            Assert.AreEqual(0, empty.S.RushEndTick, "장애물이 없다");
+            Assert.AreEqual(1, empty.S.UseCount, "카드는 쓴 것으로 센다");
+            Assert.AreEqual((int)CardRushObstacleEvent.None, empty.S.ObstacleEvent);
+
+            var barricade = new Rig(Track(new[] { Barricade(30000) }), pos: 5000);
+            barricade.Use(CardColor.Yellow);
+            Assert.AreEqual(0, barricade.S.RushEndTick);
+            Assert.AreEqual(0, barricade.S.ObstacleIndex, "다른 장애물은 못 치운다");
+            Assert.AreEqual((int)CardRushObstacleEvent.None, barricade.S.ObstacleEvent);
+
+            //  아직 안 나타난 고블린도 못 잡는다.
+            var hidden = new Rig(Track(new[] { Goblin(30000) }), pos: 5000);
+            hidden.Use(CardColor.Yellow);
+            Assert.AreEqual(0, hidden.S.ObstacleTick, "아직 안 나타났다");
+            Assert.AreEqual(0, hidden.S.RushEndTick);
+            Assert.AreEqual(0, hidden.S.ObstacleIndex);
+            Assert.AreEqual((int)CardRushObstacleEvent.None, hidden.S.ObstacleEvent);
+
+            //  양성 대조 — 나타난 뒤엔 같은 노랑이 잡는다.
+            var shown = new Rig(Track(new[] { Goblin(30000) }), pos: 30000 - CardRushRules.GoblinRevealMm);
+            shown.Tick();
+            Assert.AreNotEqual(0, shown.S.ObstacleTick);
+            shown.Use(CardColor.Yellow);
+            Assert.AreNotEqual(0, shown.S.RushEndTick);
+        }
+
+        [TestCase(CardColor.Red)]
+        [TestCase(CardColor.Blue)]
+        public void 빨강_파랑은_고블린을_못_잡는다(CardColor color)
+        {
+            var r = new Rig(Track(new[] { Goblin(30000) }), pos: 30000 - CardRushRules.GoblinRevealMm);
+            r.Tick();
+            r.Use(color);
+            Assert.AreEqual(0, r.S.RushEndTick);
+            Assert.AreEqual(0, r.S.ObstacleIndex);
+        }
+
+        [Test]
+        public void RushTicksFor는_끝점이_정해져_있고_늦을수록_줄어든다()
+        {
+            Assert.AreEqual(150, CardRushRunnerSim.RushTicksFor(0));
+            Assert.AreEqual(50, CardRushRunnerSim.RushTicksFor(150));
+            Assert.AreEqual(150, CardRushRunnerSim.RushTicksFor(-5), "범위 밖은 끝점으로");
+            Assert.AreEqual(50, CardRushRunnerSim.RushTicksFor(400), "범위 밖은 끝점으로");
+            int prev = int.MaxValue;
+            bool dropped = false;
+            for (int e = 0; e <= CardRushRules.GoblinLifeTicks; e++)
+            {
+                int v = CardRushRunnerSim.RushTicksFor(e);
+                Assert.LessOrEqual(v, prev, $"e={e}");
+                Assert.That(v, Is.InRange(CardRushRules.RushMinTicks, CardRushRules.RushMaxTicks));
+                dropped |= v < prev && prev != int.MaxValue;
+                prev = v;
+            }
+            Assert.IsTrue(dropped, "늦을수록 정말 줄어든다");
+            Assert.Less(CardRushRunnerSim.RushTicksFor(100), CardRushRunnerSim.RushTicksFor(30));
         }
 
         // ── 굴러오는 것 ──
@@ -476,27 +639,15 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 대시로_들이받아도_꽈당()
+        public void 대시로_굴러오는_것에_닿으면_꽈당이_아니라_넘는다()
         {
             var r = new Rig(Track(new[] { Roller(20000) }), pos: 13000);
             r.RunUntil(x => x.RollerGap() <= 2000);
             r.Use(CardColor.Blue);
             r.RunUntil(x => x.S.ObstacleEvent != 0, 30);
-            Assert.AreEqual((int)CardRushObstacleEvent.Tumbled, r.S.ObstacleEvent);
-            Assert.AreEqual(0, r.S.DashStartTick, "꽈당이면 대시가 끝난다");
-            Assert.AreEqual(1, r.S.Hits);
-        }
-
-        [Test]
-        public void 대시로_굴러오는_것을_건너뛸_수_없다([Range(0, 3000, 50)] int extraGap)
-        {
-            var r = new Rig(Track(new[] { Roller(20000) }), pos: 13000);
-            const int closing = CardRushRules.RunMmPerTick + CardRushRules.RollerMmPerTick;
-            r.RunUntil(x => x.RollerGap() - closing <= CardRushRules.RollerContactMm + extraGap);
-            Assert.AreEqual(0, r.S.ObstacleEvent, "대시 전엔 아직 안 닿았다");
-            r.Use(CardColor.Blue);
-            r.RunUntil(x => x.S.ObstacleEvent != 0, 200);
-            Assert.AreEqual((int)CardRushObstacleEvent.Tumbled, r.S.ObstacleEvent);
+            Assert.AreEqual((int)CardRushObstacleEvent.Jumped, r.S.ObstacleEvent);
+            Assert.AreEqual(0, r.S.Hits);
+            Assert.AreEqual(0, r.S.StunEndTick);
         }
 
         // ── 구역 ──
@@ -537,15 +688,15 @@ namespace LOP.Tests
         [Test]
         public void 대시로_빠져나가면_피함()
         {
-            var r = new Rig(Track(zones: new[] { Zone(10000, 10500, 12000) }), pos: 9990);
+            var r = new Rig(Track(zones: new[] { Zone(10000, 10500, 14000) }), pos: 9990);
             r.Tick();
             long on = r.S.ZoneTick;
             while (r.Now < on + 40) r.Tick();
-            Assert.LessOrEqual(r.S.PosMm, 12000 + CardRushRules.ZoneMarginMm, "대시 전엔 아직 안");
+            Assert.LessOrEqual(r.S.PosMm, 14000 + CardRushRules.ZoneMarginMm, "대시 전엔 아직 안");
             r.Use(CardColor.Blue);
             r.RunUntil(x => x.S.ZoneEvent != 0, 30);
             Assert.AreEqual((int)CardRushZoneEvent.Dodged, r.S.ZoneEvent);
-            Assert.Greater(r.S.PosMm, 12000 + CardRushRules.ZoneMarginMm);
+            Assert.Greater(r.S.PosMm, 14000 + CardRushRules.ZoneMarginMm);
             Assert.AreEqual(0, r.S.Hits);
             Assert.AreEqual(1, r.S.CleanStreak);
         }
@@ -574,19 +725,20 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 공중에서_구역에_맞으면_내려앉아_기절한다()
+        public void 대시_중에_구역에_맞으면_대시가_끊기고_기절한다()
         {
             var r = new Rig(Track(zones: new[] { Zone(10000, 10500, 20000) }), pos: 9990);
             r.Tick();
             long boom = r.S.ZoneTick + 60;
             while (r.Now < boom - 10) r.Tick();
-            r.Use(CardColor.Yellow);
+            r.Use(CardColor.Blue);
+            Assert.AreNotEqual(0, r.S.DashStartTick, "대시 중이다");
             r.RunUntil(x => x.S.ZoneEvent != 0, 20);
             Assert.AreEqual((int)CardRushZoneEvent.Hit, r.S.ZoneEvent);
-            Assert.AreEqual(0, r.S.JumpStartTick, "밀려나면 내려앉는다");
+            Assert.AreEqual(0, r.S.DashStartTick, "밀려나면 대시가 끝난다");
             int knocked = r.S.PosMm;
             r.Ticks(5);
-            Assert.AreEqual(knocked, r.S.PosMm, "기절 중 공중으로 날아가지 않는다");
+            Assert.AreEqual(knocked, r.S.PosMm, "기절 중 앞으로 날아가지 않는다");
         }
 
         [Test]
@@ -688,148 +840,52 @@ namespace LOP.Tests
         // ── 성질 ──
 
         [Test]
-        public void 노랑만_제때_써도_완주한다()
+        public void 파랑만_제때_써도_완주한다()
         {
-            //  구덩이는 노랑으로만 넘는다 — 탭 없이는 영영 못 간다. 노랑만 잡아 구덩이·굴러오는 것 앞에서 쓰면 완주한다.
-            int pitsSeen = 0;
+            //  구덩이는 파랑 대시로만 넘는다 — 탭 없이는 영영 못 간다. 파랑만 잡아 구덩이 앞에서 쓰면 완주한다.
+            //  바리케이드는 기다리면 올라가고 고블린은 놓쳐도 지나간다.
+            int pitsSeen = 0, goblinsSeen = 0;
             for (ulong seed = 1; seed <= 20; seed++)
             {
                 var track = new CardRushTrack(seed, Tuning);
                 pitsSeen += track.Obstacles.Count(o => o.Kind == CardRushObstacleKind.Pit);
+                goblinsSeen += track.Obstacles.Count(o => o.Kind == CardRushObstacleKind.Goblin);
                 var s = new CardRushRunnerState();
                 for (long t = G; t < G + 30000 && s.FinishTick == 0; t++)
-                    CardRushRunnerSim.Step(ref s, t, YellowOnly(s, t, track), G, 0, track, Tuning);
+                    CardRushRunnerSim.Step(ref s, t, BlueOnly(s, t, track), G, 0, track, Tuning);
                 Assert.AreNotEqual(0, s.FinishTick, $"seed {seed}: 완주 — 자리 {s.PosMm} 장애물 {s.ObstacleIndex}/{track.Obstacles.Count}");
                 Assert.AreEqual(track.Obstacles.Count, s.ObstacleIndex, $"seed {seed}");
             }
             Assert.Greater(pitsSeen, 20, "구덩이가 실제로 깔려야 시험이 뜻이 있다");
+            Assert.Greater(goblinsSeen, 0, "고블린도 실제로 깔려야 한다");
         }
 
         [Test]
-        public void 막누름이_읽는_것보다_느리다()
+        public void 탭을_안_하면_첫_구덩이를_못_넘는다()
         {
-            var mash = new List<long>();
-            var read = new List<long>();
+            //  음성 대조 — 위 시험이 대시 덕에 완주하는 것이지 구덩이가 공짜가 아니다.
+            int stuck = 0;
             for (ulong seed = 1; seed <= 20; seed++)
             {
                 var track = new CardRushTrack(seed, Tuning);
-                mash.Add(FinishTicks(track, (in CardRushRunnerState s, long t) => true));
-                read.Add(FinishTicks(track, (in CardRushRunnerState s, long t) => ReaderTaps(s, t, track)));
+                if (!track.Obstacles.Any(o => o.Kind == CardRushObstacleKind.Pit)) continue;
+                var s = new CardRushRunnerState();
+                for (long t = G; t < G + 6000 && s.FinishTick == 0; t++)
+                    CardRushRunnerSim.Step(ref s, t, false, G, 0, track, Tuning);
+                if (s.FinishTick == 0) stuck++;
             }
-            long mashMedian = Median(mash), readMedian = Median(read);
-            Assert.Less(readMedian, mashMedian, $"읽기 중앙 {readMedian}틱, 막누름 중앙 {mashMedian}틱");
+            Assert.Greater(stuck, 0, "구덩이가 있는 코스는 가만히 달려선 완주 못 한다");
         }
 
-        private delegate bool Policy(in CardRushRunnerState s, long tick);
-
-        private static long FinishTicks(CardRushTrack track, Policy tap)
-        {
-            var s = new CardRushRunnerState();
-            for (long t = G; t < G + 60000; t++)
-            {
-                CardRushRunnerSim.Step(ref s, t, tap(s, t), G, 0, track, Tuning);
-                if (s.FinishTick != 0) return s.FinishTick - G;
-            }
-            Assert.Fail("완주 못 함");
-            return 0;
-        }
-
-        private static long Median(List<long> xs)
-        {
-            var sorted = xs.OrderBy(x => x).ToList();
-            return sorted[sorted.Count / 2];
-        }
-
-        //  뛰는 창의 가운데 — 공중 2.4 m가 구덩이를 양쪽 같은 여유로 덮는 자리.
-        private static int PitJumpCenter(in CardRushObstacle pit)
-            => pit.AtMm - (CardRushRules.JumpMmPerTick * CardRushRules.JumpTicks - pit.WidthMm) / 2;
-
-        private static bool PitJumpNow(in CardRushRunnerState s, in CardRushObstacle pit)
-            => s.PosMm >= PitJumpCenter(pit) - CardRushRules.RunMmPerTick && s.PosMm < pit.AtMm;
-
-        //  굴러오는 것: 점프 반쯤에 닿을 때 뛴다.
-        private static bool RollerJumpNow(in CardRushRunnerState s, long tick, in CardRushObstacle o)
-            => s.ObstacleTick != 0
-               && CardRushRunnerSim.RollerPos(o, s.ObstacleTick, tick) - s.PosMm - CardRushRules.RollerContactMm
-                  <= (CardRushRules.JumpMmPerTick + CardRushRules.RollerMmPerTick) * CardRushRules.JumpTicks / 2;
-
-        private static bool YellowOnly(in CardRushRunnerState s, long tick, CardRushTrack track)
+        //  파랑을 잡아 두었다가 구덩이 앞 2.5 m 안에서 쓴다 — 내려앉는 자리(+5.2 m)가 가장 넓은 구덩이(1.4 m)도 지난다.
+        private static bool BlueOnly(in CardRushRunnerState s, long tick, CardRushTrack track)
         {
             if (CardRushCard.CanStart(s, tick, G)) return true;
             if (CardRushCard.CanLock(s, tick, G))
-                return CardRushCard.CardAt(s, tick, G, 0, track, out var seen) && seen == CardColor.Yellow;
+                return CardRushCard.CardAt(s, tick, G, 0, track, out var seen) && seen == CardColor.Blue;
             if (!CardRushCard.CanUse(s, tick, G, 0, track) || s.ObstacleIndex >= track.Obstacles.Count) return false;
             var o = track.Obstacles[s.ObstacleIndex];
-            if (o.Kind == CardRushObstacleKind.Pit) return PitJumpNow(s, o);
-            if (o.Kind == CardRushObstacleKind.Roller) return RollerJumpNow(s, tick, o);
-            return false;
-        }
-
-        /// <summary>
-        /// 읽는 사람(반응 0): 필요한 색을 잡아 두고 쓸 때 쓴다 — 켜진 구역에 갇힐 것 같으면 파랑(바로), 바리케이드·굴러오는 것은 빨강(사거리 안),
-        /// 구덩이는 노랑(창 가운데), 앞이 비면 파랑. 안 맞는 카드는 해가 없을 때 써서 비운다.
-        /// </summary>
-        private static bool ReaderTaps(in CardRushRunnerState s, long tick, CardRushTrack track)
-        {
-            CardColor? want = Want(s, tick, track, out bool useNow);
-            if (CardRushCard.CanStart(s, tick, G)) return true;
-            if (CardRushCard.CanLock(s, tick, G))
-                return want != null && CardRushCard.CardAt(s, tick, G, 0, track, out var seen) && seen == want;
-            if (!CardRushCard.CanUse(s, tick, G, 0, track) || !CardRushCard.CardAt(s, tick, G, 0, track, out var held)) return false;
-            if (held == want) return useNow;
-            return Harmless(held, s, tick, track);
-        }
-
-        private static CardColor? Want(in CardRushRunnerState s, long tick, CardRushTrack track, out bool useNow)
-        {
-            useNow = false;
-            if (s.ZoneIndex < track.Zones.Count && s.ZoneTick != 0)
-            {
-                var z = track.Zones[s.ZoneIndex];
-                long left = s.ZoneTick + z.WarnTicks - tick;
-                int runAt = s.PosMm + (int)(CardRushRules.RunMmPerTick * left);
-                if (runAt >= z.FromMm - CardRushRules.ZoneMarginMm && runAt <= z.ToMm + CardRushRules.ZoneMarginMm)
-                {
-                    useNow = true;
-                    return CardColor.Blue;
-                }
-            }
-            if (s.ObstacleIndex >= track.Obstacles.Count)
-            {
-                useNow = true;
-                return CardColor.Blue;
-            }
-            var o = track.Obstacles[s.ObstacleIndex];
-            if (o.Kind == CardRushObstacleKind.Pit)
-            {
-                if (o.AtMm - s.PosMm > CardRushRules.ShotRangeMm)
-                {
-                    useNow = o.AtMm - s.PosMm > CardRushRules.DashMm + 2400;
-                    return CardColor.Blue;
-                }
-                useNow = PitJumpNow(s, o);
-                return CardColor.Yellow;
-            }
-            CardRushRunnerSim.TryFront(s, tick, track, out int front);
-            int shotGap = front - (s.PosMm + CardRushRules.ShotStartAheadMm);
-            if (shotGap > CardRushRules.ShotRangeMm + 2000)
-            {
-                useNow = front - s.PosMm > CardRushRules.DashMm + 1400 + 2000;
-                return CardColor.Blue;
-            }
-            useNow = shotGap <= CardRushRules.ShotRangeMm - 500;
-            return CardColor.Red;
-        }
-
-        private static bool Harmless(CardColor held, in CardRushRunnerState s, long tick, CardRushTrack track)
-        {
-            if (held == CardColor.Red) return true;
-            if (s.ZoneTick != 0) return false;
-            if (s.ObstacleIndex >= track.Obstacles.Count) return true;
-            var o = track.Obstacles[s.ObstacleIndex];
-            int near = o.Kind == CardRushObstacleKind.Pit ? o.AtMm
-                     : CardRushRunnerSim.TryFront(s, tick, track, out int front) ? front : o.AtMm;
-            return near - s.PosMm > CardRushRules.DashMm + 2400;
+            return o.Kind == CardRushObstacleKind.Pit && o.AtMm > s.PosMm && o.AtMm - s.PosMm <= 2500;
         }
 
         [Test]

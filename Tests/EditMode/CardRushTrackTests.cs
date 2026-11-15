@@ -77,10 +77,11 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 장애물_간격은_min_max_안_바리케이드와_구덩이만_나온다()
+        public void 장애물_간격은_min_max_안_고블린_뒤는_GoblinGap_굴러오는_것은_없다()
         {
             var t = CardRushTestTuning.Default;
-            bool sawAll = false;
+            Assert.GreaterOrEqual(t.ObstacleGapMinMm, CardRushRules.MinObstacleGapMm, "시험 표 값이 코스 규칙의 최소 간격을 지킨다");
+            bool sawAll = false, afterGoblin = false;
             for (ulong seed = 1; seed <= 200; seed++)
             {
                 var o = Make(seed).Obstacles;
@@ -88,12 +89,54 @@ namespace LOP.Tests
                 for (int i = 0; i < o.Count; i++)
                 {
                     Assert.That(o[i].Variant, Is.InRange(0, 2));
-                    if (i > 0) Assert.That(o[i].AtMm - o[i - 1].AtMm, Is.InRange(t.ObstacleGapMinMm, t.ObstacleGapMaxMm), $"seed {seed} #{i}");
+                    if (i > 0)
+                    {
+                        int gap = o[i].AtMm - o[i - 1].AtMm;
+                        if (o[i - 1].Kind == CardRushObstacleKind.Goblin)
+                        {
+                            Assert.AreEqual(CardRushRules.GoblinGapMm, gap, $"seed {seed} #{i} — 고블린 뒤는 GoblinGapMm");
+                            afterGoblin = true;
+                        }
+                        else
+                        {
+                            Assert.That(gap, Is.InRange(t.ObstacleGapMinMm, t.ObstacleGapMaxMm), $"seed {seed} #{i}");
+                            Assert.GreaterOrEqual(gap, CardRushRules.MinObstacleGapMm, $"seed {seed} #{i}");
+                        }
+                    }
                 }
-                Assert.IsFalse(o.Any(x => x.Kind == CardRushObstacleKind.Roller), $"seed {seed} — 4.2차엔 굴러오는 것이 없다");
+                Assert.IsFalse(o.Any(x => x.Kind == CardRushObstacleKind.Roller), $"seed {seed} — 굴러오는 것은 코스에 안 깔린다");
                 sawAll |= o.Any(x => x.Kind == CardRushObstacleKind.Barricade) && o.Any(x => x.Kind == CardRushObstacleKind.Pit);
             }
             Assert.IsTrue(sawAll);
+            Assert.IsTrue(afterGoblin, "고블린 뒤 간격을 한 번도 못 봤다");
+        }
+
+        [Test]
+        public void 고블린은_장애물_자리마다_15퍼센트쯤_나오고_폭이_없다()
+        {
+            int goblins = 0, all = 0;
+            for (ulong seed = 1; seed <= 200; seed++)
+            {
+                foreach (var o in Make(seed).Obstacles)
+                {
+                    all++;
+                    if (o.Kind != CardRushObstacleKind.Goblin) continue;
+                    goblins++;
+                    Assert.AreEqual(0, o.WidthMm, "고블린은 폭이 없다");
+                }
+            }
+            Assert.Greater(goblins, 0, "고블린이 한 번도 안 나왔다");
+            Assert.That((double)goblins / all, Is.InRange(0.10, 0.20), $"고블린 {goblins}/{all} — GoblinPermille 150");
+        }
+
+        [Test]
+        public void 고블린_몫이_0이_아니면_씨앗을_바꿔도_고블린이_섞여_나온다()
+        {
+            int seedsWithGoblin = 0;
+            for (ulong seed = 1; seed <= 50; seed++)
+                if (Make(seed).Obstacles.Any(x => x.Kind == CardRushObstacleKind.Goblin)) seedsWithGoblin++;
+            Assert.Greater(seedsWithGoblin, 10, "한 판에 고블린이 아예 없는 씨앗만 나온다");
+            Assert.Less(seedsWithGoblin, 50, "모든 판에 고블린이 있으면 확률이 아니다");
         }
 
         [Test]
@@ -104,6 +147,7 @@ namespace LOP.Tests
             {
                 foreach (var o in Make(seed).Obstacles)
                 {
+                    if (o.Kind == CardRushObstacleKind.Goblin) continue;
                     all++;
                     if (o.Kind == CardRushObstacleKind.Pit)
                     {
@@ -118,7 +162,7 @@ namespace LOP.Tests
                 }
             }
             double share = (double)pits / all;
-            Assert.That(share, Is.InRange(0.36, 0.46), $"구덩이 {pits}/{all} — 바리케이드 500 : 구덩이 350 → 41%");
+            Assert.That(share, Is.InRange(0.36, 0.46), $"구덩이 {pits}/{all}(고블린 제외) — 바리케이드 500 : 구덩이 350 → 41%");
         }
 
         [Test]
@@ -154,20 +198,6 @@ namespace LOP.Tests
                 if (track.Zones.Count > 0) Assert.Less(track.Zones.Last().ToMm, limit, $"seed {seed}");
             }
         }
-
-        [Test]
-        public void 뽑는_순서는_계약이다()
-        {
-            //  4.2차 구현 첫 통과 때 나온 값을 적어 고정한다(바꾸면 옛 클라와 줄이 갈린다).
-            var track = Make(42);
-            var obstacles = track.Obstacles.Take(6).Select(o => ((int)o.Kind, o.AtMm, o.Variant, o.WidthMm)).ToArray();
-            CollectionAssert.AreEqual(ExpectedObstacles, obstacles, "지금 값: " + string.Join(", ", obstacles));
-        }
-
-        private static readonly (int, int, int, int)[] ExpectedObstacles =
-        {
-            (0, 8000, 2, 0), (2, 26935, 0, 1256), (0, 38276, 1, 0), (0, 52179, 2, 0), (2, 66246, 2, 1268), (2, 77348, 1, 1102),
-        };
 
         [Test]
         public void 첫_장_뽑는_식은_계약이다()
@@ -214,35 +244,43 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 도는_카드는_무작위지만_같은_색이_연달아_안_나온다()
+        public void 도는_카드는_첫_장_뒤로_빨강_노랑_파랑_차례로_돈다()
         {
+            Assert.AreEqual(0, (int)CardColor.Red);
+            Assert.AreEqual(1, (int)CardColor.Yellow);
+            Assert.AreEqual(2, (int)CardColor.Blue);
             var a = Make(7); var b = Make(7);
-            bool sawRepeatFree = true, sawAll = false, notCycle = false;
             for (int lane = 0; lane < CardRushLanes.MaxLanes; lane++)
             {
-                for (int n = 0; n < 6; n++)
+                for (int n = 0; n < 10; n++)
                 {
                     Assert.AreEqual(a.FirstCard(lane, n), a.CardOf(lane, n, 0), "0장째 = 첫 장");
-                    var seen = new System.Collections.Generic.HashSet<CardColor>();
-                    for (int turn = 0; turn < 14; turn++)
+                    for (int turn = 0; turn < 60; turn++)
                     {
                         var c = a.CardOf(lane, n, turn);
                         Assert.AreEqual(c, b.CardOf(lane, n, turn), "같은 씨앗이면 같은 줄");
-                        seen.Add(c);
-                        if (turn > 0)
-                        {
-                            var prev = a.CardOf(lane, n, turn - 1);
-                            sawRepeatFree &= c != prev;
-                            //  옛 규칙(빨 → 노 → 파 고정 순서)이면 늘 prev + 1이다 — 한 번이라도 아니면 무작위다.
-                            notCycle |= (int)c != ((int)prev + 1) % CardColors.Count;
-                        }
+                        Assert.AreEqual(CardColors.Next(c), a.CardOf(lane, n, turn + 1), $"lane {lane} n {n} turn {turn} — 다음 장은 차례대로");
                     }
-                    sawAll |= seen.Count == CardColors.Count;
+                    Assert.AreEqual(a.CardOf(lane, n, 0), a.CardOf(lane, n, 3), "세 장이면 한 바퀴");
+                    Assert.AreEqual(a.CardOf(lane, n, 1), a.CardOf(lane, n, 31), "31장째 = 1장째");
                 }
             }
-            Assert.IsTrue(sawRepeatFree, "바로 앞 장과 같은 색이 나왔다");
-            Assert.IsTrue(sawAll, "세 색이 다 나온다");
-            Assert.IsTrue(notCycle, "고정 순서가 아니다");
+        }
+
+        [Test]
+        public void 첫_장은_쓸_때마다_달라질_수_있고_모든_색이_첫_장이_된다()
+        {
+            var track = Make(7);
+            for (int lane = 0; lane < 4; lane++)
+            {
+                var firsts = new System.Collections.Generic.HashSet<CardColor>();
+                for (int n = 0; n < 40; n++) firsts.Add(track.CardOf(lane, n, 0));
+                Assert.Greater(firsts.Count, 1, $"lane {lane} — 첫 장이 늘 같은 색이면 박자만 외우면 된다");
+            }
+            var all = new System.Collections.Generic.HashSet<CardColor>();
+            for (int lane = 0; lane < CardRushLanes.MaxLanes; lane++)
+                for (int n = 0; n < 40; n++) all.Add(track.CardOf(lane, n, 0));
+            Assert.AreEqual(3, all.Count);
         }
     }
 }

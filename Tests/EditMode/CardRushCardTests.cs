@@ -52,9 +52,9 @@ namespace LOP.Tests
             var first = EmptyTrack.FirstCard(lane, 0);
             Assert.AreEqual(first, ColorAt(s, start, lane));
             Assert.AreEqual(first, ColorAt(s, start + 22, lane));
-            //  4.2차: 다음 장은 무작위(바로 앞 장과는 다른 색) — 코스의 줄(CardOf)을 그대로 따른다.
+            //  4.4차: 첫 장 뒤는 빨→노→파 차례 — 코스의 줄(CardOf)을 그대로 따른다.
             Assert.AreEqual(EmptyTrack.CardOf(lane, 0, 1), ColorAt(s, start + 23, lane));
-            Assert.AreNotEqual(first, ColorAt(s, start + 23, lane), "넘기면 색이 바뀐다");
+            Assert.AreEqual(CardColors.Next(first), ColorAt(s, start + 23, lane), "넘기면 다음 차례 색");
             Assert.AreEqual(EmptyTrack.CardOf(lane, 0, 2), ColorAt(s, start + 46, lane));
             Assert.AreEqual(EmptyTrack.CardOf(lane, 0, 3), ColorAt(s, start + 69, lane));
             Assert.AreEqual(CardRushCard.SpinColor(s, start + 46, G, lane, EmptyTrack), ColorAt(s, start + 46, lane));
@@ -145,7 +145,7 @@ namespace LOP.Tests
             Assert.AreEqual(1, s.UseCount, "사라져도 다음 첫 장으로 넘어간다");
             Assert.AreEqual(expire + CardRushRules.CooldownTicks, s.SpinStartTick);
             Assert.IsFalse(CardRushCard.CardAt(s, expire + 1, G, 0, EmptyTrack, out _), "쿨다운 동안 뒷면");
-            Assert.AreEqual(0, s.ShotTick + s.JumpStartTick + s.DashStartTick, "사라진 카드는 아무것도 안 했다");
+            Assert.AreEqual(0, s.ShotTick + s.RushEndTick + s.DashStartTick, "사라진 카드는 아무것도 안 했다");
         }
 
         [Test]
@@ -160,7 +160,7 @@ namespace LOP.Tests
             Assert.AreEqual(0, s.RollStartTick, "쿨다운 중이라 시작도 안 된다");
             Assert.AreEqual(expire, s.ExpireTick);
             Assert.AreEqual(1, s.UseCount, "사라짐 한 번만 — 쓰기로 또 세지 않는다");
-            Assert.AreEqual(0, s.ShotTick + s.JumpStartTick + s.DashStartTick);
+            Assert.AreEqual(0, s.ShotTick + s.RushEndTick + s.DashStartTick);
         }
 
         [Test]
@@ -226,14 +226,19 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 공중에서도_시작하고_잡는다()
+        public void 대시_중에도_골드_러시_중에도_시작하고_잡고_쓴다()
         {
-            var s = new CardRushRunnerState { JumpStartTick = G + 5, PosMm = 1000 };
+            //  4.4차: 점프가 없어져 공중 제한이 없다 — 움직이는 중에도 카드를 고르고 쓴다.
+            var s = new CardRushRunnerState { DashStartTick = G + 5, RushEndTick = G + 500, PosMm = 1000 };
             Assert.IsTrue(CardRushCard.CanStart(s, G + 10, G));
             Step(ref s, G + 10, true);
             Assert.AreEqual(G + 10, s.RollStartTick);
             Step(ref s, G + 11, true);
-            Assert.AreEqual(G + 11, s.LockTick, "공중에서도 잡는다(쓰기만 색에 따라 막힌다)");
+            Assert.AreEqual(G + 11, s.LockTick);
+            Assert.IsTrue(CardRushCard.CanUse(s, G + 12, G, 0, EmptyTrack), "어느 색이든 막히지 않는다");
+            Step(ref s, G + 12, true);
+            Assert.AreEqual(0, s.LockTick);
+            Assert.AreEqual(1, s.UseCount, "썼다");
         }
 
         [Test]
