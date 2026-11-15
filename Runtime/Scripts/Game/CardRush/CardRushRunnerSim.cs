@@ -2,7 +2,7 @@ namespace LOP
 {
     /// <summary>
     /// 선수 한 명의 한 틱(4차 spec §3.3) — 탭이 없어도 매 틱, 잡은 카드 사라짐 → 자동 잡기 → 탭(시작/잡기/쓰기) → 바리케이드 올라감 → 이동 → 투사체
-    /// → 막힘 → 구덩이 → 굴러오는 것 → 구역 → 완주 순서.
+    /// → 고블린 → 막힘 → 구덩이 → 굴러오는 것 → 구역 → 완주 순서.
     /// 그 선수 상태 + 코스 + 그 틱 탭만 본다(남과 얽히지 않는다). 정수만 써서 서버와 내 예측이 같은 틱에 같은 상태를 낸다.
     /// </summary>
     public static class CardRushRunnerSim
@@ -30,13 +30,15 @@ namespace LOP
                 }
                 else if (CardRushCard.CanUse(s, tick, g, lane, track))
                 {
-                    UseCard(ref s, tick, CardRushCard.SpinColor(s, s.LockTick, g, lane, track));
+                    UseCard(ref s, tick, CardRushCard.SpinColor(s, s.LockTick, g, lane, track), track);
                     ReleaseCard(ref s, tick);
                 }
             }
             LiftBarricade(ref s, tick, track, t);
             Move(ref s, tick);
             Shot(ref s, tick, track);
+            //  고블린이 먼저 — 다음 장애물 앞에서 비키면 같은 틱에 그 장애물을 판정한다.
+            Goblin(ref s, tick, track);
             StopAtBarricade(ref s, tick, track);
             Pit(ref s, tick, track, t);
             Rollers(ref s, tick, track, t);
@@ -81,7 +83,18 @@ namespace LOP
         public static int ShotPos(in CardRushRunnerState s, long tick)
             => (int)(s.ShotFromMm + (long)CardRushRules.ShotMmPerTick * (tick - s.ShotTick));
 
-        public static bool IsAirborne(in CardRushRunnerState s) => s.JumpStartTick != 0;
+        /// <summary>고블린의 자리 — 나타난 틱부터 틱마다 GoblinMmPerTick씩 달아난다.</summary>
+        public static int GoblinPos(in CardRushObstacle o, long revealTick, long tick)
+            => (int)(o.AtMm + (long)CardRushRules.GoblinMmPerTick * (tick - revealTick));
+
+        /// <summary>나타난 지 elapsed틱 만에 잡으면 받는 골드 러시 길이 — 바로 잡으면 RushMaxTicks, 사라지기 직전이면 RushMinTicks.</summary>
+        public static int RushTicksFor(long elapsed)
+        {
+            long e = System.Math.Max(0, System.Math.Min(elapsed, CardRushRules.GoblinLifeTicks));
+            return (int)(CardRushRules.RushMaxTicks - (CardRushRules.RushMaxTicks - CardRushRules.RushMinTicks) * e / CardRushRules.GoblinLifeTicks);
+        }
+
+        public static bool IsRushing(in CardRushRunnerState s, long tick) => tick < s.RushEndTick;
 
         //  쓴 뒤·사라진 뒤 같은 쿨다운, 같은 다음 첫 장 규칙.
         private static void ReleaseCard(ref CardRushRunnerState s, long tick)
@@ -92,7 +105,7 @@ namespace LOP
             s.SpinStartTick = tick + CardRushRules.CooldownTicks;
         }
 
-        private static void UseCard(ref CardRushRunnerState s, long tick, CardColor card)
+        private static void UseCard(ref CardRushRunnerState s, long tick, CardColor card, CardRushTrack track)
         {
             switch (card)
             {
@@ -102,8 +115,13 @@ namespace LOP
                     s.ShotFromMm = s.PosMm + CardRushRules.ShotStartAheadMm;
                     break;
                 case CardColor.Yellow:
-                    s.JumpStartTick = tick;
-                    s.DashStartTick = 0;
+                    //  나타나 달아나는 고블린이 있을 때만 잡힌다 — 없으면 헛손질이다.
+                    if (s.ObstacleIndex < track.Obstacles.Count
+                        && track.Obstacles[s.ObstacleIndex].Kind == CardRushObstacleKind.Goblin && s.ObstacleTick != 0)
+                    {
+                        s.RushEndTick = tick + RushTicksFor(tick - s.ObstacleTick);
+                        Clear(ref s, tick, CardRushObstacleEvent.Caught);
+                    }
                     break;
                 case CardColor.Blue:
                     s.DashStartTick = tick;
@@ -121,22 +139,16 @@ namespace LOP
 
         private static void Move(ref CardRushRunnerState s, long tick)
         {
-            if (s.JumpStartTick != 0)
-            {
-                int k = (int)(tick - s.JumpStartTick + 1);
-                s.PosMm += CardRushRules.JumpMmPerTick;
-                //  마지막 틱에 내려앉는다 — 같은 틱의 구덩이 판정은 땅으로 본다.
-                if (k >= CardRushRules.JumpTicks) s.JumpStartTick = 0;
-            }
-            else if (s.DashStartTick != 0)
+            if (s.DashStartTick != 0)
             {
                 int k = (int)(tick - s.DashStartTick + 1);
                 s.PosMm += CardRushRules.DashOffset(k) - CardRushRules.DashOffset(k - 1);
+                //  마지막 틱에 내려앉는다 — 같은 틱의 구덩이 판정은 땅으로 본다.
                 if (k >= CardRushRules.DashTicks) s.DashStartTick = 0;
             }
             else if (tick >= s.StunEndTick)
             {
-                s.PosMm += CardRushRules.RunMmPerTick;
+                s.PosMm += IsRushing(s, tick) ? CardRushRules.RushMmPerTick : CardRushRules.RunMmPerTick;
             }
         }
 
@@ -166,9 +178,8 @@ namespace LOP
             if (s.PosMm > stop)
             {
                 s.PosMm = stop;
+                //  바리케이드는 대시로도 못 넘는다 — 부딪혀 멈춘다.
                 s.DashStartTick = 0;
-                //  바리케이드는 못 넘는다 — 부딪혀 내려앉는다.
-                s.JumpStartTick = 0;
                 if (s.ObstacleTick == 0) s.ObstacleTick = tick;
             }
         }
@@ -179,7 +190,8 @@ namespace LOP
             var o = track.Obstacles[s.ObstacleIndex];
             if (o.Kind != CardRushObstacleKind.Pit) return;
             int far = o.AtMm + o.WidthMm;
-            if (s.JumpStartTick == 0 && s.PosMm >= o.AtMm && s.PosMm <= far)
+            //  대시 중엔 구덩이 위를 지난다(4.4차 — 점프 대신).
+            if (s.DashStartTick == 0 && s.PosMm >= o.AtMm && s.PosMm <= far)
             {
                 //  빠짐 — 번호는 그대로라 다시 넘어야 한다.
                 s.ObstacleEvent = (int)CardRushObstacleEvent.Fell;
@@ -205,13 +217,27 @@ namespace LOP
 
             //  음수(이미 지나침)도 접촉이다 — 대시로 건너뛸 수 없다.
             if (RollerPos(o, s.ObstacleTick, tick) - s.PosMm > CardRushRules.RollerContactMm) return;
-            if (s.JumpStartTick != 0)
+            if (s.DashStartTick != 0)
             {
                 Clear(ref s, tick, CardRushObstacleEvent.Jumped);
                 return;
             }
             Clear(ref s, tick, CardRushObstacleEvent.Tumbled);
             Knock(ref s, tick, t.RollKnockMm, t.RollStunTicks);
+        }
+
+        private static void Goblin(ref CardRushRunnerState s, long tick, CardRushTrack track)
+        {
+            if (s.ObstacleIndex >= track.Obstacles.Count) return;
+            var o = track.Obstacles[s.ObstacleIndex];
+            if (o.Kind != CardRushObstacleKind.Goblin) return;
+            if (s.ObstacleTick == 0 && s.PosMm >= o.AtMm - CardRushRules.GoblinRevealMm) s.ObstacleTick = tick;
+            //  장애물은 한 번에 하나만 본다 — 러시·대시로 다음 장애물 앞까지 오면 고블린이 3초를 다 못 살아도 비켜야
+            //  그 장애물을 지나치지 않는다(4.4차 리뷰 C1).
+            bool nextIsNear = s.ObstacleIndex + 1 < track.Obstacles.Count
+                              && s.PosMm >= track.Obstacles[s.ObstacleIndex + 1].AtMm - CardRushRules.GoblinYieldMm;
+            if ((s.ObstacleTick != 0 && tick - s.ObstacleTick >= CardRushRules.GoblinLifeTicks) || nextIsNear)
+                Clear(ref s, tick, CardRushObstacleEvent.Escaped);
         }
 
         private static void Zones(ref CardRushRunnerState s, long tick, CardRushTrack track, in CardRushTuning t)
@@ -238,8 +264,6 @@ namespace LOP
             s.PosMm = System.Math.Max(0, s.PosMm - knockMm);
             s.StunEndTick = tick + stunTicks;
             s.DashStartTick = 0;
-            //  밀려나면 내려앉는다 — 공중에서 구역에 맞아도 기절한 채 앞으로 날아가지 않게.
-            s.JumpStartTick = 0;
         }
 
         private static void Clear(ref CardRushRunnerState s, long tick, CardRushObstacleEvent kind)
@@ -248,7 +272,9 @@ namespace LOP
             s.ObstacleTick = 0;
             s.ObstacleEvent = (int)kind;
             s.ObstacleEventTick = tick;
-            Tally(ref s, kind == CardRushObstacleEvent.Tumbled);
+            //  고블린은 넘어야 할 장애물이 아니라 연속 무사 통과에 안 센다.
+            if (kind != CardRushObstacleEvent.Caught && kind != CardRushObstacleEvent.Escaped)
+                Tally(ref s, kind == CardRushObstacleEvent.Tumbled);
         }
 
         private static void Tally(ref CardRushRunnerState s, bool hit)

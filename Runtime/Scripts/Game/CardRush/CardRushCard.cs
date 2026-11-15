@@ -9,7 +9,7 @@ namespace LOP
         public static long SpinBase(in CardRushRunnerState s, long gameplayStartTick)
             => s.SpinStartTick != 0 ? s.SpinStartTick : gameplayStartTick;
 
-        /// <summary>도는 카드가 그 틱에 보일 색 — 돌기 시작한 틱(RollStartTick)부터 한 장씩 무작위로 넘긴다(4.2차). 돌고 있지 않으면 의미 없는 값이라 부르는 쪽이 거른다.</summary>
+        /// <summary>도는 카드가 그 틱에 보일 색 — 돌기 시작한 틱(RollStartTick)부터 첫 장은 무작위, 그다음은 빨→노→파 차례로 넘긴다(4.4차). 돌고 있지 않으면 의미 없는 값이라 부르는 쪽이 거른다.</summary>
         public static CardColor SpinColor(in CardRushRunnerState s, long tick, long gameplayStartTick, int lane, CardRushTrack track)
         {
             long turns = System.Math.Max(0, tick - s.RollStartTick) / CardRushRules.CardDwellTicks;
@@ -52,13 +52,11 @@ namespace LOP
             => s.RollStartTick != 0 && s.LockTick == 0 && tick >= s.RollStartTick + CardRushRules.RollMaxTicks;
 
         /// <summary>
-        /// 이 틱에 탭하면 잡은 카드를 쓰나. 잡은 틱엔 못 쓴다(한 틱에 잡기 하나). 노랑·파랑은 땅에서만 — 공중 탭은 버리고 잡은 카드는 남는다.
-        /// 못 쓰는 틱의 탭은 버린다(쌓지 않는다).
+        /// 이 틱에 탭하면 잡은 카드를 쓰나. 잡은 틱엔 못 쓴다(한 틱에 잡기 하나). 못 쓰는 틱의 탭은 버린다(쌓지 않는다).
         /// </summary>
         public static bool CanUse(in CardRushRunnerState s, long tick, long gameplayStartTick, int lane, CardRushTrack track)
         {
-            if (s.LockTick == 0 || tick <= s.LockTick || track == null || !CanAct(s, tick, gameplayStartTick)) return false;
-            return s.JumpStartTick == 0 || SpinColor(s, s.LockTick, gameplayStartTick, lane, track) == CardColor.Red;
+            return s.LockTick != 0 && tick > s.LockTick && track != null && CanAct(s, tick, gameplayStartTick);
         }
 
         /// <summary>잡은 카드가 이 틱에 사라지나 — 잡고 LockHoldTicks가 지났다. 기절 중에도 시간은 흐른다.</summary>

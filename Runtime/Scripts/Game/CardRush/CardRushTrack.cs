@@ -4,7 +4,7 @@ using GameFramework.Rng;
 namespace LOP
 {
     /// <summary>장애물 종류. 와이어·코스 계약 값이라 번호를 바꾸지 않는다.</summary>
-    public enum CardRushObstacleKind { Barricade = 0, Roller = 1, Pit = 2 }
+    public enum CardRushObstacleKind { Barricade = 0, Roller = 1, Pit = 2, Goblin = 3 }
 
     /// <summary>
     /// 코스에 깔린 장애물 하나. Variant는 그림만(바리케이드 생김새 / 통·닭·수레).
@@ -96,19 +96,15 @@ namespace LOP
         public CardColor FirstCard(int lane, int useCount) => CardOf(lane, useCount, 0);
 
         /// <summary>
-        /// 돌기 시작해 turn장째 넘긴 카드 — 장마다 무작위지만 바로 앞 장과 같은 색은 안 나온다(같은 색이 이어지면 넘어간 줄 모른다).
-        /// (레인, 쓴 횟수)마다 한 줄을 처음부터 뽑아 내려간다. 자동 잡기(RollMaxTicks)가 있어 한 줄은 열몇 장을 넘지 않는다.
+        /// 돌기 시작해 turn장째 넘긴 카드 — 첫 장만 (레인, 쓴 횟수)마다 무작위, 그다음은 빨→노→파 차례(4.4차, 트페 카드 뽑기처럼).
+        /// 차례가 정해져 있어 "다음은 노랑"을 읽고 박자에 맞춰 잡는다.
         /// </summary>
         public CardColor CardOf(int lane, int useCount, long turn)
         {
             var rng = new DeterministicRandom(
                 Hashing.Combine(Hashing.Combine(Hashing.Combine(seed, FirstCardSalt), (ulong)lane), (ulong)useCount));
-            int color = rng.Range(0, CardColors.Count);
-            for (long i = 0; i < turn; i++)
-            {
-                color = (color + 1 + rng.Range(0, CardColors.Count - 1)) % CardColors.Count;
-            }
-            return (CardColor)color;
+            int first = rng.Range(0, CardColors.Count);
+            return (CardColor)((first + turn % CardColors.Count) % CardColors.Count);
         }
 
         private static CardRushObstacle[] BuildObstacles(ulong matchSeed, in CardRushTuning t)
@@ -118,6 +114,13 @@ namespace LOP
             int at = CardRushRules.FirstObstacleMm;
             while (at < t.TrackMm - CardRushRules.FinishClearMm)
             {
+                //  고블린 자리는 그 칸을 통째로 쓰고 뒤를 GoblinGapMm 띄운다 — 사는 동안 다음 장애물에 닿지 않게.
+                if (rng.Range(0, 1000) < CardRushRules.GoblinPermille)
+                {
+                    list.Add(new CardRushObstacle(CardRushObstacleKind.Goblin, at, 0));
+                    at += CardRushRules.GoblinGapMm;
+                    continue;
+                }
                 //  바리케이드 : 구덩이 = 표의 두 몫의 비. 굴러오는 것 몫(나머지)은 4.2차에 쓰지 않는다.
                 int r = rng.Range(0, t.BarricadePermille + t.PitPermille);
                 var kind = r < t.BarricadePermille ? CardRushObstacleKind.Barricade : CardRushObstacleKind.Pit;

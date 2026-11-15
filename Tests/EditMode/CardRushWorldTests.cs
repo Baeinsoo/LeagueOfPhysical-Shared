@@ -127,24 +127,23 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 공중이면_자리에_점프_높이가_든다()
+        public void 대시_중에도_자리_높이는_땅_그대로다()
         {
+            //  4.4차: 점프가 없어졌다 — 대시는 앞으로만 간다.
             var world = Create(Rules(), out var runner);
             world.Tick(StartTick - 1, Dt);
             var origin = Rules().LaneOrigin(Lane);
             var r = runner.Get<CardRushRunner>();
-            long jump = StartTick + 10;
-            r.State = new CardRushRunnerState { PosMm = 1000, JumpStartTick = jump };
-            for (long t = jump; t < jump + CardRushRules.JumpTicks; t++)
+            long dash = StartTick + 10;
+            r.State = new CardRushRunnerState { PosMm = 1000, DashStartTick = dash };
+            int before = State(runner).PosMm;
+            for (long t = dash; t < dash + CardRushRules.DashTicks; t++)
             {
                 TickWith(world, runner, t, false);
-                int k = (int)(t - jump + 1);
-                float want = origin.y + (k < CardRushRules.JumpTicks ? CardRushRules.JumpHeightAt(k) / 1000f : 0f);
-                Assert.AreEqual(want, Pos(runner).Y, 1e-4f, $"k={k}");
+                Assert.AreEqual(origin.y, Pos(runner).Y, 1e-4f, $"t={t}");
             }
-            Assert.AreEqual(0, State(runner).JumpStartTick, "40틱째에 내려앉았다");
-            Assert.AreEqual(origin.y, Pos(runner).Y, 1e-4f, "땅이면 높이 0");
-            Assert.Greater(CardRushRules.JumpHeightAt(CardRushRules.JumpTicks / 2), 0);
+            Assert.Greater(State(runner).PosMm, before + CardRushRules.DashMm - 1, "대시로 앞으로 갔다");
+            Assert.AreEqual(0, State(runner).DashStartTick);
         }
 
         [Test]
@@ -196,10 +195,10 @@ namespace LOP.Tests
             world.Tick(StartTick - 1, Dt);
             var track = world.Track;
             var r = runner.Get<CardRushRunner>();
-            //  장애물·구역을 다 넘긴 결승 100 mm 앞 — 48 mm씩 세 틱째에 들어온다.
+            //  장애물·구역을 다 넘긴 결승 150 mm 앞 — 60 mm씩 세 틱째에 들어온다.
             r.State = new CardRushRunnerState
             {
-                PosMm = track.TrackMm - 100, ObstacleIndex = track.Obstacles.Count, ZoneIndex = track.Zones.Count,
+                PosMm = track.TrackMm - 150, ObstacleIndex = track.Obstacles.Count, ZoneIndex = track.Zones.Count,
             };
 
             TickWith(world, runner, StartTick, false);

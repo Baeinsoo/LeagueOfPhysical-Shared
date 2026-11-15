@@ -48,10 +48,10 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 장애물_간격_최소가_9_39m보다_작으면_예외()
+        public void 장애물_간격_최소가_대시보다_0_8m_긴_6m보다_작으면_예외()
         {
-            Assert.Throws<System.ArgumentOutOfRangeException>(() => Make(obstacleMin: 9.38f));
-            Assert.DoesNotThrow(() => Make(obstacleMin: 9.39f));
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => Make(obstacleMin: 5.99f));
+            Assert.DoesNotThrow(() => Make(obstacleMin: 6.0f));
         }
 
         [Test]

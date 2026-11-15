@@ -11,11 +11,11 @@ namespace LOP
         public long RollStartTick;      // 카드가 돌기 시작한 틱. 0 = 안 돈다(평소 뒷면) — 도는 색의 기준
         public long LockTick;           // 카드를 잡은 틱. 0 = 잡지 않음
         public long ExpireTick;         // 잡은 카드가 마지막으로 사라진 틱. 0 = 없음 — 그림·소리용
-        public long JumpStartTick;      // 점프를 시작한 틱. 0 = 땅
+        public long RushEndTick;        // 골드 러시가 끝나는 틱. 0 = 없음 — 와이어는 옛 점프 칸(card_jump_start_tick)을 쓴다
         public long ShotTick;           // 투사체를 던진 틱. 0 = 날고 있는 투사체 없음
         public int ShotFromMm;          // 투사체가 출발한 자리(mm)
         public int ObstacleIndex;       // 지금 상대하는 장애물 번호(코스 장애물 줄)
-        public long ObstacleTick;       // 바리케이드면 닿은 틱, 굴러오는 것이면 굴러오기 시작한 틱. 0 = 아직
+        public long ObstacleTick;       // 바리케이드면 닿은 틱, 굴러오는 것·고블린이면 나타난 틱. 0 = 아직
         public int ZoneIndex;           // 지금 상대하는 구역 번호(코스 구역 줄)
         public long ZoneTick;           // 그 구역의 경고가 켜진 틱. 0 = 아직
         public int ObstacleEvent;       // 마지막으로 치운 장애물의 결과(CardRushObstacleEvent) — 그림·소리용. 헛방은 여기 안 적는다

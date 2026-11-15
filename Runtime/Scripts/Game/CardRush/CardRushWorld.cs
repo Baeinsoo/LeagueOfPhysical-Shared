@@ -130,9 +130,6 @@ namespace LOP
             if (transform != null)
             {
                 var p = CardRushLanes.PositionAt(runner.LaneOrigin, Rules.Forward, runner.State.PosMm);
-                //  공중이면 높이를 자리에 넣는다 — 판정엔 안 쓰지만 남의 몸 보간이 점프를 그대로 보인다.
-                if (CardRushRunnerSim.IsAirborne(runner.State))
-                    p.y += CardRushRules.JumpHeightAt((int)(tick - runner.State.JumpStartTick + 1)) / 1000f;
                 transform.Position = new System.Numerics.Vector3(p.x, p.y, p.z);
             }
 
