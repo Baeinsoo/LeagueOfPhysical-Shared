@@ -15,6 +15,9 @@ namespace LOP
         private readonly bool turnBodyToAim;
         private readonly float drawRisePerSecond;
 
+        //  스코프가 Register<ArcheryAimSystem>()으로 만들 때 이 생성자를 쓰게 한다. 표시가 없으면 VContainer가
+        //  인자가 가장 많은 생성자를 골라 등록되지 않은 float을 찾다가 방 열기가 실패한다.
+        [VContainer.Inject]
         public ArcheryAimSystem(ArcheryConfig config) : this(config, EyeHeight, true)
         {
         }

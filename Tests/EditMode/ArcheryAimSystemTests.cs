@@ -2,6 +2,7 @@ using GameFramework;
 using GameFramework.World;
 using NUnit.Framework;
 using UnityEngine;
+using VContainer;
 
 namespace LOP.Tests
 {
@@ -46,6 +47,18 @@ namespace LOP.Tests
                 //  시뮬은 당기던 동안 쌓아 둔 값을 쓰므로 여기 값은 무시된다.
                 DrawRatio = drawRatio,
             };
+        }
+
+        //  과녁 활쏘기 스코프(클·서)는 설정만 등록하고 Register<ArcheryAimSystem>()으로 만든다.
+        //  인자가 가장 많은 생성자가 골라지면 float을 찾다가 방이 열리자마자 죽는다(11-16 실제로 겪음).
+        [Test]
+        public void 설정만_등록한_컨테이너에서도_만들어진다()
+        {
+            var builder = new ContainerBuilder();
+            builder.RegisterInstance(NoSwayConfig());
+            builder.Register<ArcheryAimSystem>(Lifetime.Singleton);
+
+            Assert.IsNotNull(builder.Build().Resolve<ArcheryAimSystem>());
         }
 
         [Test]
