@@ -14,7 +14,6 @@ namespace LOP
             public float SkillMs;
             public float RtTicks;
             public float Home;
-            public readonly Dictionary<long, bool> Misjudge = new Dictionary<long, bool>();
         }
 
         readonly System.Random _rng;
@@ -77,21 +76,7 @@ namespace LOP
             return false;
         }
 
-        // 도는 카드의 15% 오판은 카드마다, 색이 바뀌는 주기마다 한 번만 굴린다(틱마다 굴리면 거의 항상 오답을 쏜다).
-        bool MisjudgesNow(BotMind mind, in TriGrabCard c, long tick)
-        {
-            if (!c.Cycles) return false;
-            long period = c.PeriodTicks > 0 && tick > c.T0Tick ? (tick - c.T0Tick) / c.PeriodTicks : 0;
-            long key = ((long)c.Id << 20) ^ period;
-            if (!mind.Misjudge.TryGetValue(key, out bool wrong))
-            {
-                wrong = _rng.NextDouble() >= 0.85;
-                mind.Misjudge[key] = wrong;
-            }
-            return wrong;
-        }
-
-        /// <summary>매 틱 한 번. 갈고리가 나가 있으면 가만히 서고 쏘지 않는다.</summary>
+        /// <summary>매 틱 한 번. 갈고리가 나가 있으면 가만히 서고 쏘지 않는다. 이번 라운드에 정답을 냈으면 쏘지 않는다.</summary>
         public void Think(string botId, Vector2 pos, long tick, TriGrabMatchState s, out Vector2 move, out float? fireYawDegrees)
         {
             move = Vector2.zero;
@@ -102,6 +87,13 @@ namespace LOP
             foreach (var h in s.Hooks) if (h.OwnerId == botId) return;
 
             s.Players.TryGetValue(botId, out var me);
+            // 이번 라운드에 정답을 냈으면 더 쏘지 않고, 아직 못 낸 사람 길을 막지 않게 고리 바깥쪽 집 자리로 물러난다.
+            bool done = me != null && me.RoundPlace > 0;
+            if (done)
+            {
+                WalkTo(pos, HomePoint(mind, TriGrabConfig.BotRingMax - 0.6f), out move);
+                return;
+            }
             bool reloading = me != null && tick < me.ReloadUntilTick;
             float baseNow = s.Clock.BaseAt(tick);
             float omega = s.Clock.Omega;
@@ -111,6 +103,10 @@ namespace LOP
             bool hasShot = false;
             float shotTt = 0f;
             Vector2 shotPos = Vector2.zero;
+            bool shotCycles = false;
+            bool hasMisjudge = false;
+            float misjudgeTt = 0f;
+            Vector2 misjudgePos = Vector2.zero;
             bool hasSlip = false;
             float slipTt = 0f;
             Vector2 slipPos = Vector2.zero;
@@ -142,16 +138,30 @@ namespace LOP
 
                 if (known)
                 {
-                    bool willBeValid = !MisjudgesNow(mind, c, tick) ? s.Rule.Matches(c, tick + (long)Mathf.Ceil(tt)) : true;
-                    if (willBeValid && !Blocked(s, pos, i, ipos, tt, baseNow))
+                    bool willBeValid = s.Rule.Matches(c, tick + (long)Mathf.Ceil(tt));
+                    if (!Blocked(s, pos, i, ipos, tt, baseNow))
                     {
-                        if (!hasShot || tt < shotTt) { hasShot = true; shotTt = tt; shotPos = ipos; }
+                        if (willBeValid)
+                        {
+                            if (!hasShot || tt < shotTt) { hasShot = true; shotTt = tt; shotPos = ipos; shotCycles = c.Cycles; }
+                        }
+                        else if (c.Cycles && (!hasMisjudge || tt < misjudgeTt))
+                        {
+                            hasMisjudge = true; misjudgeTt = tt; misjudgePos = ipos;
+                        }
                     }
                 }
                 else if (!s.Rule.Matches(c, tick) && dist < TriGrabConfig.HookLength * 0.8f)
                 {
                     if (!hasSlip || tt < slipTt) { hasSlip = true; slipTt = tt; slipPos = ipos; }
                 }
+            }
+
+            // 도는 카드 오판: 도는 카드를 노려 쏘기로 한 순간 15%로 박자를 잘못 읽어, 지금 정답 색이 아닌 도는 카드를 쏜다.
+            // 쏠 때마다 한 번만 굴린다 — 주기마다 굴리면 라운드가 길어질수록(2차: 최대 20초) 오답이 쌓인다.
+            if (hasShot && shotCycles && hasMisjudge && _rng.NextDouble() < 0.15)
+            {
+                shotTt = misjudgeTt; shotPos = misjudgePos;
             }
 
             // 헛손질: 쏘기로 한 순간 4%로 정답 대신 가까운 오답 카드를 쏜다(쏠 때마다 한 번만 굴린다).
@@ -171,12 +181,16 @@ namespace LOP
                 return;
             }
 
-            if (!goal.HasValue)
-            {
-                float r = TriGrabConfig.BotRingMin + 0.8f;
-                goal = new Vector2(r * Mathf.Cos(mind.Home), r * Mathf.Sin(mind.Home));
-            }
-            Vector2 to = goal.Value - pos;
+            if (!goal.HasValue) goal = HomePoint(mind, TriGrabConfig.BotRingMin + 0.8f);
+            WalkTo(pos, goal.Value, out move);
+        }
+
+        static Vector2 HomePoint(BotMind mind, float radius) => new Vector2(radius * Mathf.Cos(mind.Home), radius * Mathf.Sin(mind.Home));
+
+        static void WalkTo(Vector2 pos, Vector2 goal, out Vector2 move)
+        {
+            move = Vector2.zero;
+            Vector2 to = goal - pos;
             float dd = to.magnitude;
             if (dd > 0.3f) move = to / dd;
         }

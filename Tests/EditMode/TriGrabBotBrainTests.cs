@@ -33,6 +33,37 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 이번_라운드에_정답을_냈으면_쏘지_않는다_양성_대조()
+        {
+            var m = LiveMatch(out long t, "bot", "other");
+            m.State.Slots[0].Card = new TriGrabCard { Id = 1, Word = 1, Ink = 0 };
+            m.State.Slots[0].ValidSinceTick = t - 60;
+            var brain = new TriGrabBotBrain(1);
+            brain.Think("bot", Body, t, m.State, out _, out var before);
+            Assert.IsTrue(before.HasValue, "양성 대조 — 아직 못 냈으면 쏜다");
+            m.State.Players["bot"].RoundPlace = 1;
+            brain.Think("bot", Body, t, m.State, out _, out var after);
+            Assert.IsFalse(after.HasValue, "정답을 낸 라운드엔 안 쏜다");
+        }
+
+        [Test]
+        public void 정답을_낸_봇은_바깥쪽_집_자리로_물러난다()
+        {
+            var m = LiveMatch(out long t, "bot", "other");
+            m.State.Slots[0].Card = new TriGrabCard { Id = 1, Word = 1, Ink = 0 };
+            m.State.Slots[0].ValidSinceTick = t - 60;
+            var brain = new TriGrabBotBrain(1);
+            m.State.Players["bot"].ReloadUntilTick = t + 100;   // 재장전 중 — 쏘지 않고 걷기만 본다
+            brain.Think("bot", new Vector2(7f, 0f), t, m.State, out _, out _);   // 집 = 0도
+            brain.Think("bot", new Vector2(10f, 0f), t, m.State, out var before, out var fire);
+            Assert.IsFalse(fire.HasValue);
+            Assert.Less(before.x, 0f, "양성 대조 — 아직 못 냈으면 정답 카드 쪽 안쪽 고리로");
+            m.State.Players["bot"].RoundPlace = 1;
+            brain.Think("bot", new Vector2(6.5f, 0f), t, m.State, out var after, out _);
+            Assert.Greater(after.x, 0.9f, "정답을 냈으면 바깥(집, 반지름 8.8)으로");
+        }
+
+        [Test]
         public void 정답이_막_떠서_아직_모르면_쏘지_않는다()
         {
             var m = LiveMatch(out long t, "bot");
@@ -120,7 +151,8 @@ namespace LOP.Tests
             m.Start(0);
 
             long t = 0;
-            int fired = 0;
+            int fired = 0, roundsEndedByQuota = 0;
+            var prevPhase = m.State.Phase;
             for (; t < TriGrabConfig.MatchCapTicks && m.State.Phase != TriGrabPhase.Over; t++)
             {
                 for (int i = 0; i < n; i++)
@@ -130,14 +162,18 @@ namespace LOP.Tests
                     else pos[i] = TriGrabMatchTests.ClampRing(pos[i] + mv * (TriGrabConfig.MoveSpeed * TriGrabConfig.TickSeconds));
                 }
                 m.Tick(t);
+                if (prevPhase == TriGrabPhase.Live && m.State.Phase == TriGrabPhase.Resolved && m.State.RoundCorrectCount == 6) roundsEndedByQuota++;
+                prevPhase = m.State.Phase;
             }
 
             Assert.AreEqual(TriGrabPhase.Over, m.State.Phase);
-            Assert.Less(t, TriGrabConfig.MatchCapTicks, "상한에 걸려 끝난 것이 아니라 점수로 끝나야 한다");
+            Assert.Less(t, TriGrabConfig.MatchCapTicks, "안전 상한이 아니라 다섯 라운드로 끝나야 한다");
+            Assert.AreEqual(TriGrabConfig.TotalRounds, m.State.Round);
+            Assert.Less(t, TriGrabConfig.TotalRounds * (TriGrabConfig.PrepTicks + TriGrabConfig.RoundLimitTicks + TriGrabConfig.ResolvedTicks) + 10);
+            Assert.GreaterOrEqual(roundsEndedByQuota, 3, $"라운드 대부분이 6명 정답으로 끝난다 (시간 상한 아님) — {roundsEndedByQuota}");
             int top = 0;
             foreach (var p in m.State.Players.Values) top = Mathf.Max(top, p.Score);
-            Assert.GreaterOrEqual(top, TriGrabConfig.TargetScore);
-            Assert.AreNotEqual("", m.State.MatchWinnerId);
+            Assert.Greater(top, 20, "누적 점수");
             Assert.Greater(fired, 5);
         }
 
@@ -154,7 +190,7 @@ namespace LOP.Tests
                 var pos = new Vector2[n];
                 for (int i = 0; i < n; i++) { ids[i] = "bot" + i; m.AddPlayer(ids[i]); pos[i] = TriGrabMatchTests.Ring(i, n); }
                 m.Start(0);
-                int lastRound = 0; int prevM = 0;
+                int prevM = 0; var prevPh = m.State.Phase;
                 for (long t = 0; t < TriGrabConfig.MatchCapTicks && m.State.Phase != TriGrabPhase.Over; t++)
                 {
                     for (int i = 0; i < n; i++)
@@ -164,23 +200,25 @@ namespace LOP.Tests
                         else pos[i] = TriGrabMatchTests.ClampRing(pos[i] + mv * (TriGrabConfig.MoveSpeed * TriGrabConfig.TickSeconds));
                     }
                     m.Tick(t);
-                    lastRound = m.State.Round;
+                    if (prevPh == TriGrabPhase.Live && m.State.Phase != TriGrabPhase.Live) right += m.State.RoundCorrectCount;
+                    prevPh = m.State.Phase;
                     int mm = 0; foreach (var pp in m.State.Players.Values) mm += pp.Mistakes;
                     if (mm > prevM) { if (m.State.Round >= 2) w2 += mm - prevM; else w1 += mm - prevM; prevM = mm; }
                 }
                 foreach (var p in m.State.Players.Values) wrong += p.Mistakes;
-                right += lastRound;
             }
             Assert.Greater(right, 8, "양성 대조 — 라운드가 충분히 돌았다");
-            Assert.Less(wrong / (float)(wrong + right), 0.25f, $"오답 {wrong} (r1 {w1}, r2+ {w2}) / 정답 {right}");
+            //  2차(순위 점수)부터는 한 라운드에 여섯 명이 정답을 낼 때까지 모두 계속 쏜다. 남이 먼저 가져간 카드를 겨눈 갈고리는
+            //  빈손으로 돌아오므로 경합은 오답에 안 섞인다. 남은 오답은 봇이 겨눈 카드 자체가 틀린 경우(도는 카드 박자, 헛손질,
+            //  앞 카드 가림 판단)다 — 4판 실측 89 / 정답 120(0.43). 경합이 다시 섞이면(옛 식 112/120 = 0.48) 넘는다.
+            Assert.Less(wrong / (float)(wrong + right), 0.46f, $"오답 {wrong} (r1 {w1}, r2+ {w2}) / 정답 {right}");
         }
 
         [Test]
-        public void 도는_카드_오판은_틱마다가_아니라_주기마다_한_번_굴린다()
+        public void 도는_카드_오판은_쏠_때만_굴린다_정답_쏘기가_없으면_틀린_도는_카드를_쏘지_않는다()
         {
             int fired = 0;
-            const int trials = 100;
-            for (int seed = 0; seed < trials; seed++)
+            for (int seed = 0; seed < 100; seed++)
             {
                 var m = LiveMatch(out long t, "bot");
                 // 도는 카드(주기 60틱, 이미 30틱 지남) — 지금도, 갈고리가 닿을 때(최대 17틱 뒤)도 같은 주기 안이라 계속 오답이다.
@@ -192,7 +230,31 @@ namespace LOP.Tests
                     if (yaw.HasValue) { fired++; break; }
                 }
             }
-            Assert.Less(fired, trials * 0.4f, "틱마다 15%를 굴리면 10틱 안에 80%가 쏜다 ");
+            Assert.AreEqual(0, fired, "주기마다 굴리면 라운드가 길수록 틀린 도는 카드를 쏜다(2차는 라운드가 최대 20초)");
+        }
+
+        [Test]
+        public void 도는_카드를_노려_쏠_때_15퍼센트쯤_박자를_잘못_읽는다()
+        {
+            int fired = 0, wrong = 0;
+            for (int seed = 0; seed < 400; seed++)
+            {
+                var m = LiveMatch(out long t, "bot");
+                // 슬롯 0 (4,0): 지금 글자색 빨강(정답)인 도는 카드. 슬롯 2 (0,4): 지금 파랑인 도는 카드.
+                m.State.Slots[0].Card = new TriGrabCard { Id = 1, Word = 1, Ink = 0, Cycles = true, PeriodTicks = 100, T0Tick = t - 40 };
+                m.State.Slots[2].Card = new TriGrabCard { Id = 2, Word = 1, Ink = 2, Cycles = true, PeriodTicks = 100, T0Tick = t - 40 };
+                m.State.Slots[0].ValidSinceTick = t - 60;
+                var brain = new TriGrabBotBrain(seed);
+                brain.Think("bot", new Vector2(6.5f, 6.5f), t, m.State, out _, out var yaw);
+                if (!yaw.HasValue) continue;
+                fired++;
+                var dir = TriGrabMath.DirFromYaw(yaw.Value);
+                //  (6.5,6.5)에서 (4,0) 쪽은 z로 더 많이, (0,4) 쪽은 x로 더 많이 간다.
+                if (Mathf.Abs(dir.x) > Mathf.Abs(dir.y)) wrong++;
+            }
+            Assert.Greater(fired, 300, "양성 대조 — 거의 매번 쏜다");
+            float rate = wrong / (float)fired;
+            Assert.That(rate, Is.InRange(0.07f, 0.25f), $"오판 {wrong}/{fired}");
         }
     }
 }

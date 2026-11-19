@@ -22,7 +22,9 @@ namespace LOP
         public const int ForceValidAfterTicks = 120;
         public const int PrepTicks = 80;
         public const int ResolvedTicks = 70;
-        public const int TargetScore = 5;
+        public const int TotalRounds = 5;
+        /// <summary>Live가 이만큼 지나면 남은 사람은 0점으로 라운드가 끝난다(20초).</summary>
+        public const int RoundLimitTicks = 1000;
         public const int MatchCapTicks = 12000;
         public const int MinPlayersWithBots = 4;
         public const int EndGraceTicks = 150;
@@ -35,6 +37,12 @@ namespace LOP
         public const float MoveSpeed = 4.5f;
 
         public static float HookSpeedPerTick => HookLength / ReachTicks;
+
+        /// <summary>그 라운드에서 k번째로 정답을 낸 사람의 점수: 10, 9, 8, … 최소 1.</summary>
+        public static int PlacePoints(int place) => System.Math.Max(1, 11 - place);
+
+        /// <summary>아직 정답을 못 낸 사람이 이 수 이하로 남으면 라운드가 끝난다. 2~7명은 1명, 8명은 2명.</summary>
+        public static int RoundEndRemaining(int participants) => System.Math.Max(1, participants / 4);
 
         /// <summary>도는 카드가 색을 바꾸는 주기. 라운드가 갈수록 짧아진다.</summary>
         public static int CyclePeriodTicks(int round)

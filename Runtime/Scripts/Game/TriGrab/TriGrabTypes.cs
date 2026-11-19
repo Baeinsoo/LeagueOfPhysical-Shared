@@ -83,6 +83,11 @@ namespace LOP
         public TriGrabCard? Carried;
         public TriGrabHookResult Result;
         public long EndTick;
+        /// <summary>
+        /// 서버 전용. 쏜 순간의 회전판으로 미리 계산한, 이 갈고리가 처음 닿을 카드(슬롯·카드 id). 이 카드만 잡는다 —
+        /// 그 사이 남이 가져가면 옆 카드를 집지 않고 빈손으로 돌아온다. TargetCardId 0 = 닿을 카드 없음(빗나감).
+        /// </summary>
+        public int TargetSlot = -1, TargetCardId;
 
         public static float RetractPerTick(bool carried) =>
             TriGrabConfig.HookSpeedPerTick * (carried ? TriGrabConfig.RetractCard : TriGrabConfig.RetractEmpty);
@@ -107,7 +112,11 @@ namespace LOP
 
     public sealed class TriGrabPlayerScore
     {
+        /// <summary>판 전체 누적 점수.</summary>
         public int Score, Mistakes;
+        /// <summary>이번 라운드에 몇 번째로 정답을 냈나. 0이면 아직 — 정답을 낸 사람은 그 라운드에서 더 쏘지 못한다.</summary>
+        public int RoundPlace;
+        public int RoundPoints;
         public long ReloadUntilTick;
         /// <summary>0이면 아직 정답 없음.</summary>
         public int BestRtMs;

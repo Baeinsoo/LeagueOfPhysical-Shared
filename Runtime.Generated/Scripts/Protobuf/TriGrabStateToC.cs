@@ -31,27 +31,29 @@ public static partial class TriGrabStateToCReflection {
           "EhAKCG9yaWdpbl94GAMgASgCEhAKCG9yaWdpbl96GAQgASgCEg0KBWRpcl94",
           "GAUgASgCEg0KBWRpcl96GAYgASgCEhEKCXR1cm5fdGljaxgHIAEoAxITCgt0",
           "dXJuX2xlbmd0aBgIIAEoAhIhCgdjYXJyaWVkGAkgASgLMhAuVHJpR3JhYkNh",
-          "cmRXaXJlEg4KBnJlc3VsdBgKIAEoBRIQCghlbmRfdGljaxgLIAEoAyJ2ChFU",
-          "cmlHcmFiUGxheWVyV2lyZRIRCgllbnRpdHlfaWQYASABKAkSDQoFc2NvcmUY",
-          "AiABKAUSEAoIbWlzdGFrZXMYAyABKAUSGQoRcmVsb2FkX3VudGlsX3RpY2sY",
-          "BCABKAMSEgoKYmVzdF9ydF9tcxgFIAEoBSKAAwoPVHJpR3JhYlN0YXRlVG9D",
-          "Eg8KB3ZlcnNpb24YASABKAUSDQoFcGhhc2UYAiABKAUSFgoOcGhhc2VfZW5k",
-          "X3RpY2sYAyABKAMSDQoFcm91bmQYBCABKAUSEQoJcnVsZV90eXBlGAUgASgF",
-          "EhIKCnJ1bGVfY29sb3IYBiABKAUSEwoLYmFzZV9hbmdsZTAYByABKAISDQoF",
-          "b21lZ2EYCCABKAISFwoPbGl2ZV9zdGFydF90aWNrGAkgASgDEhMKC2ZyZWV6",
-          "ZV90aWNrGAogASgDEh8KBXNsb3RzGAsgAygLMhAuVHJpR3JhYlNsb3RXaXJl",
-          "Eh8KBWhvb2tzGAwgAygLMhAuVHJpR3JhYkhvb2tXaXJlEiMKB3BsYXllcnMY",
-          "DSADKAsyEi5UcmlHcmFiUGxheWVyV2lyZRIXCg9yb3VuZF93aW5uZXJfaWQY",
-          "DiABKAkSFAoMdGFyZ2V0X3Njb3JlGA8gASgFEhcKD21hdGNoX3dpbm5lcl9p",
-          "ZBgQIAEoCWIGcHJvdG8z"));
+          "cmRXaXJlEg4KBnJlc3VsdBgKIAEoBRIQCghlbmRfdGljaxgLIAEoAyKhAQoR",
+          "VHJpR3JhYlBsYXllcldpcmUSEQoJZW50aXR5X2lkGAEgASgJEg0KBXNjb3Jl",
+          "GAIgASgFEhAKCG1pc3Rha2VzGAMgASgFEhkKEXJlbG9hZF91bnRpbF90aWNr",
+          "GAQgASgDEhIKCmJlc3RfcnRfbXMYBSABKAUSEwoLcm91bmRfcGxhY2UYBiAB",
+          "KAUSFAoMcm91bmRfcG9pbnRzGAcgASgFIrADCg9UcmlHcmFiU3RhdGVUb0MS",
+          "DwoHdmVyc2lvbhgBIAEoBRINCgVwaGFzZRgCIAEoBRIWCg5waGFzZV9lbmRf",
+          "dGljaxgDIAEoAxINCgVyb3VuZBgEIAEoBRIRCglydWxlX3R5cGUYBSABKAUS",
+          "EgoKcnVsZV9jb2xvchgGIAEoBRITCgtiYXNlX2FuZ2xlMBgHIAEoAhINCgVv",
+          "bWVnYRgIIAEoAhIXCg9saXZlX3N0YXJ0X3RpY2sYCSABKAMSEwoLZnJlZXpl",
+          "X3RpY2sYCiABKAMSHwoFc2xvdHMYCyADKAsyEC5UcmlHcmFiU2xvdFdpcmUS",
+          "HwoFaG9va3MYDCADKAsyEC5UcmlHcmFiSG9va1dpcmUSIwoHcGxheWVycxgN",
+          "IAMoCzISLlRyaUdyYWJQbGF5ZXJXaXJlEhcKD3JvdW5kX3dpbm5lcl9pZBgO",
+          "IAEoCRIUCgx0YXJnZXRfc2NvcmUYDyABKAUSFwoPbWF0Y2hfd2lubmVyX2lk",
+          "GBAgASgJEhQKDHRvdGFsX3JvdW5kcxgRIAEoBRIYChByb3VuZF9saW1pdF90",
+          "aWNrGBIgASgDYgZwcm90bzM="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
           new pbr::GeneratedClrTypeInfo(typeof(global::TriGrabCardWire), global::TriGrabCardWire.Parser, new[]{ "Id", "Word", "Ink", "Cycles", "PeriodTicks", "T0Tick" }, null, null, null, null),
           new pbr::GeneratedClrTypeInfo(typeof(global::TriGrabSlotWire), global::TriGrabSlotWire.Parser, new[]{ "Card", "EmptyUntilTick" }, null, null, null, null),
           new pbr::GeneratedClrTypeInfo(typeof(global::TriGrabHookWire), global::TriGrabHookWire.Parser, new[]{ "OwnerId", "FireTick", "OriginX", "OriginZ", "DirX", "DirZ", "TurnTick", "TurnLength", "Carried", "Result", "EndTick" }, null, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::TriGrabPlayerWire), global::TriGrabPlayerWire.Parser, new[]{ "EntityId", "Score", "Mistakes", "ReloadUntilTick", "BestRtMs" }, null, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::TriGrabStateToC), global::TriGrabStateToC.Parser, new[]{ "Version", "Phase", "PhaseEndTick", "Round", "RuleType", "RuleColor", "BaseAngle0", "Omega", "LiveStartTick", "FreezeTick", "Slots", "Hooks", "Players", "RoundWinnerId", "TargetScore", "MatchWinnerId" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::TriGrabPlayerWire), global::TriGrabPlayerWire.Parser, new[]{ "EntityId", "Score", "Mistakes", "ReloadUntilTick", "BestRtMs", "RoundPlace", "RoundPoints" }, null, null, null, null),
+          new pbr::GeneratedClrTypeInfo(typeof(global::TriGrabStateToC), global::TriGrabStateToC.Parser, new[]{ "Version", "Phase", "PhaseEndTick", "Round", "RuleType", "RuleColor", "BaseAngle0", "Omega", "LiveStartTick", "FreezeTick", "Slots", "Hooks", "Players", "RoundWinnerId", "TargetScore", "MatchWinnerId", "TotalRounds", "RoundLimitTick" }, null, null, null, null)
         }));
   }
   #endregion
@@ -1314,6 +1316,8 @@ public sealed partial class TriGrabPlayerWire : pb::IMessage<TriGrabPlayerWire>
     mistakes_ = other.mistakes_;
     reloadUntilTick_ = other.reloadUntilTick_;
     bestRtMs_ = other.bestRtMs_;
+    roundPlace_ = other.roundPlace_;
+    roundPoints_ = other.roundPoints_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -1383,6 +1387,33 @@ public sealed partial class TriGrabPlayerWire : pb::IMessage<TriGrabPlayerWire>
     }
   }
 
+  /// <summary>Field number for the "round_place" field.</summary>
+  public const int RoundPlaceFieldNumber = 6;
+  private int roundPlace_;
+  /// <summary>
+  /// 이번 라운드에 몇 번째로 정답을 냈나(0 = 아직). score는 판 전체 누적이다.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int RoundPlace {
+    get { return roundPlace_; }
+    set {
+      roundPlace_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "round_points" field.</summary>
+  public const int RoundPointsFieldNumber = 7;
+  private int roundPoints_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int RoundPoints {
+    get { return roundPoints_; }
+    set {
+      roundPoints_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -1403,6 +1434,8 @@ public sealed partial class TriGrabPlayerWire : pb::IMessage<TriGrabPlayerWire>
     if (Mistakes != other.Mistakes) return false;
     if (ReloadUntilTick != other.ReloadUntilTick) return false;
     if (BestRtMs != other.BestRtMs) return false;
+    if (RoundPlace != other.RoundPlace) return false;
+    if (RoundPoints != other.RoundPoints) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -1415,6 +1448,8 @@ public sealed partial class TriGrabPlayerWire : pb::IMessage<TriGrabPlayerWire>
     if (Mistakes != 0) hash ^= Mistakes.GetHashCode();
     if (ReloadUntilTick != 0L) hash ^= ReloadUntilTick.GetHashCode();
     if (BestRtMs != 0) hash ^= BestRtMs.GetHashCode();
+    if (RoundPlace != 0) hash ^= RoundPlace.GetHashCode();
+    if (RoundPoints != 0) hash ^= RoundPoints.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -1453,6 +1488,14 @@ public sealed partial class TriGrabPlayerWire : pb::IMessage<TriGrabPlayerWire>
       output.WriteRawTag(40);
       output.WriteInt32(BestRtMs);
     }
+    if (RoundPlace != 0) {
+      output.WriteRawTag(48);
+      output.WriteInt32(RoundPlace);
+    }
+    if (RoundPoints != 0) {
+      output.WriteRawTag(56);
+      output.WriteInt32(RoundPoints);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -1483,6 +1526,14 @@ public sealed partial class TriGrabPlayerWire : pb::IMessage<TriGrabPlayerWire>
       output.WriteRawTag(40);
       output.WriteInt32(BestRtMs);
     }
+    if (RoundPlace != 0) {
+      output.WriteRawTag(48);
+      output.WriteInt32(RoundPlace);
+    }
+    if (RoundPoints != 0) {
+      output.WriteRawTag(56);
+      output.WriteInt32(RoundPoints);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -1507,6 +1558,12 @@ public sealed partial class TriGrabPlayerWire : pb::IMessage<TriGrabPlayerWire>
     }
     if (BestRtMs != 0) {
       size += 1 + pb::CodedOutputStream.ComputeInt32Size(BestRtMs);
+    }
+    if (RoundPlace != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(RoundPlace);
+    }
+    if (RoundPoints != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(RoundPoints);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -1534,6 +1591,12 @@ public sealed partial class TriGrabPlayerWire : pb::IMessage<TriGrabPlayerWire>
     }
     if (other.BestRtMs != 0) {
       BestRtMs = other.BestRtMs;
+    }
+    if (other.RoundPlace != 0) {
+      RoundPlace = other.RoundPlace;
+    }
+    if (other.RoundPoints != 0) {
+      RoundPoints = other.RoundPoints;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -1574,6 +1637,14 @@ public sealed partial class TriGrabPlayerWire : pb::IMessage<TriGrabPlayerWire>
           BestRtMs = input.ReadInt32();
           break;
         }
+        case 48: {
+          RoundPlace = input.ReadInt32();
+          break;
+        }
+        case 56: {
+          RoundPoints = input.ReadInt32();
+          break;
+        }
       }
     }
   #endif
@@ -1611,6 +1682,14 @@ public sealed partial class TriGrabPlayerWire : pb::IMessage<TriGrabPlayerWire>
         }
         case 40: {
           BestRtMs = input.ReadInt32();
+          break;
+        }
+        case 48: {
+          RoundPlace = input.ReadInt32();
+          break;
+        }
+        case 56: {
+          RoundPoints = input.ReadInt32();
           break;
         }
       }
@@ -1676,6 +1755,8 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
     roundWinnerId_ = other.roundWinnerId_;
     targetScore_ = other.targetScore_;
     matchWinnerId_ = other.matchWinnerId_;
+    totalRounds_ = other.totalRounds_;
+    roundLimitTick_ = other.roundLimitTick_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -1856,6 +1937,9 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
   /// <summary>Field number for the "target_score" field.</summary>
   public const int TargetScoreFieldNumber = 15;
   private int targetScore_;
+  /// <summary>
+  /// 2차부터 쓰지 않는다(목표 점수 없이 5라운드 누적). 번호는 다시 쓰지 않는다.
+  /// </summary>
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public int TargetScore {
@@ -1874,6 +1958,33 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
     get { return matchWinnerId_; }
     set {
       matchWinnerId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+    }
+  }
+
+  /// <summary>Field number for the "total_rounds" field.</summary>
+  public const int TotalRoundsFieldNumber = 17;
+  private int totalRounds_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int TotalRounds {
+    get { return totalRounds_; }
+    set {
+      totalRounds_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "round_limit_tick" field.</summary>
+  public const int RoundLimitTickFieldNumber = 18;
+  private long roundLimitTick_;
+  /// <summary>
+  /// 이번 라운드 Live의 시간 상한 틱.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long RoundLimitTick {
+    get { return roundLimitTick_; }
+    set {
+      roundLimitTick_ = value;
     }
   }
 
@@ -1908,6 +2019,8 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
     if (RoundWinnerId != other.RoundWinnerId) return false;
     if (TargetScore != other.TargetScore) return false;
     if (MatchWinnerId != other.MatchWinnerId) return false;
+    if (TotalRounds != other.TotalRounds) return false;
+    if (RoundLimitTick != other.RoundLimitTick) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -1931,6 +2044,8 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
     if (RoundWinnerId.Length != 0) hash ^= RoundWinnerId.GetHashCode();
     if (TargetScore != 0) hash ^= TargetScore.GetHashCode();
     if (MatchWinnerId.Length != 0) hash ^= MatchWinnerId.GetHashCode();
+    if (TotalRounds != 0) hash ^= TotalRounds.GetHashCode();
+    if (RoundLimitTick != 0L) hash ^= RoundLimitTick.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -2004,6 +2119,14 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
       output.WriteRawTag(130, 1);
       output.WriteString(MatchWinnerId);
     }
+    if (TotalRounds != 0) {
+      output.WriteRawTag(136, 1);
+      output.WriteInt32(TotalRounds);
+    }
+    if (RoundLimitTick != 0L) {
+      output.WriteRawTag(144, 1);
+      output.WriteInt64(RoundLimitTick);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -2069,6 +2192,14 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
       output.WriteRawTag(130, 1);
       output.WriteString(MatchWinnerId);
     }
+    if (TotalRounds != 0) {
+      output.WriteRawTag(136, 1);
+      output.WriteInt32(TotalRounds);
+    }
+    if (RoundLimitTick != 0L) {
+      output.WriteRawTag(144, 1);
+      output.WriteInt64(RoundLimitTick);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -2120,6 +2251,12 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
     }
     if (MatchWinnerId.Length != 0) {
       size += 2 + pb::CodedOutputStream.ComputeStringSize(MatchWinnerId);
+    }
+    if (TotalRounds != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(TotalRounds);
+    }
+    if (RoundLimitTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(RoundLimitTick);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -2174,6 +2311,12 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
     }
     if (other.MatchWinnerId.Length != 0) {
       MatchWinnerId = other.MatchWinnerId;
+    }
+    if (other.TotalRounds != 0) {
+      TotalRounds = other.TotalRounds;
+    }
+    if (other.RoundLimitTick != 0L) {
+      RoundLimitTick = other.RoundLimitTick;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -2258,6 +2401,14 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
           MatchWinnerId = input.ReadString();
           break;
         }
+        case 136: {
+          TotalRounds = input.ReadInt32();
+          break;
+        }
+        case 144: {
+          RoundLimitTick = input.ReadInt64();
+          break;
+        }
       }
     }
   #endif
@@ -2339,6 +2490,14 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
         }
         case 130: {
           MatchWinnerId = input.ReadString();
+          break;
+        }
+        case 136: {
+          TotalRounds = input.ReadInt32();
+          break;
+        }
+        case 144: {
+          RoundLimitTick = input.ReadInt64();
           break;
         }
       }

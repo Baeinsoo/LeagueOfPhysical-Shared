@@ -42,6 +42,9 @@ message TriGrabPlayerWire
 	int32 mistakes = 3;
 	int64 reload_until_tick = 4;
 	int32 best_rt_ms = 5;
+	// 이번 라운드에 몇 번째로 정답을 냈나(0 = 아직). score는 판 전체 누적이다.
+	int32 round_place = 6;
+	int32 round_points = 7;
 }
 
 // 삼색 그랩 판 상태 전체(서버 → 클라). 바뀔 때만 reliable로 간다.
@@ -64,6 +67,10 @@ message TriGrabStateToC
 	repeated TriGrabHookWire hooks = 12;
 	repeated TriGrabPlayerWire players = 13;
 	string round_winner_id = 14;
+	// 2차부터 쓰지 않는다(목표 점수 없이 5라운드 누적). 번호는 다시 쓰지 않는다.
 	int32 target_score = 15;
 	string match_winner_id = 16;
+	int32 total_rounds = 17;
+	// 이번 라운드 Live의 시간 상한 틱.
+	int64 round_limit_tick = 18;
 }
