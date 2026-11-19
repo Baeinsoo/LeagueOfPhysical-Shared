@@ -14,7 +14,7 @@ namespace LOP
             public float SkillMs;
             public float RtTicks;
             public float Home;
-            public readonly HashSet<int> Rolled = new HashSet<int>();
+            public readonly Dictionary<long, bool> Misjudge = new Dictionary<long, bool>();
         }
 
         readonly System.Random _rng;
@@ -77,6 +77,20 @@ namespace LOP
             return false;
         }
 
+        // 도는 카드의 15% 오판은 카드마다, 색이 바뀌는 주기마다 한 번만 굴린다(틱마다 굴리면 거의 항상 오답을 쏜다).
+        bool MisjudgesNow(BotMind mind, in TriGrabCard c, long tick)
+        {
+            if (!c.Cycles) return false;
+            long period = c.PeriodTicks > 0 && tick > c.T0Tick ? (tick - c.T0Tick) / c.PeriodTicks : 0;
+            long key = ((long)c.Id << 20) ^ period;
+            if (!mind.Misjudge.TryGetValue(key, out bool wrong))
+            {
+                wrong = _rng.NextDouble() >= 0.85;
+                mind.Misjudge[key] = wrong;
+            }
+            return wrong;
+        }
+
         /// <summary>매 틱 한 번. 갈고리가 나가 있으면 가만히 서고 쏘지 않는다.</summary>
         public void Think(string botId, Vector2 pos, long tick, TriGrabMatchState s, out Vector2 move, out float? fireYawDegrees)
         {
@@ -97,6 +111,9 @@ namespace LOP
             bool hasShot = false;
             float shotTt = 0f;
             Vector2 shotPos = Vector2.zero;
+            bool hasSlip = false;
+            float slipTt = 0f;
+            Vector2 slipPos = Vector2.zero;
 
             for (int i = 0; i < TriGrabConfig.Slots; i++)
             {
@@ -125,22 +142,22 @@ namespace LOP
 
                 if (known)
                 {
-                    bool willBeValid = (!c.Cycles || _rng.NextDouble() < 0.85)
-                        ? s.Rule.Matches(c, tick + (long)Mathf.Ceil(tt))
-                        : true;
+                    bool willBeValid = !MisjudgesNow(mind, c, tick) ? s.Rule.Matches(c, tick + (long)Mathf.Ceil(tt)) : true;
                     if (willBeValid && !Blocked(s, pos, i, ipos, tt, baseNow))
                     {
                         if (!hasShot || tt < shotTt) { hasShot = true; shotTt = tt; shotPos = ipos; }
                     }
                 }
-                else if (!s.Rule.Matches(c, tick))
+                else if (!s.Rule.Matches(c, tick) && dist < TriGrabConfig.HookLength * 0.8f)
                 {
-                    // 헷갈려서 한 번쯤 헛손질한다. 카드마다 한 번만 굴린다.
-                    if (mind.Rolled.Add(c.Id) && _rng.NextDouble() < 0.04 && dist < TriGrabConfig.HookLength * 0.8f)
-                    {
-                        hasShot = true; shotTt = tt; shotPos = ipos;
-                    }
+                    if (!hasSlip || tt < slipTt) { hasSlip = true; slipTt = tt; slipPos = ipos; }
                 }
+            }
+
+            // 헛손질: 쏘기로 한 순간 4%로 정답 대신 가까운 오답 카드를 쏜다(쏠 때마다 한 번만 굴린다).
+            if (hasShot && hasSlip && _rng.NextDouble() < 0.04)
+            {
+                shotTt = slipTt; shotPos = slipPos;
             }
 
             if (hasShot)

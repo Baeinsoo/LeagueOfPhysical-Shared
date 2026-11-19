@@ -160,7 +160,7 @@ namespace LOP.Tests
                 foreach (var s in m.State.Slots) if (s.Card.HasValue && m.State.Rule.Matches(s.Card.Value, k)) anyValid = true;
                 if (anyValid) { forcedAt = k; break; }
             }
-            Assert.AreEqual(last + TriGrabConfig.ForceValidAfterTicks + 1, forcedAt);
+            Assert.AreEqual(last + TriGrabConfig.ForceValidAfterTicks, forcedAt);
         }
 
         [Test]
@@ -253,6 +253,41 @@ namespace LOP.Tests
         {
             Assert.AreEqual(Trace(1234), Trace(1234));
             Assert.AreNotEqual(Trace(1234), Trace(4321));
+        }
+
+        [Test]
+        public void 연달은_라운드의_주문은_화면_글이_같지_않다()
+        {
+            int checkedRounds = 0;
+            for (int seed = 1; seed <= 12; seed++)
+            {
+                var m = new TriGrabMatch(seed);
+                var brain = new TriGrabBotBrain(seed + 1);
+                var ids = new[] { "a", "b", "c", "d" };
+                var pos = new Vector2[4];
+                for (int i = 0; i < 4; i++) { m.AddPlayer(ids[i]); pos[i] = Ring(i, 4); }
+                m.Start(0);
+                int round = 0;
+                string prev = null;
+                for (long t = 0; t < TriGrabConfig.MatchCapTicks && m.State.Phase != TriGrabPhase.Over; t++)
+                {
+                    for (int i = 0; i < 4; i++)
+                    {
+                        brain.Think(ids[i], pos[i], t, m.State, out var mv, out var yaw);
+                        if (yaw.HasValue) m.TryFire(ids[i], pos[i], yaw.Value, t);
+                        else pos[i] = ClampRing(pos[i] + mv * (TriGrabConfig.MoveSpeed * TriGrabConfig.TickSeconds));
+                    }
+                    m.Tick(t);
+                    if (m.State.Round != round)
+                    {
+                        round = m.State.Round;
+                        string text = m.State.Rule.KoreanText;
+                        if (prev != null) { Assert.AreNotEqual(prev, text, $"seed {seed} 라운드 {round}"); checkedRounds++; }
+                        prev = text;
+                    }
+                }
+            }
+            Assert.Greater(checkedRounds, 20, "양성 대조 — 라운드 전환을 충분히 봤다");
         }
 
         static string Trace(int seed)

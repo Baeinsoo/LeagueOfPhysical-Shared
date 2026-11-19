@@ -141,7 +141,7 @@ namespace LOP
             }
 
             if (anyValid) s.LastValidTick = t;
-            else if (t - s.LastValidTick > TriGrabConfig.ForceValidAfterTicks)
+            else if (t - s.LastValidTick >= TriGrabConfig.ForceValidAfterTicks)
             {
                 var filled = new List<int>();
                 for (int i = 0; i < s.Slots.Length; i++) if (s.Slots[i].Card.HasValue) filled.Add(i);
@@ -267,7 +267,7 @@ namespace LOP
             do
             {
                 rule = new TriGrabRule((TriGrabRuleType)_rng.Next(3), _rng.Next(3));
-            } while (s.Round > 1 && rule.Type == s.Rule.Type && rule.Color == s.Rule.Color);
+            } while (s.Round > 1 && rule.Type == s.Rule.Type && (rule.Type == TriGrabRuleType.Match || rule.Color == s.Rule.Color));
             s.Rule = rule;
 
             long liveStart = t + TriGrabConfig.PrepTicks;
