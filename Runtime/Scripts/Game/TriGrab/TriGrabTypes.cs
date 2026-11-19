@@ -107,7 +107,11 @@ namespace LOP
 
     public sealed class TriGrabPlayerScore
     {
+        /// <summary>판 전체 누적 점수.</summary>
         public int Score, Mistakes;
+        /// <summary>이번 라운드에 몇 번째로 정답을 냈나. 0이면 아직 — 정답을 낸 사람은 그 라운드에서 더 쏘지 못한다.</summary>
+        public int RoundPlace;
+        public int RoundPoints;
         public long ReloadUntilTick;
         /// <summary>0이면 아직 정답 없음.</summary>
         public int BestRtMs;

@@ -45,7 +45,7 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 정답을_끌어오면_점수_1_라운드가_끝나고_회전판이_멈춘다()
+        public void 둘이면_첫_정답에_10점_라운드가_끝나고_회전판이_멈춘다()
         {
             var m = LiveMatch(1, out long t, A, B);
             m.State.Slots[0].Card = RedInk();
@@ -54,9 +54,12 @@ namespace LOP.Tests
             long grab = -1;
             for (long k = t + 1; k < t + 40 && m.State.Phase == TriGrabPhase.Live; k++) { m.Tick(k); grab = k; }
 
-            Assert.AreEqual(TriGrabPhase.Resolved, m.State.Phase);
-            Assert.AreEqual(1, m.State.Players[A].Score);
+            Assert.AreEqual(TriGrabPhase.Resolved, m.State.Phase, "2명이면 1명 남을 때 끝난다");
+            Assert.AreEqual(10, m.State.Players[A].Score);
+            Assert.AreEqual(1, m.State.Players[A].RoundPlace);
+            Assert.AreEqual(10, m.State.Players[A].RoundPoints);
             Assert.AreEqual(0, m.State.Players[B].Score);
+            Assert.AreEqual(0, m.State.Players[B].RoundPlace);
             Assert.AreEqual(A, m.State.RoundWinnerId);
             Assert.AreEqual(grab, m.State.Clock.FreezeTick);
             Assert.AreEqual(TriGrabHookResult.Correct, m.HookOf(A).Result);
@@ -164,26 +167,7 @@ namespace LOP.Tests
         }
 
         [Test]
-        public void 목표_점수에_닿으면_라운드가_끝난_뒤_Over()
-        {
-            var m = LiveMatch(8, out long t, A, B);
-            m.State.Players[A].Score = TriGrabConfig.TargetScore - 1;
-            m.State.Slots[0].Card = RedInk();
-            Assert.IsTrue(m.TryFire(A, Body, YawIn, t));
-            long k = t;
-            while (m.State.Phase == TriGrabPhase.Live) m.Tick(++k);
-            Assert.AreEqual(TriGrabPhase.Resolved, m.State.Phase);
-            Assert.AreEqual(TriGrabConfig.TargetScore, m.State.Players[A].Score);
-            long end = m.State.PhaseEndTick;
-            m.Tick(end - 1);
-            Assert.AreEqual(TriGrabPhase.Resolved, m.State.Phase, "쉬는 동안엔 Over가 아니다");
-            m.Tick(end);
-            Assert.AreEqual(TriGrabPhase.Over, m.State.Phase);
-            Assert.AreEqual(A, m.State.MatchWinnerId);
-        }
-
-        [Test]
-        public void 목표_점수_전이면_쉼이_끝나고_다음_라운드_준비로_간다()
+        public void 라운드가_남았으면_쉼이_끝나고_다음_라운드_준비로_간다()
         {
             var m = LiveMatch(9, out long t, A);
             m.State.Slots[0].Card = RedInk();
@@ -199,6 +183,234 @@ namespace LOP.Tests
             Assert.AreEqual(frozenBase, m.State.Clock.BaseAngle0, 1e-5f, "앞 라운드가 멈춘 각에서 이어진다");
             Assert.Less(m.State.Clock.Omega, 0f, "짝수 라운드는 반대로 돈다");
             Assert.AreEqual(end + TriGrabConfig.PrepTicks, m.State.Clock.LiveStartTick);
+            Assert.AreEqual(0, m.State.Players[A].RoundPlace, "새 라운드엔 등수가 지워진다");
+            Assert.AreEqual(0, m.State.Players[A].RoundPoints);
+            Assert.AreEqual(10, m.State.Players[A].Score, "점수는 누적");
+            Assert.AreEqual(m.State.Clock.LiveStartTick + TriGrabConfig.RoundLimitTicks, m.State.RoundLimitTick);
+        }
+
+        // ── 2차: 순위 점수 누적 ──
+
+        // 슬롯 i 바로 바깥(반지름 8)에 서서 그 슬롯을 향해 쏘는 자리와 방향(Omega 0 기준).
+        static Vector2 BodyFacing(int slot) => TriGrabCarousel.SlotPosition(slot, 0f) * 2f;
+        static float YawToward(int slot) => TriGrabMath.YawFromDir(-BodyFacing(slot));
+
+        static string[] Ids(int n)
+        {
+            var ids = new string[n];
+            for (int i = 0; i < n; i++) ids[i] = "p" + i;
+            return ids;
+        }
+
+        // n명이 한 명씩 자기 앞 슬롯의 정답 카드를 쏜다(2틱 간격). 라운드가 끝나면 멈춘다. 반환: 라운드가 끝난 틱(안 끝나면 -1)
+        static long EveryoneGrabsInOrder(TriGrabMatch m, long t, string[] ids)
+        {
+            for (int i = 0; i < ids.Length; i++) m.State.Slots[i].Card = RedInk(100 + i);
+            int next = 0;
+            for (long k = t; k < t + 200; k++)
+            {
+                if (next < ids.Length && (k - t) % 2 == 0)
+                {
+                    Assert.IsTrue(m.TryFire(ids[next], BodyFacing(next), YawToward(next), k), "쏘기 " + ids[next]);
+                    next++;
+                }
+                m.Tick(k + 1);
+                if (m.State.Phase != TriGrabPhase.Live) return k + 1;
+            }
+            return -1;
+        }
+
+        [Test]
+        public void 정답_순서대로_10_9_8점을_받는다()
+        {
+            var ids = Ids(4);
+            var m = LiveMatch(20, out long t, ids);
+            long end = EveryoneGrabsInOrder(m, t, ids);
+            Assert.Greater(end, 0, "라운드가 끝났다");
+            var p = m.State.Players;
+            Assert.AreEqual(new[] { 1, 2, 3, 0 }, new[] { p["p0"].RoundPlace, p["p1"].RoundPlace, p["p2"].RoundPlace, p["p3"].RoundPlace });
+            Assert.AreEqual(new[] { 10, 9, 8, 0 }, new[] { p["p0"].Score, p["p1"].Score, p["p2"].Score, p["p3"].Score });
+            Assert.AreEqual(new[] { 10, 9, 8, 0 }, new[] { p["p0"].RoundPoints, p["p1"].RoundPoints, p["p2"].RoundPoints, p["p3"].RoundPoints });
+            Assert.AreEqual("p0", m.State.RoundWinnerId, "라운드 1등");
+            Assert.AreEqual(3, m.State.RoundCorrectCount);
+        }
+
+        [Test]
+        public void 등수_점수는_11_빼기_등수_최소_1()
+        {
+            Assert.AreEqual(10, TriGrabConfig.PlacePoints(1));
+            Assert.AreEqual(9, TriGrabConfig.PlacePoints(2));
+            Assert.AreEqual(4, TriGrabConfig.PlacePoints(7));
+            Assert.AreEqual(1, TriGrabConfig.PlacePoints(10));
+            Assert.AreEqual(1, TriGrabConfig.PlacePoints(30));
+        }
+
+        [TestCase(2, 1)]
+        [TestCase(4, 3)]
+        [TestCase(6, 5)]
+        [TestCase(8, 6)]
+        public void 남은_사람이_인원의_4분의_1_이하면_라운드가_끝난다(int n, int correctToEnd)
+        {
+            var ids = Ids(n);
+            var m = LiveMatch(30 + n, out long t, ids);
+            long end = EveryoneGrabsInOrder(m, t, ids);
+            Assert.Greater(end, 0);
+            Assert.AreEqual(TriGrabPhase.Resolved, m.State.Phase);
+            Assert.AreEqual(correctToEnd, m.State.RoundCorrectCount, $"{n}명 — 정답 {correctToEnd}명에서 끝");
+            Assert.AreEqual(end, m.State.Clock.FreezeTick, "라운드 끝에 회전판이 멈춘다");
+            int scored = 0;
+            foreach (var id in ids) if (m.State.Players[id].RoundPlace > 0) scored++;
+            Assert.AreEqual(correctToEnd, scored);
+        }
+
+        [Test]
+        public void 첫_정답_뒤에도_라운드는_이어지고_회전판은_돈다()
+        {
+            var m = LiveMatch(21, out long t, Ids(4));
+            m.State.Slots[0].Card = RedInk();
+            Assert.IsTrue(m.TryFire("p0", BodyFacing(0), YawToward(0), t));
+            long k = t;
+            while (m.State.Players["p0"].RoundPlace == 0 && k < t + 40) m.Tick(++k);
+            Assert.AreEqual(1, m.State.Players["p0"].RoundPlace, "양성 대조 — 정답이 났다");
+            Assert.AreEqual(TriGrabPhase.Live, m.State.Phase, "4명 중 1명만 정답 — 계속");
+            Assert.AreEqual(long.MaxValue, m.State.Clock.FreezeTick, "회전판은 멈추지 않는다");
+            Assert.IsFalse(m.State.Slots[0].Card.HasValue, "정답 카드는 슬롯에서 빠진다");
+            Assert.AreEqual(k + TriGrabConfig.RefillTicks, m.State.Slots[0].EmptyUntilTick, "35틱 뒤 채운다");
+            for (long j = k + 1; j <= k + TriGrabConfig.RefillTicks; j++) m.Tick(j);
+            Assert.IsTrue(m.State.Slots[0].Card.HasValue, "채워졌다");
+        }
+
+        [Test]
+        public void 정답을_낸_사람은_그_라운드에_더_쏘지_못한다()
+        {
+            var m = LiveMatch(22, out long t, Ids(4));
+            m.State.Slots[0].Card = RedInk();
+            long k = FireAndRun(m, "p0", t, BodyFacing(0), YawToward(0));
+            Assert.AreEqual(1, m.State.Players["p0"].RoundPlace);
+            Assert.AreEqual(TriGrabPhase.Live, m.State.Phase);
+            Assert.IsNull(m.HookOf("p0"));
+            Assert.LessOrEqual(m.State.Players["p0"].ReloadUntilTick, k, "재장전은 끝났다");
+            Assert.IsFalse(m.TryFire("p0", BodyFacing(0), 90f, k), "이번 라운드엔 끝");
+            Assert.IsTrue(m.TryFire("p1", BodyFacing(1), 90f, k), "양성 대조 — 아직 못 낸 사람은 쏜다");
+        }
+
+        [Test]
+        public void 정답을_낸_사람은_다음_라운드에_다시_쏜다()
+        {
+            var m = LiveMatch(23, out long t, A);
+            m.State.Slots[0].Card = RedInk();
+            Assert.IsTrue(m.TryFire(A, Body, YawIn, t));
+            long k = t;
+            while (m.State.Phase != TriGrabPhase.Prep && k < t + 2000) m.Tick(++k);
+            while (m.State.Phase != TriGrabPhase.Live && k < t + 2000) m.Tick(++k);
+            Assert.AreEqual(2, m.State.Round);
+            Assert.IsTrue(m.TryFire(A, Body, 90f, k));
+        }
+
+        [Test]
+        public void 정답을_남은_사람을_위해_정답_카드가_계속_나온다()
+        {
+            var m = LiveMatch(24, out long t, Ids(4));
+            foreach (var sl in m.State.Slots) sl.Card = BlueInk();
+            m.State.Slots[0].Card = RedInk();
+            long k = FireAndRun(m, "p0", t, BodyFacing(0), YawToward(0));
+            Assert.AreEqual(1, m.State.Players["p0"].RoundPlace);
+            bool seen = false;
+            for (long j = k + 1; j <= k + TriGrabConfig.ForceValidAfterTicks + 5 && !seen; j++)
+            {
+                m.Tick(j);
+                foreach (var sl in m.State.Slots) if (sl.Card.HasValue && m.State.Rule.Matches(sl.Card.Value, j)) seen = true;
+            }
+            Assert.IsTrue(seen, "남은 사람이 잡을 정답 카드가 다시 생긴다");
+            Assert.AreEqual(TriGrabPhase.Live, m.State.Phase);
+        }
+
+        [Test]
+        public void Live가_1000틱_지나면_남은_사람은_0점으로_라운드가_끝난다()
+        {
+            var m = LiveMatch(25, out long t, A, B);
+            long limit = m.State.RoundLimitTick;
+            Assert.AreEqual(m.State.Clock.LiveStartTick + TriGrabConfig.RoundLimitTicks, limit);
+            for (long k = t + 1; k < limit; k++) m.Tick(k);
+            Assert.AreEqual(TriGrabPhase.Live, m.State.Phase, "상한 한 틱 전엔 Live");
+            Assert.IsTrue(m.TryFire(A, Body, 90f, limit - 1), "양성 대조 — 상한 전엔 쏜다");
+            m.Tick(limit);
+            Assert.AreEqual(TriGrabPhase.Resolved, m.State.Phase);
+            Assert.AreEqual(limit, m.State.Clock.FreezeTick);
+            Assert.AreEqual(limit + TriGrabConfig.ResolvedTicks, m.State.PhaseEndTick);
+            Assert.AreEqual(0, m.State.Players[A].Score);
+            Assert.AreEqual(0, m.State.Players[B].RoundPoints);
+        }
+
+        // 아무도 안 쏘면 라운드마다 시간 상한으로 끝난다.
+        static long RunUntilOver(TriGrabMatch m, long from, out int maxRoundSeen)
+        {
+            maxRoundSeen = 0;
+            long k = from;
+            for (; k < from + TriGrabConfig.MatchCapTicks && m.State.Phase != TriGrabPhase.Over; k++)
+            {
+                m.Tick(k);
+                maxRoundSeen = Mathf.Max(maxRoundSeen, m.State.Round);
+            }
+            return k;
+        }
+
+        [Test]
+        public void 다섯_라운드가_끝나면_Over()
+        {
+            var m = new TriGrabMatch(26);
+            m.AddPlayer(A); m.AddPlayer(B);
+            m.Start(0);
+            long k = 0;
+            //  상한을 둔다 — 라운드가 안 끝나는 회귀면 무한히 돌지 않고 실패하게.
+            while (!(m.State.Round == 5 && m.State.Phase == TriGrabPhase.Resolved) && k < TriGrabConfig.MatchCapTicks * 2) m.Tick(k++);
+            Assert.AreEqual(TriGrabPhase.Resolved, m.State.Phase);
+            long end = m.State.PhaseEndTick;
+            m.Tick(end - 1);
+            Assert.AreEqual(TriGrabPhase.Resolved, m.State.Phase, "쉬는 동안엔 Over가 아니다");
+            m.Tick(end);
+            Assert.AreEqual(TriGrabPhase.Over, m.State.Phase);
+            Assert.AreEqual(5, m.State.Round, "여섯째 라운드는 없다");
+            Assert.AreEqual(TriGrabConfig.TotalRounds, m.State.TotalRounds);
+            Assert.Less(end, TriGrabConfig.MatchCapTicks, "안전 상한이 아니라 라운드 수로 끝났다");
+        }
+
+        [Test]
+        public void 오답은_누적_점수에서_1_깎고_라운드를_넘어_이어진다()
+        {
+            var m = LiveMatch(27, out long t, A);
+            m.State.Slots[0].Card = RedInk();
+            Assert.IsTrue(m.TryFire(A, Body, YawIn, t));
+            long k = t;
+            while ((m.State.Phase != TriGrabPhase.Live || m.State.Round != 2) && k < t + 2000) m.Tick(++k);
+            Assert.AreEqual(10, m.State.Players[A].Score);
+            m.State.Rule = new TriGrabRule(TriGrabRuleType.Ink, 0);
+            var c = m.State.Clock; c.Omega = 0f; c.BaseAngle0 = 0f; m.State.Clock = c;
+            foreach (var sl in m.State.Slots) { sl.Card = null; sl.EmptyUntilTick = long.MaxValue; }
+            m.State.Slots[0].Card = BlueInk();
+            FireAndRun(m, A, k, Body, YawIn);
+            Assert.AreEqual(1, m.State.Players[A].Mistakes);
+            Assert.AreEqual(9, m.State.Players[A].Score, "누적 10 → 9");
+            Assert.AreEqual(0, m.State.Players[A].RoundPoints, "이번 라운드 점수는 정답에서만");
+        }
+
+        [Test]
+        public void 판_끝에_누적_점수가_같으면_우승자가_없고_다르면_있다()
+        {
+            var tie = new TriGrabMatch(28);
+            tie.AddPlayer(A); tie.AddPlayer(B);
+            tie.Start(0);
+            tie.State.Players[A].Score = 19; tie.State.Players[B].Score = 19;
+            RunUntilOver(tie, 0, out _);
+            Assert.AreEqual(TriGrabPhase.Over, tie.State.Phase);
+            Assert.AreEqual("", tie.State.MatchWinnerId);
+
+            var win = new TriGrabMatch(28);
+            win.AddPlayer(A); win.AddPlayer(B);
+            win.Start(0);
+            win.State.Players[A].Score = 18; win.State.Players[B].Score = 19;
+            RunUntilOver(win, 0, out _);
+            Assert.AreEqual(B, win.State.MatchWinnerId);
         }
 
         [Test]

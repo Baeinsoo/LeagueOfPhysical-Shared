@@ -9,6 +9,11 @@ namespace LOP
         public TriGrabPhase Phase = TriGrabPhase.Waiting;
         public long PhaseEndTick;
         public int Round;
+        public readonly int TotalRounds = TriGrabConfig.TotalRounds;
+        /// <summary>이번 라운드 Live가 끝나는 틱(시간 상한). 그 전에 남은 사람이 충분히 줄면 먼저 끝난다.</summary>
+        public long RoundLimitTick;
+        /// <summary>이번 라운드에 정답을 낸 사람 수.</summary>
+        public int RoundCorrectCount;
         public TriGrabRule Rule;
         public TriGrabRoundClock Clock;
         public readonly TriGrabSlot[] Slots = new TriGrabSlot[TriGrabConfig.Slots];
@@ -16,6 +21,7 @@ namespace LOP
         public readonly Dictionary<string, TriGrabPlayerScore> Players = new Dictionary<string, TriGrabPlayerScore>();
         /// <summary>등록한 순서. 와이어·점수판이 같은 순서를 쓴다.</summary>
         public readonly List<string> PlayerOrder = new List<string>();
+        /// <summary>이번 라운드 1등.</summary>
         public string RoundWinnerId = "";
         public string MatchWinnerId = "";
         public long LastValidTick;
@@ -65,6 +71,7 @@ namespace LOP
             var s = State;
             if (s.Phase != TriGrabPhase.Live) return false;
             if (!s.Players.TryGetValue(id, out var p)) return false;
+            if (p.RoundPlace > 0) return false;
             if (HookOf(id) != null || tick < p.ReloadUntilTick) return false;
 
             var hook = new TriGrabHook
@@ -103,10 +110,11 @@ namespace LOP
             }
             if (s.Phase == TriGrabPhase.Resolved && t >= s.PhaseEndTick)
             {
-                if (AnyReachedTarget()) FinishMatch();
+                if (s.Round >= s.TotalRounds) FinishMatch();
                 else StartRound(t);
                 return;
             }
+            if (s.Phase == TriGrabPhase.Live && t >= s.RoundLimitTick) EndRound(t);
 
             if (s.Phase == TriGrabPhase.Live) TickLive(t);
             TickHooks(t);
@@ -210,14 +218,17 @@ namespace LOP
             var p = s.Players[hook.OwnerId];
             if (ok)
             {
-                p.Score++;
+                s.RoundCorrectCount++;
+                p.RoundPlace = s.RoundCorrectCount;
+                p.RoundPoints = TriGrabConfig.PlacePoints(p.RoundPlace);
+                p.Score += p.RoundPoints;
                 p.ReloadUntilTick = hook.EndTick;
                 int rtMs = (int)((t - (validSince >= 0 ? validSince : t)) * 20);
                 if (p.BestRtMs == 0 || rtMs < p.BestRtMs) p.BestRtMs = rtMs;
-                s.Phase = TriGrabPhase.Resolved;
-                s.PhaseEndTick = t + TriGrabConfig.ResolvedTicks;
-                s.Clock.FreezeTick = t;
-                s.RoundWinnerId = hook.OwnerId;
+                if (p.RoundPlace == 1) s.RoundWinnerId = hook.OwnerId;
+                // 나간 몸도 참여 인원에 든다 — 정답을 못 내니 "남은 쪽"으로 센다.
+                int remaining = s.Players.Count - s.RoundCorrectCount;
+                if (remaining <= TriGrabConfig.RoundEndRemaining(s.Players.Count)) EndRound(t);
             }
             else
             {
@@ -234,10 +245,13 @@ namespace LOP
             if (removed > 0) State.Version++;
         }
 
-        bool AnyReachedTarget()
+        void EndRound(long t)
         {
-            foreach (var p in State.Players.Values) if (p.Score >= TriGrabConfig.TargetScore) return true;
-            return false;
+            var s = State;
+            s.Phase = TriGrabPhase.Resolved;
+            s.PhaseEndTick = t + TriGrabConfig.ResolvedTicks;
+            s.Clock.FreezeTick = t;
+            s.Version++;
         }
 
         void FinishMatch()
@@ -286,9 +300,11 @@ namespace LOP
                 slot.ValidSinceTick = -1;
             }
             s.Hooks.Clear();
-            foreach (var p in s.Players.Values) p.ReloadUntilTick = 0;
+            foreach (var p in s.Players.Values) { p.ReloadUntilTick = 0; p.RoundPlace = 0; p.RoundPoints = 0; }
 
             s.RoundWinnerId = "";
+            s.RoundCorrectCount = 0;
+            s.RoundLimitTick = liveStart + TriGrabConfig.RoundLimitTicks;
             s.Phase = TriGrabPhase.Prep;
             s.PhaseEndTick = liveStart;
             s.LastValidTick = liveStart;
