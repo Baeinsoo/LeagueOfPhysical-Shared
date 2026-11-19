@@ -83,6 +83,11 @@ namespace LOP
         public TriGrabCard? Carried;
         public TriGrabHookResult Result;
         public long EndTick;
+        /// <summary>
+        /// 서버 전용. 쏜 순간의 회전판으로 미리 계산한, 이 갈고리가 처음 닿을 카드(슬롯·카드 id). 이 카드만 잡는다 —
+        /// 그 사이 남이 가져가면 옆 카드를 집지 않고 빈손으로 돌아온다. TargetCardId 0 = 닿을 카드 없음(빗나감).
+        /// </summary>
+        public int TargetSlot = -1, TargetCardId;
 
         public static float RetractPerTick(bool carried) =>
             TriGrabConfig.HookSpeedPerTick * (carried ? TriGrabConfig.RetractCard : TriGrabConfig.RetractEmpty);

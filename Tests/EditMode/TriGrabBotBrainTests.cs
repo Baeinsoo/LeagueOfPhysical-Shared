@@ -47,6 +47,23 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 정답을_낸_봇은_바깥쪽_집_자리로_물러난다()
+        {
+            var m = LiveMatch(out long t, "bot", "other");
+            m.State.Slots[0].Card = new TriGrabCard { Id = 1, Word = 1, Ink = 0 };
+            m.State.Slots[0].ValidSinceTick = t - 60;
+            var brain = new TriGrabBotBrain(1);
+            m.State.Players["bot"].ReloadUntilTick = t + 100;   // 재장전 중 — 쏘지 않고 걷기만 본다
+            brain.Think("bot", new Vector2(7f, 0f), t, m.State, out _, out _);   // 집 = 0도
+            brain.Think("bot", new Vector2(10f, 0f), t, m.State, out var before, out var fire);
+            Assert.IsFalse(fire.HasValue);
+            Assert.Less(before.x, 0f, "양성 대조 — 아직 못 냈으면 정답 카드 쪽 안쪽 고리로");
+            m.State.Players["bot"].RoundPlace = 1;
+            brain.Think("bot", new Vector2(6.5f, 0f), t, m.State, out var after, out _);
+            Assert.Greater(after.x, 0.9f, "정답을 냈으면 바깥(집, 반지름 8.8)으로");
+        }
+
+        [Test]
         public void 정답이_막_떠서_아직_모르면_쏘지_않는다()
         {
             var m = LiveMatch(out long t, "bot");
@@ -191,10 +208,10 @@ namespace LOP.Tests
                 foreach (var p in m.State.Players.Values) wrong += p.Mistakes;
             }
             Assert.Greater(right, 8, "양성 대조 — 라운드가 충분히 돌았다");
-            //  2차(순위 점수)부터는 한 라운드에 여섯 명이 정답을 낼 때까지 모두 계속 쏘므로, 남이 먼저 가져간 카드 자리로
-            //  날아간 갈고리(경합)가 오답에 섞인다(4판 기준 약 3할). 그래서 1차의 0.25보다 넉넉하게 둔다 —
-            //  도는 카드 오판을 주기마다 굴리던 옛 식이면 이 비율이 더 올라간다.
-            Assert.Less(wrong / (float)(wrong + right), 0.55f, $"오답 {wrong} (r1 {w1}, r2+ {w2}) / 정답 {right}");
+            //  2차(순위 점수)부터는 한 라운드에 여섯 명이 정답을 낼 때까지 모두 계속 쏜다. 남이 먼저 가져간 카드를 겨눈 갈고리는
+            //  빈손으로 돌아오므로 경합은 오답에 안 섞인다. 남은 오답은 봇이 겨눈 카드 자체가 틀린 경우(도는 카드 박자, 헛손질,
+            //  앞 카드 가림 판단)다 — 4판 실측 89 / 정답 120(0.43). 경합이 다시 섞이면(옛 식 112/120 = 0.48) 넘는다.
+            Assert.Less(wrong / (float)(wrong + right), 0.46f, $"오답 {wrong} (r1 {w1}, r2+ {w2}) / 정답 {right}");
         }
 
         [Test]

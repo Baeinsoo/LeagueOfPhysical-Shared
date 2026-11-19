@@ -21,6 +21,8 @@ namespace LOP
         public readonly Dictionary<string, TriGrabPlayerScore> Players = new Dictionary<string, TriGrabPlayerScore>();
         /// <summary>등록한 순서. 와이어·점수판이 같은 순서를 쓴다.</summary>
         public readonly List<string> PlayerOrder = new List<string>();
+        /// <summary>지금 판에 없는(연결이 끊긴) 사람. 서버만 채운다. 정답을 낼 수 없으니 라운드 끝 수에서 "끝난 쪽"으로 센다.</summary>
+        public readonly HashSet<string> Inactive = new HashSet<string>();
         /// <summary>이번 라운드 1등.</summary>
         public string RoundWinnerId = "";
         public string MatchWinnerId = "";
@@ -54,6 +56,13 @@ namespace LOP
             State.Version++;
         }
 
+        /// <summary>서버가 연결 상태를 알린다. 봇은 늘 활성이다.</summary>
+        public void SetActive(string id, bool active)
+        {
+            if (!State.Players.ContainsKey(id)) return;
+            if (active) State.Inactive.Remove(id); else State.Inactive.Add(id);
+        }
+
         public TriGrabHook HookOf(string id)
         {
             foreach (var h in State.Hooks) if (h.OwnerId == id) return h;
@@ -71,7 +80,7 @@ namespace LOP
             var s = State;
             if (s.Phase != TriGrabPhase.Live) return false;
             if (!s.Players.TryGetValue(id, out var p)) return false;
-            if (p.RoundPlace > 0) return false;
+            if (p.RoundPlace > 0 || s.Inactive.Contains(id)) return false;
             if (HookOf(id) != null || tick < p.ReloadUntilTick) return false;
 
             var hook = new TriGrabHook
@@ -84,6 +93,7 @@ namespace LOP
                 TurnLength = TriGrabConfig.HookLength,
             };
             hook.EndTick = TriGrabHook.ComputeEndTick(hook.TurnTick, hook.TurnLength, false);
+            PickTarget(hook);
             s.Hooks.Add(hook);
             // 일단 빗나간다고 보고 재장전을 잡는다. 카드를 잡으면 아래에서 고친다.
             p.ReloadUntilTick = hook.EndTick + TriGrabConfig.ReloadMissTicks;
@@ -118,6 +128,7 @@ namespace LOP
 
             if (s.Phase == TriGrabPhase.Live) TickLive(t);
             TickHooks(t);
+            if (s.Phase == TriGrabPhase.Live && RoundDone()) EndRound(t);
             RemoveFinishedHooks(t);
         }
 
@@ -177,16 +188,31 @@ namespace LOP
                 (order[i], order[j]) = (order[j], order[i]);
             }
 
+            // 이번 틱에 닿은 갈고리는 모두 판정한다(같은 틱 두 번째 정답도 점수를 받는다). 라운드 끝은 그 뒤에 센다.
+            if (s.Phase != TriGrabPhase.Live) return;
             foreach (var hook in order)
             {
-                if (s.Phase != TriGrabPhase.Live) return;
                 if (hook.Result != TriGrabHookResult.None || hook.Carried.HasValue) continue;
                 if (t <= hook.FireTick || t > hook.TurnTick) continue;
                 TryGrab(hook, t);
             }
         }
 
-        void TryGrab(TriGrabHook hook, long t)
+        // 쏜 순간의 회전판·카드로 갈고리를 앞으로 굴려, 처음 닿을 카드를 정해 둔다(그 사이 아무것도 빠지지 않는다고 본다).
+        void PickTarget(TriGrabHook hook)
+        {
+            var s = State;
+            for (long k = hook.FireTick + 1; k <= hook.TurnTick; k++)
+            {
+                int hit = HitAt(hook, k);
+                if (hit < 0) continue;
+                hook.TargetSlot = hit;
+                hook.TargetCardId = s.Slots[hit].Card.Value.Id;
+                return;
+            }
+        }
+
+        int HitAt(TriGrabHook hook, long t)
         {
             var s = State;
             float baseAngle = s.Clock.BaseAt(t);
@@ -195,8 +221,29 @@ namespace LOP
                 _slotPos[i] = TriGrabCarousel.SlotPosition(i, baseAngle);
                 _occupied[i] = s.Slots[i].Card.HasValue;
             }
-            int hit = TriGrabMath.PickHit(hook.TipAt(t), hook.Origin, _slotPos, _occupied);
-            if (hit < 0) return;
+            return TriGrabMath.PickHit(hook.TipAt(t), hook.Origin, _slotPos, _occupied);
+        }
+
+        void TryGrab(TriGrabHook hook, long t)
+        {
+            var s = State;
+            if (hook.TargetCardId == 0) return;   // 닿을 카드가 없었다 — 빗나감
+            var target = s.Slots[hook.TargetSlot];
+            if (!target.Card.HasValue || target.Card.Value.Id != hook.TargetCardId)
+            {
+                // 겨눈 카드를 남이 먼저 가져갔다(또는 바뀌었다). 옆 카드를 집지 않고 지금 자리에서 빈손으로 돌아온다.
+                float len = hook.LengthAt(t);
+                hook.TargetCardId = 0;
+                hook.TurnTick = t;
+                hook.TurnLength = len;
+                hook.EndTick = TriGrabHook.ComputeEndTick(t, len, false);
+                s.Players[hook.OwnerId].ReloadUntilTick = hook.EndTick + TriGrabConfig.ReloadMissTicks;
+                s.Version++;
+                return;
+            }
+            Vector2 cardPos = TriGrabCarousel.SlotPosition(hook.TargetSlot, s.Clock.BaseAt(t));
+            if ((cardPos - hook.TipAt(t)).magnitude >= TriGrabConfig.HitRadius) return;
+            int hit = hook.TargetSlot;
 
             var slot = s.Slots[hit];
             var card = slot.Card.Value;
@@ -226,9 +273,6 @@ namespace LOP
                 int rtMs = (int)((t - (validSince >= 0 ? validSince : t)) * 20);
                 if (p.BestRtMs == 0 || rtMs < p.BestRtMs) p.BestRtMs = rtMs;
                 if (p.RoundPlace == 1) s.RoundWinnerId = hook.OwnerId;
-                // 나간 몸도 참여 인원에 든다 — 정답을 못 내니 "남은 쪽"으로 센다.
-                int remaining = s.Players.Count - s.RoundCorrectCount;
-                if (remaining <= TriGrabConfig.RoundEndRemaining(s.Players.Count)) EndRound(t);
             }
             else
             {
@@ -243,6 +287,21 @@ namespace LOP
         {
             int removed = State.Hooks.RemoveAll(h => h.EndTick < t);
             if (removed > 0) State.Version++;
+        }
+
+        /// <summary>
+        /// 라운드가 끝났나. 아직 정답을 낼 수 있는 사람(정답 전이고 판에 있는 사람)이 max(1, 인원/4) 이하로 남으면 끝.
+        /// 인원은 등록된 모두(나간 사람 포함) — 나간 사람은 정답을 낼 수 없으니 "끝난 쪽"으로 센다. 낼 수 있는 사람이 없어도 끝.
+        /// </summary>
+        bool RoundDone()
+        {
+            var s = State;
+            int canStillScore = 0;
+            foreach (var kv in s.Players)
+                if (kv.Value.RoundPlace == 0 && !s.Inactive.Contains(kv.Key)) canStillScore++;
+            if (canStillScore == 0) return true;
+            // 아무도 안 끝났으면(1인 판의 시작 등) 정원만으로 끝내지 않는다.
+            return canStillScore < s.Players.Count && canStillScore <= TriGrabConfig.RoundEndRemaining(s.Players.Count);
         }
 
         void EndRound(long t)

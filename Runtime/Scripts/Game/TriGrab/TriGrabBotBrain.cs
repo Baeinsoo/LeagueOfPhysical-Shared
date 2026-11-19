@@ -87,8 +87,14 @@ namespace LOP
             foreach (var h in s.Hooks) if (h.OwnerId == botId) return;
 
             s.Players.TryGetValue(botId, out var me);
-            // 이번 라운드에 정답을 냈으면 더 쏘지 않는다(걷기는 그대로).
-            bool reloading = me != null && (tick < me.ReloadUntilTick || me.RoundPlace > 0);
+            // 이번 라운드에 정답을 냈으면 더 쏘지 않고, 아직 못 낸 사람 길을 막지 않게 고리 바깥쪽 집 자리로 물러난다.
+            bool done = me != null && me.RoundPlace > 0;
+            if (done)
+            {
+                WalkTo(pos, HomePoint(mind, TriGrabConfig.BotRingMax - 0.6f), out move);
+                return;
+            }
+            bool reloading = me != null && tick < me.ReloadUntilTick;
             float baseNow = s.Clock.BaseAt(tick);
             float omega = s.Clock.Omega;
 
@@ -175,12 +181,16 @@ namespace LOP
                 return;
             }
 
-            if (!goal.HasValue)
-            {
-                float r = TriGrabConfig.BotRingMin + 0.8f;
-                goal = new Vector2(r * Mathf.Cos(mind.Home), r * Mathf.Sin(mind.Home));
-            }
-            Vector2 to = goal.Value - pos;
+            if (!goal.HasValue) goal = HomePoint(mind, TriGrabConfig.BotRingMin + 0.8f);
+            WalkTo(pos, goal.Value, out move);
+        }
+
+        static Vector2 HomePoint(BotMind mind, float radius) => new Vector2(radius * Mathf.Cos(mind.Home), radius * Mathf.Sin(mind.Home));
+
+        static void WalkTo(Vector2 pos, Vector2 goal, out Vector2 move)
+        {
+            move = Vector2.zero;
+            Vector2 to = goal - pos;
             float dd = to.magnitude;
             if (dd > 0.3f) move = to / dd;
         }
