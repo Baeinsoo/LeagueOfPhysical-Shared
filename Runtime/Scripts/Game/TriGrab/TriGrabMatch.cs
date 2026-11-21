@@ -267,7 +267,7 @@ namespace LOP
             {
                 s.RoundCorrectCount++;
                 p.RoundPlace = s.RoundCorrectCount;
-                p.RoundPoints = TriGrabConfig.PlacePoints(p.RoundPlace);
+                p.RoundPoints = TriGrabConfig.RoundPlacePoints(s.Round, p.RoundPlace);
                 p.Score += p.RoundPoints;
                 p.ReloadUntilTick = hook.EndTick;
                 int rtMs = (int)((t - (validSince >= 0 ? validSince : t)) * 20);
@@ -336,11 +336,11 @@ namespace LOP
             float prevBase = s.Clock.BaseAt(s.Clock.FreezeTick);
             s.Round++;
 
+            var prev = s.Rule;
             TriGrabRule rule;
-            do
-            {
-                rule = new TriGrabRule((TriGrabRuleType)_rng.Next(3), _rng.Next(3));
-            } while (s.Round > 1 && rule.Type == s.Rule.Type && (rule.Type == TriGrabRuleType.Match || rule.Color == s.Rule.Color));
+            int guard = 0;
+            do rule = PickRule(s.Round);
+            while (s.Round > 1 && SameOrder(rule, prev) && ++guard < 50);
             s.Rule = rule;
 
             long liveStart = t + TriGrabConfig.PrepTicks;
@@ -370,35 +370,90 @@ namespace LOP
             s.Version++;
         }
 
-        // 원본 시안 makeCard와 같다. want이면 정답 카드, 아니면 오답 카드(헷갈리게 일부러 한 칸을 주문 색으로).
+        // 라운드가 갈수록 주문이 어려워진다: 1라운드 한 축(글자색·쓰인 색·모양) → 2·3라운드 다섯 종류 → 4라운드·결승 모양까지 두 축.
+        TriGrabRule PickRule(int round)
+        {
+            int decoy = -1;
+            TriGrabRuleType type;
+            int value = 0, shape = -1;
+            bool negate = false;
+            if (TriGrabConfig.CompoundRound(round))
+            {
+                type = (TriGrabRuleType)_rng.Next(3);   // Ink · Word(색 이름) · Match에 모양을 붙인다
+                if (type != TriGrabRuleType.Match) value = _rng.Next(3);
+                shape = _rng.Next(3);
+                negate = _rng.NextDouble() < TriGrabConfig.NegateProbability(round);
+            }
+            else if (round <= 1)
+            {
+                int k = _rng.Next(3);
+                type = k == 0 ? TriGrabRuleType.Ink : k == 1 ? TriGrabRuleType.Word : TriGrabRuleType.Shape;
+                value = _rng.Next(3);
+            }
+            else
+            {
+                type = (TriGrabRuleType)_rng.Next(5);
+                if (type == TriGrabRuleType.Word) value = _rng.Next(TriGrabWords.Count);
+                else if (type == TriGrabRuleType.Ink || type == TriGrabRuleType.Shape) value = _rng.Next(3);
+            }
+            var plain = new TriGrabRule(type, value, shape, negate, -1);
+            if (plain.ColorToken != null && _rng.NextDouble() < TriGrabConfig.DecoyProbability(round))
+                decoy = (value + 1 + _rng.Next(2)) % 3;
+            return new TriGrabRule(type, value, shape, negate, decoy);
+        }
+
+        static bool SameOrder(in TriGrabRule a, in TriGrabRule b) => a.KoreanText == b.KoreanText;
+
+        // 시안 makeCard를 축 셋으로 넓혔다. want이면 정답 카드, 아니면 오답 카드 — 오답은 반쯤 일부러 주문과 한 축을 맞춰
+        // 헷갈리게 만든다(글자색 주문이면 그 색 이름을 쓰고, 모양 주문이면 그 모양 이름을 쓰는 식).
         TriGrabCard MakeCard(bool want, long t, bool allowCycle)
         {
             var s = State;
             var r = s.Rule;
             bool cyc = allowCycle && s.Round >= 2 && _rng.NextDouble() < TriGrabConfig.CycleProbability;
-            for (int i = 0; i < 60; i++)
+            int words = TriGrabConfig.WordCount(s.Round);
+            for (int i = 0; i < 80; i++)
             {
                 var c = new TriGrabCard
                 {
                     Id = _nextCardId,
-                    Word = _rng.Next(3),
+                    Word = _rng.Next(words),
                     Ink = _rng.Next(3),
+                    Shape = _rng.Next(3),
                     Cycles = cyc,
                     PeriodTicks = TriGrabConfig.CyclePeriodTicks(s.Round),
                     T0Tick = t,
                 };
-                if (!want && r.Type != TriGrabRuleType.Match && _rng.NextDouble() < 0.5)
+                if (!want && _rng.NextDouble() < 0.5) Confuse(ref c, r);
+                if (!want && r.IsCompound && _rng.NextDouble() < 0.5) c.Shape = r.ShapeFilter;
+                if (cyc && r.DependsOnInk)
                 {
-                    if (r.Type == TriGrabRuleType.Ink) c.Word = r.Color; else c.Ink = r.Color;
-                }
-                if (cyc)
-                {
-                    if (r.Type != TriGrabRuleType.Word || (c.Word == r.Color) == want) { _nextCardId++; return c; }
+                    // 도는 카드는 색 차례에 따라 정답이 된다 — 정답 카드는 언젠가 정답이 되는 것만, 오답 자리엔 아무것이나(시안과 같다).
+                    if (!want || CanEverMatch(r, c)) { _nextCardId++; return c; }
                     continue;
                 }
                 if (r.Matches(c, t) == want) { _nextCardId++; return c; }
             }
             return new TriGrabCard { Id = _nextCardId++, T0Tick = t, PeriodTicks = TriGrabConfig.CyclePeriodTicks(s.Round) };
+        }
+
+        static void Confuse(ref TriGrabCard c, in TriGrabRule r)
+        {
+            switch (r.Type)
+            {
+                case TriGrabRuleType.Ink: c.Word = r.Color; break;
+                case TriGrabRuleType.Word:
+                    if (TriGrabWords.IsColorWord(r.Color)) c.Ink = r.Color;
+                    else c.Shape = r.Color - TriGrabWords.FirstShapeWord;
+                    break;
+                case TriGrabRuleType.Shape: c.Word = TriGrabWords.ShapeWord(r.Color); break;
+            }
+        }
+
+        static bool CanEverMatch(in TriGrabRule r, in TriGrabCard c)
+        {
+            for (int ink = 0; ink < 3; ink++) if (r.MatchesWithInk(c, ink)) return true;
+            return false;
         }
     }
 }

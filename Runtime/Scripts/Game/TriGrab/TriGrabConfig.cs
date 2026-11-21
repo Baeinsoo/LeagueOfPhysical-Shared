@@ -38,8 +38,32 @@ namespace LOP
 
         public static float HookSpeedPerTick => HookLength / ReachTicks;
 
-        /// <summary>그 라운드에서 k번째로 정답을 낸 사람의 점수: 10, 9, 8, … 최소 1.</summary>
+        /// <summary>그 라운드에서 k번째로 정답을 낸 사람의 기본 점수: 10, 9, 8, … 최소 1.</summary>
         public static int PlacePoints(int place) => System.Math.Max(1, 11 - place);
+
+        /// <summary>마지막 라운드(결승)는 점수 2배 — 뒤처진 사람도 마지막까지 역전을 노린다.</summary>
+        public static int RoundMultiplier(int round) => round >= TotalRounds ? 2 : 1;
+
+        public static bool IsFinalRound(int round) => round >= TotalRounds;
+
+        /// <summary>그 라운드 k등의 점수(결승 2배 포함).</summary>
+        public static int RoundPlacePoints(int round, int place) => PlacePoints(place) * RoundMultiplier(round);
+
+        /// <summary>주문 글의 색 이름을 다른 색으로 칠할 확률. 1라운드 없음 → 2·4라운드 반 → 3·결승 항상.</summary>
+        public static double DecoyProbability(int round)
+        {
+            if (IsFinalRound(round)) return 1.0;
+            switch (round) { case 1: return 0.0; case 2: return 0.5; case 3: return 1.0; default: return 0.5; }
+        }
+
+        /// <summary>복합 주문("글자색이 빨강인 세모")이 나오는 라운드 — 4라운드와 결승.</summary>
+        public static bool CompoundRound(int round) => round >= 4 || IsFinalRound(round);
+
+        /// <summary>결승의 복합 주문은 반쯤 뒤집힌다("글자색이 빨강이 아닌 세모").</summary>
+        public static double NegateProbability(int round) => IsFinalRound(round) ? 0.5 : 0.0;
+
+        /// <summary>1라운드 카드는 색 이름만 뽑는다(모양 주문의 헷갈림 카드만 그 모양 이름을 단다). 2라운드부터 모양 이름도 섞는다.</summary>
+        public static int WordCount(int round) => round <= 1 ? TriGrabWords.FirstShapeWord : TriGrabWords.Count;
 
         /// <summary>아직 정답을 못 낸 사람이 이 수 이하로 남으면 라운드가 끝난다. 2~7명은 1명, 8명은 2명.</summary>
         public static int RoundEndRemaining(int participants) => System.Math.Max(1, participants / 4);

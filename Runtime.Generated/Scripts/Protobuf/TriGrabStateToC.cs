@@ -22,38 +22,40 @@ public static partial class TriGrabStateToCReflection {
   static TriGrabStateToCReflection() {
     byte[] descriptorData = global::System.Convert.FromBase64String(
         string.Concat(
-          "ChVUcmlHcmFiU3RhdGVUb0MucHJvdG8ibwoPVHJpR3JhYkNhcmRXaXJlEgoK",
+          "ChVUcmlHcmFiU3RhdGVUb0MucHJvdG8ifgoPVHJpR3JhYkNhcmRXaXJlEgoK",
           "AmlkGAEgASgFEgwKBHdvcmQYAiABKAUSCwoDaW5rGAMgASgFEg4KBmN5Y2xl",
           "cxgEIAEoCBIUCgxwZXJpb2RfdGlja3MYBSABKAUSDwoHdDBfdGljaxgGIAEo",
-          "AyJLCg9UcmlHcmFiU2xvdFdpcmUSHgoEY2FyZBgBIAEoCzIQLlRyaUdyYWJD",
-          "YXJkV2lyZRIYChBlbXB0eV91bnRpbF90aWNrGAIgASgDIuUBCg9UcmlHcmFi",
-          "SG9va1dpcmUSEAoIb3duZXJfaWQYASABKAkSEQoJZmlyZV90aWNrGAIgASgD",
-          "EhAKCG9yaWdpbl94GAMgASgCEhAKCG9yaWdpbl96GAQgASgCEg0KBWRpcl94",
-          "GAUgASgCEg0KBWRpcl96GAYgASgCEhEKCXR1cm5fdGljaxgHIAEoAxITCgt0",
-          "dXJuX2xlbmd0aBgIIAEoAhIhCgdjYXJyaWVkGAkgASgLMhAuVHJpR3JhYkNh",
-          "cmRXaXJlEg4KBnJlc3VsdBgKIAEoBRIQCghlbmRfdGljaxgLIAEoAyKhAQoR",
-          "VHJpR3JhYlBsYXllcldpcmUSEQoJZW50aXR5X2lkGAEgASgJEg0KBXNjb3Jl",
-          "GAIgASgFEhAKCG1pc3Rha2VzGAMgASgFEhkKEXJlbG9hZF91bnRpbF90aWNr",
-          "GAQgASgDEhIKCmJlc3RfcnRfbXMYBSABKAUSEwoLcm91bmRfcGxhY2UYBiAB",
-          "KAUSFAoMcm91bmRfcG9pbnRzGAcgASgFIrADCg9UcmlHcmFiU3RhdGVUb0MS",
-          "DwoHdmVyc2lvbhgBIAEoBRINCgVwaGFzZRgCIAEoBRIWCg5waGFzZV9lbmRf",
-          "dGljaxgDIAEoAxINCgVyb3VuZBgEIAEoBRIRCglydWxlX3R5cGUYBSABKAUS",
-          "EgoKcnVsZV9jb2xvchgGIAEoBRITCgtiYXNlX2FuZ2xlMBgHIAEoAhINCgVv",
-          "bWVnYRgIIAEoAhIXCg9saXZlX3N0YXJ0X3RpY2sYCSABKAMSEwoLZnJlZXpl",
-          "X3RpY2sYCiABKAMSHwoFc2xvdHMYCyADKAsyEC5UcmlHcmFiU2xvdFdpcmUS",
-          "HwoFaG9va3MYDCADKAsyEC5UcmlHcmFiSG9va1dpcmUSIwoHcGxheWVycxgN",
-          "IAMoCzISLlRyaUdyYWJQbGF5ZXJXaXJlEhcKD3JvdW5kX3dpbm5lcl9pZBgO",
-          "IAEoCRIUCgx0YXJnZXRfc2NvcmUYDyABKAUSFwoPbWF0Y2hfd2lubmVyX2lk",
-          "GBAgASgJEhQKDHRvdGFsX3JvdW5kcxgRIAEoBRIYChByb3VuZF9saW1pdF90",
-          "aWNrGBIgASgDYgZwcm90bzM="));
+          "AxINCgVzaGFwZRgHIAEoBSJLCg9UcmlHcmFiU2xvdFdpcmUSHgoEY2FyZBgB",
+          "IAEoCzIQLlRyaUdyYWJDYXJkV2lyZRIYChBlbXB0eV91bnRpbF90aWNrGAIg",
+          "ASgDIuUBCg9UcmlHcmFiSG9va1dpcmUSEAoIb3duZXJfaWQYASABKAkSEQoJ",
+          "ZmlyZV90aWNrGAIgASgDEhAKCG9yaWdpbl94GAMgASgCEhAKCG9yaWdpbl96",
+          "GAQgASgCEg0KBWRpcl94GAUgASgCEg0KBWRpcl96GAYgASgCEhEKCXR1cm5f",
+          "dGljaxgHIAEoAxITCgt0dXJuX2xlbmd0aBgIIAEoAhIhCgdjYXJyaWVkGAkg",
+          "ASgLMhAuVHJpR3JhYkNhcmRXaXJlEg4KBnJlc3VsdBgKIAEoBRIQCghlbmRf",
+          "dGljaxgLIAEoAyKhAQoRVHJpR3JhYlBsYXllcldpcmUSEQoJZW50aXR5X2lk",
+          "GAEgASgJEg0KBXNjb3JlGAIgASgFEhAKCG1pc3Rha2VzGAMgASgFEhkKEXJl",
+          "bG9hZF91bnRpbF90aWNrGAQgASgDEhIKCmJlc3RfcnRfbXMYBSABKAUSEwoL",
+          "cm91bmRfcGxhY2UYBiABKAUSFAoMcm91bmRfcG9pbnRzGAcgASgFIv0DCg9U",
+          "cmlHcmFiU3RhdGVUb0MSDwoHdmVyc2lvbhgBIAEoBRINCgVwaGFzZRgCIAEo",
+          "BRIWCg5waGFzZV9lbmRfdGljaxgDIAEoAxINCgVyb3VuZBgEIAEoBRIRCgly",
+          "dWxlX3R5cGUYBSABKAUSEgoKcnVsZV9jb2xvchgGIAEoBRITCgtiYXNlX2Fu",
+          "Z2xlMBgHIAEoAhINCgVvbWVnYRgIIAEoAhIXCg9saXZlX3N0YXJ0X3RpY2sY",
+          "CSABKAMSEwoLZnJlZXplX3RpY2sYCiABKAMSHwoFc2xvdHMYCyADKAsyEC5U",
+          "cmlHcmFiU2xvdFdpcmUSHwoFaG9va3MYDCADKAsyEC5UcmlHcmFiSG9va1dp",
+          "cmUSIwoHcGxheWVycxgNIAMoCzISLlRyaUdyYWJQbGF5ZXJXaXJlEhcKD3Jv",
+          "dW5kX3dpbm5lcl9pZBgOIAEoCRIUCgx0YXJnZXRfc2NvcmUYDyABKAUSFwoP",
+          "bWF0Y2hfd2lubmVyX2lkGBAgASgJEhQKDHRvdGFsX3JvdW5kcxgRIAEoBRIY",
+          "ChByb3VuZF9saW1pdF90aWNrGBIgASgDEhgKEHJ1bGVfc2hhcGVfcGx1czEY",
+          "EyABKAUSEwoLcnVsZV9uZWdhdGUYFCABKAgSHAoUcnVsZV9kZWNveV9pbmtf",
+          "cGx1czEYFSABKAViBnByb3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::TriGrabCardWire), global::TriGrabCardWire.Parser, new[]{ "Id", "Word", "Ink", "Cycles", "PeriodTicks", "T0Tick" }, null, null, null, null),
+          new pbr::GeneratedClrTypeInfo(typeof(global::TriGrabCardWire), global::TriGrabCardWire.Parser, new[]{ "Id", "Word", "Ink", "Cycles", "PeriodTicks", "T0Tick", "Shape" }, null, null, null, null),
           new pbr::GeneratedClrTypeInfo(typeof(global::TriGrabSlotWire), global::TriGrabSlotWire.Parser, new[]{ "Card", "EmptyUntilTick" }, null, null, null, null),
           new pbr::GeneratedClrTypeInfo(typeof(global::TriGrabHookWire), global::TriGrabHookWire.Parser, new[]{ "OwnerId", "FireTick", "OriginX", "OriginZ", "DirX", "DirZ", "TurnTick", "TurnLength", "Carried", "Result", "EndTick" }, null, null, null, null),
           new pbr::GeneratedClrTypeInfo(typeof(global::TriGrabPlayerWire), global::TriGrabPlayerWire.Parser, new[]{ "EntityId", "Score", "Mistakes", "ReloadUntilTick", "BestRtMs", "RoundPlace", "RoundPoints" }, null, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::TriGrabStateToC), global::TriGrabStateToC.Parser, new[]{ "Version", "Phase", "PhaseEndTick", "Round", "RuleType", "RuleColor", "BaseAngle0", "Omega", "LiveStartTick", "FreezeTick", "Slots", "Hooks", "Players", "RoundWinnerId", "TargetScore", "MatchWinnerId", "TotalRounds", "RoundLimitTick" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::TriGrabStateToC), global::TriGrabStateToC.Parser, new[]{ "Version", "Phase", "PhaseEndTick", "Round", "RuleType", "RuleColor", "BaseAngle0", "Omega", "LiveStartTick", "FreezeTick", "Slots", "Hooks", "Players", "RoundWinnerId", "TargetScore", "MatchWinnerId", "TotalRounds", "RoundLimitTick", "RuleShapePlus1", "RuleNegate", "RuleDecoyInkPlus1" }, null, null, null, null)
         }));
   }
   #endregion
@@ -104,6 +106,7 @@ public sealed partial class TriGrabCardWire : pb::IMessage<TriGrabCardWire>
     cycles_ = other.cycles_;
     periodTicks_ = other.periodTicks_;
     t0Tick_ = other.t0Tick_;
+    shape_ = other.shape_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -185,6 +188,21 @@ public sealed partial class TriGrabCardWire : pb::IMessage<TriGrabCardWire>
     }
   }
 
+  /// <summary>Field number for the "shape" field.</summary>
+  public const int ShapeFieldNumber = 7;
+  private int shape_;
+  /// <summary>
+  /// 3차: 카드 모양 0 원 · 1 세모 · 2 네모. word는 0~2 색 이름, 3~5 모양 이름.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Shape {
+    get { return shape_; }
+    set {
+      shape_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -206,6 +224,7 @@ public sealed partial class TriGrabCardWire : pb::IMessage<TriGrabCardWire>
     if (Cycles != other.Cycles) return false;
     if (PeriodTicks != other.PeriodTicks) return false;
     if (T0Tick != other.T0Tick) return false;
+    if (Shape != other.Shape) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -219,6 +238,7 @@ public sealed partial class TriGrabCardWire : pb::IMessage<TriGrabCardWire>
     if (Cycles != false) hash ^= Cycles.GetHashCode();
     if (PeriodTicks != 0) hash ^= PeriodTicks.GetHashCode();
     if (T0Tick != 0L) hash ^= T0Tick.GetHashCode();
+    if (Shape != 0) hash ^= Shape.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -261,6 +281,10 @@ public sealed partial class TriGrabCardWire : pb::IMessage<TriGrabCardWire>
       output.WriteRawTag(48);
       output.WriteInt64(T0Tick);
     }
+    if (Shape != 0) {
+      output.WriteRawTag(56);
+      output.WriteInt32(Shape);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -295,6 +319,10 @@ public sealed partial class TriGrabCardWire : pb::IMessage<TriGrabCardWire>
       output.WriteRawTag(48);
       output.WriteInt64(T0Tick);
     }
+    if (Shape != 0) {
+      output.WriteRawTag(56);
+      output.WriteInt32(Shape);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -322,6 +350,9 @@ public sealed partial class TriGrabCardWire : pb::IMessage<TriGrabCardWire>
     }
     if (T0Tick != 0L) {
       size += 1 + pb::CodedOutputStream.ComputeInt64Size(T0Tick);
+    }
+    if (Shape != 0) {
+      size += 1 + pb::CodedOutputStream.ComputeInt32Size(Shape);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -352,6 +383,9 @@ public sealed partial class TriGrabCardWire : pb::IMessage<TriGrabCardWire>
     }
     if (other.T0Tick != 0L) {
       T0Tick = other.T0Tick;
+    }
+    if (other.Shape != 0) {
+      Shape = other.Shape;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -396,6 +430,10 @@ public sealed partial class TriGrabCardWire : pb::IMessage<TriGrabCardWire>
           T0Tick = input.ReadInt64();
           break;
         }
+        case 56: {
+          Shape = input.ReadInt32();
+          break;
+        }
       }
     }
   #endif
@@ -437,6 +475,10 @@ public sealed partial class TriGrabCardWire : pb::IMessage<TriGrabCardWire>
         }
         case 48: {
           T0Tick = input.ReadInt64();
+          break;
+        }
+        case 56: {
+          Shape = input.ReadInt32();
           break;
         }
       }
@@ -1757,6 +1799,9 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
     matchWinnerId_ = other.matchWinnerId_;
     totalRounds_ = other.totalRounds_;
     roundLimitTick_ = other.roundLimitTick_;
+    ruleShapePlus1_ = other.ruleShapePlus1_;
+    ruleNegate_ = other.ruleNegate_;
+    ruleDecoyInkPlus1_ = other.ruleDecoyInkPlus1_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -1988,6 +2033,45 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
     }
   }
 
+  /// <summary>Field number for the "rule_shape_plus1" field.</summary>
+  public const int RuleShapePlus1FieldNumber = 19;
+  private int ruleShapePlus1_;
+  /// <summary>
+  /// 3차 주문 확장. rule_type 3 = 모양, 4 = 글자와 모양이 같음. 아래 둘은 +1 해서 싣는다(0 = 없음).
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int RuleShapePlus1 {
+    get { return ruleShapePlus1_; }
+    set {
+      ruleShapePlus1_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "rule_negate" field.</summary>
+  public const int RuleNegateFieldNumber = 20;
+  private bool ruleNegate_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public bool RuleNegate {
+    get { return ruleNegate_; }
+    set {
+      ruleNegate_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "rule_decoy_ink_plus1" field.</summary>
+  public const int RuleDecoyInkPlus1FieldNumber = 21;
+  private int ruleDecoyInkPlus1_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int RuleDecoyInkPlus1 {
+    get { return ruleDecoyInkPlus1_; }
+    set {
+      ruleDecoyInkPlus1_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -2021,6 +2105,9 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
     if (MatchWinnerId != other.MatchWinnerId) return false;
     if (TotalRounds != other.TotalRounds) return false;
     if (RoundLimitTick != other.RoundLimitTick) return false;
+    if (RuleShapePlus1 != other.RuleShapePlus1) return false;
+    if (RuleNegate != other.RuleNegate) return false;
+    if (RuleDecoyInkPlus1 != other.RuleDecoyInkPlus1) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -2046,6 +2133,9 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
     if (MatchWinnerId.Length != 0) hash ^= MatchWinnerId.GetHashCode();
     if (TotalRounds != 0) hash ^= TotalRounds.GetHashCode();
     if (RoundLimitTick != 0L) hash ^= RoundLimitTick.GetHashCode();
+    if (RuleShapePlus1 != 0) hash ^= RuleShapePlus1.GetHashCode();
+    if (RuleNegate != false) hash ^= RuleNegate.GetHashCode();
+    if (RuleDecoyInkPlus1 != 0) hash ^= RuleDecoyInkPlus1.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -2127,6 +2217,18 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
       output.WriteRawTag(144, 1);
       output.WriteInt64(RoundLimitTick);
     }
+    if (RuleShapePlus1 != 0) {
+      output.WriteRawTag(152, 1);
+      output.WriteInt32(RuleShapePlus1);
+    }
+    if (RuleNegate != false) {
+      output.WriteRawTag(160, 1);
+      output.WriteBool(RuleNegate);
+    }
+    if (RuleDecoyInkPlus1 != 0) {
+      output.WriteRawTag(168, 1);
+      output.WriteInt32(RuleDecoyInkPlus1);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -2200,6 +2302,18 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
       output.WriteRawTag(144, 1);
       output.WriteInt64(RoundLimitTick);
     }
+    if (RuleShapePlus1 != 0) {
+      output.WriteRawTag(152, 1);
+      output.WriteInt32(RuleShapePlus1);
+    }
+    if (RuleNegate != false) {
+      output.WriteRawTag(160, 1);
+      output.WriteBool(RuleNegate);
+    }
+    if (RuleDecoyInkPlus1 != 0) {
+      output.WriteRawTag(168, 1);
+      output.WriteInt32(RuleDecoyInkPlus1);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -2257,6 +2371,15 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
     }
     if (RoundLimitTick != 0L) {
       size += 2 + pb::CodedOutputStream.ComputeInt64Size(RoundLimitTick);
+    }
+    if (RuleShapePlus1 != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(RuleShapePlus1);
+    }
+    if (RuleNegate != false) {
+      size += 2 + 1;
+    }
+    if (RuleDecoyInkPlus1 != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(RuleDecoyInkPlus1);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -2317,6 +2440,15 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
     }
     if (other.RoundLimitTick != 0L) {
       RoundLimitTick = other.RoundLimitTick;
+    }
+    if (other.RuleShapePlus1 != 0) {
+      RuleShapePlus1 = other.RuleShapePlus1;
+    }
+    if (other.RuleNegate != false) {
+      RuleNegate = other.RuleNegate;
+    }
+    if (other.RuleDecoyInkPlus1 != 0) {
+      RuleDecoyInkPlus1 = other.RuleDecoyInkPlus1;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -2409,6 +2541,18 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
           RoundLimitTick = input.ReadInt64();
           break;
         }
+        case 152: {
+          RuleShapePlus1 = input.ReadInt32();
+          break;
+        }
+        case 160: {
+          RuleNegate = input.ReadBool();
+          break;
+        }
+        case 168: {
+          RuleDecoyInkPlus1 = input.ReadInt32();
+          break;
+        }
       }
     }
   #endif
@@ -2498,6 +2642,18 @@ public sealed partial class TriGrabStateToC : pb::IMessage<TriGrabStateToC>
         }
         case 144: {
           RoundLimitTick = input.ReadInt64();
+          break;
+        }
+        case 152: {
+          RuleShapePlus1 = input.ReadInt32();
+          break;
+        }
+        case 160: {
+          RuleNegate = input.ReadBool();
+          break;
+        }
+        case 168: {
+          RuleDecoyInkPlus1 = input.ReadInt32();
           break;
         }
       }

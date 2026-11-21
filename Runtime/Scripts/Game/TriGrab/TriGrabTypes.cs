@@ -3,13 +3,49 @@ using UnityEngine;
 namespace LOP
 {
     public enum TriGrabColor { Red = 0, Yellow = 1, Blue = 2 }
-    public enum TriGrabRuleType { Ink = 0, Word = 1, Match = 2 }
+    public enum TriGrabShape { Circle = 0, Triangle = 1, Square = 2 }
+    /// <summary>
+    /// 주문 종류. Ink = 글자색, Word = 쓰인 말(색 이름 0~2 · 모양 이름 3~5), Match = 글자(색 이름)와 글자색이 같음,
+    /// Shape = 카드 모양, ShapeMatch = 글자(모양 이름)와 카드 모양이 같음.
+    /// </summary>
+    public enum TriGrabRuleType { Ink = 0, Word = 1, Match = 2, Shape = 3, ShapeMatch = 4 }
     public enum TriGrabPhase { Waiting = 0, Prep = 1, Live = 2, Resolved = 3, Over = 4 }
     public enum TriGrabHookResult { None = 0, Correct = 1, Wrong = 2 }
 
+    /// <summary>카드에 쓰이는 말. 0~2는 색 이름(빨강·노랑·파랑), 3~5는 모양 이름(원·세모·네모).</summary>
+    public static class TriGrabWords
+    {
+        public const int Count = 6;
+        public const int FirstShapeWord = 3;
+
+        public static bool IsColorWord(int word) => word >= 0 && word < FirstShapeWord;
+        public static bool IsShapeWord(int word) => word >= FirstShapeWord && word < Count;
+        public static int ShapeWord(int shape) => FirstShapeWord + shape;
+
+        public static string ColorName(int c)
+        {
+            switch (c) { case 0: return "빨강"; case 1: return "노랑"; default: return "파랑"; }
+        }
+
+        public static string ShapeName(int s)
+        {
+            switch (s) { case 0: return "원"; case 1: return "세모"; default: return "네모"; }
+        }
+
+        public static string Name(int word) => IsShapeWord(word) ? ShapeName(word - FirstShapeWord) : ColorName(word);
+
+        /// <summary>마지막 글자에 받침이 있나(조사 고르기 — "빨강이라고" / "세모라고").</summary>
+        public static bool HasFinalConsonant(string word)
+        {
+            if (string.IsNullOrEmpty(word)) return false;
+            char ch = word[word.Length - 1];
+            return ch >= 0xAC00 && ch <= 0xD7A3 && (ch - 0xAC00) % 28 != 0;
+        }
+    }
+
     public struct TriGrabCard
     {
-        public int Id, Word, Ink;
+        public int Id, Word, Ink, Shape;
         public bool Cycles;
         public int PeriodTicks;
         public long T0Tick;
@@ -23,40 +59,109 @@ namespace LOP
         }
     }
 
+    /// <summary>
+    /// 주문. 한 조건(<see cref="Type"/>·<see cref="Color"/>)에, 후반 라운드엔 모양 거르기(<see cref="ShapeFilter"/>)와
+    /// 뒤집기(<see cref="Negate"/> — "~이 아닌")가 붙는다. <see cref="DecoyInk"/>는 주문 글의 색 이름을 다른 색으로
+    /// 칠하라는 표시일 뿐 판정에는 안 쓴다(주문을 읽는 순간부터 속이는 장치).
+    /// </summary>
     public readonly struct TriGrabRule
     {
         public readonly TriGrabRuleType Type;
+        /// <summary>Ink는 색, Word는 말 번호(0~5), Shape는 모양. Match·ShapeMatch는 안 쓴다.</summary>
         public readonly int Color;
+        /// <summary>-1이면 없음. 0~2면 그 모양 카드 중에서만 고른다(복합 주문).</summary>
+        public readonly int ShapeFilter;
+        public readonly bool Negate;
+        /// <summary>-1이면 없음. 주문 글의 색 이름을 이 색으로 칠한다.</summary>
+        public readonly int DecoyInk;
 
-        public TriGrabRule(TriGrabRuleType type, int color) { Type = type; Color = color; }
+        public TriGrabRule(TriGrabRuleType type, int color) : this(type, color, -1, false, -1) { }
+
+        public TriGrabRule(TriGrabRuleType type, int color, int shapeFilter, bool negate, int decoyInk)
+        {
+            Type = type; Color = color; ShapeFilter = shapeFilter; Negate = negate; DecoyInk = decoyInk;
+        }
+
+        public bool IsCompound => ShapeFilter >= 0;
+
+        /// <summary>판정이 글자색을 보나 — 그러면 도는 카드는 때에 따라 정답이 된다.</summary>
+        public bool DependsOnInk => Type == TriGrabRuleType.Ink || Type == TriGrabRuleType.Match;
 
         public bool Matches(in TriGrabCard c, long tick)
         {
+            if (ShapeFilter >= 0 && c.Shape != ShapeFilter) return false;
+            return BaseMatches(c, c.InkAt(tick)) != Negate;
+        }
+
+        /// <summary>글자색을 <paramref name="ink"/>로 본 판정(도는 카드가 언젠가 정답이 되나 따질 때).</summary>
+        public bool MatchesWithInk(in TriGrabCard c, int ink)
+        {
+            if (ShapeFilter >= 0 && c.Shape != ShapeFilter) return false;
+            return BaseMatches(c, ink) != Negate;
+        }
+
+        bool BaseMatches(in TriGrabCard c, int ink)
+        {
             switch (Type)
             {
-                case TriGrabRuleType.Ink: return c.InkAt(tick) == Color;
+                case TriGrabRuleType.Ink: return ink == Color;
                 case TriGrabRuleType.Word: return c.Word == Color;
-                default: return c.Word == c.InkAt(tick);
+                case TriGrabRuleType.Match: return TriGrabWords.IsColorWord(c.Word) && c.Word == ink;
+                case TriGrabRuleType.Shape: return c.Shape == Color;
+                default: return TriGrabWords.IsShapeWord(c.Word) && c.Word - TriGrabWords.FirstShapeWord == c.Shape;
             }
         }
+
+        /// <summary>주문 글에 든 색 이름(HUD가 칠한다). 없으면 null.</summary>
+        public string ColorToken
+        {
+            get
+            {
+                if (Type == TriGrabRuleType.Ink) return TriGrabWords.ColorName(Color);
+                if (Type == TriGrabRuleType.Word && TriGrabWords.IsColorWord(Color)) return TriGrabWords.ColorName(Color);
+                return null;
+            }
+        }
+
+        /// <summary>색 이름을 칠할 색 — 속임이면 다른 색, 아니면 그 색 그대로.</summary>
+        public int ColorTokenInk => DecoyInk >= 0 ? DecoyInk : Color;
 
         public string KoreanText
         {
             get
             {
-                switch (Type)
-                {
-                    case TriGrabRuleType.Ink: return "글자색이 " + ColorName(Color) + "인 카드";
-                    case TriGrabRuleType.Word: return "'" + ColorName(Color) + "'이라고 쓰인 카드";
-                    default: return "글자와 색이 같은 카드";
-                }
+                if (IsCompound) return Modifier() + " " + TriGrabWords.ShapeName(ShapeFilter);
+                if (Type == TriGrabRuleType.Shape && !Negate) return TriGrabWords.ShapeName(Color) + " 카드";
+                return Modifier() + " 카드";
             }
         }
 
-        public static string ColorName(int c)
+        string Modifier()
         {
-            switch (c) { case 0: return "빨강"; case 1: return "노랑"; default: return "파랑"; }
+            switch (Type)
+            {
+                case TriGrabRuleType.Ink:
+                {
+                    string c = TriGrabWords.ColorName(Color);
+                    return Negate ? "글자색이 " + c + (TriGrabWords.HasFinalConsonant(c) ? "이" : "가") + " 아닌" : "글자색이 " + c + "인";
+                }
+                case TriGrabRuleType.Word:
+                {
+                    string w = TriGrabWords.Name(Color);
+                    string quote = "'" + w + "'" + (TriGrabWords.HasFinalConsonant(w) ? "이라고" : "라고");
+                    return Negate ? quote + " 쓰이지 않은" : quote + " 쓰인";
+                }
+                case TriGrabRuleType.Match: return Negate ? "글자와 색이 다른" : "글자와 색이 같은";
+                case TriGrabRuleType.Shape:
+                {
+                    string s = TriGrabWords.ShapeName(Color);
+                    return Negate ? s + (TriGrabWords.HasFinalConsonant(s) ? "이" : "가") + " 아닌" : s + "인";
+                }
+                default: return Negate ? "글자와 모양이 다른" : "글자와 모양이 같은";
+            }
         }
+
+        public static string ColorName(int c) => TriGrabWords.ColorName(c);
     }
 
     /// <summary>회전판 각도. 준비 중엔 안 돌고, Live 동안만 돌고, 라운드가 끝나면 멈춘다.</summary>

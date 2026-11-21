@@ -9,6 +9,8 @@ message TriGrabCardWire
 	bool cycles = 4;
 	int32 period_ticks = 5;
 	int64 t0_tick = 6;
+	// 3차: 카드 모양 0 원 · 1 세모 · 2 네모. word는 0~2 색 이름, 3~5 모양 이름.
+	int32 shape = 7;
 }
 
 // 회전판 슬롯 하나. card가 없으면 빈 슬롯.
@@ -73,4 +75,8 @@ message TriGrabStateToC
 	int32 total_rounds = 17;
 	// 이번 라운드 Live의 시간 상한 틱.
 	int64 round_limit_tick = 18;
+	// 3차 주문 확장. rule_type 3 = 모양, 4 = 글자와 모양이 같음. 아래 둘은 +1 해서 싣는다(0 = 없음).
+	int32 rule_shape_plus1 = 19;
+	bool rule_negate = 20;
+	int32 rule_decoy_ink_plus1 = 21;
 }
