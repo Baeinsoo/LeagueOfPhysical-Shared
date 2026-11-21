@@ -4,8 +4,9 @@ using UnityEngine;
 namespace LOP
 {
     /// <summary>
-    /// 삼색 그랩 봇 두뇌(시안의 "보통"). 정답이 일정 시간 떠 있어야 "안다", 도는 카드는 정답 색이 돌아올 때를 노려
-    /// 앞질러 겨눈다. 한 인스턴스로 봇 여러 명을 돌려도 된다(봇마다 반응 속도를 따로 갖는다).
+    /// 삼색 그랩 봇 두뇌. 정답이 일정 시간 떠 있어야 "안다", 도는 카드는 정답 색이 돌아올 때를 노려 앞질러 겨눈다.
+    /// 사람 손 빠르기에 맞췄다(3차): 기본 1.1~1.6초에 어려운 주문(두 축·뒤집기·속임 색)일수록 더 늦고 더 자주 헛손질한다.
+    /// 한 인스턴스로 봇 여러 명을 돌려도 된다(봇마다 반응 속도를 따로 갖는다).
     /// </summary>
     public sealed class TriGrabBotBrain
     {
@@ -21,7 +22,7 @@ namespace LOP
         readonly Dictionary<string, BotMind> _minds = new Dictionary<string, BotMind>();
         readonly Vector2[] _pos = new Vector2[TriGrabConfig.Slots];
 
-        public TriGrabBotBrain(int seed, float minRtMs = 400f, float maxRtMs = 560f)
+        public TriGrabBotBrain(int seed, float minRtMs = 1100f, float maxRtMs = 1600f)
         {
             _rng = new System.Random(seed);
             _minRtMs = minRtMs;
@@ -30,7 +31,28 @@ namespace LOP
 
         float Gauss() => (float)((_rng.NextDouble() + _rng.NextDouble() + _rng.NextDouble() - 1.5) * 2.0);
 
-        float SampleRtTicks(BotMind m) => Mathf.Max(200f, m.SkillMs + Gauss() * 70f) / 20f;
+        float SampleRtTicks(BotMind m) => Mathf.Max(500f, m.SkillMs + Gauss() * 200f) / 20f;
+
+        /// <summary>주문이 어려울수록 알아채는 데 더 걸리는 시간(ms).</summary>
+        public static float RuleDelayMs(in TriGrabRule r)
+        {
+            float ms = 0f;
+            if (r.IsCompound) ms += 450f;
+            if (r.Negate) ms += 250f;
+            if (r.DecoyInk >= 0) ms += 200f;
+            if (r.Type == TriGrabRuleType.Match || r.Type == TriGrabRuleType.ShapeMatch) ms += 150f;
+            return ms;
+        }
+
+        /// <summary>쏘기로 한 순간 정답 대신 가까운 오답을 쏠 확률(헛손질). 주문이 어려울수록 높다.</summary>
+        public static double SlipProbability(in TriGrabRule r)
+        {
+            double p = 0.05;
+            if (r.IsCompound) p += 0.07;
+            if (r.Negate) p += 0.05;
+            if (r.DecoyInk >= 0) p += 0.05;
+            return p;
+        }
 
         BotMind MindOf(string id, Vector2 pos)
         {
@@ -95,6 +117,7 @@ namespace LOP
                 return;
             }
             bool reloading = me != null && tick < me.ReloadUntilTick;
+            float rt = mind.RtTicks + RuleDelayMs(s.Rule) / 20f;
             float baseNow = s.Clock.BaseAt(tick);
             float omega = s.Clock.Omega;
 
@@ -116,10 +139,10 @@ namespace LOP
                 var slot = s.Slots[i];
                 if (!slot.Card.HasValue) continue;
                 var c = slot.Card.Value;
-                bool seenValid = slot.ValidSinceTick >= 0 && tick - slot.ValidSinceTick >= mind.RtTicks;
+                bool seenValid = slot.ValidSinceTick >= 0 && tick - slot.ValidSinceTick >= rt;
                 // 도는 카드는 "보고 있었다면" 정답 색이 돌아올 때를 노린다
                 bool known = c.Cycles
-                    ? ((tick - c.T0Tick >= mind.RtTicks && s.Rule.Type != TriGrabRuleType.Word) || seenValid)
+                    ? ((tick - c.T0Tick >= rt && s.Rule.DependsOnInk && CanEverMatch(s.Rule, c)) || seenValid)
                     : seenValid;
 
                 var (tt, ipos) = Intercept(pos, i, baseNow, omega);
@@ -164,8 +187,8 @@ namespace LOP
                 shotTt = misjudgeTt; shotPos = misjudgePos;
             }
 
-            // 헛손질: 쏘기로 한 순간 4%로 정답 대신 가까운 오답 카드를 쏜다(쏠 때마다 한 번만 굴린다).
-            if (hasShot && hasSlip && _rng.NextDouble() < 0.04)
+            // 헛손질: 쏘기로 한 순간 정답 대신 가까운 오답 카드를 쏜다(쏠 때마다 한 번만 굴린다, 주문이 어려울수록 자주).
+            if (hasShot && hasSlip && _rng.NextDouble() < SlipProbability(s.Rule))
             {
                 shotTt = slipTt; shotPos = slipPos;
             }
@@ -183,6 +206,12 @@ namespace LOP
 
             if (!goal.HasValue) goal = HomePoint(mind, TriGrabConfig.BotRingMin + 0.8f);
             WalkTo(pos, goal.Value, out move);
+        }
+
+        static bool CanEverMatch(in TriGrabRule r, in TriGrabCard c)
+        {
+            for (int ink = 0; ink < 3; ink++) if (r.MatchesWithInk(c, ink)) return true;
+            return false;
         }
 
         static Vector2 HomePoint(BotMind mind, float radius) => new Vector2(radius * Mathf.Cos(mind.Home), radius * Mathf.Sin(mind.Home));

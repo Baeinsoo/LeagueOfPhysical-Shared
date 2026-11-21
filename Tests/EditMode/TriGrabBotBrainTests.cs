@@ -10,7 +10,8 @@ namespace LOP.Tests
             var m = new TriGrabMatch(77);
             foreach (var id in ids) m.AddPlayer(id);
             m.Start(0);
-            for (t = 0; t <= TriGrabConfig.PrepTicks; t++) m.Tick(t);
+            //  3차 봇 반응(최대 약 110틱)보다 오래 전부터 떠 있던 카드를 만들 수 있게 Live에서 200틱 더 간다.
+            for (t = 0; t <= TriGrabConfig.PrepTicks + 200; t++) m.Tick(t);
             m.State.Rule = new TriGrabRule(TriGrabRuleType.Ink, 0);
             m.State.Clock = new TriGrabRoundClock { BaseAngle0 = 0f, Omega = 0f, LiveStartTick = t, FreezeTick = long.MaxValue };
             foreach (var s in m.State.Slots) { s.Card = null; s.EmptyUntilTick = long.MaxValue; s.ValidSinceTick = -1; }
@@ -24,7 +25,7 @@ namespace LOP.Tests
         {
             var m = LiveMatch(out long t, "bot");
             m.State.Slots[0].Card = new TriGrabCard { Id = 1, Word = 1, Ink = 0 };
-            m.State.Slots[0].ValidSinceTick = t - 60;
+            m.State.Slots[0].ValidSinceTick = t - 150;
             var brain = new TriGrabBotBrain(1);
             brain.Think("bot", Body, t, m.State, out var move, out var yaw);
             Assert.IsTrue(yaw.HasValue);
@@ -37,7 +38,7 @@ namespace LOP.Tests
         {
             var m = LiveMatch(out long t, "bot", "other");
             m.State.Slots[0].Card = new TriGrabCard { Id = 1, Word = 1, Ink = 0 };
-            m.State.Slots[0].ValidSinceTick = t - 60;
+            m.State.Slots[0].ValidSinceTick = t - 150;
             var brain = new TriGrabBotBrain(1);
             brain.Think("bot", Body, t, m.State, out _, out var before);
             Assert.IsTrue(before.HasValue, "양성 대조 — 아직 못 냈으면 쏜다");
@@ -51,7 +52,7 @@ namespace LOP.Tests
         {
             var m = LiveMatch(out long t, "bot", "other");
             m.State.Slots[0].Card = new TriGrabCard { Id = 1, Word = 1, Ink = 0 };
-            m.State.Slots[0].ValidSinceTick = t - 60;
+            m.State.Slots[0].ValidSinceTick = t - 150;
             var brain = new TriGrabBotBrain(1);
             m.State.Players["bot"].ReloadUntilTick = t + 100;   // 재장전 중 — 쏘지 않고 걷기만 본다
             brain.Think("bot", new Vector2(7f, 0f), t, m.State, out _, out _);   // 집 = 0도
@@ -79,7 +80,7 @@ namespace LOP.Tests
         {
             var m = LiveMatch(out long t, "bot");
             m.State.Slots[0].Card = new TriGrabCard { Id = 1, Word = 1, Ink = 0 };
-            m.State.Slots[0].ValidSinceTick = t - 60;
+            m.State.Slots[0].ValidSinceTick = t - 150;
             var brain = new TriGrabBotBrain(1);
             brain.Think("bot", Body, t, m.State, out _, out var yawBefore);
             Assert.IsTrue(yawBefore.HasValue, "양성 대조 — 갈고리가 없으면 쏜다");
@@ -95,7 +96,7 @@ namespace LOP.Tests
         {
             var m = LiveMatch(out long t, "bot");
             m.State.Slots[0].Card = new TriGrabCard { Id = 1, Word = 1, Ink = 0 };
-            m.State.Slots[0].ValidSinceTick = t - 60;
+            m.State.Slots[0].ValidSinceTick = t - 150;
             m.State.Players["bot"].ReloadUntilTick = t + 50;
             var brain = new TriGrabBotBrain(1);
             brain.Think("bot", Body, t, m.State, out _, out var yaw);
@@ -108,7 +109,7 @@ namespace LOP.Tests
             var m = LiveMatch(out long t, "bot");
             // 슬롯 0(4,0)이 정답. 몸이 (0,-8)... 대신 같은 줄 위 슬롯 4(-4,0) 쪽에서 쏘게 몸을 (-8,0)에 둔다: 슬롯 4가 앞을 막는다.
             m.State.Slots[0].Card = new TriGrabCard { Id = 1, Word = 1, Ink = 0 };
-            m.State.Slots[0].ValidSinceTick = t - 60;
+            m.State.Slots[0].ValidSinceTick = t - 150;
             m.State.Slots[4].Card = new TriGrabCard { Id = 2, Word = 0, Ink = 2 };
             var brain = new TriGrabBotBrain(1);
             brain.Think("bot", new Vector2(-8f, 0f), t, m.State, out _, out var yaw);
@@ -208,10 +209,57 @@ namespace LOP.Tests
                 foreach (var p in m.State.Players.Values) wrong += p.Mistakes;
             }
             Assert.Greater(right, 8, "양성 대조 — 라운드가 충분히 돌았다");
-            //  2차(순위 점수)부터는 한 라운드에 여섯 명이 정답을 낼 때까지 모두 계속 쏜다. 남이 먼저 가져간 카드를 겨눈 갈고리는
-            //  빈손으로 돌아오므로 경합은 오답에 안 섞인다. 남은 오답은 봇이 겨눈 카드 자체가 틀린 경우(도는 카드 박자, 헛손질,
-            //  앞 카드 가림 판단)다 — 4판 실측 89 / 정답 120(0.43). 경합이 다시 섞이면(옛 식 112/120 = 0.48) 넘는다.
-            Assert.Less(wrong / (float)(wrong + right), 0.46f, $"오답 {wrong} (r1 {w1}, r2+ {w2}) / 정답 {right}");
+            //  봇이 겨눈 카드 자체가 틀린 경우(도는 카드 박자, 헛손질, 앞 카드 가림 판단)만 오답이 된다. 3차는 어려운 주문(두 축·뒤집기·
+            //  속임 색)일수록 헛손질을 일부러 늘려(최대 22%) 사람에게 틈을 준다 — 4판 실측 95 / 정답 111(0.46).
+            //  경합(남이 먼저 가져간 카드)은 3차 봇 속도에선 거의 안 생겨 이 비율로 못 잡는다 — TriGrabMatchTests의 경합 시험이 지킨다.
+            Assert.Less(wrong / (float)(wrong + right), 0.52f, $"오답 {wrong} (r1 {w1}, r2+ {w2}) / 정답 {right}");
+        }
+
+        // 3차: 봇은 사람 손 빠르기다. 정답이 막 뜬 뒤 첫 쏘기까지 평균 1초 넘게 걸리고, 어려운 주문(두 축)이면 더 늦다.
+        static double MeanFirstShotTicks(TriGrabRule rule)
+        {
+            long total = 0;
+            int n = 0;
+            for (int seed = 0; seed < 200; seed++)
+            {
+                var m = LiveMatch(out long t, "bot");
+                m.State.Rule = rule;
+                m.State.Slots[0].Card = new TriGrabCard { Id = 1, Word = 1, Ink = 0, Shape = 1 };
+                m.State.Slots[0].ValidSinceTick = t;
+                var brain = new TriGrabBotBrain(seed);
+                for (long k = t; k < t + 400; k++)
+                {
+                    brain.Think("bot", Body, k, m.State, out _, out var yaw);
+                    if (yaw.HasValue) { total += k - t; n++; break; }
+                }
+            }
+            Assert.Greater(n, 190, "양성 대조 — 결국 쏜다");
+            return total / (double)n;
+        }
+
+        [Test]
+        public void 봇은_정답을_알아채는_데_평균_1초_넘게_걸린다()
+        {
+            double plain = MeanFirstShotTicks(new TriGrabRule(TriGrabRuleType.Ink, 0));
+            Assert.Greater(plain, 50.0, $"평균 {plain * 20:F0} ms");
+            Assert.Less(plain, 90.0, $"너무 굼뜨지도 않다 — 평균 {plain * 20:F0} ms");
+        }
+
+        [Test]
+        public void 두_축_주문이면_봇이_더_늦게_알아챈다()
+        {
+            double plain = MeanFirstShotTicks(new TriGrabRule(TriGrabRuleType.Ink, 0));
+            double compound = MeanFirstShotTicks(new TriGrabRule(TriGrabRuleType.Ink, 0, 1, false, -1));
+            Assert.Greater(compound, plain + 15.0, $"단일 {plain * 20:F0} ms, 두 축 {compound * 20:F0} ms");
+        }
+
+        [Test]
+        public void 어려운_주문일수록_헛손질이_잦다()
+        {
+            var easy = new TriGrabRule(TriGrabRuleType.Ink, 0);
+            var hard = new TriGrabRule(TriGrabRuleType.Ink, 0, 1, true, 2);
+            Assert.Greater(TriGrabBotBrain.SlipProbability(hard), TriGrabBotBrain.SlipProbability(easy) + 0.1);
+            Assert.Greater(TriGrabBotBrain.RuleDelayMs(hard), TriGrabBotBrain.RuleDelayMs(easy) + 500f);
         }
 
         [Test]
@@ -241,9 +289,10 @@ namespace LOP.Tests
             {
                 var m = LiveMatch(out long t, "bot");
                 // 슬롯 0 (4,0): 지금 글자색 빨강(정답)인 도는 카드. 슬롯 2 (0,4): 지금 파랑인 도는 카드.
-                m.State.Slots[0].Card = new TriGrabCard { Id = 1, Word = 1, Ink = 0, Cycles = true, PeriodTicks = 100, T0Tick = t - 40 };
-                m.State.Slots[2].Card = new TriGrabCard { Id = 2, Word = 1, Ink = 2, Cycles = true, PeriodTicks = 100, T0Tick = t - 40 };
-                m.State.Slots[0].ValidSinceTick = t - 60;
+                // 3차 봇은 반응이 느리다(최대 약 2.2초 = 110틱) — 다 알아챘을 만큼 오래 전에 나온 카드로, 주기는 그보다 길게.
+                m.State.Slots[0].Card = new TriGrabCard { Id = 1, Word = 1, Ink = 0, Cycles = true, PeriodTicks = 400, T0Tick = t - 150 };
+                m.State.Slots[2].Card = new TriGrabCard { Id = 2, Word = 1, Ink = 2, Cycles = true, PeriodTicks = 400, T0Tick = t - 150 };
+                m.State.Slots[0].ValidSinceTick = t - 150;
                 var brain = new TriGrabBotBrain(seed);
                 brain.Think("bot", new Vector2(6.5f, 6.5f), t, m.State, out _, out var yaw);
                 if (!yaw.HasValue) continue;
