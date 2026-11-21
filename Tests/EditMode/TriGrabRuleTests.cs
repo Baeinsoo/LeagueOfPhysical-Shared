@@ -67,6 +67,74 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 글자와_색이_다른_주문은_색_이름_카드에서만_고른다()
+        {
+            var rule = new TriGrabRule(TriGrabRuleType.Match, 0, Triangle, true, -1);
+            Assert.IsTrue(rule.Matches(Card(0, 2, Triangle), 0), "양성 대조 — '빨강'을 파란 글씨로 쓴 세모");
+            Assert.IsFalse(rule.Matches(Card(1, 1, Triangle), 0), "글자와 색이 같으면 오답");
+            for (int ink = 0; ink < 3; ink++)
+                Assert.IsFalse(rule.Matches(Card(WordTriangle, ink, Triangle), 0), "'세모'라고 쓰인 카드는 색과 같을 수도 다를 수도 없다");
+        }
+
+        [Test]
+        public void 기본_주문값은_거르기도_속임도_없다()
+        {
+            var rule = default(TriGrabRule);
+            Assert.AreEqual(-1, rule.ShapeFilter);
+            Assert.AreEqual(-1, rule.DecoyInk);
+            Assert.IsFalse(rule.IsCompound);
+            Assert.AreEqual(2, new TriGrabRule(TriGrabRuleType.Ink, 0, 2, false, 1).ShapeFilter, "양성 대조");
+            Assert.AreEqual(1, new TriGrabRule(TriGrabRuleType.Ink, 0, 2, false, 1).DecoyInk);
+        }
+
+        [Test]
+        public void 모든_주문_조합에서_정답_카드와_오답_카드가_만들어진다()
+        {
+            var m = new TriGrabMatch(3);
+            m.AddPlayer("a");
+            int checkedRules = 0;
+            for (int round = 1; round <= TriGrabConfig.TotalRounds; round++)
+                for (int type = 0; type < 5; type++)
+                    for (int value = 0; value < TriGrabWords.Count; value++)
+                        for (int shape = -1; shape < 3; shape++)
+                            for (int neg = 0; neg < 2; neg++)
+                            {
+                                var rt = (TriGrabRuleType)type;
+                                if (rt != TriGrabRuleType.Word && value >= 3) continue;
+                                if (neg == 1 && shape < 0) continue;
+                                if (shape >= 0 && (rt == TriGrabRuleType.Shape || rt == TriGrabRuleType.ShapeMatch)) continue;
+                                m.State.Round = round;
+                                m.State.Rule = new TriGrabRule(rt, value, shape, neg == 1, -1);
+                                checkedRules++;
+                                for (int i = 0; i < 30; i++)
+                                {
+                                    var good = m.MakeCardForTest(true, 1000);
+                                    bool ever = false;
+                                    for (int ink = 0; ink < 3; ink++) ever |= m.State.Rule.MatchesWithInk(good, ink);
+                                    Assert.IsTrue(good.Cycles ? ever : m.State.Rule.Matches(good, 1000), $"정답 카드 — {m.State.Rule.KoreanText} 라운드 {round}");
+                                }
+                            }
+            Assert.Greater(checkedRules, 200, "양성 대조 — 조합을 다 훑었다");
+        }
+
+        [Test]
+        public void 일라운드_모양_주문의_정답_카드에도_모양_이름이_쓰인다()
+        {
+            var m = new TriGrabMatch(4);
+            m.AddPlayer("a");
+            m.State.Round = 1;
+            m.State.Rule = new TriGrabRule(TriGrabRuleType.Shape, Triangle);
+            int shapeWords = 0;
+            for (int i = 0; i < 300; i++)
+            {
+                var c = m.MakeCardForTest(true, 0);
+                Assert.IsTrue(m.State.Rule.Matches(c, 0));
+                if (TriGrabWords.IsShapeWord(c.Word)) shapeWords++;
+            }
+            Assert.Greater(shapeWords, 60, "모양 이름이 쓰였다고 늘 오답이면 그게 공략법이 된다");
+        }
+
+        [Test]
         public void 속임_색은_판정에_안_쓰인다()
         {
             var plain = new TriGrabRule(TriGrabRuleType.Ink, 0);

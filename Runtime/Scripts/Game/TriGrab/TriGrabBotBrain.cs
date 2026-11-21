@@ -22,8 +22,12 @@ namespace LOP
         readonly Dictionary<string, BotMind> _minds = new Dictionary<string, BotMind>();
         readonly Vector2[] _pos = new Vector2[TriGrabConfig.Slots];
 
-        public TriGrabBotBrain(int seed, float minRtMs = 1100f, float maxRtMs = 1600f)
+        readonly double _slipScale;
+
+        /// <param name="slipScale">헛손질 확률 배율. 시험이 0으로 꺼서 조준 실수만 잰다.</param>
+        public TriGrabBotBrain(int seed, float minRtMs = 1100f, float maxRtMs = 1600f, double slipScale = 1.0)
         {
+            _slipScale = slipScale;
             _rng = new System.Random(seed);
             _minRtMs = minRtMs;
             _maxRtMs = maxRtMs;
@@ -188,7 +192,7 @@ namespace LOP
             }
 
             // 헛손질: 쏘기로 한 순간 정답 대신 가까운 오답 카드를 쏜다(쏠 때마다 한 번만 굴린다, 주문이 어려울수록 자주).
-            if (hasShot && hasSlip && _rng.NextDouble() < SlipProbability(s.Rule))
+            if (hasShot && hasSlip && _rng.NextDouble() < SlipProbability(s.Rule) * _slipScale)
             {
                 shotTt = slipTt; shotPos = slipPos;
             }

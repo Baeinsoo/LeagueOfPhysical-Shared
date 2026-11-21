@@ -186,7 +186,8 @@ namespace LOP.Tests
             for (int seed = 1; seed <= 4; seed++)
             {
                 var m = new TriGrabMatch(seed * 31);
-                var brain = new TriGrabBotBrain(seed * 7);
+                //  헛손질(일부러 넣은 실수)을 끄고 조준·가림 판단의 실수만 잰다.
+                var brain = new TriGrabBotBrain(seed * 7, slipScale: 0.0);
                 var ids = new string[n];
                 var pos = new Vector2[n];
                 for (int i = 0; i < n; i++) { ids[i] = "bot" + i; m.AddPlayer(ids[i]); pos[i] = TriGrabMatchTests.Ring(i, n); }
@@ -209,10 +210,10 @@ namespace LOP.Tests
                 foreach (var p in m.State.Players.Values) wrong += p.Mistakes;
             }
             Assert.Greater(right, 8, "양성 대조 — 라운드가 충분히 돌았다");
-            //  봇이 겨눈 카드 자체가 틀린 경우(도는 카드 박자, 헛손질, 앞 카드 가림 판단)만 오답이 된다. 3차는 어려운 주문(두 축·뒤집기·
-            //  속임 색)일수록 헛손질을 일부러 늘려(최대 22%) 사람에게 틈을 준다 — 4판 실측 95 / 정답 111(0.46).
+            //  헛손질을 끈 채 잰 오답은 조준·가림 판단·도는 카드 박자의 실수뿐이다 — 4판 실측 49 / 정답 116(0.30).
+            //  조준이 무너지면(엉뚱한 카드를 겨눔) 이 비율이 뛴다. 헛손질(난이도만큼 늘린 의도된 실수)은 SlipProbability 시험이 따로 본다.
             //  경합(남이 먼저 가져간 카드)은 3차 봇 속도에선 거의 안 생겨 이 비율로 못 잡는다 — TriGrabMatchTests의 경합 시험이 지킨다.
-            Assert.Less(wrong / (float)(wrong + right), 0.52f, $"오답 {wrong} (r1 {w1}, r2+ {w2}) / 정답 {right}");
+            Assert.Less(wrong / (float)(wrong + right), 0.36f, $"오답 {wrong} (r1 {w1}, r2+ {w2}) / 정답 {right}");
         }
 
         // 3차: 봇은 사람 손 빠르기다. 정답이 막 뜬 뒤 첫 쏘기까지 평균 1초 넘게 걸리고, 어려운 주문(두 축)이면 더 늦다.

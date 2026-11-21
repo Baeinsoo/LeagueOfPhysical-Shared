@@ -411,8 +411,9 @@ namespace LOP
             var s = State;
             var r = s.Rule;
             bool cyc = allowCycle && s.Round >= 2 && _rng.NextDouble() < TriGrabConfig.CycleProbability;
-            int words = TriGrabConfig.WordCount(s.Round);
-            for (int i = 0; i < 80; i++)
+            // 1라운드 모양 주문은 모양 이름도 섞는다 — 안 섞으면 "모양 이름이 쓰였으면 오답"이 공략법이 된다.
+            int words = r.Type == TriGrabRuleType.Shape ? TriGrabWords.Count : TriGrabConfig.WordCount(s.Round);
+            for (int i = 0; i < 120; i++)
             {
                 var c = new TriGrabCard
                 {
@@ -434,8 +435,23 @@ namespace LOP
                 }
                 if (r.Matches(c, t) == want) { _nextCardId++; return c; }
             }
+            // 뽑기가 다 빗나가면 모든 조합을 차례로 훑어 맞는 카드를 만든다(어디서 시작할지만 난수) — 정답 카드는 반드시 나온다.
+            int start = _rng.Next(TriGrabWords.Count * 9);
+            for (int k = 0; k < TriGrabWords.Count * 9; k++)
+            {
+                int n = (start + k) % (TriGrabWords.Count * 9);
+                var c = new TriGrabCard
+                {
+                    Id = _nextCardId, Word = n / 9, Ink = n / 3 % 3, Shape = n % 3,
+                    PeriodTicks = TriGrabConfig.CyclePeriodTicks(s.Round), T0Tick = t,
+                };
+                if (r.Matches(c, t) == want) { _nextCardId++; return c; }
+            }
             return new TriGrabCard { Id = _nextCardId++, T0Tick = t, PeriodTicks = TriGrabConfig.CyclePeriodTicks(s.Round) };
         }
+
+        /// <summary>시험용: 지금 주문으로 정답(또는 오답) 카드를 하나 만든다.</summary>
+        public TriGrabCard MakeCardForTest(bool want, long t) => MakeCard(want, t, true);
 
         static void Confuse(ref TriGrabCard c, in TriGrabRule r)
         {

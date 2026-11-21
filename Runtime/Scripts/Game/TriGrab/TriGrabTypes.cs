@@ -69,17 +69,21 @@ namespace LOP
         public readonly TriGrabRuleType Type;
         /// <summary>Ink는 색, Word는 말 번호(0~5), Shape는 모양. Match·ShapeMatch는 안 쓴다.</summary>
         public readonly int Color;
+        // 기본값(default)이 "거르기·속임 없음"이 되도록 +1 해서 담는다.
+        readonly int shapeFilterPlus1, decoyInkPlus1;
         /// <summary>-1이면 없음. 0~2면 그 모양 카드 중에서만 고른다(복합 주문).</summary>
-        public readonly int ShapeFilter;
+        public int ShapeFilter => shapeFilterPlus1 - 1;
         public readonly bool Negate;
         /// <summary>-1이면 없음. 주문 글의 색 이름을 이 색으로 칠한다.</summary>
-        public readonly int DecoyInk;
+        public int DecoyInk => decoyInkPlus1 - 1;
 
         public TriGrabRule(TriGrabRuleType type, int color) : this(type, color, -1, false, -1) { }
 
         public TriGrabRule(TriGrabRuleType type, int color, int shapeFilter, bool negate, int decoyInk)
         {
-            Type = type; Color = color; ShapeFilter = shapeFilter; Negate = negate; DecoyInk = decoyInk;
+            Type = type; Color = color; Negate = negate;
+            shapeFilterPlus1 = shapeFilter < 0 ? 0 : shapeFilter + 1;
+            decoyInkPlus1 = decoyInk < 0 ? 0 : decoyInk + 1;
         }
 
         public bool IsCompound => ShapeFilter >= 0;
@@ -90,13 +94,22 @@ namespace LOP
         public bool Matches(in TriGrabCard c, long tick)
         {
             if (ShapeFilter >= 0 && c.Shape != ShapeFilter) return false;
-            return BaseMatches(c, c.InkAt(tick)) != Negate;
+            return Judge(c, c.InkAt(tick));
         }
 
         /// <summary>글자색을 <paramref name="ink"/>로 본 판정(도는 카드가 언젠가 정답이 되나 따질 때).</summary>
         public bool MatchesWithInk(in TriGrabCard c, int ink)
         {
             if (ShapeFilter >= 0 && c.Shape != ShapeFilter) return false;
+            return Judge(c, ink);
+        }
+
+        // "글자와 색이 다른"은 색 이름이 쓰인 카드 중에서만 고른다 — 모양 이름 카드는 색과 같을 수도 다를 수도 없다.
+        // "글자와 모양이 다른"도 같은 이유로 모양 이름 카드만.
+        bool Judge(in TriGrabCard c, int ink)
+        {
+            if (Negate && Type == TriGrabRuleType.Match && !TriGrabWords.IsColorWord(c.Word)) return false;
+            if (Negate && Type == TriGrabRuleType.ShapeMatch && !TriGrabWords.IsShapeWord(c.Word)) return false;
             return BaseMatches(c, ink) != Negate;
         }
 
