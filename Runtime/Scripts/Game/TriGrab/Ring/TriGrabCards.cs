@@ -7,6 +7,13 @@ namespace LOP.TriGrab
     {
         const int MaxTries = 800;
 
+        /// <summary>솟아오르는 정도 0~1(시안 popK). 0.5 미만이면 아직 손에 안 닿는다.</summary>
+        public static float PopK(TriGrabCard c, long tick)
+        {
+            float k = Math.Min(1f, (float)(tick - c.BornTick) / TriGrabConfig.PopTicks);
+            return 1f - (1f - k) * (1f - k);
+        }
+
         public static TriGrabRule PickRule(Random rng, TriGrabRule? previous)
         {
             int k = rng.Next(3);
