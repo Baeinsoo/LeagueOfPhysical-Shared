@@ -74,7 +74,32 @@ namespace LOP.TriGrab
 
         public void SetActive(string id, bool active)
         {
-            if (active) State.Inactive.Remove(id); else State.Inactive.Add(id);
+            if (active)
+            {
+                State.Inactive.Remove(id);
+                return;
+            }
+            State.Inactive.Add(id);
+            DropHookOf(id);
+        }
+
+        // 나간 사람의 손은 지우고, 끌던 카드는 점수 없이 사라진다(라운드 끝과 같은 처리) — 몸이 없어도 손이 점수를 내지 않게.
+        void DropHookOf(string id)
+        {
+            var h = HookOf(id);
+            if (h == null) return;
+            State.Hooks.Remove(h);
+            if (h.CardId >= 0)
+            {
+                for (int i = 0; i < State.Cards.Count; i++)
+                {
+                    var c = State.Cards[i];
+                    if (c.Id != h.CardId || c.CarriedBy != id) continue;
+                    c.CarriedBy = null;
+                    c.Gone = true;
+                }
+            }
+            State.Version++;
         }
 
         public void Start(long tick)

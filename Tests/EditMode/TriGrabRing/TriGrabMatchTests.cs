@@ -192,6 +192,35 @@ namespace LOP.TriGrab.Tests
         }
 
         [Test]
+        public void Leaver_DropsHook_CarriedCardGoneWithoutScore()
+        {
+            Setup();
+            var card = SetupTarget(true);
+            Assert.IsTrue(_m.TryFire("a", BodyA, YawMinusX, _t));
+            for (int i = 0; i < 80 && _m.HookOf("a").State != TriGrabHookState.Back; i++) Step();
+            Assert.AreEqual("a", card.CarriedBy, "잡고 돌아오는 중(전제)");
+            int v = _m.State.Version;
+            _m.SetActive("a", false);
+            Assert.IsNull(_m.HookOf("a"), "나간 사람 손은 지운다");
+            Assert.IsNull(card.CarriedBy);
+            Assert.IsTrue(card.Gone, "끌려가던 카드는 점수 없이 사라진다");
+            Assert.Greater(_m.State.Version, v);
+            Step(60);
+            Assert.AreEqual(0, _m.State.Players["a"].Score);
+            Assert.AreEqual(0, _m.State.Players["a"].Correct);
+        }
+
+        [Test]
+        public void Leaver_OtherPlayersHookUntouched()
+        {
+            Setup();
+            ToLive();
+            Assert.IsTrue(_m.TryFire("b", BodyB, YawPlusX, _t));
+            _m.SetActive("a", false);
+            Assert.IsNotNull(_m.HookOf("b"));
+        }
+
+        [Test]
         public void Quota_EndsRoundWhenAllOkTaken()
         {
             Setup();
