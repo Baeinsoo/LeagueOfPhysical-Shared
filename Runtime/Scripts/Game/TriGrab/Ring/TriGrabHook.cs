@@ -106,19 +106,25 @@ namespace LOP.TriGrab
             h.TurnTick = tick;
         }
 
-        /// <summary>몸이 움직였을 수 있으니 매 틱 몸 자리를 시작점으로 다시 잡는다.</summary>
+        /// <summary>
+        /// 손끝이 지금 몸 쪽으로 곧게 다가온다(몸이 움직여도 끊기지 않는다). Origin·Dir 등 쏠 때의 값은 건드리지 않고,
+        /// Length는 손끝에서 몸까지의 거리로 갱신한다.
+        /// </summary>
         public static bool StepBack(TriGrabHook h, Vector2 bodyPos, IDictionary<int, TriGrabCard> cards, float dt)
         {
             if (h.State != TriGrabHookState.Back) return h.State == TriGrabHookState.Done;
-            h.Origin = bodyPos;
-            h.Length = Math.Max(0f, h.Length - TriGrabConfig.HookBackSpeed * dt);
-            h.Tip = h.Origin + h.Dir * h.Length;
+            float step = TriGrabConfig.HookBackSpeed * dt;
+            var to = bodyPos - h.Tip;
+            float d = to.Length();
+            bool arrived = d <= step + ArriveDistance;
+            if (!arrived) h.Tip += to / d * step;
+            h.Length = Vector2.Distance(h.Tip, bodyPos);
             if (h.CardId >= 0 && cards.TryGetValue(h.CardId, out var card))
             {
                 card.Pos = h.Tip;
                 card.Vel = Vector2.Zero;
             }
-            if (h.Length > ArriveDistance) return false;
+            if (!arrived) return false;
             h.State = TriGrabHookState.Done;
             return true;
         }

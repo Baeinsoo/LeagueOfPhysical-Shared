@@ -164,7 +164,37 @@ namespace LOP.TriGrab.Tests
             }
             Assert.IsTrue(done);
             Assert.AreEqual(TriGrabHookState.Done, h.State);
-            Assert.LessOrEqual(h.Length, TriGrabConfig.BodyRadius * 0.6f + 1e-4f);
+            Assert.LessOrEqual(h.Length, TriGrabConfig.HookBackSpeed * Dt + TriGrabConfig.BodyRadius * 0.6f + 1e-4f);
+        }
+
+        [Test]
+        public void Back_TipContinuous_WhenBodyMoves()
+        {
+            var c = Card(1, 5f);
+            var cards = new Dictionary<int, TriGrabCard> { { 1, c } };
+            var h = FireRight();
+            RunOut(h, new List<TriGrabCard> { c }, new List<TriGrabMole>(), Dt);
+            var origin = h.Origin; var dir = h.Dir;
+            float turnLen = h.TurnLength; long turnTick = h.TurnTick; long fireTick = h.FireTick;
+            float maxStep = TriGrabConfig.HookBackSpeed * Dt + 1e-4f;
+
+            var body = Vector2.Zero;
+            bool done = false;
+            for (int i = 0; i < 400 && !done; i++)
+            {
+                if (i < 10) body += new Vector2(0f, 0.3f); // 3 m 옆으로
+                var before = h.Tip;
+                done = TriGrabHook.StepBack(h, body, cards, Dt);
+                Assert.LessOrEqual(Vector2.Distance(before, h.Tip), maxStep);
+                Assert.AreEqual(h.Tip.X, c.Pos.X, 1e-4f);
+                Assert.AreEqual(h.Tip.Y, c.Pos.Y, 1e-4f);
+            }
+            Assert.IsTrue(done);
+            Assert.AreEqual(origin, h.Origin);
+            Assert.AreEqual(dir, h.Dir);
+            Assert.AreEqual(turnLen, h.TurnLength);
+            Assert.AreEqual(turnTick, h.TurnTick);
+            Assert.AreEqual(fireTick, h.FireTick);
         }
 
         [Test]
