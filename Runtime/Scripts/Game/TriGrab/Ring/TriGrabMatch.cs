@@ -59,6 +59,8 @@ namespace LOP.TriGrab
         readonly TriGrabMoleSpawner _moles = new TriGrabMoleSpawner();
         int _nextCardId;
         long _nextRefillTick;
+        int _ringCount, _ringIndex;
+        float _ringRadius, _ringRotation;
         TriGrabRule? _previousRule;
 
         public TriGrabMatch(int seed) { _rng = new Random(seed); }
@@ -178,7 +180,16 @@ namespace LOP.TriGrab
             State.OkSpawned = 0;
             _nextRefillTick = tick;
             SetPhase(TriGrabPhase.Live, tick + TriGrabConfig.LiveLimitTicks);
-            for (int i = 0; i < TriGrabConfig.CardsOnDisc + 2 && Refill(tick); i++) { }
+            // 첫 묶음은 가운데 작은 고리에 같은 간격으로 놓는다(겹치지 않게 고리는 필요하면 조금 넓힌다).
+            // 보충 규칙이 CardsOnDisc에서 멈추므로 첫 묶음도 그 수다.
+            int batch = TriGrabConfig.CardsOnDisc;
+            float need = TriGrabConfig.CardBumpRadius * 2f + 0.02f;
+            _ringRadius = Math.Max(TriGrabConfig.CardSpawnRadius, need / (2f * (float)Math.Sin(Math.PI / batch)));
+            _ringRotation = (float)(_rng.NextDouble() * Math.PI * 2);
+            _ringCount = batch;
+            _ringIndex = 0;
+            for (int i = 0; i < batch && Refill(tick); i++) { }
+            _ringCount = 0;
         }
 
         List<TriGrabCard> OnDisc()
@@ -227,8 +238,15 @@ namespace LOP.TriGrab
                 found = true;
             }
             if (!found) return false;
-            if (!TriGrabCardSim.TryFreeSpot(onDisc, _rng, out var spot)) return false;
-            float a = (float)(_rng.NextDouble() * Math.PI * 2);
+            Vector2 spot;
+            if (_ringCount > 0)
+            {
+                float a0 = _ringRotation + _ringIndex * (float)(Math.PI * 2 / _ringCount);
+                _ringIndex++;
+                spot = new Vector2((float)Math.Cos(a0), (float)Math.Sin(a0)) * _ringRadius;
+            }
+            else if (!TriGrabCardSim.TryCenterSpot(onDisc, _rng, out spot)) return false;
+            var dir = TriGrabCardSim.OutwardDirection(spot, _rng);
             var card = new TriGrabCard
             {
                 Id = _nextCardId++,
@@ -238,7 +256,7 @@ namespace LOP.TriGrab
                 Ok = wantOk,
                 BornTick = tick,
                 Pos = spot,
-                Vel = new Vector2((float)Math.Cos(a), (float)Math.Sin(a)) * TriGrabConfig.CardSpeed,
+                Vel = dir * TriGrabConfig.CardBurstSpeed,
             };
             State.Cards.Add(card);
             onDisc.Add(card);
