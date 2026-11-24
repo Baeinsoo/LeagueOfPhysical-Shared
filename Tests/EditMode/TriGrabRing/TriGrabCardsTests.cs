@@ -24,6 +24,31 @@ namespace LOP.TriGrab.Tests
         }
 
         [Test]
+        public void IsTrap_InkAndWordRules_EachMatchedField()
+        {
+            foreach (var type in new[] { TriGrabRuleType.Ink, TriGrabRuleType.Word })
+            {
+                var r = new TriGrabRule(type, 0, 1);
+                Assert.IsTrue(TriGrabCards.IsTrap(word: 2, ink: 0, fill: 3, r), type + " 글씨 색이 규칙 색");
+                Assert.IsTrue(TriGrabCards.IsTrap(word: 0, ink: 2, fill: 3, r), type + " 글자가 규칙 색");
+                Assert.IsTrue(TriGrabCards.IsTrap(word: 2, ink: 3, fill: 0, r), type + " 바탕이 규칙 색");
+                Assert.IsTrue(TriGrabCards.IsTrap(word: 2, ink: 1, fill: 3, r), type + " 글씨 색이 미끼 색");
+                Assert.IsFalse(TriGrabCards.IsTrap(word: 2, ink: 3, fill: 2, r), type + " 아무것도 안 겹침");
+                // 글자·바탕이 미끼 색인 것은 함정이 아니다(미끼는 글씨 색만 본다).
+                Assert.IsFalse(TriGrabCards.IsTrap(word: 1, ink: 3, fill: 1, r), type + " 미끼는 글씨 색만");
+            }
+        }
+
+        [Test]
+        public void IsTrap_MatchRule_FillEqualsWord()
+        {
+            var r = new TriGrabRule(TriGrabRuleType.Match, 0, 1);
+            Assert.IsTrue(TriGrabCards.IsTrap(word: 2, ink: 3, fill: 2, r));
+            Assert.IsFalse(TriGrabCards.IsTrap(word: 2, ink: 3, fill: 0, r), "규칙 값은 보지 않는다");
+            Assert.IsFalse(TriGrabCards.IsTrap(word: 0, ink: 1, fill: 3, r));
+        }
+
+        [Test]
         public void Make_NeverInvalid_And_HasEnoughOk()
         {
             var rng = new Random(12345);
