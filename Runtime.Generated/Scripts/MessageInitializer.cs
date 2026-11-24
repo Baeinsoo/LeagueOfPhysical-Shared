@@ -30,6 +30,8 @@ namespace LOP
             MessageFactory.RegisterCreator(MessageIds.PlayerPresenceToC, () => new PlayerPresenceToC());
             MessageFactory.RegisterCreator(MessageIds.StatAllocationToC, () => new StatAllocationToC());
             MessageFactory.RegisterCreator(MessageIds.StatAllocationToS, () => new StatAllocationToS());
+            MessageFactory.RegisterCreator(MessageIds.TriGrabCardsToC, () => new TriGrabCardsToC());
+            MessageFactory.RegisterCreator(MessageIds.TriGrabRingStateToC, () => new TriGrabRingStateToC());
             MessageFactory.RegisterCreator(MessageIds.TriGrabStateToC, () => new TriGrabStateToC());
             MessageFactory.RegisterCreator(MessageIds.UserEntitySnapToC, () => new UserEntitySnapToC());
             MessageFactory.RegisterCreator(MessageIds.WorldEventBatchToC, () => new WorldEventBatchToC());

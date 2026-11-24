@@ -29,5 +29,7 @@ namespace LOP
         public const ushort MountedArcheryStateToC         = 24;
         public const ushort KnockbackStateToC              = 25;
         public const ushort TriGrabStateToC                = 26;
+        public const ushort TriGrabRingStateToC            = 27;
+        public const ushort TriGrabCardsToC                = 28;
     }
 }
