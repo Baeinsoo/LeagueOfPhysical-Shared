@@ -27,6 +27,8 @@ namespace LOP
         private readonly SavePadField _savePads;
         private readonly ObstacleField _obstacles;
         private readonly CatchTargetField _catchTargets;
+        private readonly StormHazardField _storm;
+        private readonly StormHazardSystem _stormSystem;
 
         // 매 틱 도는 코드라 목록을 새로 만들지 않고 비워서 다시 쓴다.
         private readonly List<GameFramework.World.Entity> _divers = new List<GameFramework.World.Entity>();
@@ -64,7 +66,9 @@ namespace LOP
             int layerMask,
             SavePadField savePads = null,
             ObstacleField obstacles = null,
-            CatchTargetField catchTargets = null)
+            CatchTargetField catchTargets = null,
+            StormHazardField storm = null,
+            StormHazardSystem stormSystem = null)
             : base(entityRegistry, eventBuffer)
         {
             _moveSystem = moveSystem;
@@ -81,6 +85,8 @@ namespace LOP
             _savePads = savePads;
             _obstacles = obstacles;
             _catchTargets = catchTargets;
+            _storm = storm;
+            _stormSystem = stormSystem;
             _beforePositionLookup = TryGetBeforeMovePosition;
         }
 
@@ -120,7 +126,7 @@ namespace LOP
 
             for (int i = 0; i < _divers.Count; i++)
             {
-                ApplyPostureInput(_divers[i], deltaTime);
+                ApplyPostureInput(_divers[i], tick, deltaTime);
                 //  별을 잡은 뒤엔 입력과 상관없이 펴진 채 천천히 내려앉는다(엔딩처럼) — 입력 바로 뒤라 이번 틱 이동에 먹는다.
                 if ((_divers[i].Get<GameFramework.World.GroundState>()?.IsGrounded ?? false) == false)
                 {
@@ -137,7 +143,16 @@ namespace LOP
 
             for (int i = 0; i < _divers.Count; i++)
             {
-                _moveSystem.Tick(_divers[i], deltaTime, _config);
+                _moveSystem.Tick(_divers[i], deltaTime, _config, IsControlLocked(_divers[i], tick));
+            }
+
+            //  상승 기류에 실려 있으면 속도를 덮는다 — 이동이 정한 속도 뒤, 옮기기 앞.
+            if (_storm != null && _stormSystem != null)
+            {
+                for (int i = 0; i < _divers.Count; i++)
+                {
+                    _stormSystem.ApplyLift(_divers[i], tick, deltaTime, _storm);
+                }
             }
 
             //  지오메트리에 파묻힌 몸을 밖으로 밀고, 민 방향에 파고들던 속도를 지운다.
@@ -195,6 +210,19 @@ namespace LOP
             for (int i = 0; i < _divers.Count; i++)
             {
                 ToWorldVelocity(_divers[i], tick, deltaTime);
+            }
+
+            //  몸개그 장애물 — 다 옮긴 자리에서 이번 틱에 닿은 것을 본다. 결과 속도는 다음 틱 이동에 먹는다.
+            if (_storm != null && _stormSystem != null && _storm.IsEmpty == false)
+            {
+                for (int i = 0; i < _divers.Count; i++)
+                {
+                    var diver = _divers[i];
+                    UnityEngine.Vector3 before = _beforeMove.TryGetValue(diver.Id, out var b)
+                        ? b.position
+                        : GameFramework.World.EntityMotionExtensions.GetPosition(diver);
+                    _stormSystem.Detect(diver, tick, deltaTime, _storm, _config, before);
+                }
             }
 
             // 이동 뒤에 온다 — "발 딛고 있나"를 이동 커널이 방금 계산했기 때문이다.
@@ -498,7 +526,10 @@ namespace LOP
 
         // 입력이 자세를 바로 덮어쓰지 않는다 — 정해진 속도로만 움직인다. 그래야 자세가
         // 튀지 않고, 남을 예측하는 쪽의 오차도 완만해진다.
-        private void ApplyPostureInput(GameFramework.World.Entity entity, float deltaTime)
+        private static bool IsControlLocked(GameFramework.World.Entity entity, long tick)
+            => entity.Get<StormState>()?.ControlLocked(tick) ?? false;
+
+        private void ApplyPostureInput(GameFramework.World.Entity entity, long tick, float deltaTime)
         {
             var posture = entity.Get<Posture>();
             var command = entity.Get<InputBuffer>()?.Current;
@@ -530,6 +561,15 @@ namespace LOP
 
             if (command == null)
             {
+                return;
+            }
+
+            //  기절·떠오르는 중엔 조작이 안 먹는다 — 대자로 풀리고 패러세일이 접힌다.
+            if (IsControlLocked(entity, tick))
+            {
+                float unwind = _config.PostureRate * deltaTime;
+                posture.Axis = posture.Axis > unwind ? posture.Axis - unwind : 0f;
+                posture.Gliding = false;
                 return;
             }
 

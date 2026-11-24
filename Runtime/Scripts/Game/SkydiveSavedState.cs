@@ -28,11 +28,14 @@ namespace LOP
 
         //  저장한 세이브 발판. 안 담으면 되감은 뒤 저장이 사라지거나(되감기 전 저장) 남는다(되감기 뒤 저장).
         public readonly int SavePadId;
+        //  몸개그 장애물(기절·떠오름) — 안 담으면 되감은 뒤 기절이 풀리거나 남는다.
+        public readonly StormSavedState? Storm;
 
         private SkydiveSavedState(float axis, bool gliding, float stamina,
                                   bool emergencyUsed, float emergencyRemaining, SkydiveMotionState motion,
                                   System.Numerics.Vector3 drift, System.Numerics.Vector3 driftAnchor,
-                                  long finishedTick, float finishDepth, bool isGrounded, int savePadId)
+                                  long finishedTick, float finishDepth, bool isGrounded, int savePadId,
+                                  StormSavedState? storm)
         {
             Axis = axis;
             Gliding = gliding;
@@ -46,6 +49,7 @@ namespace LOP
             FinishDepth = finishDepth;
             IsGrounded = isGrounded;
             SavePadId = savePadId;
+            Storm = storm;
         }
 
         public static SkydiveSavedState Capture(GameFramework.World.Entity entity)
@@ -65,7 +69,8 @@ namespace LOP
                 entity.Get<FinishState>()?.FinishedTick ?? FinishState.NotFinished,
                 entity.Get<FinishState>()?.Depth ?? 0f,
                 entity.Get<GameFramework.World.GroundState>()?.IsGrounded ?? false,
-                entity.Get<SkydiveSave>()?.PadId ?? SkydiveSave.None);
+                entity.Get<SkydiveSave>()?.PadId ?? SkydiveSave.None,
+                StormSavedState.Capture(entity));
         }
 
         public void RestoreTo(GameFramework.World.Entity entity)
@@ -124,6 +129,7 @@ namespace LOP
             {
                 save.PadId = SavePadId;
             }
+            Storm?.RestoreTo(entity);
         }
     }
 }

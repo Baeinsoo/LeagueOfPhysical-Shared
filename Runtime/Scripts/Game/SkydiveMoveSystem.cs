@@ -22,7 +22,7 @@ namespace LOP
     /// </summary>
     public class SkydiveMoveSystem
     {
-        public void Tick(GameFramework.World.Entity entity, float deltaTime, in SkydiveConfig config)
+        public void Tick(GameFramework.World.Entity entity, float deltaTime, in SkydiveConfig config, bool inputLocked = false)
         {
             var velocity = entity.Get<GameFramework.World.Velocity>();
             var posture = entity.Get<Posture>();
@@ -32,7 +32,8 @@ namespace LOP
             }
 
             var linear = velocity.Linear;
-            var command = entity.Get<InputBuffer>()?.Current;
+            //  기절 중엔 입력이 없는 것과 같다(몸개그 장애물 — StormHazardSystem).
+            var command = inputLocked ? null : entity.Get<InputBuffer>()?.Current;
             float inputX = command == null ? 0f : command.Horizontal;
             float inputZ = command == null ? 0f : command.Vertical;
 
