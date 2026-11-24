@@ -40,13 +40,18 @@ namespace LOP
         }
     }
 
-    /// <summary>원통을 가로지르는 갈매기 V자 떼. 선두가 <see cref="LaneLength"/> 길이 길을 주기적으로 지나간다.</summary>
+    /// <summary>원통을 가로지르는 갈매기 떼(V자 또는 넓은 판). 선두가 <see cref="LaneLength"/> 길이 길을 주기적으로 지나간다.</summary>
     public readonly struct GullFlock
     {
         public readonly float Y, HeadingDegrees, Offset, SpeedPerTick, LaneLength;
         public readonly int Count, Phase;
-        public GullFlock(float y, float headingDegrees, float offset, float speedPerTick, float laneLength, int count, int phase)
-        { Y = y; HeadingDegrees = headingDegrees; Offset = offset; SpeedPerTick = speedPerTick; LaneLength = laneLength; Count = count; Phase = phase; }
+        /// <summary>0이면 V자, 아니면 한 줄에 이만큼씩 엇갈려 늘어선 넓은 판.</summary>
+        public readonly int Columns;
+        public GullFlock(float y, float headingDegrees, float offset, float speedPerTick, float laneLength, int count, int phase, int columns = 0)
+        { Y = y; HeadingDegrees = headingDegrees; Offset = offset; SpeedPerTick = speedPerTick; LaneLength = laneLength; Count = count; Phase = phase; Columns = columns; }
+
+        /// <summary>새 한 마리의 판정 반지름(몸 반지름은 따로 더한다).</summary>
+        public const float BirdRadius = 1.8f;
 
         public Vector3 Heading
         {
@@ -60,6 +65,12 @@ namespace LOP
             Vector3 side = new Vector3(-dir.z, 0f, dir.x);
             double travel = ((tick + Phase) * SpeedPerTick) % LaneLength;
             float lead = (float)travel - LaneLength * 0.5f;
+            if (Columns > 0)
+            {
+                int line = index / Columns, col = index % Columns;
+                float across = (col - (Columns - 1) * 0.5f) * 3.4f + (line % 2 == 1 ? 1.7f : 0f);
+                return dir * (lead - line * 3.4f) + side * (Offset + across) + Vector3.up * Y;
+            }
             int row = (index + 1) / 2;
             float sign = index == 0 ? 0f : (index % 2 == 1 ? 1f : -1f);
             return dir * (lead - row * 2.6f) + side * (Offset + sign * row * 2.4f) + Vector3.up * Y;
@@ -101,39 +112,62 @@ namespace LOP
                 return field;
             }
 
-            //  뭉게구름 쿠션 — 벽에서 안쪽으로 피어 있다(벽에서 6m 안쪽이 중심).
-            void Cushion(float y, float deg) => field.Cushions.Add(new CloudCushion(OnCircle(WallRadius - 6f, deg, y), 7f));
-            Cushion(1390f, 30f); Cushion(1210f, 150f); Cushion(1095f, 260f); Cushion(870f, 80f);
-            Cushion(700f, 300f); Cushion(545f, 190f); Cushion(430f, 110f);
-
-            //  먹구름 덩이 — 띠마다 여럿이 서로 다른 반지름·빠르기로 돈다.
-            var rng = new System.Random(1124);
-            void Band(float yLo, float yHi, int count)
+            //  밀도(사용자 11-24 "거의 충돌날 일이 없다"): 100m 떨어질 때마다 피할 것이 하나쯤 나오게.
+            //  먹구름은 띠마다 소용돌이 팔 셋 — 팔 사이가 길이고, 팔이 통째로 돈다(읽고 피하거나 펴서 기다린다).
+            float[] bands = { 1530f, 1390f, 1205f, 1085f, 840f, 690f, 520f, 430f };
+            for (int b = 0; b < bands.Length; b++)
             {
-                for (int i = 0; i < count; i++)
+                SpiralBand(field, bands[b], b * 37f, (b % 2 == 0 ? 1f : -1f) * (0.22f + 0.04f * (b % 3)), b);
+            }
+
+            //  뭉게구름 쿠션 — 원통 가운데쯤. 둘은 조리개 바로 아래 한가운데(열리면 다들 거기로 빠진다 → 뽀잉).
+            void Cushion(float y, float r, float deg, float size) => field.Cushions.Add(new CloudCushion(OnCircle(r, deg, y), size));
+            Cushion(1490f, 30f, 40f, 11f); Cushion(1345f, 35f, 200f, 11f); Cushion(1125f, 0f, 0f, 10f); Cushion(1060f, 25f, 120f, 11f);
+            Cushion(885f, 30f, 300f, 11f); Cushion(800f, 38f, 60f, 11f); Cushion(625f, 28f, 230f, 11f); Cushion(568f, 0f, 0f, 10f);
+            Cushion(465f, 33f, 150f, 11f);
+
+            //  갈매기 떼 — 3줄 x 10마리 넓은 판으로 원통을 가로지른다(초속 20~25m).
+            float lane = WallRadius * 2f + 40f;
+            field.Flocks.Add(new GullFlock(1465f, 30f, 0f, 0.4f, lane, 30, 0, columns: 10));
+            field.Flocks.Add(new GullFlock(1335f, 200f, 12f, 0.45f, lane, 30, 90, columns: 10));
+            field.Flocks.Add(new GullFlock(1185f, 120f, -10f, 0.4f, lane, 30, 40, columns: 10));
+            field.Flocks.Add(new GullFlock(975f, 300f, 5f, 0.5f, lane, 30, 150, columns: 10));
+            field.Flocks.Add(new GullFlock(870f, 70f, -15f, 0.45f, lane, 30, 220, columns: 10));
+            field.Flocks.Add(new GullFlock(500f, 250f, 8f, 0.5f, lane, 30, 310, columns: 10));
+
+            //  상승 기류 소용돌이 — 바람 기둥(Up_960, 0° 반지름 35)과 다른 자리.
+            void Lift(float r, float deg, float baseY, float height) => field.Updrafts.Add(new Updraft(OnCircle(r, deg, baseY), 11f, height));
+            Lift(35f, 220f, 1470f, 35f); Lift(30f, 300f, 1110f, 40f); Lift(35f, 150f, 940f, 40f);
+            Lift(25f, 240f, 780f, 40f); Lift(30f, 20f, 700f, 35f); Lift(30f, 330f, 470f, 30f);
+            return field;
+        }
+
+        /// <summary>먹구름 소용돌이 띠 — 팔 셋(가운데 6m → 벽 55m, 110° 비틀림)에 구름을 11m 간격으로 늘어놓는다. 이웃 구름이 겹쳐 팔 사이로만 빠진다.</summary>
+        private static void SpiralBand(StormHazardField field, float y, float baseDegrees, float degreesPerTick, int band)
+        {
+            const int arms = 3;
+            const float r0 = 6f, r1 = 55f, twist = 110f, spacing = 11f, radius = 6f;
+            for (int arm = 0; arm < arms; arm++)
+            {
+                float armStart = baseDegrees + arm * 360f / arms;
+                Vector3 prev = default;
+                float carried = 0f;
+                for (int s = 0; s <= 200; s++)
                 {
-                    float y = yLo + (float)rng.NextDouble() * (yHi - yLo);
-                    float orbit = 10f + (float)rng.NextDouble() * (WallRadius - 18f);
-                    float start = (float)rng.NextDouble() * 360f;
-                    float speed = (0.12f + (float)rng.NextDouble() * 0.25f) * (rng.NextDouble() < 0.5 ? -1f : 1f);
-                    float radius = 3.5f + (float)rng.NextDouble() * 2.5f;
-                    field.Clouds.Add(new StormCloud(y, orbit, start, speed, 3f + (float)rng.NextDouble() * 4f, 300 + rng.Next(200), radius));
+                    float t = s / 200f;
+                    float deg = armStart + twist * t;
+                    float r = Mathf.Lerp(r0, r1, t);
+                    Vector3 p = OnCircle(r, deg, 0f);
+                    if (s > 0) carried += Vector3.Distance(p, prev);
+                    if (s == 0 || carried >= spacing)
+                    {
+                        float bob = 2f + StormDebrisGeometry.Jitter(band * 7 + arm, s) * 1.5f;
+                        field.Clouds.Add(new StormCloud(y, r, deg, degreesPerTick, bob, 360 + band * 20, radius));
+                        carried = 0f;
+                    }
+                    prev = p;
                 }
             }
-            Band(1360f, 1480f, 6); Band(1050f, 1110f, 5); Band(800f, 880f, 7); Band(450f, 560f, 7);
-
-            //  갈매기 떼 — 초속 20m(0.4m/틱)로 원통을 가로지른다.
-            float lane = WallRadius * 2f + 40f;
-            field.Flocks.Add(new GullFlock(1335f, 30f, 0f, 0.4f, lane, 7, 0));
-            field.Flocks.Add(new GullFlock(1065f, 200f, 12f, 0.45f, lane, 7, 90));
-            field.Flocks.Add(new GullFlock(830f, 120f, -10f, 0.4f, lane, 9, 40));
-            field.Flocks.Add(new GullFlock(500f, 300f, 5f, 0.5f, lane, 7, 150));
-
-            //  상승 기류 소용돌이 — 바람 기둥(Up_960)과 다른 자리.
-            field.Updrafts.Add(new Updraft(new Vector3(30f, 1180f, -25f), 7f, 45f));
-            field.Updrafts.Add(new Updraft(new Vector3(-35f, 680f, 10f), 7f, 45f));
-            field.Updrafts.Add(new Updraft(new Vector3(20f, 410f, 30f), 7f, 30f));
-            return field;
         }
 
         private static Vector3 OnCircle(float radius, float degrees, float y)
@@ -307,7 +341,7 @@ namespace LOP
                     for (int b = 0; b < flock.Count; b++)
                     {
                         Vector3 bird = flock.BirdAt(b, tick);
-                        if ((bird - body).sqrMagnitude < (1.2f + bodyRadius) * (1.2f + bodyRadius))
+                        if ((bird - body).sqrMagnitude < (GullFlock.BirdRadius + bodyRadius) * (GullFlock.BirdRadius + bodyRadius))
                         {
                             Vector3 dir = flock.Heading;
                             velocity.Linear = new System.Numerics.Vector3(dir.x * 24f, Mathf.Max(velocity.Linear.Y, -8f), dir.z * 24f);

@@ -105,6 +105,12 @@ namespace LOP
         {
             CollectDivers();
 
+            //  태풍의 눈(시제품): 큰 장애물 판정을 잔해 모양으로 갈아 끼운다. 맵이 들어온 뒤 첫 틱에 한 번 — 어떤 질의보다 먼저.
+            if (_storm != null && _storm.IsEmpty == false && StormDebrisRebuilder.EnsureBuilt(_obstacles))
+            {
+                _motionBridge.SyncTransforms();
+            }
+
             //  문·장애물을 이 틱 자세로 세우고 엔진에 반영하는 일이 어떤 질의보다 먼저다(스펙 §5 ①) — 그 안에서 한다.
             //  뒤로 물리면 발밑 여유 레이가 지난 틱 자세를 보고, 클라 뷰가 프레임마다 옮겨 둔 소수 틱 자세가 판정에 샌다.
             //  도는 판 위에 선 사람은 판이 이번 틱에 돈 만큼 같이 옮긴다(사용자 10-09).
