@@ -119,5 +119,42 @@ namespace LOP.TriGrab
             spot = default;
             return false;
         }
+
+        /// <summary>
+        /// 한가운데(반지름 CardSpawnRadius 안)에서 다른 카드와 안 겹치는 자리를 찾는다.
+        /// 없으면 중심에서 가장 가까운 빈자리(카드 벽 안)를 고른다.
+        /// </summary>
+        public static bool TryCenterSpot(IList<TriGrabCard> onDisc, Random rng, out Vector2 spot)
+        {
+            float gap = TriGrabConfig.CardBumpRadius * 2f + SpotLooseGap;
+            const int ringSteps = 16;
+            float rot = (float)(rng.NextDouble() * Math.PI * 2);
+            for (int ring = 0; ring <= 60; ring++)
+            {
+                float r = ring * 0.1f;
+                if (r > TriGrabConfig.CardWallRadius - SpotEdgeMargin) break;
+                int steps = ring == 0 ? 1 : ringSteps;
+                for (int s = 0; s < steps; s++)
+                {
+                    float a = rot + s * (float)(Math.PI * 2 / steps);
+                    var p = new Vector2((float)Math.Cos(a) * r, (float)Math.Sin(a) * r);
+                    bool ok = true;
+                    for (int i = 0; i < onDisc.Count && ok; i++)
+                        if (Vector2.Distance(onDisc[i].Pos, p) < gap) ok = false;
+                    if (ok) { spot = p; return true; }
+                }
+            }
+            spot = default;
+            return false;
+        }
+
+        /// <summary>중심에서 바깥으로 향하는 방향(중심 한가운데면 임의 방향).</summary>
+        public static Vector2 OutwardDirection(Vector2 spot, Random rng)
+        {
+            float len = spot.Length();
+            if (len > 1e-3f) return spot / len;
+            float a = (float)(rng.NextDouble() * Math.PI * 2);
+            return new Vector2((float)Math.Cos(a), (float)Math.Sin(a));
+        }
     }
 }

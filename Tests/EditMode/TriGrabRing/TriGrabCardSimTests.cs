@@ -47,6 +47,33 @@ namespace LOP.TriGrab.Tests
         }
 
         [Test]
+        public void FiveCardsBurstFromCenter_NoOverlap_NoEscape_1000Ticks()
+        {
+            var rng = new Random(3);
+            int n = TriGrabConfig.CardsOnDisc;
+            var cards = new List<TriGrabCard>();
+            float ringR = (TriGrabConfig.CardBumpRadius * 2f + 0.02f) / (2f * (float)Math.Sin(Math.PI / n));
+            for (int i = 0; i < n; i++)
+            {
+                float a = i * (float)(Math.PI * 2 / n);
+                var pos = new Vector2((float)Math.Cos(a), (float)Math.Sin(a)) * ringR;
+                cards.Add(new TriGrabCard { Id = i, Pos = pos, Vel = TriGrabCardSim.OutwardDirection(pos, rng) * TriGrabConfig.CardBurstSpeed });
+            }
+            float minDist = 2 * TriGrabConfig.CardBumpRadius - 0.01f, worstPair = float.MaxValue, worstR = 0f;
+            for (int t = 0; t < 1000; t++)
+            {
+                TriGrabCardSim.Step(cards, NoMoles, t, TriGrabConfig.TickSeconds, rng);
+                for (int i = 0; i < n; i++)
+                {
+                    worstR = Math.Max(worstR, cards[i].Pos.Length());
+                    for (int j = i + 1; j < n; j++) worstPair = Math.Min(worstPair, Vector2.Distance(cards[i].Pos, cards[j].Pos));
+                }
+            }
+            Assert.GreaterOrEqual(worstPair, minDist);
+            Assert.LessOrEqual(worstR, TriGrabConfig.CardWallRadius + 0.001f);
+        }
+
+        [Test]
         public void SpeedRelaxesTo1_4()
         {
             var c = new TriGrabCard { Pos = Vector2.Zero, Vel = new Vector2(0.2f, 0f) };

@@ -43,14 +43,14 @@ namespace LOP.TriGrab.Tests
             Assert.AreEqual(TriGrabPhase.Live, _m.State.Phase);
         }
 
-        // Live 시작 직후 카드 7장을 시험용으로 고정한다: 첫 장은 (3,0)의 목표, 나머지는 손 길(y=0)에서 먼 곳.
+        // Live 시작 직후 카드 5장을 시험용으로 고정한다: 첫 장은 (3,0)의 목표, 나머지는 손 길(y=0)에서 먼 곳.
         TriGrabCard SetupTarget(bool ok)
         {
             ToLive();
             var s = _m.State;
             s.Quota = 99;
-            var spots = new[] { new Vector2(3f, 0f), new Vector2(-3f, 3f), new Vector2(0f, 3.4f), new Vector2(3f, 3f), new Vector2(-3f, -3f), new Vector2(0f, -3.4f), new Vector2(3f, -3f) };
-            Assert.AreEqual(7, s.Cards.Count, "시작 카드 수");
+            var spots = new[] { new Vector2(3f, 0f), new Vector2(-3f, 3f), new Vector2(0f, 3.4f), new Vector2(3f, 3f), new Vector2(-3f, -3f) };
+            Assert.AreEqual(TriGrabConfig.CardsOnDisc, s.Cards.Count, "시작 카드 수");
             for (int i = 0; i < s.Cards.Count; i++)
             {
                 var c = s.Cards[i];
@@ -311,6 +311,46 @@ namespace LOP.TriGrab.Tests
             Assert.Greater(v2, v1, "잡음");
             for (int i = 0; i < 80 && !card.Gone; i++) Step();
             Assert.Greater(_m.State.Version, v2, "점수");
+        }
+
+        [Test]
+        public void InitialBatch_BornAtCenterMovingOutward_NoOverlapAfterStep()
+        {
+            Setup();
+            ToLive();
+            var cards = _m.State.Cards;
+            Assert.AreEqual(TriGrabConfig.CardsOnDisc, cards.Count);
+            float minDist = 2 * TriGrabConfig.CardBumpRadius - 0.01f;
+            for (int i = 0; i < cards.Count; i++)
+            {
+                Assert.LessOrEqual(cards[i].Pos.Length(), 1.8f, "가운데 근처에서 태어난다");
+                float outward = Vector2.Dot(cards[i].Vel, cards[i].Pos / cards[i].Pos.Length());
+                Assert.Greater(outward, TriGrabConfig.CardSpeed + 0.5f, "바깥으로 튄다");
+                for (int j = i + 1; j < cards.Count; j++)
+                    Assert.GreaterOrEqual(Vector2.Distance(cards[i].Pos, cards[j].Pos), minDist, "겹치면 안 된다");
+            }
+            Step();
+            for (int i = 0; i < cards.Count; i++)
+                for (int j = i + 1; j < cards.Count; j++)
+                    Assert.GreaterOrEqual(Vector2.Distance(cards[i].Pos, cards[j].Pos), minDist, "한 틱 뒤에도");
+        }
+
+        [Test]
+        public void Refill_BornWithinSpawnRadiusMovingOutward()
+        {
+            Setup();
+            ToLive();
+            var s = _m.State;
+            s.Quota = 99;
+            for (int i = 0; i < 3; i++) s.Cards[i].Gone = true;
+            int before = s.Cards.Count;
+            for (int i = 0; i < 40 && s.Cards.Count == before; i++) Step();
+            Assert.Greater(s.Cards.Count, before, "보충됨");
+            var c = s.Cards[s.Cards.Count - 1];
+            Assert.LessOrEqual(c.Pos.Length(), TriGrabConfig.CardSpawnRadius + 0.2f, "한가운데에서 태어난다");
+            Assert.Greater(c.Vel.Length(), TriGrabConfig.CardSpeed + 0.5f, "튀어 나가는 속도");
+            if (c.Pos.Length() > 0.05f)
+                Assert.Greater(Vector2.Dot(c.Vel, c.Pos), 0f, "바깥 방향");
         }
     }
 }

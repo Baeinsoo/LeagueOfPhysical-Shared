@@ -37,7 +37,11 @@ namespace LOP.TriGrab
         public const int ResolvedTicks = 70;
         public const int TotalRounds = 10;
 
-        public const int CardsOnDisc = 7;
+        public const int CardsOnDisc = 5;
+        /// <summary>새 카드는 판 한가운데에서 태어나 바깥으로 퍼진다 — 어디에 맞는 카드가 나오는지로 승부가 갈리지 않게.</summary>
+        public const float CardSpawnRadius = 0.6f;
+        /// <summary>태어날 때 바깥으로 튀어 나가는 속도. 평소 속도(CardSpeed)로 서서히 가라앉는다.</summary>
+        public const float CardBurstSpeed = 3.0f;
         public const int RefillTicks = 18;
         public const int PopTicks = 15;
 
