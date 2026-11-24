@@ -236,6 +236,8 @@ namespace LOP
     /// </summary>
     public class StormHazardSystem
     {
+        /// <summary>이 반지름 밖의 새는 벽 너머라 안 보이고 안 맞는다(뷰도 같은 값으로 숨긴다).</summary>
+        public const float WallHide = 60f;
         public const float StunSeconds = 1.4f;
         public const float GullStunSeconds = 0.7f;
         public const float GullOnHeadSeconds = 5f;
@@ -319,7 +321,7 @@ namespace LOP
                     {
                         Vector3 n = d.sqrMagnitude > 1e-6f ? d.normalized : Vector3.up;
                         velocity.Linear = new System.Numerics.Vector3(n.x * 14f, Mathf.Max(4f, n.y * 10f), n.z * 14f);
-                        state.StunEndTick = tick + Ticks(StunSeconds, deltaTime);
+                        state.StunEndTick = System.Math.Max(state.StunEndTick, tick + Ticks(StunSeconds, deltaTime));   // 더 긴 기절을 줄이지 않는다
                         state.CloudReadyTick = tick + Ticks(1.2f, deltaTime);
                         Unglide(diver);
                         Hit(state, StormHazardKind.StormCloud, tick);
@@ -341,11 +343,16 @@ namespace LOP
                     for (int b = 0; b < flock.Count; b++)
                     {
                         Vector3 bird = flock.BirdAt(b, tick);
+                        //  벽 밖(원통 반지름 60 너머)의 새는 그려지지 않으니 맞지도 않는다.
+                        if (bird.x * bird.x + bird.z * bird.z > WallHide * WallHide)
+                        {
+                            continue;
+                        }
                         if ((bird - body).sqrMagnitude < (GullFlock.BirdRadius + bodyRadius) * (GullFlock.BirdRadius + bodyRadius))
                         {
                             Vector3 dir = flock.Heading;
                             velocity.Linear = new System.Numerics.Vector3(dir.x * 24f, Mathf.Max(velocity.Linear.Y, -8f), dir.z * 24f);
-                            state.StunEndTick = tick + Ticks(GullStunSeconds, deltaTime);
+                            state.StunEndTick = System.Math.Max(state.StunEndTick, tick + Ticks(GullStunSeconds, deltaTime));   // 더 긴 기절을 줄이지 않는다
                             state.GullOnHeadEndTick = tick + Ticks(GullOnHeadSeconds, deltaTime);
                             state.GullReadyTick = tick + Ticks(1.5f, deltaTime);
                             Unglide(diver);

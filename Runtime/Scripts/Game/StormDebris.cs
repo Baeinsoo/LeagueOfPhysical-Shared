@@ -42,8 +42,9 @@ namespace LOP
             for (int row = 0; row < rows; row++)
             {
                 float z = z0 + row * LogWidth;
-                float endA = radius - Jitter(seed, row * 2) * 3.5f;
-                float endB = radius - Jitter(seed, row * 2 + 1) * 3.5f;
+                //  줄 끝은 조금만 흩뜨린다 — 테두리 고리 둘(RimRing)이 그 아래를 메워 가장자리에 몸이 빠질 띠가 없다.
+                float endA = radius - Jitter(seed, row * 2) * 1.0f;
+                float endB = radius - Jitter(seed, row * 2 + 1) * 1.0f;
                 float start = float.NaN, last = float.NaN;
                 for (int s = 0; s <= steps + 1; s++)
                 {
@@ -62,7 +63,32 @@ namespace LOP
                     }
                 }
             }
+            //  테두리 통나무 고리 둘 — 나란한 줄은 원 둘레를 계단처럼 남겨 그 사이로 몸이 빠진다(리뷰 11-25).
+            RimRing(pieces, StormDebrisKind.Log, radius - LogWidth * 0.5f - 0.05f, LogWidth, gapDegrees, margin, Vector3.zero);
+            RimRing(pieces, StormDebrisKind.Log, radius - LogWidth * 1.5f - 0.05f, LogWidth, gapDegrees, margin, Vector3.zero);
             return pieces;
+        }
+
+        /// <summary>
+        /// 원 둘레를 따라 접선 방향 조각을 늘어놓는다(가운데 반지름 <paramref name="center"/>, 폭 <paramref name="width"/>).
+        /// 틈 부채꼴(0°~<paramref name="gapDegrees"/>)과 가장자리 여유는 비운다. 이웃 조각과 조금 겹쳐 빈틈이 없다.
+        /// </summary>
+        private static void RimRing(List<StormDebrisPiece> pieces, StormDebrisKind kind, float center, float width,
+                                    float gapDegrees, float margin, Vector3 pivot)
+        {
+            const float stepDegrees = 4.4f;
+            float outer = center + width * 0.5f;
+            float marginDegrees = margin / center * Mathf.Rad2Deg;
+            float first = gapDegrees + marginDegrees + stepDegrees * 0.5f;
+            float last = 360f - marginDegrees - stepDegrees * 0.5f;
+            int n = Mathf.CeilToInt((last - first) / stepDegrees) + 1;
+            float spacing = (last - first) / (n - 1);
+            float half = outer * Mathf.Sin(spacing * 0.5f * Mathf.Deg2Rad) + 0.15f;
+            for (int i = 0; i < n; i++)
+            {
+                float deg = first + spacing * i;
+                pieces.Add(new StormDebrisPiece(kind, Direction(deg) * center - pivot, new Vector3(half * 2f, LogWidth, width), deg + 90f));
+            }
         }
 
         //  통나무 상자 귀퉁이가 끝(들쭉날쭉한 원) 안에 있어야 한다 — 벽을 파고들지 않게.
@@ -77,8 +103,8 @@ namespace LOP
         {
             float len = b - a + step;
             if (len < 2.5f) return;
-            float lift = (Jitter(seed, 1000 + row) - 0.5f) * 0.3f;   // 줄마다 높이가 살짝 다르다
-            pieces.Add(new StormDebrisPiece(StormDebrisKind.Log, new Vector3((a + b) * 0.5f, lift, z), new Vector3(len, LogWidth, LogWidth), 0f));
+            //  높이를 흩뜨리면 이웃 줄 사이 턱(0.12m 넘음)이 벽이 된다 — 윗면을 맞춘다.
+            pieces.Add(new StormDebrisPiece(StormDebrisKind.Log, new Vector3((a + b) * 0.5f, 0f, z), new Vector3(len, LogWidth, LogWidth), 0f));
         }
 
         /// <summary>점이 틈 부채꼴 밖에 있고, 틈 가장자리 두 선에서 <paramref name="margin"/> 이상 떨어져 있나.</summary>
@@ -103,7 +129,9 @@ namespace LOP
         {
             var pieces = new List<StormDebrisPiece>();
             const float trunk = 4f, inner = 4f;
-            float outer = length - 1f;
+            float crownWidth = Mathf.Min(width - 2f, 10f);
+            //  끝 잎 덩이 바깥 귀퉁이까지 벽(59) 안에 남게 줄기 길이를 줄인다.
+            float outer = Mathf.Min(length - 1f, Mathf.Sqrt(58.9f * 58.9f - crownWidth * crownWidth * 0.25f));
             float crownLen = 8f;
             float trunkEnd = outer - crownLen;
             Vector3 dir = Direction(bladeDegrees);
@@ -125,7 +153,6 @@ namespace LOP
                     pieces.Add(new StormDebrisPiece(StormDebrisKind.Crown, leaf, new Vector3(3f, 2.6f, 3f), yaw));
                 }
             }
-            float crownWidth = Mathf.Min(width - 2f, 10f);
             pieces.Add(new StormDebrisPiece(StormDebrisKind.Crown, dir * (outer - crownLen * 0.5f), new Vector3(crownLen, 3.5f, crownWidth), bladeDegrees));
             return pieces;
         }
@@ -154,11 +181,28 @@ namespace LOP
                 if (half < 0.8f) continue;
                 //  줄마다 비틀면 줄 사이에 쐐기 틈이 생긴다 — 비틀지 않고 높이·두께만 흩뜨린다.
                 float yaw = mid + 90f;
+                //  두께는 달라도 윗면은 같은 높이(0.6) — 걸어 다닐 때 턱이 벽이 되지 않게.
                 float thick = Jitter(seed, 500 + n) < 0.3f ? 1.6f : 1.2f;
-                float lift = (Jitter(seed, 900 + n) - 0.5f) * 0.5f;
-                Vector3 c = dir * r + Vector3.up * lift - pivot;
+                Vector3 c = dir * r + Vector3.up * (0.6f - thick * 0.5f) - pivot;
                 pieces.Add(new StormDebrisPiece(StormDebrisKind.Plank, c, new Vector3(half * 2f, thick, PlankWidth), yaw));
             }
+            //  바깥 테두리 — 곧은 판자는 원호를 못 따라가 벽 쪽에 띠가 빈다(리뷰 11-25). 날개 부채꼴만큼 둘레 조각을 깐다.
+            {
+                const float rimWidth = 3.0f;
+                float center = radius - rimWidth * 0.5f - 0.05f;
+                float outer = center + rimWidth * 0.5f;
+                float span = a1 - a0;
+                int count = Mathf.CeilToInt(span / 4.4f);
+                float step = span / count;
+                float half = outer * Mathf.Sin(step * 0.5f * Mathf.Deg2Rad) + 0.15f;
+                for (int i = 0; i < count; i++)
+                {
+                    float deg = a0 + step * (i + 0.5f);
+                    pieces.Add(new StormDebrisPiece(StormDebrisKind.Plank, Direction(deg) * center + Vector3.up * 0f - pivot,
+                                                    new Vector3(half * 2f, 1.2f, rimWidth), deg + 90f));
+                }
+            }
+
             //  위에 엇갈려 얹힌 들보 셋 — 줄무늬 판이 아니라 쌓인 더미로 보이게. 날개 이등분선 가까이 두어 부채꼴 밖으로 안 나간다.
             for (int k = 0; k < 3; k++)
             {

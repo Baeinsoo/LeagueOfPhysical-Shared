@@ -76,6 +76,20 @@ namespace LOP.Tests
         }
 
         [Test]
+        public void 이미_긴_기절_중에_짧은_기절이_와도_줄지_않는다()
+        {
+            var field = new StormHazardField();
+            field.Clouds.Add(new StormCloud(y: 200f, orbit: 0f, startDegrees: 0f, degreesPerTick: 0f, bob: 0f, bobPeriod: 0, radius: 4f));
+            var d = Diver(new Vector3(0f, 202f, 0f) - Vector3.up * 0.9f, new Vector3(0f, -30f, 0f));
+            d.Get<StormState>().StunEndTick = 1000;
+
+            new StormHazardSystem().Detect(d, 100, Dt, field, Config(), before: new Vector3(0f, 205f, 0f));
+
+            Assert.AreEqual(StormHazardKind.StormCloud, d.Get<StormState>().LastHitKind, "맞기는 맞았다");
+            Assert.AreEqual(1000, d.Get<StormState>().StunEndTick);
+        }
+
+        [Test]
         public void 상승_기류는_떠올랐다가_끝나는_틱에_바깥으로_뱉는다()
         {
             var field = new StormHazardField();

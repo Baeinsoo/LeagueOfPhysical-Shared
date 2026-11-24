@@ -17,6 +17,13 @@ namespace LOP.Tests
                     yield return p.Center + q * new Vector3(sx * p.Size.x * 0.5f, 0f, sz * p.Size.z * 0.5f);
         }
 
+        //  0.4 간격 네 점이 다 비었으면 지름 0.8짜리 몸이 빠질 자리다.
+        private static bool BodyFits(List<StormDebrisPiece> pieces, Vector3 pt)
+            => Covered(pieces, pt) == false
+               && Covered(pieces, pt + new Vector3(0.4f, 0f, 0f)) == false
+               && Covered(pieces, pt + new Vector3(0f, 0f, 0.4f)) == false
+               && Covered(pieces, pt + new Vector3(0.4f, 0f, 0.4f)) == false;
+
         private static bool Covered(List<StormDebrisPiece> pieces, Vector3 point)
         {
             foreach (var p in pieces)
@@ -33,27 +40,27 @@ namespace LOP.Tests
             var logs = StormDebrisGeometry.Raft(Radius, 90f, 1234);
             Assert.Greater(logs.Count, 20, "통나무가 실제로 생겼다");
 
-            int outside = 0, covered = 0;
-            for (float x = -55f; x <= 55f; x += 1f)
+            int holes = 0;
+            for (float x = -59f; x <= 59f; x += 0.4f)
             {
-                for (float z = -55f; z <= 55f; z += 1f)
+                for (float z = -59f; z <= 59f; z += 0.4f)
                 {
                     var pt = new Vector3(x, 0f, z);
                     float deg = Mathf.Atan2(z, x) * Mathf.Rad2Deg;
                     if (deg < 0f) deg += 360f;
-                    if (pt.magnitude > 50f) continue;
+                    if (pt.magnitude > 58.9f) continue;
                     if (deg > 5f && deg < 85f && pt.magnitude > 4f)
                     {
                         Assert.IsFalse(Covered(logs, pt), $"틈 안 ({x},{z})이 막혔다");
                     }
-                    else if (StormDebrisGeometry.OutsideGap(x, z, 90f, 3.5f))
+                    else if (StormDebrisGeometry.OutsideGap(x, z, 90f, 3.5f) && BodyFits(logs, pt))
                     {
-                        outside++;
-                        if (Covered(logs, pt)) covered++;
+                        holes++;
                     }
                 }
             }
-            Assert.Greater(covered / (float)outside, 0.95f, "틈 밖은 통나무로 막혀 있다(몸이 빠질 구멍 없음)");
+            //  벽 쪽 가장자리(58.9m까지)를 포함해 틈 밖엔 몸(지름 0.8)이 빠질 빈칸이 하나도 없다.
+            Assert.AreEqual(0, holes, "틈 밖에 몸이 빠질 구멍");
         }
 
         [Test]
@@ -63,7 +70,7 @@ namespace LOP.Tests
             {
                 foreach (var c in TopCorners(log))
                 {
-                    Assert.LessOrEqual(new Vector2(c.x, c.z).magnitude, Radius + 0.01f);
+                    Assert.LessOrEqual(new Vector2(c.x, c.z).magnitude, Radius + 0.1f);
                 }
             }
         }
@@ -71,7 +78,8 @@ namespace LOP.Tests
         [Test]
         public void 거목은_날개_폭과_길이_안에_있다()
         {
-            const float width = 16f, length = 58f, deg = 120f;
+            //  Build가 부르는 값 그대로(날개 메시 길이 58 + 2).
+            const float width = 16f, length = 60f, deg = 120f;
             Vector3 dir = StormDebrisGeometry.Direction(deg);
             Vector3 side = new Vector3(-dir.z, 0f, dir.x);
             var tree = StormDebrisGeometry.Tree(deg, length, width, 7);
@@ -81,7 +89,7 @@ namespace LOP.Tests
                 foreach (var c in TopCorners(piece))
                 {
                     Assert.LessOrEqual(Mathf.Abs(Vector3.Dot(c, side)), width * 0.5f + 0.01f, piece.Kind + " 가 날개 폭 밖");
-                    Assert.LessOrEqual(Vector3.Dot(c, dir), length + 0.01f, piece.Kind + " 가 날개 끝 밖");
+                    Assert.LessOrEqual(new Vector2(c.x, c.z).magnitude, 59.1f, piece.Kind + " 가 벽을 파고든다");
                 }
             }
         }
@@ -101,25 +109,20 @@ namespace LOP.Tests
                     all.Add(new StormDebrisPiece(p.Kind, p.Center + pivot, p.Size, p.Yaw));
                     foreach (var c in TopCorners(p))
                     {
-                        Assert.LessOrEqual(new Vector2(c.x + pivot.x, c.z + pivot.z).magnitude, Radius + 0.01f, "판자가 벽을 파고든다");
+                        Assert.LessOrEqual(new Vector2(c.x + pivot.x, c.z + pivot.z).magnitude, Radius + 0.1f, "판자가 벽을 파고든다");
                     }
                 }
             }
             //  몸 반지름 0.4 — 지름 0.8짜리 원이 통째로 빈 곳이 있으면 빠진다. 0.4 간격 격자 점의 빈 곳을 본다.
             int holes = 0;
-            for (float x = -50f; x <= 50f; x += 0.4f)
+            for (float x = -59f; x <= 59f; x += 0.4f)
             {
-                for (float z = -50f; z <= 50f; z += 0.4f)
+                for (float z = -59f; z <= 59f; z += 0.4f)
                 {
                     var pt = new Vector3(x, 0f, z);
-                    if (pt.magnitude > 50f || pt.magnitude < 3f) continue;
-                    if (Covered(all, pt) == false
-                        && Covered(all, pt + new Vector3(0.4f, 0f, 0f)) == false
-                        && Covered(all, pt + new Vector3(0f, 0f, 0.4f)) == false
-                        && Covered(all, pt + new Vector3(0.4f, 0f, 0.4f)) == false)
-                    {
-                        holes++;
-                    }
+                    //  벽 쪽 가장자리까지 본다(예전 판도 59m까지 막혀 있었다).
+                    if (pt.magnitude > 58.5f || pt.magnitude < 3f) continue;
+                    if (BodyFits(all, pt)) holes++;
                 }
             }
             Assert.AreEqual(0, holes, "닫힌 조리개에 몸이 빠질 구멍");

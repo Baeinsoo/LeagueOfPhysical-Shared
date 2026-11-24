@@ -24,7 +24,7 @@ public static partial class EntitySnapReflection {
         string.Concat(
           "ChBFbnRpdHlTbmFwLnByb3RvGhJQcm90b1ZlY3RvcjMucHJvdG8aHVByb3Rv",
           "TW90aW9uQ29udHJpYnV0aW9uLnByb3RvGhdQcm90b0FjdGl2ZUVmZmVjdC5w",
-          "cm90byKGCwoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
+          "cm90byLQDQoKRW50aXR5U25hcBIRCgllbnRpdHlfaWQYASABKAkSHwoIcG9z",
           "aXRpb24YAiABKAsyDS5Qcm90b1ZlY3RvcjMSHwoIcm90YXRpb24YAyABKAsy",
           "DS5Qcm90b1ZlY3RvcjMSHwoIdmVsb2NpdHkYBCABKAsyDS5Qcm90b1ZlY3Rv",
           "cjMSDgoGbWF4X0hQGAUgASgFEhIKCmN1cnJlbnRfSFAYBiABKAUSNgoUbW90",
@@ -54,12 +54,20 @@ public static partial class EntitySnapReflection {
           "ASgDEhYKDmNhcmRfbG9ja190aWNrGDUgASgDEhgKEGNhcmRfZXhwaXJlX3Rp",
           "Y2sYNiABKAMSHAoUY2FyZF9qdW1wX3N0YXJ0X3RpY2sYNyABKAMSFgoOY2Fy",
           "ZF9zaG90X3RpY2sYOCABKAMSGQoRY2FyZF9zaG90X2Zyb21fbW0YOSABKAUS",
-          "HAoUY2FyZF9yb2xsX3N0YXJ0X3RpY2sYOiABKANKBAgMEA1KBAgNEA5KBAgg",
-          "ECFKBAghECJKBAgiECNKBAgkECVKBAgpECpiBnByb3RvMw=="));
+          "HAoUY2FyZF9yb2xsX3N0YXJ0X3RpY2sYOiABKAMSGwoTc3Rvcm1fc3R1bl9l",
+          "bmRfdGljaxg7IAEoAxIbChNzdG9ybV9saWZ0X2VuZF90aWNrGDwgASgDEhUK",
+          "DXN0b3JtX2VqZWN0X3gYPSABKAISFQoNc3Rvcm1fZWplY3Rfehg+IAEoAhIj",
+          "ChtzdG9ybV9ndWxsX29uX2hlYWRfZW5kX3RpY2sYPyABKAMSIAoYc3Rvcm1f",
+          "Y3VzaGlvbl9yZWFkeV90aWNrGEAgASgDEh4KFnN0b3JtX2Nsb3VkX3JlYWR5",
+          "X3RpY2sYQSABKAMSHQoVc3Rvcm1fZ3VsbF9yZWFkeV90aWNrGEIgASgDEiAK",
+          "GHN0b3JtX3VwZHJhZnRfcmVhZHlfdGljaxhDIAEoAxIbChNzdG9ybV9sYXN0",
+          "X2hpdF9raW5kGEQgASgFEhsKE3N0b3JtX2xhc3RfaGl0X3RpY2sYRSABKANK",
+          "BAgMEA1KBAgNEA5KBAggECFKBAghECJKBAgiECNKBAgkECVKBAgpECpiBnBy",
+          "b3RvMw=="));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { global::ProtoVector3Reflection.Descriptor, global::ProtoMotionContributionReflection.Descriptor, global::ProtoActiveEffectReflection.Descriptor, },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick", "PostureAxis", "Gliding", "Stamina", "EmergencyRemaining", "DashEndTick", "DashCharge", "TeleportCount", "FinishPlacement", "Score", "FlapCombo", "KnockbackEndTick", "DamagePercent", "KnockbackAmmo", "KnockbackNextReloadTick", "KnockbackCooldownEndTick", "KnockbackHasBomb", "CardStunEndTick", "CardSpinStartTick", "CardPosMm", "CardUseCount", "CardDashStartTick", "CardObstacleIndex", "CardObstacleTick", "CardZoneIndex", "CardZoneTick", "CardObstacleEvent", "CardObstacleEventTick", "CardZoneEvent", "CardZoneEventTick", "CardFinishTick", "CardCleanStreak", "CardWhiffTick", "CardLockTick", "CardExpireTick", "CardJumpStartTick", "CardShotTick", "CardShotFromMm", "CardRollStartTick" }, null, null, null, null)
+          new pbr::GeneratedClrTypeInfo(typeof(global::EntitySnap), global::EntitySnap.Parser, new[]{ "EntityId", "Position", "Rotation", "Velocity", "MaxHP", "CurrentHP", "MotionContributions", "Grounded", "ActiveAbilityId", "AbilityEndTick", "StatusEffects", "StunEndTick", "InvulnEndTick", "PostureAxis", "Gliding", "Stamina", "EmergencyRemaining", "DashEndTick", "DashCharge", "TeleportCount", "FinishPlacement", "Score", "FlapCombo", "KnockbackEndTick", "DamagePercent", "KnockbackAmmo", "KnockbackNextReloadTick", "KnockbackCooldownEndTick", "KnockbackHasBomb", "CardStunEndTick", "CardSpinStartTick", "CardPosMm", "CardUseCount", "CardDashStartTick", "CardObstacleIndex", "CardObstacleTick", "CardZoneIndex", "CardZoneTick", "CardObstacleEvent", "CardObstacleEventTick", "CardZoneEvent", "CardZoneEventTick", "CardFinishTick", "CardCleanStreak", "CardWhiffTick", "CardLockTick", "CardExpireTick", "CardJumpStartTick", "CardShotTick", "CardShotFromMm", "CardRollStartTick", "StormStunEndTick", "StormLiftEndTick", "StormEjectX", "StormEjectZ", "StormGullOnHeadEndTick", "StormCushionReadyTick", "StormCloudReadyTick", "StormGullReadyTick", "StormUpdraftReadyTick", "StormLastHitKind", "StormLastHitTick" }, null, null, null, null)
         }));
   }
   #endregion
@@ -152,6 +160,17 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     cardShotTick_ = other.cardShotTick_;
     cardShotFromMm_ = other.cardShotFromMm_;
     cardRollStartTick_ = other.cardRollStartTick_;
+    stormStunEndTick_ = other.stormStunEndTick_;
+    stormLiftEndTick_ = other.stormLiftEndTick_;
+    stormEjectX_ = other.stormEjectX_;
+    stormEjectZ_ = other.stormEjectZ_;
+    stormGullOnHeadEndTick_ = other.stormGullOnHeadEndTick_;
+    stormCushionReadyTick_ = other.stormCushionReadyTick_;
+    stormCloudReadyTick_ = other.stormCloudReadyTick_;
+    stormGullReadyTick_ = other.stormGullReadyTick_;
+    stormUpdraftReadyTick_ = other.stormUpdraftReadyTick_;
+    stormLastHitKind_ = other.stormLastHitKind_;
+    stormLastHitTick_ = other.stormLastHitTick_;
     _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
   }
 
@@ -894,6 +913,154 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
   }
 
+  /// <summary>Field number for the "storm_stun_end_tick" field.</summary>
+  public const int StormStunEndTickFieldNumber = 59;
+  private long stormStunEndTick_;
+  /// <summary>
+  /// Skydive 태풍의 눈 몸개그 장애물(StormState). 지속은 끝나는 절대 틱(ADR-0015), 0 = 없음.
+  /// 서버만 맞은 경우 클라는 이것으로만 안다 — 보정 처리기가 예측과 비교해 다르면 되감는다.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long StormStunEndTick {
+    get { return stormStunEndTick_; }
+    set {
+      stormStunEndTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "storm_lift_end_tick" field.</summary>
+  public const int StormLiftEndTickFieldNumber = 60;
+  private long stormLiftEndTick_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long StormLiftEndTick {
+    get { return stormLiftEndTick_; }
+    set {
+      stormLiftEndTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "storm_eject_x" field.</summary>
+  public const int StormEjectXFieldNumber = 61;
+  private float stormEjectX_;
+  /// <summary>
+  /// 떠오름이 끝나는 틱에 뱉는 방향(수평 단위 벡터)
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public float StormEjectX {
+    get { return stormEjectX_; }
+    set {
+      stormEjectX_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "storm_eject_z" field.</summary>
+  public const int StormEjectZFieldNumber = 62;
+  private float stormEjectZ_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public float StormEjectZ {
+    get { return stormEjectZ_; }
+    set {
+      stormEjectZ_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "storm_gull_on_head_end_tick" field.</summary>
+  public const int StormGullOnHeadEndTickFieldNumber = 63;
+  private long stormGullOnHeadEndTick_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long StormGullOnHeadEndTick {
+    get { return stormGullOnHeadEndTick_; }
+    set {
+      stormGullOnHeadEndTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "storm_cushion_ready_tick" field.</summary>
+  public const int StormCushionReadyTickFieldNumber = 64;
+  private long stormCushionReadyTick_;
+  /// <summary>
+  /// 같은 장애물에 다시 걸리기까지 쉬는 끝 틱
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long StormCushionReadyTick {
+    get { return stormCushionReadyTick_; }
+    set {
+      stormCushionReadyTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "storm_cloud_ready_tick" field.</summary>
+  public const int StormCloudReadyTickFieldNumber = 65;
+  private long stormCloudReadyTick_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long StormCloudReadyTick {
+    get { return stormCloudReadyTick_; }
+    set {
+      stormCloudReadyTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "storm_gull_ready_tick" field.</summary>
+  public const int StormGullReadyTickFieldNumber = 66;
+  private long stormGullReadyTick_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long StormGullReadyTick {
+    get { return stormGullReadyTick_; }
+    set {
+      stormGullReadyTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "storm_updraft_ready_tick" field.</summary>
+  public const int StormUpdraftReadyTickFieldNumber = 67;
+  private long stormUpdraftReadyTick_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long StormUpdraftReadyTick {
+    get { return stormUpdraftReadyTick_; }
+    set {
+      stormUpdraftReadyTick_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "storm_last_hit_kind" field.</summary>
+  public const int StormLastHitKindFieldNumber = 68;
+  private int stormLastHitKind_;
+  /// <summary>
+  /// StormHazardKind — 연출용
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int StormLastHitKind {
+    get { return stormLastHitKind_; }
+    set {
+      stormLastHitKind_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "storm_last_hit_tick" field.</summary>
+  public const int StormLastHitTickFieldNumber = 69;
+  private long stormLastHitTick_;
+  /// <summary>
+  /// -1 = 아직 없음
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public long StormLastHitTick {
+    get { return stormLastHitTick_; }
+    set {
+      stormLastHitTick_ = value;
+    }
+  }
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
   [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
   public override bool Equals(object other) {
@@ -960,6 +1127,17 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (CardShotTick != other.CardShotTick) return false;
     if (CardShotFromMm != other.CardShotFromMm) return false;
     if (CardRollStartTick != other.CardRollStartTick) return false;
+    if (StormStunEndTick != other.StormStunEndTick) return false;
+    if (StormLiftEndTick != other.StormLiftEndTick) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(StormEjectX, other.StormEjectX)) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(StormEjectZ, other.StormEjectZ)) return false;
+    if (StormGullOnHeadEndTick != other.StormGullOnHeadEndTick) return false;
+    if (StormCushionReadyTick != other.StormCushionReadyTick) return false;
+    if (StormCloudReadyTick != other.StormCloudReadyTick) return false;
+    if (StormGullReadyTick != other.StormGullReadyTick) return false;
+    if (StormUpdraftReadyTick != other.StormUpdraftReadyTick) return false;
+    if (StormLastHitKind != other.StormLastHitKind) return false;
+    if (StormLastHitTick != other.StormLastHitTick) return false;
     return Equals(_unknownFields, other._unknownFields);
   }
 
@@ -1018,6 +1196,17 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     if (CardShotTick != 0L) hash ^= CardShotTick.GetHashCode();
     if (CardShotFromMm != 0) hash ^= CardShotFromMm.GetHashCode();
     if (CardRollStartTick != 0L) hash ^= CardRollStartTick.GetHashCode();
+    if (StormStunEndTick != 0L) hash ^= StormStunEndTick.GetHashCode();
+    if (StormLiftEndTick != 0L) hash ^= StormLiftEndTick.GetHashCode();
+    if (StormEjectX != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(StormEjectX);
+    if (StormEjectZ != 0F) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(StormEjectZ);
+    if (StormGullOnHeadEndTick != 0L) hash ^= StormGullOnHeadEndTick.GetHashCode();
+    if (StormCushionReadyTick != 0L) hash ^= StormCushionReadyTick.GetHashCode();
+    if (StormCloudReadyTick != 0L) hash ^= StormCloudReadyTick.GetHashCode();
+    if (StormGullReadyTick != 0L) hash ^= StormGullReadyTick.GetHashCode();
+    if (StormUpdraftReadyTick != 0L) hash ^= StormUpdraftReadyTick.GetHashCode();
+    if (StormLastHitKind != 0) hash ^= StormLastHitKind.GetHashCode();
+    if (StormLastHitTick != 0L) hash ^= StormLastHitTick.GetHashCode();
     if (_unknownFields != null) {
       hash ^= _unknownFields.GetHashCode();
     }
@@ -1234,6 +1423,50 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(208, 3);
       output.WriteInt64(CardRollStartTick);
     }
+    if (StormStunEndTick != 0L) {
+      output.WriteRawTag(216, 3);
+      output.WriteInt64(StormStunEndTick);
+    }
+    if (StormLiftEndTick != 0L) {
+      output.WriteRawTag(224, 3);
+      output.WriteInt64(StormLiftEndTick);
+    }
+    if (StormEjectX != 0F) {
+      output.WriteRawTag(237, 3);
+      output.WriteFloat(StormEjectX);
+    }
+    if (StormEjectZ != 0F) {
+      output.WriteRawTag(245, 3);
+      output.WriteFloat(StormEjectZ);
+    }
+    if (StormGullOnHeadEndTick != 0L) {
+      output.WriteRawTag(248, 3);
+      output.WriteInt64(StormGullOnHeadEndTick);
+    }
+    if (StormCushionReadyTick != 0L) {
+      output.WriteRawTag(128, 4);
+      output.WriteInt64(StormCushionReadyTick);
+    }
+    if (StormCloudReadyTick != 0L) {
+      output.WriteRawTag(136, 4);
+      output.WriteInt64(StormCloudReadyTick);
+    }
+    if (StormGullReadyTick != 0L) {
+      output.WriteRawTag(144, 4);
+      output.WriteInt64(StormGullReadyTick);
+    }
+    if (StormUpdraftReadyTick != 0L) {
+      output.WriteRawTag(152, 4);
+      output.WriteInt64(StormUpdraftReadyTick);
+    }
+    if (StormLastHitKind != 0) {
+      output.WriteRawTag(160, 4);
+      output.WriteInt32(StormLastHitKind);
+    }
+    if (StormLastHitTick != 0L) {
+      output.WriteRawTag(168, 4);
+      output.WriteInt64(StormLastHitTick);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -1442,6 +1675,50 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
       output.WriteRawTag(208, 3);
       output.WriteInt64(CardRollStartTick);
     }
+    if (StormStunEndTick != 0L) {
+      output.WriteRawTag(216, 3);
+      output.WriteInt64(StormStunEndTick);
+    }
+    if (StormLiftEndTick != 0L) {
+      output.WriteRawTag(224, 3);
+      output.WriteInt64(StormLiftEndTick);
+    }
+    if (StormEjectX != 0F) {
+      output.WriteRawTag(237, 3);
+      output.WriteFloat(StormEjectX);
+    }
+    if (StormEjectZ != 0F) {
+      output.WriteRawTag(245, 3);
+      output.WriteFloat(StormEjectZ);
+    }
+    if (StormGullOnHeadEndTick != 0L) {
+      output.WriteRawTag(248, 3);
+      output.WriteInt64(StormGullOnHeadEndTick);
+    }
+    if (StormCushionReadyTick != 0L) {
+      output.WriteRawTag(128, 4);
+      output.WriteInt64(StormCushionReadyTick);
+    }
+    if (StormCloudReadyTick != 0L) {
+      output.WriteRawTag(136, 4);
+      output.WriteInt64(StormCloudReadyTick);
+    }
+    if (StormGullReadyTick != 0L) {
+      output.WriteRawTag(144, 4);
+      output.WriteInt64(StormGullReadyTick);
+    }
+    if (StormUpdraftReadyTick != 0L) {
+      output.WriteRawTag(152, 4);
+      output.WriteInt64(StormUpdraftReadyTick);
+    }
+    if (StormLastHitKind != 0) {
+      output.WriteRawTag(160, 4);
+      output.WriteInt32(StormLastHitKind);
+    }
+    if (StormLastHitTick != 0L) {
+      output.WriteRawTag(168, 4);
+      output.WriteInt64(StormLastHitTick);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -1600,6 +1877,39 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
     if (CardRollStartTick != 0L) {
       size += 2 + pb::CodedOutputStream.ComputeInt64Size(CardRollStartTick);
+    }
+    if (StormStunEndTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(StormStunEndTick);
+    }
+    if (StormLiftEndTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(StormLiftEndTick);
+    }
+    if (StormEjectX != 0F) {
+      size += 2 + 4;
+    }
+    if (StormEjectZ != 0F) {
+      size += 2 + 4;
+    }
+    if (StormGullOnHeadEndTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(StormGullOnHeadEndTick);
+    }
+    if (StormCushionReadyTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(StormCushionReadyTick);
+    }
+    if (StormCloudReadyTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(StormCloudReadyTick);
+    }
+    if (StormGullReadyTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(StormGullReadyTick);
+    }
+    if (StormUpdraftReadyTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(StormUpdraftReadyTick);
+    }
+    if (StormLastHitKind != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(StormLastHitKind);
+    }
+    if (StormLastHitTick != 0L) {
+      size += 2 + pb::CodedOutputStream.ComputeInt64Size(StormLastHitTick);
     }
     if (_unknownFields != null) {
       size += _unknownFields.CalculateSize();
@@ -1770,6 +2080,39 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
     }
     if (other.CardRollStartTick != 0L) {
       CardRollStartTick = other.CardRollStartTick;
+    }
+    if (other.StormStunEndTick != 0L) {
+      StormStunEndTick = other.StormStunEndTick;
+    }
+    if (other.StormLiftEndTick != 0L) {
+      StormLiftEndTick = other.StormLiftEndTick;
+    }
+    if (other.StormEjectX != 0F) {
+      StormEjectX = other.StormEjectX;
+    }
+    if (other.StormEjectZ != 0F) {
+      StormEjectZ = other.StormEjectZ;
+    }
+    if (other.StormGullOnHeadEndTick != 0L) {
+      StormGullOnHeadEndTick = other.StormGullOnHeadEndTick;
+    }
+    if (other.StormCushionReadyTick != 0L) {
+      StormCushionReadyTick = other.StormCushionReadyTick;
+    }
+    if (other.StormCloudReadyTick != 0L) {
+      StormCloudReadyTick = other.StormCloudReadyTick;
+    }
+    if (other.StormGullReadyTick != 0L) {
+      StormGullReadyTick = other.StormGullReadyTick;
+    }
+    if (other.StormUpdraftReadyTick != 0L) {
+      StormUpdraftReadyTick = other.StormUpdraftReadyTick;
+    }
+    if (other.StormLastHitKind != 0) {
+      StormLastHitKind = other.StormLastHitKind;
+    }
+    if (other.StormLastHitTick != 0L) {
+      StormLastHitTick = other.StormLastHitTick;
     }
     _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
   }
@@ -2003,6 +2346,50 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
           CardRollStartTick = input.ReadInt64();
           break;
         }
+        case 472: {
+          StormStunEndTick = input.ReadInt64();
+          break;
+        }
+        case 480: {
+          StormLiftEndTick = input.ReadInt64();
+          break;
+        }
+        case 493: {
+          StormEjectX = input.ReadFloat();
+          break;
+        }
+        case 501: {
+          StormEjectZ = input.ReadFloat();
+          break;
+        }
+        case 504: {
+          StormGullOnHeadEndTick = input.ReadInt64();
+          break;
+        }
+        case 512: {
+          StormCushionReadyTick = input.ReadInt64();
+          break;
+        }
+        case 520: {
+          StormCloudReadyTick = input.ReadInt64();
+          break;
+        }
+        case 528: {
+          StormGullReadyTick = input.ReadInt64();
+          break;
+        }
+        case 536: {
+          StormUpdraftReadyTick = input.ReadInt64();
+          break;
+        }
+        case 544: {
+          StormLastHitKind = input.ReadInt32();
+          break;
+        }
+        case 552: {
+          StormLastHitTick = input.ReadInt64();
+          break;
+        }
       }
     }
   #endif
@@ -2233,6 +2620,50 @@ public sealed partial class EntitySnap : pb::IMessage<EntitySnap>
         }
         case 464: {
           CardRollStartTick = input.ReadInt64();
+          break;
+        }
+        case 472: {
+          StormStunEndTick = input.ReadInt64();
+          break;
+        }
+        case 480: {
+          StormLiftEndTick = input.ReadInt64();
+          break;
+        }
+        case 493: {
+          StormEjectX = input.ReadFloat();
+          break;
+        }
+        case 501: {
+          StormEjectZ = input.ReadFloat();
+          break;
+        }
+        case 504: {
+          StormGullOnHeadEndTick = input.ReadInt64();
+          break;
+        }
+        case 512: {
+          StormCushionReadyTick = input.ReadInt64();
+          break;
+        }
+        case 520: {
+          StormCloudReadyTick = input.ReadInt64();
+          break;
+        }
+        case 528: {
+          StormGullReadyTick = input.ReadInt64();
+          break;
+        }
+        case 536: {
+          StormUpdraftReadyTick = input.ReadInt64();
+          break;
+        }
+        case 544: {
+          StormLastHitKind = input.ReadInt32();
+          break;
+        }
+        case 552: {
+          StormLastHitTick = input.ReadInt64();
           break;
         }
       }
