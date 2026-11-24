@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+// 원판 위 카드와 끌려가는 카드의 자리(서버 → 클라). 비신뢰, 틱마다.
+// ids[i]의 자리가 (xs[i], zs[i])다.
+// @auto_generate
+message TriGrabCardsToC
+{
+	int64 tick = 1;
+	repeated int32 ids = 2;
+	repeated float xs = 3;
+	repeated float zs = 4;
+}

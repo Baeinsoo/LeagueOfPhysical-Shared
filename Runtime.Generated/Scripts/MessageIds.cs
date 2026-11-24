@@ -28,6 +28,8 @@ namespace LOP
         public const ushort LeaveMatchToS                  = 23;
         public const ushort MountedArcheryStateToC         = 24;
         public const ushort KnockbackStateToC              = 25;
-        public const ushort TriGrabStateToC                = 26;
+        // 26은 옛 TriGrabStateToC(회전판)가 쓰던 번호다. 다른 ID가 밀리지 않게 비워 둔다.
+        public const ushort TriGrabRingStateToC            = 27;
+        public const ushort TriGrabCardsToC                = 28;
     }
 }

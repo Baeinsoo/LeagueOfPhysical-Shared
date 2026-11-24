@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+// 원형 판 카드 한 장. 자리는 TriGrabCardsToC가 따로 싣는다.
+message TriGrabRingCardWire
+{
+	int32 id = 1;
+	int32 word = 2;
+	int32 ink = 3;
+	int32 fill = 4;
+	bool ok = 5;
+	int64 born_tick = 6;
+	// 갈고리에 끌려가는 중이면 그 주인, 아니면 빈 문자열.
+	string carried_by = 7;
+	bool gone = 8;
+}
+
+message TriGrabRingHookWire
+{
+	string owner_id = 1;
+	int64 fire_tick = 2;
+	float origin_x = 3;
+	float origin_z = 4;
+	float dir_x = 5;
+	float dir_z = 6;
+	// TriGrabHookState 값
+	int32 state = 7;
+	// TriGrabHookEnd 값
+	int32 end = 8;
+	int32 card_id = 9;
+	int64 turn_tick = 10;
+	float turn_length = 11;
+	// 신뢰 재전송이 날아가는 중에 도착해도 끝 자리를 알 수 있게 싣는다.
+	float tip_x = 12;
+	float tip_z = 13;
+}
+
+message TriGrabRingMoleWire
+{
+	int32 id = 1;
+	float x = 2;
+	float z = 3;
+	int64 spawn_tick = 4;
+	int32 stand_ticks = 5;
+	// 맞기 전에는 -1
+	int64 bonk_tick = 6;
+	int32 say = 7;
+	int32 bonk_line = 8;
+}
+
+message TriGrabRingPlayerWire
+{
+	string entity_id = 1;
+	int32 score = 2;
+	int32 correct = 3;
+	int32 wrong = 4;
+	int64 stun_until_tick = 5;
+	int32 place = 6;
+	int64 cooldown_until_tick = 7;
+}
+
+message TriGrabRingFxWire
+{
+	// TriGrabFxKind 값
+	int32 kind = 1;
+	float x = 2;
+	float z = 3;
+	string owner_id = 4;
+	int32 line = 5;
+	int64 tick = 6;
+}
+
+// 삼색 그랩 원형 판 상태 전체(서버 → 클라). 바뀔 때만 reliable로 간다.
+// 카드 자리는 TriGrabCardsToC가 매 틱 따로 보낸다.
+// @auto_generate
+message TriGrabRingStateToC
+{
+	// 받는 쪽은 자기가 가진 판본보다 작으면 버린다(늦게 도착한 낡은 소식).
+	int32 version = 1;
+	int32 phase = 2;
+	int64 phase_end_tick = 3;
+	int32 round = 4;
+	int32 total_rounds = 5;
+	int32 rule_type = 6;
+	int32 rule_value = 7;
+	int32 rule_lure = 8;
+	int64 live_start_tick = 9;
+	int32 quota = 10;
+	int32 ok_spawned = 11;
+	repeated TriGrabRingCardWire cards = 12;
+	repeated TriGrabRingHookWire hooks = 13;
+	repeated TriGrabRingMoleWire moles = 14;
+	repeated TriGrabRingPlayerWire players = 15;
+	repeated TriGrabRingFxWire fx = 16;
+}
