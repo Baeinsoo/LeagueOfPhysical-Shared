@@ -352,5 +352,30 @@ namespace LOP.TriGrab.Tests
             if (c.Pos.Length() > 0.05f)
                 Assert.Greater(Vector2.Dot(c.Vel, c.Pos), 0f, "바깥 방향");
         }
+
+        [Test]
+        public void InitialBatch_OkCardsAreNotAlwaysNeighbors()
+        {
+            // 맞는 카드 둘의 고리 칸이 늘 이웃(72도)이면 한쪽으로 몰려 튀어 나간다 — 칸을 섞으면 144도도 나와야 한다.
+            int neighbors = 0, farApart = 0, rounds = 0;
+            for (int seed = 1; seed <= 120; seed++)
+            {
+                var m = new TriGrabMatch(seed);
+                m.AddPlayer("a");
+                m.AddPlayer("b");
+                m.Start(0);
+                long t = 0;
+                for (int i = 0; i < 100 && m.State.Phase != TriGrabPhase.Live; i++) { t++; m.Tick(t, id => Vector2.Zero); }
+                var oks = new System.Collections.Generic.List<TriGrabCard>();
+                foreach (var c in m.State.Cards) if (c.Ok) oks.Add(c);
+                if (oks.Count < 2) continue;
+                rounds++;
+                float cos = Vector2.Dot(Vector2.Normalize(oks[0].Pos), Vector2.Normalize(oks[1].Pos));
+                if (cos > 0.2f) neighbors++; else farApart++;
+            }
+            Assert.Greater(rounds, 100);
+            Assert.Greater(farApart, rounds / 4, "맞는 카드가 멀리 떨어진 칸에 놓이는 판이 충분히 있다");
+            Assert.Greater(neighbors, rounds / 4, "이웃 칸 판도 있다(섞였다는 뜻 — 한쪽으로 고정이 아니다)");
+        }
     }
 }

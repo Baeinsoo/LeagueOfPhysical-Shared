@@ -74,6 +74,18 @@ namespace LOP.TriGrab.Tests
         }
 
         [Test]
+        public void CenterSpot_KeepsClearOfStandingMole()
+        {
+            var mole = new TriGrabMole { Pos = new Vector2(0.2f, 0f), SpawnTick = 0, StandTicks = 1000 };
+            Assert.IsTrue(TriGrabCardSim.TryCenterSpot(new List<TriGrabCard>(), new[] { mole }, 50, new Random(1), out var p));
+            float need = TriGrabConfig.CardBumpRadius + TriGrabConfig.MoleRadius;
+            Assert.GreaterOrEqual(Vector2.Distance(p, mole.Pos), need, "두더지 위에 태어나지 않는다");
+            var rising = new TriGrabMole { Pos = new Vector2(0f, 0f), SpawnTick = 48, StandTicks = 1000 };
+            Assert.IsTrue(TriGrabCardSim.TryCenterSpot(new List<TriGrabCard>(), new[] { rising }, 50, new Random(1), out var q));
+            Assert.GreaterOrEqual(Vector2.Distance(q, rising.Pos), need, "솟는 중인 두더지도 피한다");
+        }
+
+        [Test]
         public void SpeedRelaxesTo1_4()
         {
             var c = new TriGrabCard { Pos = Vector2.Zero, Vel = new Vector2(0.2f, 0f) };

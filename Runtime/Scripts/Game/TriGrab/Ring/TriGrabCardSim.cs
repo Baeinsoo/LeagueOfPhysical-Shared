@@ -124,9 +124,11 @@ namespace LOP.TriGrab
         /// 한가운데(반지름 CardSpawnRadius 안)에서 다른 카드와 안 겹치는 자리를 찾는다.
         /// 없으면 중심에서 가장 가까운 빈자리(카드 벽 안)를 고른다.
         /// </summary>
-        public static bool TryCenterSpot(IList<TriGrabCard> onDisc, Random rng, out Vector2 spot)
+        public static bool TryCenterSpot(IList<TriGrabCard> onDisc, IReadOnlyList<TriGrabMole> moles, long tick, Random rng, out Vector2 spot)
         {
             float gap = TriGrabConfig.CardBumpRadius * 2f + SpotLooseGap;
+            // 솟는 중인 두더지도 곧 카드를 밀어내므로 사라지지 않은 두더지는 모두 피한다.
+            float moleGap = TriGrabConfig.CardBumpRadius + TriGrabConfig.MoleRadius + SpotLooseGap;
             const int ringSteps = 16;
             float rot = (float)(rng.NextDouble() * Math.PI * 2);
             for (int ring = 0; ring <= 60; ring++)
@@ -141,6 +143,8 @@ namespace LOP.TriGrab
                     bool ok = true;
                     for (int i = 0; i < onDisc.Count && ok; i++)
                         if (Vector2.Distance(onDisc[i].Pos, p) < gap) ok = false;
+                    for (int m = 0; m < moles.Count && ok; m++)
+                        if (!moles[m].GoneAt(tick) && Vector2.Distance(moles[m].Pos, p) < moleGap) ok = false;
                     if (ok) { spot = p; return true; }
                 }
             }

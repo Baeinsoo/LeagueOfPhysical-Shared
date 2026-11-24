@@ -60,6 +60,7 @@ namespace LOP.TriGrab
         int _nextCardId;
         long _nextRefillTick;
         int _ringCount, _ringIndex;
+        int[] _ringSlots;
         float _ringRadius, _ringRotation;
         TriGrabRule? _previousRule;
 
@@ -188,6 +189,14 @@ namespace LOP.TriGrab
             _ringRotation = (float)(_rng.NextDouble() * Math.PI * 2);
             _ringCount = batch;
             _ringIndex = 0;
+            // 맞는 카드가 먼저 만들어지므로 칸을 섞지 않으면 늘 이웃 칸에 몰려 한쪽으로 튄다.
+            _ringSlots = new int[batch];
+            for (int i = 0; i < batch; i++) _ringSlots[i] = i;
+            for (int i = batch - 1; i > 0; i--)
+            {
+                int j = _rng.Next(i + 1);
+                (_ringSlots[i], _ringSlots[j]) = (_ringSlots[j], _ringSlots[i]);
+            }
             for (int i = 0; i < batch && Refill(tick); i++) { }
             _ringCount = 0;
         }
@@ -241,11 +250,11 @@ namespace LOP.TriGrab
             Vector2 spot;
             if (_ringCount > 0)
             {
-                float a0 = _ringRotation + _ringIndex * (float)(Math.PI * 2 / _ringCount);
+                float a0 = _ringRotation + _ringSlots[_ringIndex] * (float)(Math.PI * 2 / _ringCount);
                 _ringIndex++;
                 spot = new Vector2((float)Math.Cos(a0), (float)Math.Sin(a0)) * _ringRadius;
             }
-            else if (!TriGrabCardSim.TryCenterSpot(onDisc, _rng, out spot)) return false;
+            else if (!TriGrabCardSim.TryCenterSpot(onDisc, State.Moles, tick, _rng, out spot)) return false;
             var dir = TriGrabCardSim.OutwardDirection(spot, _rng);
             var card = new TriGrabCard
             {
