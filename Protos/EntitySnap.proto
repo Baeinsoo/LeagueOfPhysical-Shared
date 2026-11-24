@@ -68,4 +68,17 @@ message EntitySnap
 	int64 card_shot_tick = 56;        // CardRush: 날고 있는 투사체를 던진 틱. 0 = 없음
 	int32 card_shot_from_mm = 57;     // CardRush: 투사체 출발 자리(mm)
 	int64 card_roll_start_tick = 58;  // CardRush: 카드가 돌기 시작한 틱. 0 = 안 돈다(평소 뒷면)
+	// Skydive 태풍의 눈 몸개그 장애물(StormState). 지속은 끝나는 절대 틱(ADR-0015), 0 = 없음.
+	// 서버만 맞은 경우 클라는 이것으로만 안다 — 보정 처리기가 예측과 비교해 다르면 되감는다.
+	int64 storm_stun_end_tick = 59;
+	int64 storm_lift_end_tick = 60;
+	float storm_eject_x = 61;          // 떠오름이 끝나는 틱에 뱉는 방향(수평 단위 벡터)
+	float storm_eject_z = 62;
+	int64 storm_gull_on_head_end_tick = 63;
+	int64 storm_cushion_ready_tick = 64; // 같은 장애물에 다시 걸리기까지 쉬는 끝 틱
+	int64 storm_cloud_ready_tick = 65;
+	int64 storm_gull_ready_tick = 66;
+	int64 storm_updraft_ready_tick = 67;
+	int32 storm_last_hit_kind = 68;    // StormHazardKind — 연출용
+	int64 storm_last_hit_tick = 69;    // -1 = 아직 없음
 }
